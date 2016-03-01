@@ -164,6 +164,7 @@ public class Player implements Runnable {
 
             player.report();
         } catch (Exception e) {
+            System.out.println("Invalid arguments.");
             return;
         }
 

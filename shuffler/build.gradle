@@ -16,3 +16,6 @@ dependencies {
 
 project.pmd.ignoreFailures = true
 project.findbugs.ignoreFailures = true
+
+apply plugin: 'application'
+mainClassName = "main.java.com.shuffle.sim.Player"
