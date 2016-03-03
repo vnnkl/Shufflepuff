@@ -216,7 +216,7 @@ public class CoinShuffle {
             equivocationCheck(encryptionKeys, newAddresses, false);
 
             // Phase 5: verification and submission.
-            // Everyone creates a Bitcoin transaction and signs it, then broadcasts the signature.
+            // Everyone creates a BitcoinCrypto transaction and signs it, then broadcasts the signature.
             // If all signatures check out, then the transaction is history into the net.
             phase.set(Phase.VerificationAndSubmission);
 
@@ -1150,7 +1150,7 @@ public class CoinShuffle {
     public CoinShuffle(
             MessageFactory messages, // Object that knows how to create and copy messages.
             Crypto crypto, // Connects to the cryptography.
-            Coin coin // Connects us to the Bitcoin or other cryptocurrency netork.
+            Coin coin // Connects us to the BitcoinCrypto or other cryptocurrency netork.
     ) {
         if (crypto == null || coin == null || messages == null) {
             throw new NullPointerException();
