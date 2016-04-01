@@ -22,8 +22,13 @@ import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.player.Connect;
 import com.shuffle.protocol.CoinShuffle;
+import com.shuffle.protocol.FormatException;
+import com.shuffle.protocol.InvalidParticipantSetException;
 import com.shuffle.protocol.Machine;
 import com.shuffle.protocol.Phase;
+import com.shuffle.protocol.SignatureException;
+import com.shuffle.protocol.TimeoutException;
+import com.shuffle.protocol.ValueException;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -226,7 +231,14 @@ class Player implements Runnable {
                     connect.connect(tcp, param.identities, new MockMarshaller(), 1, 3),
                     msg
             );
-        } catch (IOException | InterruptedException | CoinNetworkException e) {
+        } catch (IOException
+                | InterruptedException
+                | CoinNetworkException
+                | TimeoutException
+                | SignatureException
+                | FormatException
+                | ValueException
+                | InvalidParticipantSetException e) {
             // TODO handle these problems appropriately.
             return null;
         } finally {

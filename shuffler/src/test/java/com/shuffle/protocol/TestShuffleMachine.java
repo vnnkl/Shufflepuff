@@ -36,7 +36,8 @@ import java.util.Map;
 public class TestShuffleMachine {
     static final Logger log = LogManager.getLogger(TestShuffleMachine.class);
     private static final int defaultSeed = 99;
-    private static final int defaultTrials = 10;
+    private static final int defaultTrials = 1;
+    private static final boolean override = true;
 
     private int seed = 99;
 
@@ -50,8 +51,13 @@ public class TestShuffleMachine {
     }
 
     public TestShuffleMachine(int seed, int trials) {
-        this.seed = defaultSeed;
-        this.trials = defaultTrials;
+        if (override) {
+            this.seed = defaultSeed;
+            this.trials = defaultTrials;
+        } else {
+            this.seed = seed;
+            this.trials = trials;
+        }
     }
 
     public class Report {

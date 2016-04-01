@@ -44,7 +44,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -102,7 +101,7 @@ public class CoinShuffle {
 
         void protocolDefinition(
         ) throws
-                TimeoutError,
+                TimeoutException,
                 FormatException,
                 CryptographyError,
                 InvalidImplementationError,
@@ -303,18 +302,14 @@ public class CoinShuffle {
             }
 
             // Send the transaction into the net.
-            try {
-                machine.t.send();
-            } catch(CoinNetworkException e) {
-                machine.e = e;
-            }
+            machine.t.send();
 
             // The protocol has completed successfully.
             machine.phase = Phase.Completed;
         }
 
         // Everyone except player 1 creates a new keypair and sends it around to everyone else.
-        DecryptionKey newDecryptionKey(Map<VerificationKey, Address> changeAddresses) {
+        DecryptionKey newDecryptionKey(Map<VerificationKey, Address> changeAddresses) throws TimeoutException, InterruptedException {
             DecryptionKey dk = null;
             if (me != 1) {
                 dk = crypto.makeDecryptionKey();
@@ -366,7 +361,7 @@ public class CoinShuffle {
         // malicious machine can override it.
         Deque<Address> readAndBroadcastNewAddresses(Message shuffled)
                 throws FormatException, InterruptedException,
-                SignatureException, ValueException, BlameException {
+                SignatureException, ValueException, BlameException, TimeoutException {
             Deque<Address> newAddresses;
             if (me == N) {
                 // The last player adds his own new address in without
@@ -383,7 +378,7 @@ public class CoinShuffle {
         // In the shuffle phase, we have to receive a set of strings from the previous player and
         // decrypt them all.
         final Message decryptAll(Message message, DecryptionKey key, int expected)
-                throws InvalidImplementationError, FormatException {
+                throws InvalidImplementationError, FormatException, TimeoutException, InterruptedException {
 
             Message decrypted = messages.make();
 
@@ -426,7 +421,7 @@ public class CoinShuffle {
                 boolean errorCase // There is an equivocation check that occurs
         ) throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException {
+                SignatureException, TimeoutException {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             mailbox.broadcast(equivocationCheck, machine.phase);
@@ -468,8 +463,7 @@ public class CoinShuffle {
         // Check for players with insufficient funds.
         private Matrix blameInsufficientFunds() throws
                 InterruptedException, FormatException,
-                ValueException, SignatureException, CoinNetworkException
-        {
+                ValueException, SignatureException, CoinNetworkException, TimeoutException {
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
@@ -513,7 +507,7 @@ public class CoinShuffle {
                 FormatException,
                 ValueException,
                 ProtocolException,
-                SignatureException {
+                SignatureException, TimeoutException {
 
             // First skip to phase 4 and do an equivocation check.
             machine.phase = Phase.EquivocationCheck;
@@ -521,7 +515,7 @@ public class CoinShuffle {
         }
 
         Matrix blameBroadcastShuffleMessages()
-                throws InterruptedException, SignatureException, ValueException, FormatException {
+                throws InterruptedException, SignatureException, ValueException, FormatException, TimeoutException {
 
             machine.phase = Phase.Blame;
             log.warn("Player " + me + " enters blame phase and sends broadcast messages.");
@@ -538,7 +532,7 @@ public class CoinShuffle {
         }
 
         Matrix checkDoubleSpending(Transaction t) throws
-                InterruptedException, SignatureException, ValueException, FormatException {
+                InterruptedException, SignatureException, ValueException, FormatException, TimeoutException {
             // Check for double spending.
             Message doubleSpend = messages.make();
             for (VerificationKey key : players.values()) {
@@ -1106,36 +1100,8 @@ public class CoinShuffle {
         return null;
     }
 
-    Machine run(Machine state, Address change, Network network)  {
-
-        // Get the initial ordering of the players.
-        int i = 1;
-        Map<Integer, VerificationKey> numberedPlayers = new TreeMap<>();
-        for (VerificationKey player : state.players) {
-            numberedPlayers.put(i, player);
-            i++;
-        }
-
-        // Make an inbox for the next round.
-        Mailbox mailbox = new Mailbox(state.session, state.sk, numberedPlayers.values(), network);
-
-        try {
-            this.new Round(state, numberedPlayers, change, mailbox).protocolDefinition();
-        } catch (InterruptedException
-                | ProtocolException
-                | FormatException
-                | ValueException
-                | InvalidParticipantSetException
-                | SignatureException
-                | CoinNetworkException e) {
-            state.e = e;
-        }
-
-        return state;
-    }
-
     // Run the protocol without creating a new thread.
-    public final Machine runProtocol(
+    public Machine runProtocol(
             SessionIdentifier session, // Unique session identifier.
             long amount, // The amount to be shuffled per player.
             SigningKey sk, // The signing key of the current player.
@@ -1146,7 +1112,10 @@ public class CoinShuffle {
             // If this is not null, the machine is put in this channel so that another thread can
             // query the phase as it runs.
             SendChan<Machine> queue
-    ) {
+    ) throws TimeoutException,
+            InvalidParticipantSetException,
+            InterruptedException, FormatException, ValueException,
+            SignatureException, ProtocolException, CoinNetworkException {
         if (amount <= 0) {
             throw new IllegalArgumentException();
         }
@@ -1158,97 +1127,22 @@ public class CoinShuffle {
             queue.send(machine);
         }
 
-        return run(machine, change, network);
-    }
-
-    // Run the protocol in a separate thread and get a future to the final state.
-    public final Future<Machine> runProtocolFuture(
-            final SessionIdentifier session, // Unique session identifier.
-            final long amount, // The amount to be shuffled per player.
-            final SigningKey sk, // The signing key of the current player.
-            // The set of players, sorted alphabetically by address.
-            final SortedSet<VerificationKey> players,
-            final Address change, // Change address. (can be null)
-            final Network network // The network that connects us to the other players.
-    ) {
-        final Chan<Machine> q = new Chan<>();
-
-        if (amount <= 0) {
-            throw new IllegalArgumentException();
-        }
-        if (session == null || sk == null || players == null || network == null) {
-            throw new NullPointerException();
+        // Get the initial ordering of the players.
+        int i = 1;
+        Map<Integer, VerificationKey> numberedPlayers = new TreeMap<>();
+        for (VerificationKey player : machine.players) {
+            numberedPlayers.put(i, player);
+            i++;
         }
 
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    q.send(runProtocol(session, amount, sk, players, change, network, null));
-                } catch (TimeoutError e) {
-                    log.error("Protocol timeout error.");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    log.error("Exception caught: " + e.toString());
-                }
+        // Make an inbox for the next round.
+        Mailbox mailbox = new Mailbox(
+                machine.session, machine.sk, numberedPlayers.values(), network
+        );
 
-                q.close();
-            }
-        }).start();
+        this.new Round(machine, numberedPlayers, change, mailbox).protocolDefinition();
 
-        return new Future<Machine>() {
-            Machine result = null;
-            boolean done = false;
-
-            @Override
-            public boolean cancel(boolean b) {
-                return false;
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return false;
-            }
-
-            @Override
-            public boolean isDone() {
-                return done || q.closed();
-            }
-
-            @Override
-            public synchronized Machine get() throws InterruptedException, ExecutionException {
-                if (done) {
-                    return result;
-                }
-
-                result = q.receive();
-                done = true;
-                return result;
-            }
-
-            @Override
-            public synchronized Machine get(long l, TimeUnit timeUnit)
-                    throws InterruptedException, ExecutionException, TimeoutException {
-
-                if (done) {
-                    return result;
-                }
-
-                Machine r = q.receive(l, timeUnit);
-
-                if (r != null) {
-                    result = r;
-                    done = true;
-                    return result;
-                }
-
-                if (q.closed()) {
-                    done = true;
-                }
-
-                return null;
-            }
-        };
+        return machine;
     }
 
     public CoinShuffle(

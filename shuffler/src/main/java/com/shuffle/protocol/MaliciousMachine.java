@@ -14,8 +14,10 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.chan.SendChan;
 import com.shuffle.protocol.blame.Blame;
 import com.shuffle.protocol.blame.BlameException;
 import com.shuffle.protocol.blame.Matrix;
@@ -28,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 
 /**
@@ -52,7 +55,7 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         @Override
-        DecryptionKey newDecryptionKey(Map<VerificationKey, Address> changeAddresses) {
+        DecryptionKey newDecryptionKey(Map<VerificationKey, Address> changeAddresses) throws TimeoutException, InterruptedException {
             DecryptionKey dk = null;
             if (me != 1) {
                 dk = crypto.makeDecryptionKey();
@@ -84,7 +87,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 boolean errorCase)
                 throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException {
+                SignatureException, TimeoutException {
 
             Map<VerificationKey, EncryptionKey> otherKeys = new HashMap<>();
             otherKeys.putAll(encryptonKeys);
@@ -143,7 +146,7 @@ public final class MaliciousMachine extends CoinShuffle {
         @Override
         Deque<Address> readAndBroadcastNewAddresses(Message shuffled)
                 throws FormatException, InterruptedException,
-                SignatureException, ValueException, BlameException {
+                SignatureException, ValueException, BlameException, TimeoutException {
 
             Deque<Address> newAddresses;
             if (me == N) {
@@ -178,7 +181,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 boolean errorCase)
                 throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException {
+                SignatureException, TimeoutException {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             Message otherCheck = equivocationCheckHash(players, encryptonKeys, otherAddresses);
@@ -347,7 +350,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 boolean errorCase)
                 throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException {
+                SignatureException, TimeoutException {
             if (!spent) {
                 try {
                     t.send();
@@ -375,75 +378,90 @@ public final class MaliciousMachine extends CoinShuffle {
     private final Transaction t;
 
     @Override
-    protected Machine run(Machine state, Address change, Network network)  {
+    public Machine runProtocol(
+            SessionIdentifier session, // Unique session identifier.
+            long amount, // The amount to be shuffled per player.
+            SigningKey sk, // The signing key of the current player.
+            // The set of players, sorted alphabetically by address.
+            SortedSet<VerificationKey> players,
+            Address change, // Change address. (can be null)
+            Network network, // The network that connects us to the other players.
+            // If this is not null, the machine is put in this channel so that another thread can
+            // query the phase as it runs.
+            SendChan<Machine> queue
+    ) throws TimeoutException,
+            InvalidParticipantSetException,
+            InterruptedException, FormatException, ValueException,
+            SignatureException, ProtocolException, CoinNetworkException {
+        if (amount <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (session == null || sk == null || players == null || network == null) {
+            throw new NullPointerException();
+        }
+        Machine machine = new Machine(session, amount, sk, players);
+        if (queue != null) {
+            queue.send(machine);
+        }
 
         // Get the initial ordering of the players.
         int i = 1;
         Map<Integer, VerificationKey> numberedPlayers = new TreeMap<>();
-        for (VerificationKey player : state.players) {
+        for (VerificationKey player : machine.players) {
             numberedPlayers.put(i, player);
             i++;
         }
 
         // Make an inbox for the next round.
-        Mailbox mailbox = new Mailbox(state.session, state.sk, numberedPlayers.values(), network);
+        Mailbox mailbox = new Mailbox(
+                machine.session, machine.sk, numberedPlayers.values(), network
+        );
 
-        try {
+        Round round = null;
 
-            Round round = null;
-
-            switch (maliciousPhase) {
-                case Announcement: {
-                    if (equivocate != null) {
-                        round = new AnnouncementEquivocatorRound(
-                                state, numberedPlayers, change, mailbox, equivocate);
-                    }
-                    break;
+        switch (maliciousPhase) {
+            case Announcement: {
+                if (equivocate != null) {
+                    round = new AnnouncementEquivocatorRound(
+                            machine, numberedPlayers, change, mailbox, equivocate);
                 }
-                case Shuffling: {
-                    if (drop != 0) {
-                        if (duplicate != 0) {
-                            round = new DropAddressReplaceDuplicate(
-                                    state, numberedPlayers, change, mailbox, drop, duplicate);
-                        } else if (replaceNew) {
-                            round = new DropAddressReplaceNew(
-                                    state, numberedPlayers, change, mailbox, drop);
-                        } else {
-                            round = new DropAddress(state, numberedPlayers, change, mailbox, drop);
-                        }
-                    }
-                    break;
-                }
-                case BroadcastOutput: {
-                    if (equivocate != null) {
-                        round = new BroadcastEquivocatorRound(
-                                state, numberedPlayers, change, mailbox, equivocate);
-                    }
-                    break;
-                }
-                case VerificationAndSubmission: {
-                    round = new DoubleSpender(state, numberedPlayers, change, mailbox, t);
-                    break;
-                }
-                default: { }
+                break;
             }
-
-            if (round == null) {
-                round = this.new Round(state, numberedPlayers, change, mailbox);
+            case Shuffling: {
+                if (drop != 0) {
+                    if (duplicate != 0) {
+                        round = new DropAddressReplaceDuplicate(
+                                machine, numberedPlayers, change, mailbox, drop, duplicate);
+                    } else if (replaceNew) {
+                        round = new DropAddressReplaceNew(
+                                machine, numberedPlayers, change, mailbox, drop);
+                    } else {
+                        round = new DropAddress(machine, numberedPlayers, change, mailbox, drop);
+                    }
+                }
+                break;
             }
-
-            round.protocolDefinition();
-        } catch (InterruptedException
-                | ProtocolException
-                | FormatException
-                | ValueException
-                | InvalidParticipantSetException
-                | SignatureException
-                | CoinNetworkException e) {
-            state.e = e;
+            case BroadcastOutput: {
+                if (equivocate != null) {
+                    round = new BroadcastEquivocatorRound(
+                            machine, numberedPlayers, change, mailbox, equivocate);
+                }
+                break;
+            }
+            case VerificationAndSubmission: {
+                round = new DoubleSpender(machine, numberedPlayers, change, mailbox, t);
+                break;
+            }
+            default: { }
         }
 
-        return state;
+        if (round == null) {
+            round = this.new Round(machine, numberedPlayers, change, mailbox);
+        }
+
+        round.protocolDefinition();
+
+        return machine;
     }
 
     private MaliciousMachine(MessageFactory messages, Crypto crypto,

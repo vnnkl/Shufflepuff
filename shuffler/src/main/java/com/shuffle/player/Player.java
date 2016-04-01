@@ -22,6 +22,7 @@ import com.shuffle.protocol.MessageFactory;
 import com.shuffle.protocol.Network;
 import com.shuffle.protocol.Phase;
 import com.shuffle.protocol.SessionIdentifier;
+import com.shuffle.protocol.TimeoutException;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -157,11 +158,12 @@ class Player<Identity, Format> {
             // this round of the protocol.
             // TODO
 
-            Machine machine = shuffle.runProtocol(session,
-                    settings.amount, sk, validPlayers, settings.change, net, chan);
-
-            if (machine.exception() == null && machine.phase() != Phase.Blame) {
-                break;
+            Machine machine = null;
+            try {
+                machine = shuffle.runProtocol(session,
+                        settings.amount, sk, validPlayers, settings.change, net, chan);
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             attempt++;

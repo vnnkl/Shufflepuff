@@ -21,7 +21,7 @@ import com.shuffle.protocol.Machine;
 import com.shuffle.protocol.MessageFactory;
 import com.shuffle.protocol.Network;
 import com.shuffle.protocol.SignedPacket;
-import com.shuffle.protocol.TimeoutError;
+import com.shuffle.protocol.TimeoutException;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -59,20 +59,13 @@ public final class Simulator {
         public void sendTo(
                 VerificationKey to,
                 SignedPacket packet
-        ) throws InvalidImplementationError, TimeoutError {
+        ) throws InvalidImplementationError, InterruptedException {
 
-            try {
-                networks.get(to).deliver(packet);
-            } catch (InterruptedException e) {
-                // This means that the thread running the machine we are delivering to
-                // has been interrupted. This would look like a timeout if this were
-                // happening over a real network.
-                throw new TimeoutError();
-            }
+            networks.get(to).deliver(packet);
         }
 
         @Override
-        public SignedPacket receive() throws TimeoutError, InterruptedException {
+        public SignedPacket receive() throws InterruptedException {
             for (int i = 0; i < 2; i++) {
                 SignedPacket next = inbox.receive(300, TimeUnit.MILLISECONDS);
 
@@ -81,7 +74,7 @@ public final class Simulator {
                 }
             }
 
-            throw new TimeoutError();
+            return null;
         }
 
         public void deliver(SignedPacket packet) throws InterruptedException {

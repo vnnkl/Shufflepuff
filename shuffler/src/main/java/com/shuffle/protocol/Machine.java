@@ -26,8 +26,6 @@ public class Machine {
 
     final SessionIdentifier session;
 
-    Exception e = null;
-
     Transaction t = null;
 
     Matrix matrix = null;
@@ -50,10 +48,6 @@ public class Machine {
 
     public Matrix blame() {
         return matrix;
-    }
-
-    public Exception exception() {
-        return e;
     }
 
     public Machine(
@@ -87,10 +81,6 @@ public class Machine {
         }
 
         str += ": Unsuccessful run " + session;
-
-        if (e != null) {
-            str += "; threw " + e.toString();
-        }
 
         if (phase != null) {
             str += " failed in phase " + phase.toString();
@@ -127,8 +117,6 @@ public class Machine {
         public boolean match(Machine m) {
             return session == m.session
                     && (phase == null || phase == m.phase)
-                    && (e == null && m.e == null
-                        || e != null && m.e != null && e.getClass().equals(m.e.getClass()))
                     && ((matrix == null && (m.matrix == null || m.matrix.isEmpty()))
                         || (matrix != null && matrix.match(m.matrix)));
         }

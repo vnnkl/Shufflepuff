@@ -8,8 +8,10 @@
 
 package com.shuffle.sim;
 
+import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.chan.Chan;
 import com.shuffle.monad.Summable;
 import com.shuffle.monad.SummableMap;
 import com.shuffle.monad.SummableMaps;
@@ -56,6 +58,95 @@ public class Adversary {
         this.shuffle = shuffle;
     }
 
+    // Run the protocol in a separate thread and get a future to the final state.
+    private static Future<Machine> runProtocolFuture(
+            final CoinShuffle shuffle,
+            final SessionIdentifier session, // Unique session identifier.
+            final long amount, // The amount to be shuffled per player.
+            final SigningKey sk, // The signing key of the current player.
+            // The set of players, sorted alphabetically by address.
+            final SortedSet<VerificationKey> players,
+            final Address change, // Change address. (can be null)
+            final Network network // The network that connects us to the other players.
+    ) {
+        final Chan<Machine> q = new Chan<>();
+
+        if (amount <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (session == null || sk == null || players == null || network == null) {
+            throw new NullPointerException();
+        }
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    q.send(shuffle.runProtocol(session, amount, sk, players, change, network, null));
+                } catch (Exception e) {
+                    // Ignore and we'll just return nothing.
+                }
+
+                q.close();
+            }
+        }).start();
+
+        return new Future<Machine>() {
+            Machine result = null;
+            boolean done = false;
+
+            @Override
+            public boolean cancel(boolean b) {
+                return false;
+            }
+
+            @Override
+            public boolean isCancelled() {
+                return false;
+            }
+
+            @Override
+            public boolean isDone() {
+                return done || q.closed();
+            }
+
+            @Override
+            public synchronized Machine get() throws InterruptedException, ExecutionException {
+                if (done) {
+                    return result;
+                }
+
+                result = q.receive();
+                done = true;
+                return result;
+            }
+
+            @Override
+            public synchronized Machine get(long l, TimeUnit timeUnit)
+                    throws InterruptedException, ExecutionException,
+                    java.util.concurrent.TimeoutException {
+
+                if (done) {
+                    return result;
+                }
+
+                Machine r = q.receive(l, timeUnit);
+
+                if (r != null) {
+                    result = r;
+                    done = true;
+                    return result;
+                }
+
+                if (q.closed()) {
+                    done = true;
+                }
+
+                return null;
+            }
+        };
+    }
+
     public SessionIdentifier session() {
         return session;
     }
@@ -66,7 +157,7 @@ public class Adversary {
 
         return new Future<Summable.SummableElement<Map<SigningKey, Machine>>>() {
             final Future<Machine> m
-                    = shuffle.runProtocolFuture(session, amount, sk, players, null, network);
+                    = runProtocolFuture(shuffle, session, amount, sk, players, null, network);
 
             @Override
             public boolean cancel(boolean b) {
