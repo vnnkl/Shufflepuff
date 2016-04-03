@@ -99,7 +99,7 @@ public class TestShuffleMachine {
         }
     }
 
-    void check(String description, InitialState init) {
+    void check(InitialState init) {
         int fail = 0;
         int success = 0;
         caseNo++;
@@ -110,7 +110,7 @@ public class TestShuffleMachine {
             }
 
             Map<SigningKey, TestCase.Mismatch> mismatch
-                    = com.shuffle.sim.TestCase.test(init, new MockMessageFactory());
+                    = com.shuffle.sim.TestCase.test(init);
             if (mismatch == null || mismatch.isEmpty() ) {
                 success ++;
             } else {

@@ -10,8 +10,10 @@ package com.shuffle.sim;
 
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.SigningKey;
+import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Chan;
+import com.shuffle.monad.Either;
 import com.shuffle.monad.Summable;
 import com.shuffle.monad.SummableMap;
 import com.shuffle.monad.SummableMaps;
@@ -20,6 +22,7 @@ import com.shuffle.protocol.InvalidImplementationError;
 import com.shuffle.protocol.Machine;
 import com.shuffle.protocol.Network;
 import com.shuffle.protocol.SessionIdentifier;
+import com.shuffle.protocol.blame.Matrix;
 
 import java.util.Map;
 import java.util.SortedSet;
@@ -59,7 +62,7 @@ public class Adversary {
     }
 
     // Run the protocol in a separate thread and get a future to the final state.
-    private static Future<Machine> runProtocolFuture(
+    private static Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>> runProtocolFuture(
             final CoinShuffle shuffle,
             final SessionIdentifier session, // Unique session identifier.
             final long amount, // The amount to be shuffled per player.
@@ -69,7 +72,7 @@ public class Adversary {
             final Address change, // Change address. (can be null)
             final Network network // The network that connects us to the other players.
     ) {
-        final Chan<Machine> q = new Chan<>();
+        final Chan<Either<Transaction, Matrix>> q = new Chan<>();
 
         if (amount <= 0) {
             throw new IllegalArgumentException();
@@ -82,7 +85,9 @@ public class Adversary {
             @Override
             public void run() {
                 try {
-                    q.send(shuffle.runProtocol(session, amount, sk, players, change, network, null));
+                    q.send(new Either<Transaction, Matrix>(shuffle.runProtocol(session, amount, sk, players, change, network, null), null));
+                } catch (Matrix m) {
+                    q.send(new Either<Transaction, Matrix>(null, m));
                 } catch (Exception e) {
                     // Ignore and we'll just return nothing.
                 }
@@ -91,8 +96,8 @@ public class Adversary {
             }
         }).start();
 
-        return new Future<Machine>() {
-            Machine result = null;
+        return new Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>>() {
+            Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>> result = null;
             boolean done = false;
 
             @Override
@@ -110,19 +115,28 @@ public class Adversary {
                 return done || q.closed();
             }
 
+            private Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>> g(
+                    Either<Transaction, Matrix> m
+            ) {
+                if (m == null) {
+                    return new SummableMaps.Zero<>();
+                }
+                return new SummableMap<>(sk, m);
+            }
+
             @Override
-            public synchronized Machine get() throws InterruptedException, ExecutionException {
+            public synchronized Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>> get() throws InterruptedException, ExecutionException {
                 if (done) {
                     return result;
                 }
 
-                result = q.receive();
+                result = g(q.receive());
                 done = true;
                 return result;
             }
 
             @Override
-            public synchronized Machine get(long l, TimeUnit timeUnit)
+            public synchronized Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>> get(long l, TimeUnit timeUnit)
                     throws InterruptedException, ExecutionException,
                     java.util.concurrent.TimeoutException {
 
@@ -130,10 +144,10 @@ public class Adversary {
                     return result;
                 }
 
-                Machine r = q.receive(l, timeUnit);
+                Either<Transaction, Matrix> r = q.receive(l, timeUnit);
 
                 if (r != null) {
-                    result = r;
+                    result = g(r);
                     done = true;
                     return result;
                 }
@@ -152,51 +166,10 @@ public class Adversary {
     }
 
     // Return a future that can be composed with others.
-    public Future<Summable.SummableElement<Map<SigningKey, Machine>>> turnOn(
+    public Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>> turnOn(
     ) throws InvalidImplementationError {
 
-        return new Future<Summable.SummableElement<Map<SigningKey, Machine>>>() {
-            final Future<Machine> m
-                    = runProtocolFuture(shuffle, session, amount, sk, players, null, network);
-
-            @Override
-            public boolean cancel(boolean b) {
-                return m.cancel(b);
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return m.isCancelled();
-            }
-
-            @Override
-            public boolean isDone() {
-                return m.isDone();
-            }
-
-            private Summable.SummableElement<Map<SigningKey, Machine>> g(Machine m) {
-                if (m == null) {
-                    return new SummableMaps.Zero<>();
-                }
-                return new SummableMap<>(sk, m);
-            }
-
-            @Override
-            public Summable.SummableElement<Map<SigningKey, Machine>> get(
-            ) throws InterruptedException, ExecutionException {
-
-                return g(m.get());
-            }
-
-            @Override
-            public Summable.SummableElement<Map<SigningKey, Machine>> get(
-                    long l, TimeUnit timeUnit
-            ) throws InterruptedException, ExecutionException, TimeoutException {
-
-                return g(m.get(l, timeUnit));
-            }
-
-        };
+        return runProtocolFuture(shuffle, session, amount, sk, players, null, network);
     }
 
     public SigningKey identity() {

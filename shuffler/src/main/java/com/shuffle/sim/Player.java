@@ -10,6 +10,7 @@ package com.shuffle.sim;
 
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
+import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Chan;
 import com.shuffle.mock.InsecureRandom;
@@ -29,6 +30,7 @@ import com.shuffle.protocol.Phase;
 import com.shuffle.protocol.SignatureException;
 import com.shuffle.protocol.TimeoutException;
 import com.shuffle.protocol.ValueException;
+import com.shuffle.protocol.blame.Matrix;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -214,7 +216,7 @@ class Player implements Runnable {
         }
     }
 
-    private Machine play() {
+    private Transaction play() {
         Channel<InetSocketAddress, Bytestring> tcp = new TcpChannel(param.port, exec);
 
         Connect<InetSocketAddress> connect = new Connect<>(param.init.crypto());
@@ -240,6 +242,9 @@ class Player implements Runnable {
                 | ValueException
                 | InvalidParticipantSetException e) {
             // TODO handle these problems appropriately.
+            return null;
+        } catch (Matrix matrix) {
+            matrix.printStackTrace();
             return null;
         } finally {
             connect.shutdown();

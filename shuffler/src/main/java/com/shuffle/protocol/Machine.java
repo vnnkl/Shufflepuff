@@ -11,6 +11,7 @@ package com.shuffle.protocol;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.monad.Either;
 import com.shuffle.protocol.blame.Matrix;
 
 import java.util.SortedSet;
@@ -28,8 +29,6 @@ public class Machine {
 
     Transaction t = null;
 
-    Matrix matrix = null;
-
     final long amount; // The amount to be shuffled.
 
     final SigningKey sk; // My signing private key.
@@ -44,10 +43,6 @@ public class Machine {
 
     public Transaction transaction() {
         return t;
-    }
-
-    public Matrix blame() {
-        return matrix;
     }
 
     public Machine(
@@ -86,63 +81,6 @@ public class Machine {
             str += " failed in phase " + phase.toString();
         }
 
-        if (matrix != null) {
-            str += "; blame = " + matrix.toString();
-        }
-
         return str;
-    }
-
-    // A representation of an expected result for a CoinShuffle round.
-    public static class Expected {
-
-        public final Phase phase;
-        public final SessionIdentifier session;
-        public final Exception e;
-        public final Matrix matrix;
-
-        public Expected(
-                SessionIdentifier session,
-                Phase phase,
-                Exception e,
-                Matrix matrix
-        ) {
-            this.session = session;
-            this.phase = phase;
-            this.e = e;
-            this.matrix = matrix;
-        }
-
-        // Whether two return states are equivalent.
-        public boolean match(Machine m) {
-            return session == m.session
-                    && (phase == null || phase == m.phase)
-                    && ((matrix == null && (m.matrix == null || m.matrix.isEmpty()))
-                        || (matrix != null && matrix.match(m.matrix)));
-        }
-
-        public String toString() {
-            String session = " " + this.session.toString();
-
-            if (phase == Phase.Completed || (e == null && (matrix == null || matrix.isEmpty()))) {
-                return "Successful run" + session;
-            }
-
-            String str = "Unsuccessful run" + session;
-
-            if (e != null) {
-                str += "; threw " + e.toString();
-            }
-
-            if (phase != null) {
-                str += " failed in phase " + phase.toString();
-            }
-
-            if (matrix != null) {
-                str += "; blame = " + matrix.toString();
-            }
-
-            return str;
-        }
     }
 }

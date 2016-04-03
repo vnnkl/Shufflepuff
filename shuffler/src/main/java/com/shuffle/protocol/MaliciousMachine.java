@@ -55,7 +55,7 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         @Override
-        DecryptionKey newDecryptionKey(Map<VerificationKey, Address> changeAddresses) throws TimeoutException, InterruptedException {
+        final DecryptionKey newDecryptionKey(Map<VerificationKey, Address> changeAddresses) throws TimeoutException, InterruptedException {
             DecryptionKey dk = null;
             if (me != 1) {
                 dk = crypto.makeDecryptionKey();
@@ -81,13 +81,13 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         @Override
-        Matrix equivocationCheck(
+        final void equivocationCheck(
                 Map<VerificationKey, EncryptionKey> encryptonKeys,
                 Queue<Address> newAddresses,
                 boolean errorCase)
                 throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException, TimeoutException {
+                SignatureException, TimeoutException, Matrix {
 
             Map<VerificationKey, EncryptionKey> otherKeys = new HashMap<>();
             otherKeys.putAll(encryptonKeys);
@@ -111,10 +111,8 @@ public final class MaliciousMachine extends CoinShuffle {
 
             if (areEqual(hashes.values())) {
                 if (mailbox.blame() || errorCase) {
-                    return blameBroadcastShuffleMessages();
+                    blameBroadcastShuffleMessages();
                 }
-
-                return null;
             }
 
             // If the hashes are not equal, enter the blame phase.
@@ -125,7 +123,7 @@ public final class MaliciousMachine extends CoinShuffle {
             Message blameMessage = messages.make().attach(Blame.EquivocationFailure(evidence));
             mailbox.broadcast(blameMessage, machine.phase);
 
-            return fillBlameMatrix(new Matrix());
+            throw fillBlameMatrix();
         }
     }
 
@@ -144,7 +142,7 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         @Override
-        Deque<Address> readAndBroadcastNewAddresses(Message shuffled)
+        final Deque<Address> readAndBroadcastNewAddresses(Message shuffled)
                 throws FormatException, InterruptedException,
                 SignatureException, ValueException, BlameException, TimeoutException {
 
@@ -175,13 +173,13 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         @Override
-        Matrix equivocationCheck(
+        final void equivocationCheck(
                 Map<VerificationKey, EncryptionKey> encryptonKeys,
                 Queue<Address> newAddresses,
                 boolean errorCase)
                 throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException, TimeoutException {
+                SignatureException, TimeoutException, Matrix {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             Message otherCheck = equivocationCheckHash(players, encryptonKeys, otherAddresses);
@@ -198,7 +196,7 @@ public final class MaliciousMachine extends CoinShuffle {
 
             if (areEqual(hashes.values())) {
                 if (mailbox.blame() || errorCase) {
-                    return blameBroadcastShuffleMessages();
+                    blameBroadcastShuffleMessages();
                 }
             }
 
@@ -210,7 +208,7 @@ public final class MaliciousMachine extends CoinShuffle {
             Message blameMessage = messages.make().attach(Blame.EquivocationFailure(evidence));
             mailbox.broadcast(blameMessage, machine.phase);
 
-            return fillBlameMatrix(new Matrix());
+            throw fillBlameMatrix();
         }
     }
 
@@ -329,7 +327,7 @@ public final class MaliciousMachine extends CoinShuffle {
         }
     }
 
-    public class DoubleSpender extends Round {
+    public final class DoubleSpender extends Round {
         final Transaction t;
         boolean spent = false;
 
@@ -344,13 +342,13 @@ public final class MaliciousMachine extends CoinShuffle {
 
         @Override
         // This is when we maliciously double spend the transaction.
-        Matrix equivocationCheck(
+        final void equivocationCheck(
                 Map<VerificationKey, EncryptionKey> encryptonKeys,
                 Queue<Address> newAddresses,
                 boolean errorCase)
                 throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException, TimeoutException {
+                SignatureException, TimeoutException, Matrix {
             if (!spent) {
                 try {
                     t.send();
@@ -360,13 +358,13 @@ public final class MaliciousMachine extends CoinShuffle {
                 }
             }
 
-            return super.equivocationCheck(encryptonKeys, newAddresses, errorCase);
+            super.equivocationCheck(encryptonKeys, newAddresses, errorCase);
         }
 
         @Override
         // We made the double spend transaction so obviously we're not going to check honestly.
-        protected Matrix checkDoubleSpending(Transaction t) {
-            return null;
+        final void checkDoubleSpending(Transaction t) {
+
         }
     }
 
@@ -378,7 +376,7 @@ public final class MaliciousMachine extends CoinShuffle {
     private final Transaction t;
 
     @Override
-    public Machine runProtocol(
+    public Transaction runProtocol(
             SessionIdentifier session, // Unique session identifier.
             long amount, // The amount to be shuffled per player.
             SigningKey sk, // The signing key of the current player.
@@ -392,7 +390,7 @@ public final class MaliciousMachine extends CoinShuffle {
     ) throws TimeoutException,
             InvalidParticipantSetException,
             InterruptedException, FormatException, ValueException,
-            SignatureException, ProtocolException, CoinNetworkException {
+            SignatureException, ProtocolException, CoinNetworkException, Matrix {
         if (amount <= 0) {
             throw new IllegalArgumentException();
         }
@@ -459,9 +457,7 @@ public final class MaliciousMachine extends CoinShuffle {
             round = this.new Round(machine, numberedPlayers, change, mailbox);
         }
 
-        round.protocolDefinition();
-
-        return machine;
+        return round.protocolDefinition();
     }
 
     private MaliciousMachine(MessageFactory messages, Crypto crypto,

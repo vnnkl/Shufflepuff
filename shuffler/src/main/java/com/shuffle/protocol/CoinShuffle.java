@@ -19,7 +19,6 @@ import com.shuffle.bitcoin.Signature;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.chan.Chan;
 import com.shuffle.chan.SendChan;
 import com.shuffle.protocol.blame.Blame;
 import com.shuffle.protocol.blame.BlameException;
@@ -42,9 +41,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 /**
  *
@@ -99,7 +95,7 @@ public class CoinShuffle {
 
         public final Mailbox mailbox;
 
-        void protocolDefinition(
+        Transaction protocolDefinition(
         ) throws
                 TimeoutException,
                 FormatException,
@@ -109,7 +105,7 @@ public class CoinShuffle {
                 InterruptedException,
                 SignatureException,
                 ProtocolException,
-                CoinNetworkException {
+                CoinNetworkException, Matrix {
 
             if (amount <= 0) {
                 throw new IllegalArgumentException();
@@ -124,10 +120,7 @@ public class CoinShuffle {
             // Check for sufficient funds.
             // There was a problem with the wording of the original paper which would have meant
             // that player 1's funds never would have been checked, but we have to do that.
-            machine.matrix = blameInsufficientFunds();
-            if (machine.matrix != null) {
-                return;
-            }
+            blameInsufficientFunds();
 
             // This will contain the change addresses.
             Map<VerificationKey, Address> changeAddresses = new HashMap<>();
@@ -142,8 +135,7 @@ public class CoinShuffle {
             } catch (BlameException e) {
                 // might receive blame messages about insufficient funds.
                 machine.phase = Phase.Blame;
-                machine.matrix = fillBlameMatrix(new Matrix());
-                return;
+                throw fillBlameMatrix();
             }
 
             readAnnouncements(announcement, encryptionKeys, changeAddresses);
@@ -169,8 +161,7 @@ public class CoinShuffle {
                             mailbox.receiveFrom(players.get(me - 1), machine.phase)), dk, me - 1);
 
                     if (shuffled == null) {
-                        machine.matrix = blameShuffleMisbehavior();
-                        return;
+                        blameShuffleMisbehavior();
                     }
                 }
 
@@ -202,12 +193,10 @@ public class CoinShuffle {
                     }
                     case ShuffleFailure: {
                         // This was sent
-                        machine.matrix = blameShuffleMisbehavior();
-                        return;
+                        blameShuffleMisbehavior();
                     }
                     default: {
-                        machine.matrix = fillBlameMatrix(new Matrix());
-                        return;
+                        throw fillBlameMatrix();
                     }
                 }
             }
@@ -218,8 +207,7 @@ public class CoinShuffle {
                 mailbox.broadcast(messages.make().attach(Blame.MissingOutput(players.get(N))),
                         machine.phase);
 
-                machine.matrix = blameShuffleMisbehavior();
-                return;
+                blameShuffleMisbehavior();
             }
 
             // Phase 4: equivocation check.
@@ -227,10 +215,7 @@ public class CoinShuffle {
             // encryption keys to different players.
             machine.phase = Phase.EquivocationCheck;
 
-            machine.matrix = equivocationCheck(encryptionKeys, newAddresses, false);
-            if (machine.matrix != null) {
-                return;
-            }
+            equivocationCheck(encryptionKeys, newAddresses, false);
 
             // Phase 5: verification and submission.
             // Everyone creates a Bitcoin transaction and signs it, then broadcasts the signature.
@@ -244,10 +229,7 @@ public class CoinShuffle {
 
             machine.t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
 
-            machine.matrix = checkDoubleSpending(machine.t);
-            if (machine.matrix != null) {
-                return;
-            }
+            checkDoubleSpending(machine.t);
 
             mailbox.broadcast(messages.make().attach(sk.makeSignature(machine.t)), machine.phase);
 
@@ -269,8 +251,7 @@ public class CoinShuffle {
                     default: {
                         machine.phase = Phase.Blame;
                         // Could receive notice of double spending here.
-                        machine.matrix = fillBlameMatrix(new Matrix());
-                        return;
+                        throw fillBlameMatrix();
                     }
                 }
             }
@@ -297,8 +278,7 @@ public class CoinShuffle {
                     blameMessage = blameMessage.attach(Blame.InvalidSignature(key, signature));
                 }
                 mailbox.broadcast(blameMessage, machine.phase);
-                machine.matrix = fillBlameMatrix(new Matrix());
-                return;
+                throw fillBlameMatrix();
             }
 
             // Send the transaction into the net.
@@ -306,6 +286,8 @@ public class CoinShuffle {
 
             // The protocol has completed successfully.
             machine.phase = Phase.Completed;
+
+            return machine.t;
         }
 
         // Everyone except player 1 creates a new keypair and sends it around to everyone else.
@@ -414,14 +396,14 @@ public class CoinShuffle {
 
         // Players run an equivocation check when they must confirm that they all have
         // the same information.
-        Matrix equivocationCheck(
+        void equivocationCheck(
                 Map<VerificationKey,
                 EncryptionKey> encryptonKeys,
                 Queue<Address> newAddresses,
                 boolean errorCase // There is an equivocation check that occurs
         ) throws InterruptedException, ValueException,
                 FormatException, ProtocolException,
-                SignatureException, TimeoutException {
+                SignatureException, TimeoutException, Matrix {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             mailbox.broadcast(equivocationCheck, machine.phase);
@@ -441,10 +423,10 @@ public class CoinShuffle {
                 if (errorCase ||
                         mailbox.blame(Reason.ShuffleFailure) ||
                         mailbox.blame(Reason.MissingOutput)) {
-                    return blameBroadcastShuffleMessages();
+                    blameBroadcastShuffleMessages();
                 }
 
-                return null;
+                return;
             }
 
             log.warn("Player " + me + " equivocation check fails.");
@@ -457,13 +439,14 @@ public class CoinShuffle {
             mailbox.broadcast(messages.make().attach(Blame.EquivocationFailure(evidence)),
                     machine.phase);
 
-            return fillBlameMatrix(new Matrix());
+            throw fillBlameMatrix();
         }
 
         // Check for players with insufficient funds.
-        private Matrix blameInsufficientFunds() throws
+        private void blameInsufficientFunds() throws
                 InterruptedException, FormatException,
-                ValueException, SignatureException, CoinNetworkException, TimeoutException {
+                ValueException, SignatureException,
+                CoinNetworkException, TimeoutException, Matrix {
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
@@ -475,13 +458,10 @@ public class CoinShuffle {
             }
 
             // If they do, return.
-            if (offenders.isEmpty()) {
-                return null;
-            }
+            if (offenders.isEmpty()) return;
 
             // If not, enter blame phase and find offending transactions.
             machine.phase = Phase.Blame;
-            Matrix matrix = new Matrix();
             Message blameMessage = messages.make();
             for (VerificationKey offender : offenders) {
                 Transaction t = coin.getConflictingTransaction(offender.address(), amount);
@@ -497,25 +477,26 @@ public class CoinShuffle {
             mailbox.broadcast(blameMessage, machine.phase);
 
             // Get all subsequent blame messages.
-            return fillBlameMatrix(matrix);
+            throw fillBlameMatrix();
         }
 
         // Some misbehavior that has occurred during the shuffle phase and we want to
         // find out what happened!
-        private Matrix blameShuffleMisbehavior()
+        private void blameShuffleMisbehavior()
                 throws InterruptedException,
                 FormatException,
                 ValueException,
                 ProtocolException,
-                SignatureException, TimeoutException {
+                SignatureException, TimeoutException, Matrix {
 
             // First skip to phase 4 and do an equivocation check.
             machine.phase = Phase.EquivocationCheck;
-            return equivocationCheck(encryptionKeys, newAddresses, true);
+            equivocationCheck(encryptionKeys, newAddresses, true);
         }
 
-        Matrix blameBroadcastShuffleMessages()
-                throws InterruptedException, SignatureException, ValueException, FormatException, TimeoutException {
+        void blameBroadcastShuffleMessages()
+                throws InterruptedException, SignatureException,
+                ValueException, FormatException, TimeoutException, Matrix {
 
             machine.phase = Phase.Blame;
             log.warn("Player " + me + " enters blame phase and sends broadcast messages.");
@@ -528,11 +509,12 @@ public class CoinShuffle {
             mailbox.broadcast(messages.make().attach(
                     Blame.ShuffleAndEquivocationFailure(dk, evidence)), machine.phase);
 
-            return fillBlameMatrix(new Matrix());
+            throw fillBlameMatrix();
         }
 
-        Matrix checkDoubleSpending(Transaction t) throws
-                InterruptedException, SignatureException, ValueException, FormatException, TimeoutException {
+        void checkDoubleSpending(Transaction t) throws
+                InterruptedException, SignatureException,
+                ValueException, FormatException, TimeoutException, Matrix {
             // Check for double spending.
             Message doubleSpend = messages.make();
             for (VerificationKey key : players.values()) {
@@ -546,19 +528,19 @@ public class CoinShuffle {
                 machine.phase = Phase.Blame;
 
                 mailbox.broadcast(doubleSpend, machine.phase);
-                return fillBlameMatrix(new Matrix());
+                throw fillBlameMatrix();
             }
-
-            return null;
         }
 
         // When we know we'll receive a bunch of blame messages, we have to go through them all
         // to figure out what's going on.
-        final Matrix fillBlameMatrix(Matrix matrix) throws
+        final Matrix fillBlameMatrix() throws
                 InterruptedException,
                 FormatException,
                 ValueException,
                 SignatureException {
+            Matrix matrix = new Matrix();
+
             Map<VerificationKey, Queue<SignedPacket>> blameMessages = mailbox.receiveAllBlame();
 
             // Get all hashes received in phase 4 to check that they were reported correctly.
@@ -1101,7 +1083,7 @@ public class CoinShuffle {
     }
 
     // Run the protocol without creating a new thread.
-    public Machine runProtocol(
+    public Transaction runProtocol(
             SessionIdentifier session, // Unique session identifier.
             long amount, // The amount to be shuffled per player.
             SigningKey sk, // The signing key of the current player.
@@ -1115,7 +1097,7 @@ public class CoinShuffle {
     ) throws TimeoutException,
             InvalidParticipantSetException,
             InterruptedException, FormatException, ValueException,
-            SignatureException, ProtocolException, CoinNetworkException {
+            SignatureException, ProtocolException, CoinNetworkException, Matrix {
         if (amount <= 0) {
             throw new IllegalArgumentException();
         }
@@ -1140,9 +1122,7 @@ public class CoinShuffle {
                 machine.session, machine.sk, numberedPlayers.values(), network
         );
 
-        this.new Round(machine, numberedPlayers, change, mailbox).protocolDefinition();
-
-        return machine;
+        return this.new Round(machine, numberedPlayers, change, mailbox).protocolDefinition();
     }
 
     public CoinShuffle(
