@@ -19,7 +19,6 @@ import com.shuffle.monad.SummableMap;
 import com.shuffle.monad.SummableMaps;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.InvalidImplementationError;
-import com.shuffle.protocol.Machine;
 import com.shuffle.protocol.Network;
 import com.shuffle.protocol.SessionIdentifier;
 import com.shuffle.protocol.blame.Matrix;
@@ -62,7 +61,9 @@ public class Adversary {
     }
 
     // Run the protocol in a separate thread and get a future to the final state.
-    private static Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>> runProtocolFuture(
+    private static Future<Summable.SummableElement<Map<SigningKey,
+            Either<Transaction, Matrix>>>> runProtocolFuture(
+
             final CoinShuffle shuffle,
             final SessionIdentifier session, // Unique session identifier.
             final long amount, // The amount to be shuffled per player.
@@ -85,7 +86,9 @@ public class Adversary {
             @Override
             public void run() {
                 try {
-                    q.send(new Either<Transaction, Matrix>(shuffle.runProtocol(session, amount, sk, players, change, network, null), null));
+                    q.send(new Either<Transaction, Matrix>(shuffle.runProtocol(
+                            session, amount, sk, players, change, network, null
+                    ), null));
                 } catch (Matrix m) {
                     q.send(new Either<Transaction, Matrix>(null, m));
                 } catch (Exception e) {
@@ -96,7 +99,8 @@ public class Adversary {
             }
         }).start();
 
-        return new Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>>() {
+        return new Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>>(
+        ) {
             Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>> result = null;
             boolean done = false;
 
@@ -125,7 +129,9 @@ public class Adversary {
             }
 
             @Override
-            public synchronized Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>> get() throws InterruptedException, ExecutionException {
+            public synchronized Summable.SummableElement<Map<SigningKey,
+                    Either<Transaction, Matrix>>> get()
+                    throws InterruptedException, ExecutionException {
                 if (done) {
                     return result;
                 }
@@ -136,7 +142,8 @@ public class Adversary {
             }
 
             @Override
-            public synchronized Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>> get(long l, TimeUnit timeUnit)
+            public synchronized Summable.SummableElement<Map<SigningKey,
+                    Either<Transaction, Matrix>>> get(long l, TimeUnit timeUnit)
                     throws InterruptedException, ExecutionException,
                     java.util.concurrent.TimeoutException {
 
