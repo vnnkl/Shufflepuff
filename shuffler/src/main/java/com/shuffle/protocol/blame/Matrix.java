@@ -36,14 +36,14 @@ public class Matrix extends Throwable {
 
         VerificationKey accused = evidence.accused;
 
-        Map<VerificationKey, Evidence> blames = blame.get(accuser);
+        Map<VerificationKey, Evidence> blames = blame.get(accused);
 
         if (blames == null) {
             blames = new HashMap<>();
-            blame.put(accuser, blames);
+            blame.put(accused, blames);
         }
 
-        Evidence blame = blames.get(accused);
+        Evidence blame = blames.get(accuser);
 
         if (blame != null) {
             log.error("Overwriting blame matrix entry "
@@ -51,7 +51,21 @@ public class Matrix extends Throwable {
             throw new IllegalArgumentException();
         }
 
-        blames.put(accused, evidence);
+        blames.put(accuser, evidence);
+    }
+
+    // Check whether one player already blamed another for a given offense.
+    public boolean blameExists(VerificationKey accuser, VerificationKey accused, Reason reason) {
+        Map<VerificationKey, Evidence> blames = blame.get(accused);
+
+        if (blames == null) {
+            return false;
+        }
+
+        Evidence offense = blames.get(accuser);
+
+        return offense != null && offense.reason == reason;
+
     }
 
     private static Map<VerificationKey, Evidence> put(
@@ -65,7 +79,7 @@ public class Matrix extends Throwable {
         }
     }
 
-    public static void putAll(
+    private static void putAll(
             Map<VerificationKey, Map<VerificationKey, Evidence>> to,
             Map<VerificationKey, Map<VerificationKey, Evidence>> bm
     ) {
@@ -73,20 +87,6 @@ public class Matrix extends Throwable {
             VerificationKey key = row.getKey();
             to.put(key, put(to.get(key), row.getValue()));
         }
-    }
-
-    // Check whether one player already blamed another for a given offense.
-    public boolean blameExists(VerificationKey accuser, VerificationKey accused, Reason reason) {
-        Map<VerificationKey, Evidence> blames = blame.get(accuser);
-
-        if (blames == null) {
-            return false;
-        }
-
-        Evidence offense = blames.get(accused);
-
-        return offense != null && offense.reason == reason;
-
     }
 
     public Evidence get(VerificationKey accuser, VerificationKey accused) {
@@ -127,26 +127,26 @@ public class Matrix extends Throwable {
         Map<VerificationKey, Map<VerificationKey, Evidence>> bml = new HashMap<>();
         putAll(bml, bm.blame);
 
-        for (VerificationKey accuser : blame.keySet()) {
-            Map<VerificationKey, Evidence> us = blame.get(accuser);
+        for (VerificationKey accused : blame.keySet()) {
+            Map<VerificationKey, Evidence> us = blame.get(accused);
             Map<VerificationKey, Evidence> them = new HashMap<>();
-            if (bml.containsKey(accuser)) {
-                them.putAll(bml.get(accuser));
+            if (bml.containsKey(accused)) {
+                them.putAll(bml.get(accused));
             }
 
-            for (VerificationKey accused : us.keySet()) {
-                if (!us.get(accused).match(them.get(accused))) {
+            for (VerificationKey accuser : us.keySet()) {
+                if (!us.get(accuser).match(them.get(accuser))) {
                     return false;
                 }
 
-                them.remove(accused);
+                them.remove(accuser);
             }
 
             if (!them.isEmpty()) {
                 return false;
             }
 
-            bml.remove(accuser);
+            bml.remove(accused);
         }
 
         return bml.isEmpty();
