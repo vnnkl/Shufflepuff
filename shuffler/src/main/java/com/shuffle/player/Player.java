@@ -20,6 +20,7 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.Mailbox;
+import com.shuffle.protocol.blame.Evidence;
 import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Phase;
 import com.shuffle.protocol.blame.Matrix;
@@ -28,6 +29,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -121,14 +123,16 @@ class Player<Identity> {
         // Try the protocol.
         int attempt = 0;
 
-        // The eliminated players. A player is eliminated when there is a subset of players
-        // which all blame him and none of whom blame one another.
+        // The eliminated players.
         SortedSet<VerificationKey> eliminated = new TreeSet<>();
 
         CoinShuffle shuffle = new CoinShuffle(messages, crypto, coin);
 
         while (true) {
 
+            // *** Step 1: do a round of CoinShuffle ***
+
+            // If too few players are available, abort.
             if (players.size() - eliminated.size() < settings.minPlayers) {
                 return null;
             }
@@ -152,32 +156,123 @@ class Player<Identity> {
 
             Matrix blame = null;
             try {
+                // If the protocol returns correctly without throwing a Matrix, then
+                // it has been successful.
                 return shuffle.runProtocol(
                         settings.amount, sk, validPlayers, settings.addrNew, settings.change, chan);
             } catch (Matrix m) {
                 blame = m;
             } catch (Exception e) {
-                // TODO must handle timeouts effectively here.
+                // TODO must handle timeouts here.
                 e.printStackTrace();
+                return null;
             }
 
+            // Cannot continue beyond a certain maximum number of attempts.
             attempt++;
 
             if (attempt > settings.maxRetries) {
                 return null;
             }
 
-            // Go through players and check if they are eliminated.
+            // *** Step 2: construct reset message ***
+
+            // We must construct a message that informs other players of who will be eliminated.
+            // This message must say who will be eliminated and who will remain, and it must
+            // provide evidence as to why the eliminated players should be eliminated, if it would
+            // not be obvious to everyone.
+
+            // The set of players who are not eliminated.
+            SortedSet<VerificationKey> remaining = new TreeSet<>();
+            // The set of players who have been blamed, the players blaming them,
+            // and the evidence provided.
+            Map<VerificationKey, Map<VerificationKey, Evidence>> blamed = new HashMap<>();
+
+            // Next we go through players and find those which are not eliminated.
             for (VerificationKey player : players) {
                 // Who blames this player?
+                Map<VerificationKey, Evidence> accusers = blame.getAccusations(player);
 
-                // Does everyone blame this player?
+                // If nobody has blamed this player, then he's ok and can be stored in remaining.
+                if (accusers == null || accusers.isEmpty()) {
+                    remaining.add(player);
+                } else {
+                    blamed.put(player, accusers);
+                }
+            }
+
+            // Stores evidences required to eliminate players.
+            Map<VerificationKey, Evidence> evidences = new HashMap<>();
+
+            // Next go through the set of blamed players and decide what to do with them.
+            for (Map.Entry<VerificationKey, Map<VerificationKey, Evidence>> entry : blamed.entrySet()) {
+                VerificationKey player = entry.getKey();
+
+                Map<VerificationKey, Evidence> accusers = entry.getValue();
+
+                // Does everyone blame this player except himself?
+                Set<VerificationKey> everyone = new HashSet<>();
+                everyone.addAll(players);
+                everyone.removeAll(accusers.keySet());
+
+                if (everyone.size() == 0 || everyone.size() == 1 && everyone.contains(player)) {
+                    eliminated.add(player); // Can eliminate this player without extra evidence.
+                    continue;
+                }
 
                 // Why is this player blamed? Is it objective?
-
                 // If not, include evidence.
+                // sufficient contains sufficient evidence to eliminate the player.
+                // (theoretically not all other players could have provided logically equivalent
+                // evidence against him, so we just need sufficient evidence.)
+                Evidence sufficient = null;
+                f : for (Evidence evidence : accusers.values()) {
+                    switch (evidence.reason) {
+                        // TODO all cases other than default are not complete.
+                        case DoubleSpend:
+                            // fallthrough
+                        case InsufficientFunds:
+                            // fallthrough
+                        case InvalidSignature: {
+                            sufficient = evidence;
+                            break;
+                        }
+                        case NoFundsAtAll: {
+                            if (sufficient == null) {
+                                sufficient = evidence;
+                            }
+                            break;
+                        }
+                        default: {
+                            // Other cases than those specified above are are objective.
+                            // We can be sure that other players agree
+                            // that this player should be eliminated.
+                            sufficient = null;
+                            eliminated.add(player);
+                            break f;
+                        }
+                    }
+                }
 
+                // Include evidence if required.
+                if (sufficient != null) {
+                    evidences.put(player, sufficient);
+                }
             }
+
+            // Remove eliminated players from blamed.
+            for (VerificationKey player : eliminated) {
+                blamed.remove(player);
+            }
+
+            if (blamed.size() > 0) {
+                // TODO How could this happen and what to do about it?
+            }
+
+            // TODO
+            // Broadcast new list of players, along with evidence for eliminated players.
+
+            // *** Step 3: equivocation check on all other players ***
 
             // TODO
             // Now we try to start a new round.
@@ -186,6 +281,8 @@ class Player<Identity> {
             // Resend everything to show that we all agree.
             // Receive rebroadcasts and check.
             // Begin protocol.
+
+
         }
     }
 }
