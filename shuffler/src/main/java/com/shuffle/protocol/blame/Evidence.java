@@ -33,6 +33,7 @@ public class Evidence {
     public final Reason reason;
     public final Transaction t;
     public final Bytestring signature;
+    public final Packet[] packets;
     public final Map<VerificationKey, Packet> output;
     public final Map<VerificationKey, EncryptionKey> sent;
     public final Map<VerificationKey, Packet> shuffle;
@@ -44,6 +45,7 @@ public class Evidence {
             Reason reason,
             Transaction t,
             Bytestring signature,
+            Packet[] packets,
             Map<VerificationKey, Packet> output,
             Map<VerificationKey, EncryptionKey> sent,
             Map<VerificationKey, Packet> shuffle,
@@ -87,6 +89,14 @@ public class Evidence {
             }
             case NoFundsAtAll:
                 break;
+            case InvalidFormat: {
+                if (packets == null || packets.length != 1 || packets[0] == null)
+                    throw new IllegalArgumentException();
+                break;
+            }
+            case Liar: {
+                if (accused == null || packets == null) throw new IllegalArgumentException();
+            }
             default: {
                 throw new IllegalArgumentException();
             }
@@ -101,6 +111,7 @@ public class Evidence {
         this.keys = keys;
         this.shuffle = shuffle;
         this.broadcast = broadcast;
+        this.packets = packets;
     }
 
     protected Evidence(VerificationKey accused, Reason reason) {
@@ -113,6 +124,7 @@ public class Evidence {
         this.keys = null;
         this.broadcast = null;
         this.shuffle = null;
+        this.packets = null;
     }
 
     @Override
@@ -163,21 +175,21 @@ public class Evidence {
     }
 
     public static Evidence NoFundsAtAll(VerificationKey accused) {
-        return new Evidence(accused, Reason.NoFundsAtAll, null, null, null, null, null, null, null);
+        return new Evidence(accused, Reason.NoFundsAtAll, null, null, null, null, null, null, null, null);
     }
 
     public static Evidence InsufficientFunds(VerificationKey accused, Transaction t) {
         return new Evidence(accused,
-                Reason.InsufficientFunds, t, null, null, null, null, null, null);
+                Reason.InsufficientFunds, t, null, null, null, null, null, null, null);
     }
 
     public static Evidence DoubleSpend(VerificationKey accused, Transaction t) {
-        return new Evidence(accused, Reason.DoubleSpend, t, null, null, null, null, null, null);
+        return new Evidence(accused, Reason.DoubleSpend, t, null, null, null, null, null, null, null);
     }
 
     public static Evidence InvalidSignature(VerificationKey accused, Bytestring signature) {
         return new Evidence(accused,
-                Reason.InvalidSignature, null, signature, null, null, null, null, null);
+                Reason.InvalidSignature, null, signature, null, null, null, null, null, null);
     }
 
     public static Evidence EquivocationFailureAnnouncement(
@@ -185,7 +197,7 @@ public class Evidence {
             Map<VerificationKey, EncryptionKey> sent
     ) {
         return new Evidence(accused,
-                Reason.EquivocationFailure, null, null, null, sent, null, null, null);
+                Reason.EquivocationFailure, null, null, null, null, sent, null, null, null);
     }
 
     public static Evidence EquivocationFailureBroadcast(
@@ -193,7 +205,7 @@ public class Evidence {
             Map<VerificationKey, Packet> output
     ) {
         return new Evidence(accused,
-                Reason.EquivocationFailure, null, null, output, null, null, null, null);
+                Reason.EquivocationFailure, null, null, null, output, null, null, null, null);
     }
 
     public static Evidence ShuffleMisbehaviorDropAddress(
@@ -202,7 +214,7 @@ public class Evidence {
             Map<VerificationKey, Packet> shuffleMessages,
             Map<VerificationKey, Packet> broadcastMessages
     ) {
-        return new Evidence(accused, Reason.ShuffleFailure,
+        return new Evidence(accused, Reason.ShuffleFailure, null,
                 null, null, null, null, shuffleMessages, broadcastMessages, keys);
     }
 
@@ -210,10 +222,21 @@ public class Evidence {
         return new Evidence(accused, reason);
     }
 
+    public static Evidence InvalidFormat(VerificationKey accused, Packet packet) {
+        return new Evidence(accused, Reason.InvalidFormat,
+                null, null, new Packet[]{packet}, null, null, null, null, null);
+    }
+
+    public static Evidence Liar(VerificationKey accused, Packet[] packet) {
+        return new Evidence(accused, Reason.Liar,
+                null, null, packet, null, null, null, null, null);
+    }
+
     // TODO remove this function when the protocol is finally done.
     public static Evidence Placeholder(VerificationKey accused, Reason reason) {
         log.warn("placeholder evidence!");
         new Exception().printStackTrace();
         return new Evidence(accused, reason);
+
     }
 }

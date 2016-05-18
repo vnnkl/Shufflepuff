@@ -26,5 +26,5 @@ public enum Reason {
     InvalidSignature, // A signature has come out invalid.
     MissingOutput, // An output is missing from the output vector.
     Liar, // A player has falsely accused another of being malicious.
-    EmptyBlameMessage,
+    InvalidFormat, // An improperly formatted message has been sent.
 }

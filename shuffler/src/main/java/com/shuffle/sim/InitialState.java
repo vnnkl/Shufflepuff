@@ -83,7 +83,7 @@ public class InitialState {
 
     private static final class EvidencePatternAny extends Evidence {
         private EvidencePatternAny(VerificationKey accused) {
-            super(accused, Reason.NoFundsAtAll, null, null, null, null, null, null, null);
+            super(accused, Reason.NoFundsAtAll, null, null, null, null, null, null, null, null);
 
         }
 

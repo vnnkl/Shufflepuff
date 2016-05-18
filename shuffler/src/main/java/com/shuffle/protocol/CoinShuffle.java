@@ -109,11 +109,12 @@ public class CoinShuffle {
             // Phase 1: Announcement
             // In the announcement phase, participants distribute temporary encryption keys.
             phase.set(Phase.Announcement);
-            log.info(" * Player " + me + " begins Coin Shuffle protocol with " + N + " players.");
+            log.info("Player " + me + " begins CoinShuffle protocol " + " with " + N + " players.");
 
             // Check for sufficient funds.
             // There was a problem with the wording of the original paper which would have meant
-            // that player 1's funds never would have been checked, but we have to do that.
+            // that player 1's funds never would have been checked, but it's necessary to check
+            // everybody.
             blameInsufficientFunds();
 
             // This will contain the change addresses.
@@ -170,6 +171,7 @@ public class CoinShuffle {
                 phase.set(Phase.BroadcastOutput);
 
                 newAddresses = readAndBroadcastNewAddresses(shuffled);
+
             } catch (BlameException e) {
                 switch (e.packet.payload().readBlame().reason) {
                     case MissingOutput: {
@@ -552,7 +554,7 @@ public class CoinShuffle {
 
                     if (message.isEmpty()) {
                         log.error("Empty blame message received from " + from);
-                        matrix.put(vk, Evidence.Placeholder(from, Reason.EmptyBlameMessage));
+                        matrix.put(vk, Evidence.InvalidFormat(from, packet));
                     }
 
                     while (!message.isEmpty()) {
@@ -568,7 +570,7 @@ public class CoinShuffle {
                             case InsufficientFunds: {
                                 if (blame.t == null) {
                                     // A transaction must be included to claim insufficient funds.
-                                    matrix.put(vk, Evidence.Placeholder(from, Reason.Liar));
+                                    matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
                                     break;
                                 }
 
@@ -581,8 +583,11 @@ public class CoinShuffle {
                                 // These are the keys received by
                                 // this player in the announcement phase.
                                 Map<VerificationKey, EncryptionKey> receivedKeys = new HashMap<>();
-                                fillBlameMatrixCollectHistory(vk, from, blame.packets, matrix,
-                                        outputVectors, shuffleMessages, receivedKeys, sentKeys);
+                                if (!fillBlameMatrixCollectHistory(vk, from, blame.packets, matrix,
+                                        outputVectors, shuffleMessages, receivedKeys, sentKeys)) {
+
+                                    matrix.put(from, Evidence.Liar(from, new Packet[]{packet}));
+                                }
 
                                 Queue<Address> addresses = new LinkedList<>();
 
@@ -611,33 +616,42 @@ public class CoinShuffle {
                                 if (!hashes.get(from).equals(
                                         equivocationCheckHash(players, receivedKeys, addresses))
                                         ) {
-                                    matrix.put(vk, Evidence.Placeholder(from, Reason.Liar));
+                                    matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
                                 }
 
                                 break;
                             }
                             case ShuffleAndEquivocationFailure: {
-                                if (decryptionKeys.containsKey(from)) {
-                                    // TODO blame someone here.
+                                if (!decryptionKeys.containsKey(from)) {
+                                    // We should not receive two keys from the same player so this
+                                    // block should always execute in a perfect world.
+                                    decryptionKeys.put(from, blame.privateKey);
                                 }
-                                decryptionKeys.put(from, blame.privateKey);
 
                                 // Check that the decryption key is valid. (The decryption key
                                 // can be null for player 1, who doesn't make one.)
-                                if (packet.from() != players.get(1)) {
-                                    if (blame.privateKey == null)  {
-                                        // TODO blame someone here.
+                                if (!packet.from().equals(players.get(1))) {
+                                    if (blame.privateKey == null) {
+                                        matrix.put(vk, Evidence.InvalidFormat(from, packet));
                                     } else if (
                                             !blame.privateKey.EncryptionKey(
                                             ).equals(encryptionKeys.get(from))
                                             ) {
-                                        // TODO blame someone here.
+
+                                        // We have received a private key that does not match
+                                        // the public key we have for this player. Include the
+                                        // original packet containing the encryption key and the
+                                        // packet with the mismatched key.
+                                        matrix.put(vk, Evidence.Liar(from, new Packet[]{null/* TODO */, packet}));
                                     }
                                 }
 
-                                fillBlameMatrixCollectHistory(vk, from, blame.packets, matrix,
+                                if (!fillBlameMatrixCollectHistory(vk, from, blame.packets, matrix,
                                         outputVectors, shuffleMessages,
-                                        new HashMap<VerificationKey, EncryptionKey>(), sentKeys);
+                                        new HashMap<VerificationKey, EncryptionKey>(), sentKeys)) {
+
+                                    matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
+                                }
 
                                 break;
                             }
@@ -647,8 +661,9 @@ public class CoinShuffle {
                                 break;
                             }
                             case InvalidSignature: {
+
                                 if (blame.invalid == null || blame.accused == null) {
-                                    matrix.put(vk, Evidence.Placeholder(from, Reason.Liar));
+                                    matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
                                     break;
                                 }
 
@@ -922,7 +937,8 @@ public class CoinShuffle {
 
     // This function is only called by fillBlameMatrix to collect messages sent in
     // phases 1, 2, and 3. and to organize the information appropriately.
-    private static void fillBlameMatrixCollectHistory(
+    // If the function returns false, this means that packets has an invalid format.
+    private static boolean fillBlameMatrixCollectHistory(
             VerificationKey vk,
             VerificationKey from,
             Queue<Packet> packets,
@@ -937,17 +953,15 @@ public class CoinShuffle {
             Map<VerificationKey, Map<VerificationKey, EncryptionKey>> sentKeys
     ) throws FormatException {
 
-        if (packets == null) {
-            log.error("Player " + vk.toString() + " null blames " + from.toString() + ", case J");
-            matrix.put(vk, Evidence.Placeholder(from, Reason.Liar));
-            return;
-        }
+        if (packets == null) return false;
+        boolean validPacket = true;
 
         // Collect all packets received in the appropriate place.
         for (Packet packet : packets) {
             switch (packet.phase()) {
                 case BroadcastOutput: {
                     if (outputVectors.containsKey(from)) {
+
                         // We should only ever receive one such message from each player.
                         if (outputVectors.containsKey(from)
                                 && !outputVectors.get(from).equals(packet)) {
@@ -955,10 +969,11 @@ public class CoinShuffle {
                             log.error("Player " + vk.toString() + " null blames " + from.toString()
                                     + ", case A; " + outputVectors.get(from).toString() + " != "
                                     + packet.toString());
-                            matrix.put(vk, Evidence.Placeholder(from, Reason.Liar));
+                            matrix.put(vk, Evidence.Liar(from, new Packet[]{outputVectors.get(from), packet}));
                         }
+                    } else {
+                        outputVectors.put(from, packet);
                     }
-                    outputVectors.put(from, packet);
                     break;
                 }
                 case Announcement: {
@@ -974,22 +989,22 @@ public class CoinShuffle {
                     break;
                 }
                 case Shuffling: {
-                    if (shuffleMessages.containsKey(from)) {
-                        // TODO blame someone here.
+                    if (shuffleMessages.containsKey(from) && !shuffleMessages.get(from).equals(packet)) {
+                        matrix.put(vk, Evidence.Liar(from, new Packet[]{shuffleMessages.get(from), packet}));
+                    } else {
+                        shuffleMessages.put(from, packet);
                     }
-                    shuffleMessages.put(from, packet);
                     break;
                 }
                 default: {
                     // This case should never happen.
                     // It's not malicious but it's not allowed either.
-                    log.error("Player " + vk.toString()
-                            + " null blames " + from.toString() + ", case C");
-                    matrix.put(vk, Evidence.Placeholder(from, Reason.Liar));
-                    break;
+                    validPacket = false;
                 }
             }
         }
+
+        return validPacket;
     }
 
     private static Evidence checkShuffleMisbehavior(
