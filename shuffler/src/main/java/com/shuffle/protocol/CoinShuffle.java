@@ -642,7 +642,14 @@ public class CoinShuffle {
                                         // the public key we have for this player. Include the
                                         // original packet containing the encryption key and the
                                         // packet with the mismatched key.
-                                        matrix.put(vk, Evidence.Liar(from, new Packet[]{null/* TODO */, packet}));
+                                        Packet newKeyPacket = null;
+                                        Queue<Packet> newKeyPackets = mailbox.getPacketsByPhase(Phase.Announcement);
+                                        for (Packet p : newKeyPackets) {
+                                            if (p.from().equals(packet.from())) {
+                                                newKeyPacket = p;
+                                            }
+                                        }
+                                        matrix.put(vk, Evidence.Liar(from, new Packet[]{newKeyPacket, packet}));
                                     }
                                 }
 
