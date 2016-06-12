@@ -1,0 +1,81 @@
+package com.shuffle;
+
+import com.shuffle.player.Shuffle;
+
+import java.io.PrintStream;
+import java.util.Arrays;
+
+import joptsimple.OptionException;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+
+/**
+ * Created by Daniel Krawisz on 6/10/16.
+ */
+public class Main {
+
+    private Main() {}
+
+    public static void printHelpMessage(PrintStream stream) {
+        // TODO
+        stream.println("You should be learning how to use the program.");
+    }
+
+    public static void printVersionMessage(PrintStream stream) {
+        stream.println("Shufflepuff version 0.1 alpha");
+    }
+
+    public static OptionParser getBaseOptionsParser() {
+        OptionParser parser = new OptionParser();
+        parser.accepts("help", "print help message.");
+        parser.accepts("version", "print version.");
+        return parser;
+    }
+
+    public static void main(String[] args) {
+
+        if (args.length == 0) {
+            printHelpMessage(System.out);
+            return;
+        }
+
+        String[] opts = new String[args.length - 1];
+        System.arraycopy(args, 1, opts, 0, opts.length);
+
+        try {
+            switch (args[0]) {
+                case "shuffle" : {
+                    Shuffle.main(opts);
+                    break;
+                }
+                case "mediate" : {
+                    // TODO
+                    break;
+                }
+                case "lobby" : {
+                    // TODO
+                    break;
+                }
+                default: {
+
+                    OptionParser parser = getBaseOptionsParser();
+                    OptionSet options = parser.parse(args);
+
+                    if (options == null) {
+                        parser.printHelpOn(System.out);
+                        return;
+                    }
+
+                    if (options.has("version")) {
+                        printVersionMessage(System.out);
+                        return;
+                    }
+
+                    printHelpMessage(System.out);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}

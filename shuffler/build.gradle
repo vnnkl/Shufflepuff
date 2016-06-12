@@ -29,7 +29,13 @@ project.findbugs.ignoreFailures = true
 apply plugin: 'application'
 
 jar {
+    doFirst {
+        from {
+            configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        }
+    }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
     manifest {
-        attributes 'Main-Class': 'com.shuffle.sim.Player'
+        attributes 'Main-Class': 'com.shuffle.Main'
     }
 }
