@@ -9,7 +9,7 @@
 package com.shuffle.monad;
 
 /**
- * Represents a type that is either X or Y.
+ * Represents a type that is either X or Y, not exclusive. 
  *
  * Created by Daniel Krawisz on 3/18/16.
  */
@@ -18,12 +18,9 @@ public class Either<X, Y> {
     public final Y second;
 
     public Either(X first, Y second) {
-        if (first == null) {
-            if (second == null) {
-                throw new NullPointerException();
-            }
-        } else if (second != null) {
-            throw new IllegalArgumentException();
+        // Both cannot be null.
+        if (first == null && second == null) {
+            throw new NullPointerException();
         }
 
         this.first = first;
