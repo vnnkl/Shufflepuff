@@ -303,7 +303,7 @@ public class CoinShuffle {
         }
 
         Deque<Address> readNewAddresses(Message message)
-                throws FormatException, InvalidImplementationError {
+                throws FormatException {
 
             Deque<Address> queue = new LinkedList<>();
 
@@ -666,7 +666,7 @@ public class CoinShuffle {
                                 break;
                             }
                             default:
-                                throw new InvalidImplementationError();
+                                matrix.put(vk, Evidence.Placeholder(from, Reason.InvalidBlameReason));
                         }
                     }
                 }
@@ -768,8 +768,7 @@ public class CoinShuffle {
         }
 
         // Get the set of players from i to N.
-        public final Set<VerificationKey> playerSet(int i, int n)
-                throws InvalidImplementationError {
+        public final Set<VerificationKey> playerSet(int i, int n) {
 
             if (i < 1) {
                 i = 1;
@@ -855,7 +854,7 @@ public class CoinShuffle {
     }
 
     // Algorithm to randomly shuffle the elements of a message.
-    final Message shuffle(Message message) throws InvalidImplementationError, FormatException {
+    final Message shuffle(Message message) throws FormatException {
 
         Message shuffled = messages.make();
 
@@ -885,7 +884,7 @@ public class CoinShuffle {
     }
 
     // Test whether a set of messages are equal.
-    static boolean areEqual(Iterable<Message> messages) throws InvalidImplementationError {
+    static boolean areEqual(Iterable<Message> messages) {
         Message last = null;
         for (Message m : messages) {
             if (last != null) {

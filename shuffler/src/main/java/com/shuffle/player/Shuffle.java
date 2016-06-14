@@ -1,9 +1,14 @@
 package com.shuffle.player;
 
+import com.shuffle.bitcoin.Coin;
+import com.shuffle.mock.MockCoin;
+
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.StringReader;
 import java.util.Arrays;
 
+import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
@@ -22,23 +27,41 @@ public class Shuffle {
         OptionParser parser = new OptionParser();
         parser.accepts("help", "print help message.");
 
+        ArgumentAcceptingOptionSpec<String> query = parser.acceptsAll(Arrays.asList("q", "query"),
+                "Means of performing blockchain queries. btcd and blockchain.info are supported")
+                .withRequiredArg().ofType(String.class);
+
+        ArgumentAcceptingOptionSpec<String> blockchain = parser.acceptsAll(Arrays.asList("b", "blockchain"),
+                "Which blockchain to query (test or main)")
+                .withRequiredArg().ofType(String.class);
+
         if (TEST_MODE) {
             parser.accepts("prng")
                     .withRequiredArg()
                     .ofType(String.class)
                     .defaultsTo("mock");
+
             parser.accepts("signatures")
                     .withRequiredArg()
                     .ofType(String.class)
                     .defaultsTo("mock");
+
             parser.accepts("encryption")
                     .withRequiredArg()
                     .ofType(String.class)
                     .defaultsTo("mock");
-        }
 
-        parser.acceptsAll(Arrays.asList("b", "blockchain"),
-                "Means of performing blockchain queries. btcd and blockchain.info are supported").withRequiredArg().ofType(String.class);
+            query.defaultsTo("mock");
+            blockchain.defaultsTo("test");
+
+            parser.accepts("coin")
+                    .withRequiredArg()
+                    .ofType(String.class)
+                    .defaultsTo("{\"outputs\":[],\"transactions\":[]}");
+        } else {
+            query.defaultsTo("blockchain.info");
+            blockchain.defaultsTo("main");
+        }
 
         parser.acceptsAll(Arrays.asList("B", "amount"),
                 "amount to be transferred (satoshis)").withRequiredArg().ofType(Integer.class);
@@ -58,22 +81,12 @@ public class Shuffle {
         return parser;
     }
 
-    private static class InvalidOption extends Throwable {
-        private final String x;
+    public static void checkOptions(OptionSet options, PrintStream stream)
+            throws IllegalArgumentException {
 
-        private InvalidOption(String x) {
-            this.x = x;
-        }
+        Coin coin = null;
 
-        @Override
-        public String getMessage() {
-            return x;
-        }
-    }
-
-    public static void checkOptions(OptionSet options, PrintStream stream) throws InvalidOption {
-
-        switch ((String)options.valueOf("blockchain")) {
+        switch ((String)options.valueOf("query")) {
             case "btcd" : {
                 // TODO
                 break;
@@ -85,42 +98,50 @@ public class Shuffle {
             }
             case "mock" : {
                 if (TEST_MODE) {
-                    // TODO
+                    try {
+                        System.out.println("About to parse " + (String)options.valueOf("coin"));
+                        coin = MockCoin.fromJSON(new StringReader((String)options.valueOf("coin")));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Unable to parse mockchain data: "
+                                + e.getMessage() + "\n");
+                    }
                     break;
                 }
-                // Deliberate fallthrough.
+                // fallthrough.
             }
             default : {
-                throw new InvalidOption(
-                        "No option 'blockchain' supplied. some means of looking Available options are 'btcd' and " +
-                                "'blockchain.info'. 'btcd' allows for looking up options on a " +
-                                "local instance of the blockchain. 'blockchain.info' allows for " +
-                                "querying the blockchain over the web through blockchain.info.\n"
+                throw new IllegalArgumentException(
+                        "Invalid option for 'blockchain' supplied. Available options are 'btcd' " +
+                                "and 'blockchain.info'. 'btcd' allows for looking up options on " +
+                                "a local instance of the blockchain. 'blockchain.info' allows for" +
+                                " querying the blockchain over the web through blockchain.info.\n"
                 );
             }
         }
 
         if (!options.has("amount")) {
-            throw new InvalidOption("No option 'amount' supplied. We need to know what sum is to be " +
-            "shuffled for each player in the join transaction.\n");
+            throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
+            "is to be shuffled for each player in the join transaction.\n");
         }
 
         if (!options.has("time")) {
-            throw new InvalidOption("No option 'time' supplied. When does the join take place?\n");
+            throw new IllegalArgumentException("No option 'time' supplied. When does the join take place?\n");
         }
 
         if (!options.has("seed")) {
-            throw new InvalidOption("No option 'seed' supplied. Random seed needed!\n");
+            throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!\n");
         }
     }
 
     public static void main(String[] opts) throws IOException {
 
         OptionParser parser = getShuffleOptionsParser();
-        OptionSet options = parser.parse(opts);
-
-        if (options == null) {
-            parser.printHelpOn(System.out);
+        OptionSet options = null;
+        try {
+            options = parser.parse(opts);
+        } catch (Exception e) {
+            // Show the user some json parser error.
+            System.out.println(e.getMessage());
             return;
         }
 
@@ -132,8 +153,9 @@ public class Shuffle {
 
         try {
             checkOptions(options, System.out);
-        } catch (InvalidOption invalidOption) {
-            System.out.print(invalidOption.getMessage());
+        } catch (IllegalArgumentException e) {
+            System.out.print(e.getMessage());
+            return;
         }
 
         System.out.println("Options check out ok!");

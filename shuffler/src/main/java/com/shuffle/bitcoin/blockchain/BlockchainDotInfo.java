@@ -19,8 +19,6 @@ import java.util.List;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.params.MainNetParams;
 import org.json.JSONTokener;
 import org.json.JSONObject;
 

@@ -1,7 +1,5 @@
 package com.shuffle.mock;
 
-import com.shuffle.protocol.InvalidImplementationError;
-
 /**
  * Created by Daniel Krawisz on 12/6/15.
  */
@@ -22,7 +20,7 @@ public class RandomSequence implements MockCrypto.Random {
 
         // Tests should be designed so as not blockchain give invalid numbers.
         if (sequence[counter] > n || sequence[counter] < 0) {
-            throw new InvalidImplementationError();
+            return 0;
         }
 
         return sequence[counter++];

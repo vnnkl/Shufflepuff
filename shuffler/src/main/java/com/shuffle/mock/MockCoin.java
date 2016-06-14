@@ -14,9 +14,15 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.protocol.InvalidImplementationError;
 
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+
+import java.io.Reader;
 import java.io.Serializable;
+import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +41,9 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         final long amountHeld;
 
         public Output(Address address, long amount) {
+            if (address == null) throw new NullPointerException();
+            if (amount == 0) throw new IllegalArgumentException();
+
             this.address = address;
             this.amountHeld = amount;
         }
@@ -152,17 +161,36 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         }
     }
 
-    final ConcurrentHashMap<Address, Output> blockchain = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<Address, Output> blockchain;
     // The transaction that spends an output.
-    final ConcurrentHashMap<Output, Transaction> spend = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<Output, MockTransaction> spend;
     // The transaction that sends to an input.
-    final ConcurrentHashMap<Output, Transaction> sent = new ConcurrentHashMap<>();
+    final ConcurrentHashMap<Output, MockTransaction> sent;
 
     public MockCoin(Map<Address, Output> blockchain) {
+
+        this.blockchain = new ConcurrentHashMap<>();
+        spend = new ConcurrentHashMap<>();
+        sent = new ConcurrentHashMap<>();
+
         this.blockchain.putAll(blockchain);
     }
 
     public MockCoin() {
+
+        blockchain = new ConcurrentHashMap<>();
+        spend = new ConcurrentHashMap<>();
+        sent = new ConcurrentHashMap<>();
+    }
+
+    private MockCoin(
+            ConcurrentHashMap<Address, Output> blockchain,
+            ConcurrentHashMap<Output, MockTransaction> spend,
+            ConcurrentHashMap<Output, MockTransaction> sent
+    ) {
+        this.blockchain = blockchain;
+        this.spend = spend;
+        this.sent = sent;
     }
 
     @Override
@@ -192,12 +220,8 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         return new MockTransaction(in, out, this);
     }
 
-    public synchronized void send(Transaction t) throws CoinNetworkException {
-        if (t == null) throw new NullPointerException();
-
-        if (!(t instanceof MockTransaction)) throw new InvalidImplementationError();
-
-        MockTransaction mt = (MockTransaction) t;
+    public synchronized void send(MockTransaction mt) throws CoinNetworkException {
+        if (mt == null) throw new NullPointerException();
 
         // First check that the transaction doesn't send more than it spends.
         long available = 0;
@@ -205,7 +229,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
         for (Output output : mt.outputs) available -= output.amountHeld;
 
-        if (available < 0) throw new CoinNetworkException(t);
+        if (available < 0) throw new CoinNetworkException(mt);
 
         // Does the transaction spend from valid outputs?
         for (Output input : mt.inputs)
@@ -222,11 +246,11 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         }
 
         // Register the transaction.
-        for (Output input : mt.inputs) spend.put(input, t);
+        for (Output input : mt.inputs) spend.put(input, mt);
 
         for (Output output : mt.outputs) {
             blockchain.put(output.address, output);
-            sent.put(output, t);
+            sent.put(output, mt);
         }
     }
 
@@ -312,5 +336,154 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         newCoin.sent.putAll(sent);
 
         return newCoin;
+    }
+
+    public String JSON() {
+        JSONObject json = new JSONObject();
+
+        JSONArray outputs = new JSONArray();
+        int i = 1;
+        Map<Output, Integer> blockchain = new HashMap<>();
+
+        for (Output o : this.blockchain.values()) {
+            blockchain.put(o, i);
+
+            JSONObject output = new JSONObject();
+            output.put("address", o.address);
+            output.put("amount", o.amountHeld);
+
+            outputs.add(output);
+
+            i ++;
+        }
+
+        json.put("outputs", outputs);
+
+        JSONArray transactions = new JSONArray();
+
+        for (MockTransaction t : sent.values()) {
+            JSONArray in = new JSONArray();
+            JSONArray out = new JSONArray();
+
+            for (Output o : t.inputs) {
+                in.add(blockchain.get(o));
+            }
+
+            for (Output o : t.outputs) {
+                out.add(blockchain.get(o));
+            }
+
+            JSONObject jt = new JSONObject();
+            jt.put("inputs", in);
+            jt.put("outputs", out);
+            if (t.z != 1) jt.put("z", t.z);
+            transactions.add(jt);
+        }
+
+        json.put("transactions", transactions);
+
+        return json.toString();
+    }
+
+    public static MockCoin fromJSON(Reader jsonObject) throws IllegalArgumentException {
+
+        JSONObject json = null;
+        JSONArray outputs = null;
+        JSONArray transactions = null;
+        try {
+            json = (JSONObject) JSONValue.parse(jsonObject);
+            if (json == null) {
+                throw new IllegalArgumentException("could not parse json object.");
+            }
+
+            outputs = (JSONArray) json.get("outputs");
+            if (outputs == null) {
+                throw new IllegalArgumentException("Missing field \"outputs\".");
+            }
+
+            transactions = (JSONArray) json.get("transactions");
+            if (transactions == null) {
+                throw new IllegalArgumentException("Missing field \"transactions\".");
+            }
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("could not parse json object.");
+        }
+
+        MockCoin mock = new MockCoin();
+
+        Map<Long, Output> outList = new HashMap<>();
+        for (int i = 1; i <= outputs.size(); i ++) {
+            JSONObject o = null;
+            try {
+                o = (JSONObject) outputs.get(i - 1);
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read "
+                        + outputs.get(i - 1) + " as json object.");
+            }
+
+            Object address = o.get("address");
+            Long amount = (Long) o.get("amount");
+            if (address == null) {
+                throw new IllegalArgumentException("Output missing field \"address\".");
+            }
+            if (amount == null) {
+                throw new IllegalArgumentException("Output missing field \"amount\".");
+            }
+
+            Output bo = null;
+            if (address instanceof String) {
+                bo = new Output(new MockAddress((String)address),amount);
+            } else if (address instanceof Long) {
+                bo = new Output(new MockAddress((Long)address),amount);
+            } else {
+                throw new IllegalArgumentException("Could not read " + address + " as address");
+            }
+
+            outList.put((long)i, bo);
+            mock.blockchain.put(bo.address, bo);
+        }
+
+        for (Object t : transactions) {
+
+            JSONObject trans = (JSONObject)t;
+            JSONArray in = (JSONArray) trans.get("inputs");
+            JSONArray out = (JSONArray) trans.get("outputs");
+            List<Output> tout = new LinkedList<>();
+            List<Output> tin = new LinkedList<>();
+
+            for (Object i : in) {
+                Output o = outList.get(i);
+                if (o == null) {
+                    throw new IllegalArgumentException("Missing output " + o);
+                }
+                tin.add(outList.get(i));
+            }
+
+            for (Object i : out) {
+                Output o = outList.get(i);
+                if (o == null) {
+                    throw new IllegalArgumentException("Missing output " + o);
+                }
+                tout.add(outList.get(i));
+            }
+
+            MockTransaction tr;
+            Long z = null;
+            Object zz = trans.get("z");
+            try {
+
+                if (zz == null) {
+                    System.out.println("About to try to create transation " + tin + ", " + tout);
+                    tr = new MockTransaction(tin, tout, mock);
+                } else {
+                    z = (Long) zz;
+                    tr = new MockTransaction(tin, tout, z.intValue(), mock);
+                }
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read z value " + zz + " as long.");
+            }
+        }
+
+        return mock;
     }
 }

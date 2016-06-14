@@ -41,7 +41,7 @@ public class MockVerificationKey implements VerificationKey, Serializable {
 
     @Override
     public Address address() {
-        return new MockAddress(index);
+        return new MockAddress(Integer.toString(index));
     }
 
     public String toString() {

@@ -38,7 +38,7 @@ import java.util.TreeSet;
  *
  * Created by Daniel Krawisz on 2/1/16.
  */
-class Player<Identity> {
+class Player<Identity> implements Runnable {
     private static final Logger log = LogManager.getLogger(Player.class);
 
     private final SigningKey sk;
@@ -88,7 +88,8 @@ class Player<Identity> {
         this.messages = messages;
     }
 
-    static void main(String[] args) {
+    @Override
+    public void run() {
 
     }
 

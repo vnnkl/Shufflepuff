@@ -7,7 +7,6 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
-import com.shuffle.protocol.InvalidImplementationError;
 import com.shuffle.protocol.blame.Blame;
 import com.shuffle.protocol.message.Phase;
 
@@ -31,7 +30,7 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
 
         public SecureHash(com.shuffle.protocol.message.Message message) {
             if (!(message instanceof Message)) {
-                throw new InvalidImplementationError();
+                throw new IllegalArgumentException();
             }
 
             hashed = ((Message) message).atoms;

@@ -8,9 +8,6 @@
 
 package com.shuffle.protocol.message;
 
-import com.shuffle.protocol.InvalidImplementationError;
-import com.shuffle.protocol.message.Message;
-
 import java.io.IOException;
 
 /**

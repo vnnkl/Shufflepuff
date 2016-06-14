@@ -276,8 +276,6 @@ public class TestShuffleMachineMethods {
                 Message result = machine.shuffle(input);
                 log.info("got " + result.toString() + "; expected " + expected.toString());
                 Assert.assertTrue(result.equals(expected));
-            } catch (InvalidImplementationError e) {
-                Assert.fail("Unexpected InvalidImplementationException");
             } catch (FormatException e) {
                 e.printStackTrace();
                 Assert.fail("Unexpected FormatException: ");
@@ -374,13 +372,10 @@ public class TestShuffleMachineMethods {
         int i = 0;
         for (AreEqualTestCase testCase : tests) {
             i++;
-            try {
-                System.out.println("test case... input " + testCase.input.toString());
-                Assert.assertEquals("Failure in test case " + i,
-                        testCase.expected, CoinShuffle.areEqual(testCase.input));
-            } catch (InvalidImplementationError e) {
-                Assert.fail("Tests have failed due blockchain error in test class.");
-            }
+
+            System.out.println("test case... input " + testCase.input.toString());
+            Assert.assertEquals("Failure in test case " + i,
+                    testCase.expected, CoinShuffle.areEqual(testCase.input));
         }
     }
 
@@ -467,8 +462,6 @@ public class TestShuffleMachineMethods {
         } catch (FormatException e) {
             e.printStackTrace();
             Assert.fail("Unexpected FormatException:");
-        } catch (InvalidImplementationError e) {
-            Assert.fail("Unexpected InvalidImplementationError:");
         } catch (InvalidParticipantSetException e) {
             Assert.fail("Unexpected InvalidParticipantSetException");
         }
@@ -521,8 +514,7 @@ public class TestShuffleMachineMethods {
 
                 Assert.assertTrue(expected.equals(result));
             }
-        } catch (FormatException | InvalidImplementationError
-                | InvalidParticipantSetException e) {
+        } catch (FormatException | InvalidParticipantSetException e) {
             e.printStackTrace();
             Assert.fail();
         }
@@ -564,8 +556,7 @@ public class TestShuffleMachineMethods {
                 } catch (FormatException ignored) {
                 }
             }
-        } catch (InvalidParticipantSetException
-                | InvalidImplementationError e) {
+        } catch (InvalidParticipantSetException e) {
             Assert.fail(e.toString());
         }
     }

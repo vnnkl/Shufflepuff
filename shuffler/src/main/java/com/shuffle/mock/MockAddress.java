@@ -18,26 +18,35 @@ import java.io.Serializable;
  * Created by Daniel Krawisz on 12/19/15.
  */
 public class MockAddress implements Address, Serializable {
-    public final int index;
+    public final String addr;
+
+    public MockAddress(String addr) {
+        if (addr == null) throw new NullPointerException();
+        this.addr = addr;
+    }
 
     public MockAddress(int index) {
-        this.index = index;
+        this.addr = Integer.toString(index);
+    }
+
+    public MockAddress(Long l) {
+        this.addr = l.toString();
     }
 
     @Override
     public boolean equals(Object o) {
-        return o != null && o instanceof MockAddress && index == ((MockAddress) o).index;
+        return o != null && o instanceof MockAddress && addr.equals(((MockAddress) o).addr);
 
     }
 
     @Override
     public int hashCode() {
-        return -index;
+        return addr.hashCode();
     }
 
     @Override
     public String toString() {
-        return "ad[" + index + "]";
+        return "ad[" + addr + "]";
     }
 
     @Override
@@ -54,16 +63,6 @@ public class MockAddress implements Address, Serializable {
             return 0;
         }
 
-        int index = ((MockAddress)address).index;
-
-        if (index < this.index) {
-            return -1;
-        }
-
-        if (index > this.index) {
-            return 1;
-        }
-
-        return 0;
+        return addr.compareTo(((MockAddress)address).addr);
     }
 }

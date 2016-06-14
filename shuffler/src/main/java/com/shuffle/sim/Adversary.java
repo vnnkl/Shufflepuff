@@ -21,7 +21,6 @@ import com.shuffle.monad.SummableMap;
 import com.shuffle.monad.SummableMaps;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
-import com.shuffle.protocol.InvalidImplementationError;
 import com.shuffle.protocol.InvalidParticipantSetException;
 import com.shuffle.protocol.WaitingException;
 import com.shuffle.protocol.blame.Matrix;
@@ -185,8 +184,7 @@ public class Adversary {
     }
 
     // Return a future that can be composed with others.
-    public Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>> turnOn(
-    ) throws InvalidImplementationError {
+    public Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>> turnOn() {
 
         return runProtocolFuture(shuffle, amount, sk, players, addrNew, null);
     }
