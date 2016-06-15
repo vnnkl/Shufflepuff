@@ -3,12 +3,17 @@ package com.shuffle.bitcoin.impl;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.EncryptionKey;
 
+import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.ECKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
 import org.junit.Test;
-import org.spongycastle.jce.provider.BouncyCastleProvider;
 
-import java.security.Security;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.spec.ECGenParameterSpec;
 
 import static org.junit.Assert.assertEquals;
 
@@ -16,7 +21,7 @@ import static org.junit.Assert.assertEquals;
  * Created by conta on 07.06.16.
  */
 public class EncryptionKeyImplTest {
-    ECKey ecKey;
+    ECKey ecKey, tkey;
     ECKey pub;
     EncryptionKey ek;
     Address address;
@@ -25,13 +30,30 @@ public class EncryptionKeyImplTest {
     public void setUp() throws Exception {
         ecKey = new ECKey();
         pub = ECKey.fromPublicOnly(ecKey.getPubKey());
-        ek = new EncryptionKeyImpl(pub);
+        //ek = new EncryptionKeyImpl(pub);
         address = new AddressImpl("myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG");
 
-        System.out.println("ecKey pubHex   " + ecKey.getPublicKeyAsHex());
-        System.out.println("ecKey privHex  " + ecKey.getPrivateKeyAsHex());
-        System.out.println("pub from ecKey " + pub);
-        System.out.println("EncKey         " + ek);
+        System.out.println("ecKey pubHex            " + ecKey.getPublicKeyAsHex());
+        System.out.println("ecKey privHex           " + ecKey.getPrivateKeyAsHex());
+        System.out.println("pub from ecKey          " + pub);
+
+
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECIES",new BouncyCastleProvider());
+        keyPairGenerator.initialize(new ECGenParameterSpec("secp256k1"));
+
+        KeyPair recipientKeyPair = keyPairGenerator.generateKeyPair();
+        PublicKey pubKey = recipientKeyPair.getPublic();
+        PrivateKey privKey = recipientKeyPair.getPrivate();
+
+        ek = new EncryptionKeyImpl(pubKey);
+
+        System.out.println("EncKey                  " + ek);
+
+        //testkey creation
+        byte[] privbytes = Hex.decodeHex("076edbacad6ba3572be68131900da4e2a3b72f273bb2184c304282bcac117838".toCharArray());
+        tkey = ECKey.fromPrivate(privbytes, false);
+        System.out.println("\nhardcoded testKey (tkey) " + tkey);
+        System.out.println("testKey (tkey) priv:     " + tkey.getPrivateKeyAsHex());
     }
 
     @Test
@@ -50,6 +72,7 @@ public class EncryptionKeyImplTest {
         System.out.println("address                 " + address);
         System.out.println("ek                      " + ek);
         System.out.println(new AddressImpl(address.toString()));
+
         System.out.println("address encrypted to ek " + ek.encrypt(address));
     }
 }

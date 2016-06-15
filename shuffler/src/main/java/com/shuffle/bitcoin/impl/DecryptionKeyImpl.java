@@ -12,7 +12,9 @@ import org.spongycastle.util.encoders.Hex;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.KeySpec;
 
 import javax.crypto.Cipher;
@@ -26,12 +28,24 @@ public class DecryptionKeyImpl implements DecryptionKey {
 
    final ECKey key;
    final byte[] encryptionKey;
+   final PrivateKey privateKey;
+   final PublicKey publicKey;
+
+
 
    BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
 
    public DecryptionKeyImpl(org.bitcoinj.core.ECKey key) {
       this.key = key;
       this.encryptionKey = key.getPubKey();
+      this.privateKey = null;
+      this.publicKey = null;
+   }
+   public DecryptionKeyImpl(KeyPair keyPair) {
+      this.privateKey = keyPair.getPrivate();
+      this.publicKey = keyPair.getPublic();
+      this.key = ECKey.fromPrivate(this.privateKey.getEncoded());
+      this.encryptionKey = this.publicKey.getEncoded();
    }
 
 
@@ -41,13 +55,13 @@ public class DecryptionKeyImpl implements DecryptionKey {
    }
 
    public ECKey getKey() {
-      return ECKey.fromASN1(key.toASN1());
+      return key;
    }
 
    @Override
    public EncryptionKey EncryptionKey() {
       ECKey pubkey = ECKey.fromPublicOnly(encryptionKey);
-      return new EncryptionKeyImpl(pubkey);
+      return new EncryptionKeyImpl(publicKey);
    }
 
 

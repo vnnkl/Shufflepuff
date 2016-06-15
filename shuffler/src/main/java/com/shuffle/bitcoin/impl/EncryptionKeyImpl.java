@@ -1,7 +1,6 @@
 package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
@@ -10,9 +9,13 @@ import org.spongycastle.jce.provider.BouncyCastleProvider;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Security;
-import java.util.Base64;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 
@@ -22,14 +25,26 @@ import javax.crypto.Cipher;
 public class EncryptionKeyImpl implements EncryptionKey {
 
    ECKey encryptionKey;
+   PublicKey publicKey;
 
    static {
       Security.addProvider(new BouncyCastleProvider());
    }
 
-   public EncryptionKeyImpl(byte[] ecPubKey) {
-      this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
+   public EncryptionKeyImpl(byte[] ecPubKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
+      // this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
+
+      KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
+      EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
+      this.publicKey = keyFactory.generatePublic(publicKeySpec);
+      this.encryptionKey = ECKey.fromPublicOnly(this.publicKey.getEncoded());
+
    }
+
+   public EncryptionKeyImpl(PublicKey pubKey) {
+      this.publicKey = pubKey;
+   }
+
 
    public EncryptionKeyImpl(ECKey ecPubKey) {
       if (ecPubKey.hasPrivKey()) {
@@ -40,23 +55,23 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    public String toString() {
-      return this.encryptionKey.getPublicKeyAsHex();
+      // return this.encryptionKey.getPublicKeyAsHex();
+      return Arrays.toString(publicKey.getEncoded());
    }
 
    @Override
    public Address encrypt(Address m) {
       AddressImpl add = null;
       try {
-         KeyFactory kf = KeyFactory.getInstance("EC");
 
          //cast will fail, maybe
          //X509EncodedKeySpec spec = kf.getKeySpec(encryptionKey,X509EncodedKeySpec.class);
          //PublicKey pubKey = kf.generatePublic(kf.getKeySpec(((Key) encryptionKey), KeySpec.class));
-         PublicKey publicKey = BitcoinCrypto.loadPublicKey(Base64.getEncoder().encodeToString(encryptionKey.getPrivKeyBytes()));
-         byte[] publicKey2 = ECKey.publicKeyFromPrivate(encryptionKey.getPrivKey(), encryptionKey.isCompressed());
+         //PublicKey publicKey = BitcoinCrypto.loadPublicKey(org.spongycastle.util.encoders.Base64.toBase64String(encryptionKey.getPubKey()));
+         // byte[] publicKey2 = ECKey.publicKeyFromPrivate(encryptionKey.getPrivKey(), encryptionKey.isCompressed());
 
          //encrypt cipher
-         Cipher cipher = Cipher.getInstance("EC");
+         Cipher cipher = Cipher.getInstance("ECIES");
          cipher.init(Cipher.ENCRYPT_MODE, publicKey);
          byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
          byte[] encrypted = cipher.doFinal(bytes);
@@ -67,5 +82,6 @@ public class EncryptionKeyImpl implements EncryptionKey {
       }
       return add;
    }
+   
 
 }

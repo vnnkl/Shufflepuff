@@ -8,19 +8,17 @@ import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.ECKey;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.spec.ECGenParameterSpec;
 import java.util.Arrays;
-import java.util.Enumeration;
 
 import javax.crypto.Cipher;
 
@@ -48,12 +46,14 @@ public class DecryptionKeyImplTest {
 
     @Test
     public void testECIESAvailability() throws Exception {
-        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECIES");
-        keyPairGenerator.initialize(new ECGenParameterSpec("secp256r1"));
+
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECIES",new BouncyCastleProvider());
+        keyPairGenerator.initialize(new ECGenParameterSpec("secp256k1"));
 
         KeyPair recipientKeyPair = keyPairGenerator.generateKeyPair();
         PublicKey pubKey = recipientKeyPair.getPublic();
         PrivateKey privKey = recipientKeyPair.getPrivate();
+
 
         // init the encryption cipher
         Cipher iesCipher = Cipher.getInstance("ECIES");
@@ -68,6 +68,9 @@ public class DecryptionKeyImplTest {
         String decryptedMessage = new String(iesCipher.doFinal(encryptedMessage));
 
         System.out.println(message);
+        System.out.println(pubKey);
+        System.out.println(privKey);
+        System.out.println(Arrays.toString(privKey.getEncoded()));
         System.out.println(" -> " + Hex.encodeHexString(encryptedMessage));
         System.out.println(" -> " + decryptedMessage);
     }
@@ -91,12 +94,7 @@ public class DecryptionKeyImplTest {
         EncryptionKey encryptionKey1 = new EncryptionKeyImpl(ECKey.fromPublicOnly(ecKey.getPubKey()));
 //
 //      PublicKey publicKey = BitcoinCrypto.loadPublicKey(Base64.getEncoder().encodeToString(ecKey.getPubKey()));
-        Provider p[] = Security.getProviders();
-        for (Provider aP : p) {
-            System.out.println(aP);
-            for (Enumeration e = aP.keys(); e.hasMoreElements(); )
-                System.out.println("\t" + e.nextElement());
-        }
+
         System.out.println("ecKey: " + ecKey.toString());
         System.out.println("ecKey priv: " + ecKey.getPrivateKeyAsHex());
         System.out.println("secureRandom: " + secureRandom.toString());
