@@ -148,7 +148,7 @@ public class Mailbox {
         return found;
     }
 
-    // Get all packets history or received by phase. Used during blame phase.
+    // Get all packets sent or received by phase. Used during blame phase.
     public Queue<Packet> getPacketsByPhase(Phase phase) {
         Queue<Packet> selection = new LinkedList<>();
 

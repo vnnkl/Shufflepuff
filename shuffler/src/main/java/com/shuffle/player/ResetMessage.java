@@ -16,6 +16,6 @@ package com.shuffle.player;
  *
  * Created by Daniel Krawisz on 4/21/16.
  */
-public class ResetMessage {
+public class ResetMessage extends Throwable {
 
 }

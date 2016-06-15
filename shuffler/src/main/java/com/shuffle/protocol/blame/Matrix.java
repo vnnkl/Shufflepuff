@@ -68,6 +68,12 @@ public class Matrix extends Throwable {
 
     }
 
+    public Map<VerificationKey, Evidence> getAccusations(VerificationKey accused) {
+        Map<VerificationKey, Evidence> accusations = new HashMap<>();
+        accusations.putAll(blame.get(accused));
+        return accusations;
+    }
+
     private static Map<VerificationKey, Evidence> put(
             Map<VerificationKey, Evidence> to,
             Map<VerificationKey, Evidence> row) {
