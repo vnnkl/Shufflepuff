@@ -6,7 +6,12 @@ import com.shuffle.mock.MockCoin;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
@@ -81,56 +86,69 @@ public class Shuffle {
         return parser;
     }
 
-    public static void checkOptions(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException {
+    private static class Environment {
+        Coin coin;
+        String seed;
+        long time;
 
-        Coin coin = null;
+        public Environment(OptionSet options, PrintStream stream)
+                throws IllegalArgumentException, ParseException {
 
-        switch ((String)options.valueOf("query")) {
-            case "btcd" : {
-                // TODO
-                break;
-            }
-            case "blockchain.info" : {
-                stream.print("Warning: you have chosen to query address balances over through a " +
-                " third party service. \n");
-                break;
-            }
-            case "mock" : {
-                if (TEST_MODE) {
-                    try {
-                        System.out.println("About to parse " + (String)options.valueOf("coin"));
-                        coin = MockCoin.fromJSON(new StringReader((String)options.valueOf("coin")));
-                    } catch (IllegalArgumentException e) {
-                        throw new IllegalArgumentException("Unable to parse mockchain data: "
-                                + e.getMessage() + "\n");
-                    }
+            switch ((String)options.valueOf("query")) {
+                case "btcd" : {
+                    // TODO
                     break;
                 }
-                // fallthrough.
+                case "blockchain.info" : {
+                    stream.print("Warning: you have chosen to query address balances over through a " +
+                            " third party service. \n");
+                    break;
+                }
+                case "mock" : {
+                    if (TEST_MODE) {
+                        try {
+                            System.out.println("About to parse " + (String)options.valueOf("coin"));
+                            coin = MockCoin.fromJSON(new StringReader((String)options.valueOf("coin")));
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Unable to parse mockchain data: "
+                                    + e.getMessage() + "\n");
+                        }
+                        break;
+                    }
+                    // fallthrough.
+                }
+                default : {
+                    throw new IllegalArgumentException(
+                            "Invalid option for 'blockchain' supplied. Available options are 'btcd' " +
+                                    "and 'blockchain.info'. 'btcd' allows for looking up options on " +
+                                    "a local instance of the blockchain. 'blockchain.info' allows for" +
+                                    " querying the blockchain over the web through blockchain.info.\n"
+                    );
+                }
             }
-            default : {
-                throw new IllegalArgumentException(
-                        "Invalid option for 'blockchain' supplied. Available options are 'btcd' " +
-                                "and 'blockchain.info'. 'btcd' allows for looking up options on " +
-                                "a local instance of the blockchain. 'blockchain.info' allows for" +
-                                " querying the blockchain over the web through blockchain.info.\n"
-                );
+
+            if (!options.has("amount")) {
+                throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
+                        "is to be shuffled for each player in the join transaction.\n");
             }
+
+            if (!options.has("time")) {
+                throw new IllegalArgumentException("No option 'time' supplied. When does the join take place?\n");
+            }
+
+            if (!options.has("seed")) {
+                throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!\n");
+            }
+
+            seed = (String)options.valueOf("seed");
+            // Check entropy.
+            if (new EntropyEstimator().put(seed) < 128) {
+                throw new IllegalArgumentException("Seed may not be random enough. Please provide longer seed.");
+            }
+
+            time = new SimpleDateFormat().parse((String)options.valueOf("time")).getTime();
         }
 
-        if (!options.has("amount")) {
-            throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
-            "is to be shuffled for each player in the join transaction.\n");
-        }
-
-        if (!options.has("time")) {
-            throw new IllegalArgumentException("No option 'time' supplied. When does the join take place?\n");
-        }
-
-        if (!options.has("seed")) {
-            throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!\n");
-        }
     }
 
     public static void main(String[] opts) throws IOException {
@@ -151,9 +169,10 @@ public class Shuffle {
             return;
         }
 
+        Environment environment;
         try {
-            checkOptions(options, System.out);
-        } catch (IllegalArgumentException e) {
+            environment = new Environment(options, System.out);
+        } catch (IllegalArgumentException | ParseException e) {
             System.out.print(e.getMessage());
             return;
         }
