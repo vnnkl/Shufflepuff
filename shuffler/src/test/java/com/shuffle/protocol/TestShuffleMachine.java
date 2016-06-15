@@ -13,7 +13,7 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.mock.AlwaysZero;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCrypto;
-import com.shuffle.mock.MockSessionIdentifier;
+import com.shuffle.player.SessionIdentifier;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.TestCase;
 
@@ -76,7 +76,7 @@ public class TestShuffleMachine {
     public class MockTestCase extends TestCase {
 
         MockTestCase(String session) {
-            super(17, new MockSessionIdentifier(session));
+            super(17, SessionIdentifier.TestSession(session));
         }
 
         @Override
@@ -88,7 +88,7 @@ public class TestShuffleMachine {
     public class NoShuffleTestCase extends TestCase {
 
         NoShuffleTestCase(String session) {
-            super(17, new MockSessionIdentifier(session));
+            super(17, SessionIdentifier.TestSession(session));
         }
 
         @Override

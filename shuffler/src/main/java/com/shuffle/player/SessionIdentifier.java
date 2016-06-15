@@ -6,20 +6,19 @@
  *
  */
 
-package com.shuffle.mock;
-
-import com.shuffle.chan.packet.SessionIdentifier;
+package com.shuffle.player;
 
 import java.io.Serializable;
 
 /**
  * Created by Daniel Krawisz on 12/6/15.
  */
-public class MockSessionIdentifier implements SessionIdentifier, Serializable {
-    static final String version = "CoinShuffle mock implementation for testing.";
+public class SessionIdentifier implements com.shuffle.chan.packet.SessionIdentifier, Serializable {
+    public final String version;
     public final String id;
 
-    public MockSessionIdentifier(String id) {
+    private SessionIdentifier(String version, String id) {
+        this.version = version;
         this.id = id;
     }
 
@@ -29,11 +28,11 @@ public class MockSessionIdentifier implements SessionIdentifier, Serializable {
             return false;
         }
 
-        if (!(o instanceof MockSessionIdentifier)) {
+        if (!(o instanceof SessionIdentifier)) {
             return false;
         }
 
-        MockSessionIdentifier s = (MockSessionIdentifier) o;
+        SessionIdentifier s = (SessionIdentifier) o;
 
         return this == s || id.equals(s.id);
     }
@@ -56,5 +55,15 @@ public class MockSessionIdentifier implements SessionIdentifier, Serializable {
     @Override
     public String id() {
         return id;
+    }
+
+    public static SessionIdentifier TestSession(String id) {
+        return new SessionIdentifier(
+                "Shufflepuff Coinshuffle test", id);
+    }
+
+    public static SessionIdentifier Session(String id) {
+        return new SessionIdentifier(
+                "Shufflepuff CoinShuffle alpha", id);
     }
 }

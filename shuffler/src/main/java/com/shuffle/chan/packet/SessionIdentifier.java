@@ -11,7 +11,7 @@ package com.shuffle.chan.packet;
 import java.io.Serializable;
 
 /**
- * The session identifier is a unique string given at the outset.
+ * The session identifier is a unique string included with each packet in a session.
  *
  * Created by Daniel Krawisz on 12/3/15.
  */

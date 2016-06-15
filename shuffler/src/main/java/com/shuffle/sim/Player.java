@@ -14,9 +14,7 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.BasicChan;
-import com.shuffle.chan.BasicInbox;
 import com.shuffle.chan.Chan;
-import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Receive;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.JavaMarshaller;
@@ -24,7 +22,7 @@ import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCrypto;
-import com.shuffle.mock.MockSessionIdentifier;
+import com.shuffle.player.SessionIdentifier;
 import com.shuffle.p2p.Collector;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
@@ -34,7 +32,6 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.p2p.Connect;
-import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.player.P;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
@@ -58,7 +55,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 /**
@@ -70,13 +66,13 @@ class Player<Address> implements Runnable {
 
     private static class Parameters<Address> {
         public final SigningKey me;
-        SessionIdentifier session;
+        com.shuffle.chan.packet.SessionIdentifier session;
         public final int port;
         public final int threads;
         public final InitialState.PlayerInitialState init;
         public final Map<VerificationKey, Address> identities;
 
-        public Parameters(SigningKey me, SessionIdentifier session, int port, int threads,
+        public Parameters(SigningKey me, com.shuffle.chan.packet.SessionIdentifier session, int port, int threads,
                           InitialState.PlayerInitialState init,
                           Map<VerificationKey, Address> identities) {
 
@@ -185,7 +181,7 @@ class Player<Address> implements Runnable {
         Crypto crypto = new MockCrypto(new InsecureRandom(7777));
 
         InitialState init = InitialState.successful(
-                new MockSessionIdentifier(options.get("-id")),
+                SessionIdentifier.TestSession(options.get("-id")),
                 Integer.parseInt(options.get("-amount")),
                 crypto,
                 Integer.parseInt(options.get("-players")));
@@ -207,7 +203,7 @@ class Player<Address> implements Runnable {
 
         return new Parameters<InetSocketAddress>(
                 new MockSigningKey(Integer.parseInt(options.get("-key"))),
-                new MockSessionIdentifier(options.get("-id")),
+                SessionIdentifier.TestSession(options.get("-id")),
                 Integer.parseInt(options.get("-minport")) + i,
                 Integer.parseInt(options.get("-threads")),
                 pinit, identities);

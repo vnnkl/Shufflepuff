@@ -20,11 +20,10 @@ import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockEncryptedAddress;
 import com.shuffle.mock.MockEncryptionKey;
 import com.shuffle.player.Messages;
-import com.shuffle.mock.MockSessionIdentifier;
+import com.shuffle.player.SessionIdentifier;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.mock.RandomSequence;
-import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.protocol.message.Message;
 
 import org.apache.logging.log4j.Logger;
@@ -34,7 +33,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -141,7 +139,7 @@ public class TestShuffleMachineMethods {
 
             Set<VerificationKey> result = null;
 
-            MockSessionIdentifier session = new MockSessionIdentifier("testPlayerSet" + i);
+            SessionIdentifier session = SessionIdentifier.TestSession("testPlayerSet" + i);
             MockSigningKey me = new MockSigningKey(test.player);
 
             MockNetwork network = new MockNetwork(session, me, test.players, 100);
@@ -257,7 +255,7 @@ public class TestShuffleMachineMethods {
         players.add(new MockSigningKey(3));
 
         for (ShuffleTestCase test : tests) {
-            SessionIdentifier session = new MockSessionIdentifier("shuffle test");
+            SessionIdentifier session = SessionIdentifier.TestSession("shuffle test");
             MockNetwork network = new MockNetwork(session, me, players, 100);
 
             Messages messages = network.messages(me.VerificationKey());
@@ -295,7 +293,7 @@ public class TestShuffleMachineMethods {
             players.add(new MockSigningKey(2));
 
             messages = new MockNetwork(
-                    new MockSessionIdentifier("test are equal"),
+                    SessionIdentifier.TestSession("test are equal"),
                     sk, players, 100).messages(sk.VerificationKey());
 
             for (int i : input) {
@@ -311,7 +309,7 @@ public class TestShuffleMachineMethods {
             players.add(new MockSigningKey(2));
 
             messages = new MockNetwork(
-                    new MockSessionIdentifier("test are equal"),
+                    SessionIdentifier.TestSession("test are equal"),
                     sk, players, 100).messages(sk.VerificationKey());
 
             for (int[] in : input) {
@@ -418,7 +416,7 @@ public class TestShuffleMachineMethods {
 
                 // Set up a session identifier and signing key.
                 SessionIdentifier session
-                        = new MockSessionIdentifier("testDecryptAll" + i);
+                        = SessionIdentifier.TestSession("testDecryptAll" + i);
 
                 SortedSet<SigningKey> players = new TreeSet<>();
                 for (int j = 0; j <= i; j++) {
@@ -483,10 +481,10 @@ public class TestShuffleMachineMethods {
                     playerSet.add(vk);
                 }
 
-                SessionIdentifier mockSessionIdentifier
-                        = new MockSessionIdentifier("testReadNewAddresses" + i);
+                SessionIdentifier sessionIdentifier
+                        = SessionIdentifier.TestSession("testReadNewAddresses" + i);
                 MockNetwork net = new MockNetwork(
-                        mockSessionIdentifier, new MockSigningKey(1), players, 100);
+                        sessionIdentifier, new MockSigningKey(1), players, 100);
                 Messages messages = net.messages(sk.VerificationKey());
 
                 Message expected = messages.make();
@@ -503,7 +501,7 @@ public class TestShuffleMachineMethods {
                 Mailbox mailbox
                         = new Mailbox(sk.VerificationKey(), playerSet, messages);
                 CoinShuffle.Round round = standardTestInitialization(
-                                mockSessionIdentifier, 1, new MockAddress(-1), players, crypto, mailbox
+                        sessionIdentifier, 1, new MockAddress(-1), players, crypto, mailbox
                 );
 
                 Deque<Address> newAddrs = round.readNewAddresses(input);
@@ -531,10 +529,10 @@ public class TestShuffleMachineMethods {
                     playerSet.add(vk);
                 }
 
-                SessionIdentifier mockSessionIdentifier
-                        = new MockSessionIdentifier("testReadNewAddressesfail" + i);
+                SessionIdentifier sessionIdentifier
+                        = SessionIdentifier.TestSession("testReadNewAddressesfail" + i);
                 MockNetwork net = new MockNetwork(
-                        mockSessionIdentifier, new MockSigningKey(1), players, 100);
+                        sessionIdentifier, new MockSigningKey(1), players, 100);
                 Messages messages = net.messages(sk.VerificationKey());
 
                 Message input = messages.make();
@@ -547,7 +545,7 @@ public class TestShuffleMachineMethods {
                 Mailbox mailbox = new Mailbox(sk.VerificationKey(), playerSet, messages);
 
                 CoinShuffle.Round round = standardTestInitialization(
-                        mockSessionIdentifier, 1, new MockAddress(-1), players, crypto, mailbox
+                        sessionIdentifier, 1, new MockAddress(-1), players, crypto, mailbox
                 );
 
                 try {

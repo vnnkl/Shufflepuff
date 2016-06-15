@@ -15,7 +15,6 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Chan;
-import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.protocol.CoinShuffle;
@@ -41,51 +40,45 @@ import java.util.TreeSet;
 class Player<Identity> implements Runnable {
     private static final Logger log = LogManager.getLogger(Player.class);
 
+    private final com.shuffle.chan.packet.SessionIdentifier session;
+
     private final SigningKey sk;
 
     private final Coin coin;
 
-    private final MessageFactory messages;
+    private final Crypto crypto;
 
-    public class Settings {
-        final SessionIdentifier session;
-        final long amount;
-        final Address addrNew;
-        final Address change;
-        final int minPlayers;
-        final int maxRetries;
-        final int timeout;
+    private final long time; // The time at which the join is scheduled to happen.
 
-        public Settings(
-                SessionIdentifier session,
-                long amount,
-                Address addrNew,
-                Address change,
-                int minPlayers,
-                int maxRetries,
-                int timeout
-        ) {
-            this.session = session;
-            this.amount = amount;
-            this.addrNew = addrNew;
-            this.change = change;
-            this.minPlayers = minPlayers;
-            this.maxRetries = maxRetries;
-            this.timeout = timeout;
-        }
-    }
+    private final long amount;
+    private final Address addrNew;
+    private final Address change;
+    private final int timeout;
 
     Player(
             SigningKey sk,
+            SessionIdentifier session,
             MessageFactory messages, // Object that knows how to create and copy messages.
-            Coin coin // Connects us to the Bitcoin or other cryptocurrency netork.
+            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
+            Crypto crypto,
+            long time,
+            long amount,
+            Address addrNew,
+            Address change,
+            int timeout
     ) {
-        if (sk == null || coin == null || messages == null) {
+        if (sk == null || coin == null || session == null || crypto == null) {
             throw new NullPointerException();
         }
+        this.session = session;
         this.sk = sk;
         this.coin = coin;
-        this.messages = messages;
+        this.crypto = crypto;
+        this.time = time;
+        this.amount = amount;
+        this.addrNew = addrNew;
+        this.change = change;
+        this.timeout = timeout;
     }
 
     @Override
@@ -97,8 +90,7 @@ class Player<Identity> implements Runnable {
             Set<Identity> identities,
             Channel<Identity, Bytestring> channel,
             Map<Identity, VerificationKey> keys, // Can be null.
-            Settings settings,
-            Crypto crypto,
+            MessageFactory messages,
             Chan<Phase> chan
     ) {
 
@@ -119,9 +111,6 @@ class Player<Identity> implements Runnable {
             players.add(key);
         }
 
-        // Try the protocol.
-        int attempt = 0;
-
         // The eliminated players. A player is eliminated when there is a subset of players
         // which all blame him and none of whom blame one another.
         SortedSet<VerificationKey> eliminated = new TreeSet<>();
@@ -129,10 +118,6 @@ class Player<Identity> implements Runnable {
         CoinShuffle shuffle = new CoinShuffle(messages, crypto, coin);
 
         while (true) {
-
-            if (players.size() - eliminated.size() < settings.minPlayers) {
-                return null;
-            }
 
             // Get the initial ordering of the players.
             int i = 1;
@@ -154,18 +139,12 @@ class Player<Identity> implements Runnable {
             Matrix blame = null;
             try {
                 return shuffle.runProtocol(
-                        settings.amount, sk, validPlayers, settings.addrNew, settings.change, chan);
+                        amount, sk, validPlayers, addrNew, change, chan);
             } catch (Matrix m) {
                 blame = m;
             } catch (Exception e) {
                 // TODO must handle timeouts effectively here.
                 e.printStackTrace();
-            }
-
-            attempt++;
-
-            if (attempt > settings.maxRetries) {
-                return null;
             }
 
             // Go through players and check if they are eliminated.

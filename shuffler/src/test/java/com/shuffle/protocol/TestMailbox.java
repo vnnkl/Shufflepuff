@@ -15,10 +15,9 @@ import com.shuffle.chan.Inbox;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.player.Messages;
-import com.shuffle.mock.MockSessionIdentifier;
+import com.shuffle.player.SessionIdentifier;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
-import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.player.P;
 import com.shuffle.protocol.blame.BlameException;
 import com.shuffle.protocol.message.Phase;
@@ -28,7 +27,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -78,7 +76,7 @@ public class TestMailbox {
             }
 
             MockSigningKey me = new MockSigningKey(test.sender);
-            SessionIdentifier session = new MockSessionIdentifier("test broadcast");
+            com.shuffle.chan.packet.SessionIdentifier session = SessionIdentifier.TestSession("test broadcast");
 
             MockNetwork network = new MockNetwork(session, me, test.recipients, 100);
 
@@ -133,7 +131,7 @@ public class TestMailbox {
             MockSigningKey sk = new MockSigningKey(test.sender);
 
             // Create mock network object.
-            SessionIdentifier session = new MockSessionIdentifier("testSend" + index);
+            SessionIdentifier session = SessionIdentifier.TestSession("testSend" + index);
             MockNetwork network = new MockNetwork(session, sk, test.players, 100);
 
             // make the set of players.
@@ -220,7 +218,7 @@ public class TestMailbox {
                 players.add(j.VerificationKey());
             }
 
-            SessionIdentifier session = new MockSessionIdentifier("receiveFromTest" + index);
+            SessionIdentifier session = SessionIdentifier.TestSession("receiveFromTest" + index);
             MockNetwork network = new MockNetwork(session, sk, test.players, 100);
 
             try {
@@ -315,7 +313,7 @@ public class TestMailbox {
             SigningKey sk = new MockSigningKey(test.me);
             VerificationKey vk = sk.VerificationKey();
 
-            SessionIdentifier session = new MockSessionIdentifier("receiveFromMultiple" + i);
+            SessionIdentifier session = SessionIdentifier.TestSession("receiveFromMultiple" + i);
 
             // Create mock network object.
             MockNetwork network = new MockNetwork(session, sk, test.players, 100);

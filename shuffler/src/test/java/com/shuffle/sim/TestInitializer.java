@@ -6,7 +6,7 @@ import com.shuffle.chan.Inbox;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.packet.SigningSend;
-import com.shuffle.mock.MockSessionIdentifier;
+import com.shuffle.player.SessionIdentifier;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.p2p.Bytestring;
 
@@ -48,7 +48,7 @@ public class TestInitializer {
         IntMarshaller im = new IntMarshaller();
 
         Initializer<Integer> initializer = new Initializer<Integer>(
-                new MockSessionIdentifier("test initializer " + players), 2 * (1 + players ));
+                SessionIdentifier.TestSession("test initializer " + players), 2 * (1 + players ));
 
         Map<SigningKey, Initializer.Connections<Integer>> connections = new HashMap<>();
 
