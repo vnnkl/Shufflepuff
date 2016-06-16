@@ -1,19 +1,28 @@
 package com.shuffle.player;
 
+import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
+import com.shuffle.bitcoin.Crypto;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.mock.InsecureRandom;
+import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
+import com.shuffle.mock.MockCrypto;
+import com.shuffle.mock.MockSigningKey;
+import com.shuffle.monad.Either;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
 import java.net.InetSocketAddress;
-import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -31,6 +40,12 @@ import joptsimple.OptionSet;
 public class Shuffle {
     // Turn this on to enable test mode options.
     private static boolean TEST_MODE = true;
+
+    // 1 / 100 of a bitcoin.
+    private static long MIN_AMMOUNT = 1000000;
+
+    // Entropy checker must think there is at least this much entropy.
+    private static int MIN_APPARENT_ENTROPY = 128;
 
     public static OptionParser getShuffleOptionsParser() {
         OptionParser parser = new OptionParser();
@@ -67,6 +82,8 @@ public class Shuffle {
                     .withRequiredArg()
                     .ofType(String.class)
                     .defaultsTo("{\"outputs\":[],\"transactions\":[]}");
+
+            parser.accepts("me").withRequiredArg().ofType(String.class);
         } else {
             query.defaultsTo("blockchain.info");
             blockchain.defaultsTo("main");
@@ -90,23 +107,26 @@ public class Shuffle {
                 .withRequiredArg()
                 .ofType(String.class);
 
-        if (TEST_MODE) {
-            parser.accepts("me").withRequiredArg().ofType(String.class);
-        }
-
-        parser.accepts("key")
-                .requiredUnless("me")
+        parser.acceptsAll(Arrays.asList("k", "key"), "Your private key.")
+                .requiredUnless("local")
                 .withRequiredArg().ofType(String.class);
-        parser.accepts("change")
-                .requiredUnless("me")
+        parser.accepts("change", "Your change address. Optional")
+                .requiredUnless("local")
                 .withRequiredArg().ofType(String.class);
-        parser.accepts("output")
-                .requiredUnless("me")
+        parser.accepts("anon")
+                .requiredUnless("local")
                 .withRequiredArg()
                 .ofType(String.class);
+        parser.accepts("timeout")
+                .withRequiredArg()
+                .ofType(Long.class)
+                .defaultsTo(1000L);
 
-        parser.accepts("peers").withRequiredArg().ofType(String.class);
+        parser.accepts("peers",
+                "The peers we will be connecting to, formatted as a JSON array.")
+                .withRequiredArg().ofType(String.class);
 
+        parser.accepts("report").withRequiredArg().ofType(String.class);
 
         return parser;
     }
@@ -115,14 +135,71 @@ public class Shuffle {
     public final String seed;
     public final long time;
     public final long amount;
+    public final long timeout;
     public final SessionIdentifier session;
-    Set<Player> me = new HashSet<>();
-    Map<VerificationKey, InetSocketAddress> others = new HashMap<>();
+    public final Crypto crypto;
+    Set<Player<Either<InetSocketAddress, Integer>>> local = new HashSet<>();
+    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
+    public final String report; // Where to save the report.
 
     public Shuffle(OptionSet options, PrintStream stream)
             throws IllegalArgumentException, ParseException {
 
-        switch ((String)options.valueOf("query")) {
+        if (!options.has("amount")) {
+            throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
+                    "is to be shuffled for each player in the join transaction.");
+        }
+
+        if (!options.has("time")) {
+            throw new IllegalArgumentException("No option 'time' supplied. When does the join take place?");
+        }
+
+        if (!options.has("seed")) {
+            throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!");
+        }
+
+        if (!options.has("session")) {
+            throw new IllegalArgumentException("No option 'session' supplied.");
+        }
+
+        if (!options.has("players")) {
+            throw new IllegalArgumentException("No option 'session' supplied.");
+        }
+
+        // Check on the time.
+        time = new SimpleDateFormat()
+                .parse((String)options.valueOf("time")).getTime();
+        long now = System.currentTimeMillis();
+
+        if (time < now) {
+            throw new IllegalArgumentException("Cannot join protocol in the past.");
+        }
+
+        // Check the random seed for apparent randomness.
+        seed = (String)options.valueOf("seed");
+        // Check entropy.
+        if (new EntropyEstimator().put(seed) <= MIN_APPARENT_ENTROPY) {
+            throw new IllegalArgumentException("Seed may not be random enough. Please provide longer seed.");
+        }
+
+        // Get the session identifier.
+        if (TEST_MODE) {
+            session = SessionIdentifier.TestSession((String) options.valueOf("session"));
+        } else {
+            session = SessionIdentifier.Session((String) options.valueOf("session"));
+        }
+
+        timeout = (Long)options.valueOf("timeout");
+
+        if (options.has("report")) {
+            report = (String)options.valueOf("report");
+        } else {
+            report = null;
+        }
+
+        // Detect the nature of the cryptocoin network we will use.
+        String query = (String)options.valueOf("query");
+        switch (query) {
             case "btcd" : {
                 // TODO
                 coin = null;
@@ -130,7 +207,7 @@ public class Shuffle {
             }
             case "blockchain.info" : {
                 stream.print("Warning: you have chosen to query address balances over through a " +
-                        " third party service. \n");
+                        " third party service.");
                 coin = null;
                 break;
             }
@@ -141,7 +218,7 @@ public class Shuffle {
                         coin = MockCoin.fromJSON(new StringReader((String)options.valueOf("coin")));
                     } catch (IllegalArgumentException e) {
                         throw new IllegalArgumentException("Unable to parse mockchain data: "
-                                + e.getMessage() + "\n");
+                                + e.getMessage());
                     }
                     break;
                 }
@@ -152,42 +229,181 @@ public class Shuffle {
                         "Invalid option for 'blockchain' supplied. Available options are 'btcd' " +
                                 "and 'blockchain.info'. 'btcd' allows for looking up options on " +
                                 "a local instance of the blockchain. 'blockchain.info' allows for" +
-                                " querying the blockchain over the web through blockchain.info.\n"
+                                " querying the blockchain over the web through blockchain.info."
                 );
             }
         }
 
-        if (!options.has("amount")) {
-            throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
-                    "is to be shuffled for each player in the join transaction.\n");
+        // Check cryptography options.
+        if (TEST_MODE) {
+            String prng = (String) options.valueOf("prng");
+            String signatures = (String) options.valueOf("signatures");
+            String encryption = (String) options.valueOf("encryption");
+
+            if (!prng.equals("mock")) {
+                throw new IllegalArgumentException("mock crypto only supported currently.");
+            }
+            if (!signatures.equals("mock")) {
+                throw new IllegalArgumentException("mock crypto only supported currently.");
+            }
+            if (!encryption.equals("mock")) {
+                throw new IllegalArgumentException("mock crypto only supported currently.");
+            }
+
+            if (!query.equals("mock")) {
+                throw new IllegalArgumentException("Can only use mock Bitcoin network with mock cryptography.");
+            }
+        } else {
+            throw new IllegalArgumentException("Shufflepuff pre-alpha must be compiled in test mode.");
         }
 
-        if (!options.has("time")) {
-            throw new IllegalArgumentException("No option 'time' supplied. When does the join take place?\n");
-        }
-
-        if (!options.has("seed")) {
-            throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!\n");
-        }
-
-        if (!options.has("session")) {
-            throw new IllegalArgumentException("No option 'session' supplied.\n");
-        }
-
-        seed = (String)options.valueOf("seed");
-        // Check entropy.
-        if (new EntropyEstimator().put(seed) < 128) {
-            throw new IllegalArgumentException("Seed may not be random enough. Please provide longer seed.");
-        }
-
-        time = new SimpleDateFormat().parse((String)options.valueOf("time")).getTime();
+        // Create the crypto interface.
+        crypto = new MockCrypto(new InsecureRandom(seed.hashCode()));
 
         amount = (Long)options.valueOf("amount");
+        if (amount <= MIN_AMMOUNT) {
+            throw new IllegalArgumentException("Amount is too small. ");
+        }
 
-        if (TEST_MODE) {
-            session = SessionIdentifier.TestSession((String) options.valueOf("session"));
+        // Get information for this player. (In test mode, one node
+        // may run more than one player.)
+        if (TEST_MODE && options.has("local")) {
+            if (options.has("key")) {
+                throw new IllegalArgumentException("Option 'key' not needed when 'local' is defined.");
+            }
+            if (options.has("change")) {
+                throw new IllegalArgumentException("Option 'change' not needed when 'local' is defined.");
+            }
+            if (options.has("anon")) {
+                throw new IllegalArgumentException("Option 'anon' not needed when 'local' is defined.");
+            }
+
+            JSONArray local = readJSONArray((String)options.valueOf("local"));
+
+            for (int i = 1; i <= local.size(); i ++) {
+                JSONObject o = null;
+                try {
+                    o = (JSONObject) local.get(i - 1);
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read "
+                            + local.get(i - 1) + " as json object.");
+                }
+
+                String key = (String)o.get("key");
+                String anon = (String) o.get("anon");
+                String change = (String) o.get("change");
+                if (key == null) {
+                    throw new IllegalArgumentException("Player missing field \"key\".");
+                }
+                if (anon == null) {
+                    throw new IllegalArgumentException("Player missing field \"anon\".");
+                }
+
+                this.local.add(readPlayer(options, key, anon, change));
+            }
         } else {
-            session = SessionIdentifier.Session((String) options.valueOf("session"));
+            if (!options.has("key")) {
+                throw new IllegalArgumentException("Missing option 'key'.");
+            }
+            if (options.has("anon")) {
+                throw new IllegalArgumentException("Missing option 'anon'.");
+            }
+
+            String key = (String)options.valueOf("key");
+            String anon = (String)options.valueOf("anon");
+            if (!options.has("change")) {
+                this.local.add(readPlayer(options, key, anon, null));
+            } else {
+                this.local.add(readPlayer(options, key, anon, (String)options.valueOf("change")));
+            }
+        }
+
+        // Finally, get the peers.
+        Set<Either<InetSocketAddress, Integer>> addresses = new HashSet<>();
+        JSONArray peers = readJSONArray((String)options.valueOf("peers"));
+        for (int i = 1; i <= local.size(); i ++) {
+            JSONObject o = null;
+            try {
+                o = (JSONObject) peers.get(i - 1);
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read "
+                        + peers.get(i - 1) + " as json object.");
+            }
+
+            String key = (String)o.get("key");
+            String addr = (String)o.get("address");
+            if (key == null) {
+                throw new IllegalArgumentException("Peer missing field \"key\".");
+            }
+            if (addr == null) {
+                throw new IllegalArgumentException("Peer missing field \"address\".");
+            }
+
+            VerificationKey vk;
+            if (TEST_MODE) {
+
+            } else {
+                // TODO
+                throw new IllegalArgumentException();
+            }
+
+            // Try to read address as integer.
+            Either<InetSocketAddress, Integer> address;
+            try {
+                Integer intAddr = Integer.parseInt(addr);
+                address = new Either<>(null, intAddr);
+            } catch (NumberFormatException e) {
+                // TODO: construct InetSocketAddress.
+            }
+        }
+    }
+
+    private Player<Either<InetSocketAddress, Integer>> readPlayer(OptionSet options, String key, String anon, String change) {
+        SigningKey sk;
+        Address anonAddress;
+        Address changeAddress;
+        if (TEST_MODE) {
+            switch ((String)options.valueOf("signatures")) {
+                case "mock" : {
+                    sk = new MockSigningKey(Integer.parseInt(key));
+                    anonAddress = new MockAddress(anon);
+                    if (change == null) {
+                        changeAddress = null;
+                    } else {
+                        changeAddress = new MockAddress(change);
+                    }
+                    break;
+                }
+                default: {
+                    throw new IllegalArgumentException("Only test crypto supported in this pre-alpha version.");
+                }
+            }
+        } else {
+            // TODO
+            throw new IllegalArgumentException("Can only run in test mode.");
+        }
+
+        if (changeAddress == null) {
+            return new Player<Either<InetSocketAddress, Integer>>(
+                    sk, session, coin, crypto, anonAddress, time, amount, timeout);
+        } else {
+            return new Player<Either<InetSocketAddress, Integer>>(
+                    sk, session, coin, crypto, anonAddress, changeAddress, time, amount, timeout);
+        }
+    }
+
+    private static JSONArray readJSONArray(String ar) {
+
+        try {
+            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
+            if (json == null) {
+                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+            }
+
+            return (JSONArray) json.get("x");
+
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
         }
     }
 
@@ -198,7 +414,6 @@ public class Shuffle {
         try {
             options = parser.parse(opts);
         } catch (Exception e) {
-            // Show the user some json parser error.
             System.out.println(e.getMessage());
             return;
         }
@@ -212,8 +427,8 @@ public class Shuffle {
         Shuffle shuffle;
         try {
             shuffle = new Shuffle(options, System.out);
-        } catch (IllegalArgumentException | ParseException e) {
-            System.out.print(e.getMessage());
+        } catch (IllegalArgumentException | ClassCastException | ParseException e) {
+            System.out.println(e.getMessage());
             return;
         }
 

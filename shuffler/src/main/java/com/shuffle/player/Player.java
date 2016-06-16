@@ -53,23 +53,23 @@ class Player<Identity> implements Runnable {
     private final long time; // The time at which the join is scheduled to happen.
 
     private final long amount;
-    private final Address addrNew;
+    private final Address anon;
     private final Address change;
-    private final int timeout;
+    private final long timeout;
 
     Player(
             SigningKey sk,
             SessionIdentifier session,
-            MessageFactory messages, // Object that knows how to create and copy messages.
             Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
             Crypto crypto,
+            Address anon,
+            Address change,
             long time,
             long amount,
-            Address addrNew,
-            Address change,
-            int timeout
+            long timeout
     ) {
-        if (sk == null || coin == null || session == null || crypto == null) {
+        if (sk == null || coin == null || session == null
+                || crypto == null || anon == null || change == null) {
             throw new NullPointerException();
         }
         this.session = session;
@@ -78,9 +78,35 @@ class Player<Identity> implements Runnable {
         this.crypto = crypto;
         this.time = time;
         this.amount = amount;
-        this.addrNew = addrNew;
+        this.anon = anon;
         this.change = change;
         this.timeout = timeout;
+    }
+
+    // If we want to run the protocol without a change address.
+    Player(
+            SigningKey sk,
+            SessionIdentifier session,
+            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
+            Crypto crypto,
+            Address anon,
+            long time,
+            long amount,
+            long timeout
+    ) {
+        if (sk == null || coin == null || session == null
+                || crypto == null || anon == null) {
+            throw new NullPointerException();
+        }
+        this.session = session;
+        this.sk = sk;
+        this.coin = coin;
+        this.crypto = crypto;
+        this.time = time;
+        this.amount = amount;
+        this.anon = anon;
+        this.timeout = timeout;
+        change = null;
     }
 
     @Override
@@ -142,7 +168,7 @@ class Player<Identity> implements Runnable {
             // If the protocol returns correctly without throwing a Matrix, then
             // it has been successful.
             return shuffle.runProtocol(
-                    amount, sk, validPlayers, addrNew, change, chan);
+                    amount, sk, validPlayers, anon, change, chan);
         } catch (Matrix m) {
             blame = m;
         } catch (Exception e) {
