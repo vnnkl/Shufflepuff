@@ -127,6 +127,19 @@ public class Shuffle {
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
+        parser.accepts("netParams")
+                .requiredUnless("local")
+                .withRequiredArg().ofType(String.class);
+        parser.accepts("minPeers")
+                .requiredUnless("local")
+                .withRequiredArg().ofType(String.class);
+        parser.accepts("rpcuser")
+                .requiredUnless("local")
+                .withRequiredArg().ofType(String.class);
+        parser.accepts("rpcpass")
+                .requiredUnless("local")
+                .withRequiredArg().ofType(String.class);
+
         parser.accepts("peers",
                 "The peers we will be connecting to, formatted as a JSON array.")
                 .withRequiredArg().ofType(String.class);
@@ -213,10 +226,18 @@ public class Shuffle {
                 }
 
                 NetworkParameters netParams = null;
-                if ((String)options.valueOf("netParams") == "main") {
-                    netParams = MainNetParams.get();
-                } else if ((String)options.valueOf("netParams") == "test") {
-                    netParams = TestNet3Params.get();
+
+                switch ((String)options.valueOf("netParams")) {
+
+                    case "main" : {
+                        netParams = MainNetParams.get();
+                        break;
+                    }
+
+                    case "test" : {
+                        netParams = TestNet3Params.get();
+                        break;
+                    }
                 }
 
                 int minPeers = (int)options.valueOf("minPeers");
@@ -239,10 +260,18 @@ public class Shuffle {
                 }
 
                 NetworkParameters netParams = null;
-                if ((String)options.valueOf("netParams") == "main") {
-                    netParams = MainNetParams.get();
-                } else if ((String)options.valueOf("netParams") == "test") {
-                    netParams = TestNet3Params.get();
+
+                switch ((String)options.valueOf("netParams")) {
+
+                    case "main" : {
+                        netParams = MainNetParams.get();
+                        break;
+                    }
+
+                    case "test" : {
+                        netParams = TestNet3Params.get();
+                        break;
+                    }
                 }
 
                 int minPeers = (int)options.valueOf("minPeers");
