@@ -5,6 +5,8 @@ import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
+import com.shuffle.bitcoin.blockchain.Btcd;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
@@ -12,6 +14,9 @@ import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.monad.Either;
 
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -201,14 +206,48 @@ public class Shuffle {
         String query = (String)options.valueOf("query");
         switch (query) {
             case "btcd" : {
-                // TODO
-                coin = null;
+
+                if (!options.has("netParams") || !options.has("minPeers")
+                        || !options.has("rpcuser") || !options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Missing arguments for btcd");
+                }
+
+                NetworkParameters netParams = null;
+                if ((String)options.valueOf("netParams") == "main") {
+                    netParams = MainNetParams.get();
+                } else if ((String)options.valueOf("netParams") == "test") {
+                    netParams = TestNet3Params.get();
+                }
+
+                int minPeers = (int)options.valueOf("minPeers");
+                String rpcuser = (String)options.valueOf("rpcuser");
+                String rpcpass = (String)options.valueOf("rpcpass");
+
+                coin = new Btcd(netParams, minPeers, rpcuser, rpcpass);
                 break;
             }
             case "blockchain.info" : {
                 stream.print("Warning: you have chosen to query address balances over through a " +
                         " third party service.");
-                coin = null;
+
+                if (!options.has("netParams") || !options.has("minPeers")) {
+                    throw new IllegalArgumentException("Missing netparams or minpeers argument");
+                }
+
+                if (options.has("rpcuser") || options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Wrong argument for blockchain.info");
+                }
+
+                NetworkParameters netParams = null;
+                if ((String)options.valueOf("netParams") == "main") {
+                    netParams = MainNetParams.get();
+                } else if ((String)options.valueOf("netParams") == "test") {
+                    netParams = TestNet3Params.get();
+                }
+
+                int minPeers = (int)options.valueOf("minPeers");
+
+                coin = new BlockchainDotInfo(netParams, minPeers);
                 break;
             }
             case "mock" : {
