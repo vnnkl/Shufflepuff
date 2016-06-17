@@ -147,11 +147,6 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
         }
 
         @Override
-        public Either<X, Y> identity() {
-            return new Either<X, Y>(x.identity(), y.identity());
-        }
-
-        @Override
         public void close() throws InterruptedException {
             x.close();
             y.close();
@@ -162,11 +157,6 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
             // It should not actually happen that both channels are in a different state.
             return x.closed() || y.closed();
         }
-    }
-
-    @Override
-    public Either<X, Y> identity() {
-        return new Either<X, Y>(x.identity(), y.identity());
     }
 
     @Override

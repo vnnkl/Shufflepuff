@@ -399,11 +399,6 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
         private boolean closed = false;
 
         @Override
-        public InetSocketAddress identity() {
-            return me;
-        }
-
-        @Override
         // TODO should close all connections and stop listening.
         public void close() {
             if (closed) return;
@@ -456,11 +451,6 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
 
             return new TcpConnection();
         }
-    }
-
-    @Override
-    public InetSocketAddress identity() {
-        return me;
     }
 
     @Override

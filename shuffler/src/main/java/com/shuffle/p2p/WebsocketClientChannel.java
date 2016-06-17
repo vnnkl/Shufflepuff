@@ -27,8 +27,6 @@ import javax.websocket.OnClose;
 import javax.websocket.Session;
 import javax.websocket.WebSocketContainer;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 /**
  *
  *
@@ -256,11 +254,6 @@ public class WebsocketClientChannel implements Channel<URI, Bytestring> {
         private boolean closed = false;
 
         @Override
-        public URI identity() {
-            return WebsocketClientChannel.this.identity();
-        }
-
-        @Override
         public void close() {
             if (closed) return;
 
@@ -293,9 +286,4 @@ public class WebsocketClientChannel implements Channel<URI, Bytestring> {
         return peers.get(you);
     }
 
-    @Override
-    public URI identity() {
-        // TODO
-        throw new NotImplementedException();
-    }
 }

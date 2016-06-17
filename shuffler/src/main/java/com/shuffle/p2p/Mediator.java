@@ -478,11 +478,6 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
         }
     }
 
-    @Override
-    public Address identity() {
-        return conn.identity();
-    }
-
     private boolean closed = false;
 
     @Override

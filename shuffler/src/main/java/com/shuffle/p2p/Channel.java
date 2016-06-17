@@ -19,13 +19,11 @@ import java.io.Serializable;
  *
  * Created by Daniel Krawisz on 12/16/15.
  */
-public interface Channel<Identity, Message extends Serializable> {
-    // Our own identity on this channel. For TCP, this would be a IP address.
-    Identity identity();
+public interface Channel<Address, Message extends Serializable> {
 
     // Returns null if a peer could not be created for this identity.
-    Peer<Identity, Message> getPeer(Identity you);
+    Peer<Address, Message> getPeer(Address you);
 
     // Returns null if the connection could not be opened.
-    Connection<Identity> open(final Listener<Identity, Message> listener) throws InterruptedException;
+    Connection<Address> open(final Listener<Address, Message> listener) throws InterruptedException;
 }

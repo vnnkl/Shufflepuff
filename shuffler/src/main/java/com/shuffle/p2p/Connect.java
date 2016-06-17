@@ -29,7 +29,7 @@ import java.util.TreeSet;
  *
  * Created by Daniel Krawisz on 2/16/16.
  */
-public class Connect<Address, P extends Serializable> implements Connection<Address> {
+public class Connect<Identity, P extends Serializable> implements Connection<Identity> {
 
     // The list of peers will be altered by two threads; the one for initiating connections
     // and the one for receiving connections. We set it in its own class to allow for some
@@ -37,54 +37,54 @@ public class Connect<Address, P extends Serializable> implements Connection<Addr
     private class Peers {
 
         // The list of peers which we have not connected with yet.
-        private final Queue<Address> unconnected = new LinkedList<>();
-        private final Set<Address> remaining = new TreeSet<>();
+        private final Queue<Identity> unconnected = new LinkedList<>();
+        private final Set<Identity> remaining = new TreeSet<>();
 
-        private final Collector<Address, P> collector;
+        private final Collector<Identity, P> collector;
 
-        private Peers(Collector<Address, P> collector) {
+        private Peers(Collector<Identity, P> collector) {
             this.collector = collector;
         }
 
-        public void queue(Address address) {
-            if (address == null) {
+        public void queue(Identity identity) {
+            if (identity == null) {
                 throw new NullPointerException();
             }
 
-            if (remaining.contains(address)) return;
+            if (remaining.contains(identity)) return;
 
-            unconnected.add(address);
-            remaining.add(address);
+            unconnected.add(identity);
+            remaining.add(identity);
         }
 
-        public Address peek() {
+        public Identity peek() {
             return unconnected.peek();
         }
 
         boolean rotate() {
-            Address address = unconnected.poll();
-            if (address == null) {
+            Identity identity = unconnected.poll();
+            if (identity == null) {
                 return false;
             }
 
-            unconnected.add(address);
+            unconnected.add(identity);
             return true;
         }
 
-        private boolean connect(Session<Address, P> session) throws InterruptedException {
-            Address addr = session.peer().identity();
+        private boolean connect(Session<Identity, P> session) throws InterruptedException {
+            Identity addr = session.peer().identity();
 
             return remaining.remove(addr) && collector.put(session);
 
         }
 
         public synchronized boolean openSession(
-                Address address,
-                Peer<Address, P> peer) throws InterruptedException {
+                Identity identity,
+                Peer<Identity, P> peer) throws InterruptedException {
 
-            Send<P> processor = collector.inbox.receivesFrom(address);
+            Send<P> processor = collector.inbox.receivesFrom(identity);
             if (processor != null) {
-                Session<Address, P> session =
+                Session<Identity, P> session =
                         peer.openSession(processor);
 
                 if (session != null) {
@@ -99,8 +99,8 @@ public class Connect<Address, P extends Serializable> implements Connection<Addr
             return false;
         }
 
-        boolean connected(Address address) {
-            return collector.connected.containsKey(address);
+        boolean connected(Identity identity) {
+            return collector.connected.containsKey(identity);
         }
 
         // Removes the first element from the list.
@@ -116,77 +116,77 @@ public class Connect<Address, P extends Serializable> implements Connection<Addr
 
     // Keep track of the number of connection attempt retries for each address.
     private class Retries {
-        final Map<Address, Integer> retries = new HashMap<>();
+        final Map<Identity, Integer> retries = new HashMap<>();
 
-        public int retries(Address address) {
-            Integer r = retries.get(address);
+        public int retries(Identity identity) {
+            Integer r = retries.get(identity);
             if (r == null) {
-                retries.put(address, 0);
+                retries.put(identity, 0);
                 return 0;
             }
 
             return r;
         }
 
-        public int increment(Address address) {
-            Integer r = retries.get(address);
+        public int increment(Identity identity) {
+            Integer r = retries.get(identity);
 
             if (r == null) {
                 r = 0;
             }
             r++;
 
-            retries.put(address, r);
+            retries.put(identity, r);
             return r;
         }
     }
 
-    private final Channel<Address, P> channel;
-    private final Connection<Address> connection;
-    private final Collector<Address, P> collector;
+    private final Channel<Identity, P> channel;
+    private final Connection<Identity> connection;
+    private final Collector<Identity, P> collector;
     private final Crypto crypto;
+    private final Identity me;
 
     private boolean finished = false;
 
-    public Connect(Channel<Address, P> channel, Crypto crypto, int bloop) throws InterruptedException {
+    public Connect(Identity me, Channel<Identity, P> channel, Crypto crypto, int bloop) throws InterruptedException {
         if (channel == null || crypto == null) throw new NullPointerException();
 
-        collector = new Collector<>(new BasicInbox<Address, P>(bloop));
+        collector = new Collector<>(new BasicInbox<Identity, P>(bloop));
 
         connection = channel.open(collector);
-        if (connection == null) throw new IllegalArgumentException();
+        if (connection == null || me == null) throw new IllegalArgumentException();
 
         this.channel = channel;
         this.crypto = crypto;
+        this.me = me;
     }
 
     // Connect to all peers; remote peers can be initiating connections to us as well.
-    public Collector<Address, P> connect(
-            SortedSet<Address> addrs,
+    public Collector<Identity, P> connect(
+            SortedSet<Identity> addrs,
             int maxRetries) throws IOException, InterruptedException {
 
-        if (addrs == null) throw new NullPointerException();
+        if (me == null || addrs == null) throw new NullPointerException();
 
         if (finished) return null;
 
         // TODO make there be a parameter for max messages rather than just doing 100.
         Peers peers = new Peers(collector);
 
-        Address me = channel.identity();
-
         // Randomly arrange the list of peers.
         // First, put all peers in an array.
-        ArrayList<Address> addresses = new ArrayList<>();
-        addresses.addAll(addrs);
+        ArrayList<Identity> identities = new ArrayList<>();
+        identities.addAll(addrs);
 
         // Then randomly select them one at a time and put them in peers.
         for (int rmax = addrs.size() - 1; rmax >= 0; rmax--) {
             int rand = crypto.getRandom(rmax);
-            Address addr = addresses.get(rand);
+            Identity addr = identities.get(rand);
 
             // Put the address at the end into the spot we just took. This way,
             // we are always selecting randomly from a set of unselected peers.
-            addresses.set(rand, addresses.get(rmax));
+            identities.set(rand, identities.get(rmax));
 
             // Don't try to connect to myself.
             if (addr.equals(me)) continue;
@@ -198,24 +198,24 @@ public class Connect<Address, P extends Serializable> implements Connection<Addr
 
         int l = 0;
         while (true) {
-            Address address = peers.peek();
-            if (address == null) {
+            Identity identity = peers.peek();
+            if (identity == null) {
                 break;
             }
 
-            if (peers.connected(address)) {
+            if (peers.connected(identity)) {
                 peers.remove();
                 continue;
             }
 
-            Peer<Address, P> peer = channel.getPeer(address);
+            Peer<Identity, P> peer = channel.getPeer(identity);
 
             if (peer == null) {
                 // TODO clean up properly and fail more gracefully.
                 throw new NullPointerException();
             }
 
-            if (peers.openSession(address, peer)) {
+            if (peers.openSession(identity, peer)) {
                 continue;
             }
 
@@ -237,11 +237,6 @@ public class Connect<Address, P extends Serializable> implements Connection<Addr
 
         finished = true;
         return collector;
-    }
-
-    @Override
-    public Address identity() {
-        return connection.identity();
     }
 
     @Override

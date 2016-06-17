@@ -259,11 +259,6 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         private boolean closed = false;
 
         @Override
-        public Name identity() {
-            return me;
-        }
-
-        @Override
         public void close() throws InterruptedException {
             if (closed) return;
 
@@ -342,10 +337,5 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
     @Override
     public Peer<Name,Payload> getPeer(Name you) {
         return new MediatorClientPeer(you);
-    }
-
-    @Override
-    public Name identity() {
-        return me;
     }
 }

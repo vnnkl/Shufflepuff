@@ -15,9 +15,7 @@ package com.shuffle.p2p;
  *
  * Created by Daniel Krawisz on 2/22/16.
  */
-public interface Connection<Identity> {
-    // Our own identity on this channel. For TCP, this would be a IP address.
-    Identity identity();
+public interface Connection<Address> {
 
     // Once closed, a Connection cannot be reopened. Instead, a new Connection is created
     // by the Channel's open method.

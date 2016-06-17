@@ -258,7 +258,7 @@ class Player<Address> implements Runnable {
         keys.addAll(param.identities.keySet());
 
         Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> conn
-                = new Connect<>(channel, param.init.crypto(), 2 * (1 + param.identities.size()));
+                = new Connect<>(param.me.VerificationKey(), channel, param.init.crypto(), 2 * (1 + param.identities.size()));
 
         // Pause here to ensure that all other instances of the program are connected to the internet.
         Thread.sleep(5000);

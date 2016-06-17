@@ -93,11 +93,6 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
     }
 
     @Override
-    public Address identity() {
-        return inner.identity();
-    }
-
-    @Override
     public Peer<Address, X> getPeer(Address you) {
         Peer<Address, Bytestring> p = inner.getPeer(you);
         if (p == null) return null;
@@ -109,11 +104,6 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
 
         public MarshallConnection(Connection<Address> inner) {
             this.inner = inner;
-        }
-
-        @Override
-        public Address identity() {
-            return inner.identity();
         }
 
         @Override

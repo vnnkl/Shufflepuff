@@ -17,7 +17,6 @@ import com.shuffle.p2p.Peer;
 import com.shuffle.p2p.Session;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -67,11 +66,6 @@ public class MockNetwork<Q, X extends Serializable> {
 
         class MockConnection implements Connection<Q> {
             boolean closed = false;
-
-            @Override
-            public Q identity() {
-                return me;
-            }
 
             @Override
             public void close() throws InterruptedException {
@@ -216,11 +210,6 @@ public class MockNetwork<Q, X extends Serializable> {
         final Q me;
         private final Object lock = new Object();
         private boolean closed = true;
-
-        @Override
-        public Q identity() {
-            return me;
-        }
 
         @Override
         public Peer<Q, X> getPeer(Q you) {

@@ -317,7 +317,7 @@ public class WebsocketServerChannel implements Channel<InetAddress, Bytestring> 
     private class WebsocketConnection implements Connection<InetAddress> {
         private boolean closed = false;
 
-        public InetAddress identity() {
+        public InetAddress address() {
             return me;
         }
 
@@ -410,11 +410,6 @@ public class WebsocketServerChannel implements Channel<InetAddress, Bytestring> 
         if (you.equals(me)) return null;
 
         return peers.get(you);
-    }
-
-    @Override
-    public InetAddress identity() {
-        return me;
     }
 
 }

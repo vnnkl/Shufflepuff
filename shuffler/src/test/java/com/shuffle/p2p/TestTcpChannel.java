@@ -174,11 +174,6 @@ public class TestTcpChannel {
             }
 
             @Override
-            public Integer identity() {
-                return me;
-            }
-
-            @Override
             public void close() throws InterruptedException {
                 conn.close();
             }
@@ -187,11 +182,6 @@ public class TestTcpChannel {
             public boolean closed() throws InterruptedException {
                 return conn.closed();
             }
-        }
-
-        @Override
-        public Integer identity() {
-            return me;
         }
 
         @Override

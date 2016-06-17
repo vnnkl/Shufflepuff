@@ -91,11 +91,6 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
     }
 
     @Override
-    public Identity identity() {
-        return me;
-    }
-
-    @Override
     public Peer<Identity, X> getPeer(Identity you) {
         Address addr = hosts.get(you);
         if (addr == null) return null;
@@ -108,11 +103,6 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
 
         public MappedConnection(Connection<Address> connection) {
             this.connection = connection;
-        }
-
-        @Override
-        public Identity identity() {
-            return me;
         }
 
         @Override
