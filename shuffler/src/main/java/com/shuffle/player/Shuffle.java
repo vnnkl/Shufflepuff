@@ -127,17 +127,12 @@ public class Shuffle {
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
-        parser.accepts("netParams")
-                .requiredUnless("local")
-                .withRequiredArg().ofType(String.class);
+
         parser.accepts("minPeers")
-                .requiredUnless("local")
                 .withRequiredArg().ofType(String.class);
         parser.accepts("rpcuser")
-                .requiredUnless("local")
                 .withRequiredArg().ofType(String.class);
         parser.accepts("rpcpass")
-                .requiredUnless("local")
                 .withRequiredArg().ofType(String.class);
 
         parser.accepts("peers",
@@ -220,14 +215,19 @@ public class Shuffle {
         switch (query) {
             case "btcd" : {
 
-                if (!options.has("netParams") || !options.has("minPeers")
-                        || !options.has("rpcuser") || !options.has("rpcpass")) {
-                    throw new IllegalArgumentException("Missing arguments for btcd");
+                if (!options.has("blockchain")) {
+                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
+                } else if (!options.has("minPeers")) {
+                    throw new IllegalArgumentException("Need to set minPeers parameter (min peers to connect to)");
+                } else if (!options.has("rpcuser")) {
+                    throw new IllegalArgumentException("Need to set rpcuser parameter (rpc server login)");
+                } else if (!options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Need to set rpcpass parameter (rpc server login)");
                 }
 
                 NetworkParameters netParams = null;
 
-                switch ((String)options.valueOf("netParams")) {
+                switch ((String)options.valueOf("blockchain")) {
 
                     case "main" : {
                         netParams = MainNetParams.get();
@@ -251,17 +251,19 @@ public class Shuffle {
                 stream.print("Warning: you have chosen to query address balances over through a " +
                         " third party service.");
 
-                if (!options.has("netParams") || !options.has("minPeers")) {
-                    throw new IllegalArgumentException("Missing netparams or minpeers argument");
-                }
-
-                if (options.has("rpcuser") || options.has("rpcpass")) {
-                    throw new IllegalArgumentException("Wrong argument for blockchain.info");
+                if (!options.has("blockchain")) {
+                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
+                } else if (!options.has("minPeers")) {
+                    throw new IllegalArgumentException("Need to set minPeers parameter (min peers to connect to)");
+                } else if (options.has("rpcuser")) {
+                    throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
+                } else if (options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Blockchain.info does not use a rpcpass parameter");
                 }
 
                 NetworkParameters netParams = null;
 
-                switch ((String)options.valueOf("netParams")) {
+                switch ((String)options.valueOf("blockchain")) {
 
                     case "main" : {
                         netParams = MainNetParams.get();
