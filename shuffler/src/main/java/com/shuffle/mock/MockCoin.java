@@ -37,8 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class MockCoin implements com.shuffle.sim.MockCoin {
     public static class Output implements Serializable {
-        final Address address;
-        final long amountHeld;
+        public final Address address;
+        public final long amountHeld;
 
         public Output(Address address, long amount) {
             if (address == null) throw new NullPointerException();
@@ -73,7 +73,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     /**
      * Created by Daniel Krawisz on 12/8/15.
      */
-    static class MockTransaction implements Transaction, Serializable {
+    public static class MockTransaction implements Transaction, Serializable {
         public final List<Output> inputs = new LinkedList<>();
         public final List<Output> outputs = new LinkedList<>();
         // A number used to represented slight variations in a transaction which would
@@ -269,12 +269,13 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     public Transaction shuffleTransaction(
             final long amount,
             List<VerificationKey> from,
-            Queue<Address> to, Map<VerificationKey,
-            Address> changeAddresses) {
+            Queue<Address> to,
+            Map<VerificationKey, Address> changeAddresses) {
 
         if (amount == 0) throw new IllegalArgumentException();
 
         List<Output> inputs = new LinkedList<>();
+        List<Output> changes = new LinkedList<>();
         List<Output> outputs = new LinkedList<>();
 
         // Are there inputs big enough to make this transaction?
@@ -290,10 +291,12 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
             // If a change address has been provided, add that.
             Address change = changeAddresses.get(key);
-            if (change != null) outputs.add(new Output(change, value - amount));
+            if (change != null) changes.add(new Output(change, value - amount));
         }
 
         for (Address address : to) outputs.add(new Output(address, amount));
+
+        outputs.addAll(changes);
 
         return new MockTransaction(inputs, outputs, 1, this);
     }

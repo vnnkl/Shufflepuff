@@ -65,7 +65,7 @@ public final class MaliciousMachine extends CoinShuffle {
         final DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses) throws IOException, InterruptedException {
 
             DecryptionKey dk = null;
-            if (me != 1) {
+
                 dk = crypto.makeDecryptionKey();
                 alt = crypto.makeDecryptionKey();
 
@@ -82,7 +82,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 for (VerificationKey to : players.values()) {
                     mailbox.send(equivocate.contains(to) ? eq : message, phase.get(), to);
                 }
-            }
+
             return dk;
         }
 

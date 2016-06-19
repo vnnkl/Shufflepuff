@@ -42,44 +42,46 @@ public class Adversary {
 
     private final CoinShuffle shuffle;
     private final SigningKey sk;
-    private final Address addrNew;
+    private final Address anon;
     private final SortedSet<VerificationKey> players;
     private final long amount;
+    private final Address change; // Change address. (can be null)
 
     Adversary(
             long amount,
             SigningKey sk,
             SortedSet<VerificationKey> players,
-            Address addrNew,
+            Address anon,
+            Address change,
             CoinShuffle shuffle) {
 
-        if (sk == null || players == null || shuffle == null || addrNew == null) throw new NullPointerException();
+        if (sk == null || players == null || shuffle == null || anon == null)
+            throw new NullPointerException();
 
         this.amount = amount;
         this.sk = sk;
         this.players = players;
         this.shuffle = shuffle;
-        this.addrNew = addrNew;
+        this.anon = anon;
+        this.change = change;
     }
 
     // Run the protocol in a separate thread and get a future to the final state.
-    private static Future<Summable.SummableElement<Map<SigningKey,
+    private Future<Summable.SummableElement<Map<SigningKey,
             Either<Transaction, Matrix>>>> runProtocolFuture(
 
             final CoinShuffle shuffle,
             final long amount, // The amount to be shuffled per player.
             final SigningKey sk, // The signing key of the current player.
             // The set of players, sorted alphabetically by address.
-            final SortedSet<VerificationKey> players,
-            final Address addrNew,
-            final Address change // Change address. (can be null)
+            final SortedSet<VerificationKey> players
     ) {
         final Chan<Either<Transaction, Matrix>> q = new BasicChan<>();
 
         if (amount <= 0) {
             throw new IllegalArgumentException();
         }
-        if (sk == null || players == null || addrNew == null) {
+        if (sk == null || players == null) {
             throw new NullPointerException();
         }
 
@@ -90,7 +92,7 @@ public class Adversary {
                 try {
                     try {
                         q.send(new Either<Transaction, Matrix>(shuffle.runProtocol(
-                                amount, sk, players, addrNew, change, null
+                                amount, sk, players, anon, change, null
                         ), null));
 
                     } catch (Matrix m) {
@@ -186,7 +188,7 @@ public class Adversary {
     // Return a future that can be composed with others.
     public Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>> turnOn() {
 
-        return runProtocolFuture(shuffle, amount, sk, players, addrNew, null);
+        return runProtocolFuture(shuffle, amount, sk, players);
     }
 
     public SigningKey identity() {

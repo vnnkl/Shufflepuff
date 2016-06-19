@@ -144,7 +144,7 @@ public class InitialState {
         long initialAmount = 0;
         long spend = 0;
         long doubleSpend = 0;
-        boolean change = false; // Whether to make a change address.
+        Address change = null; // A change address.
         int viewpoint = 1;
         boolean mutate = false; // Whether to create a mutated transaction.
 
@@ -270,7 +270,7 @@ public class InitialState {
                 shuffle = new CoinShuffle(messages, crypto, coin);
             }
 
-            return new Adversary(amount, sk, keys, addr, shuffle);
+            return new Adversary(amount, sk, keys, addr, change, shuffle);
         }
 
         // The sort of malicious behavior to be performed by this player, if any.
@@ -470,8 +470,8 @@ public class InitialState {
         return this;
     }
 
-    public InitialState change() {
-        players.getLast().change = true;
+    public InitialState change(Address address) {
+        players.getLast().change = address;
         return this;
     }
 

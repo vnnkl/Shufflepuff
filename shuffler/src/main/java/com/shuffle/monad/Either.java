@@ -26,4 +26,13 @@ public class Either<X, Y> {
         this.first = first;
         this.second = second;
     }
+
+    @Override
+    public String toString() {
+        if (first != null) {
+            return first.toString();
+        }
+
+        return second.toString();
+    }
 }

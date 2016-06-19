@@ -120,13 +120,17 @@ public class CoinShuffle {
             // This will contain the change addresses.
             Map<VerificationKey, Address> changeAddresses = new HashMap<>();
 
-            // Everyone except player 1 creates a new keypair and sends it around to everyone else.
+            // Everyone creates a new keypair and sends it around to everyone else.
+            // Note that the key for player 1 is not actually used; however, player 1
+            // needs to send an announcement message at this point too because he might
+            // have a change address. Therefore he just follows the same procedure as
+            // everyone else.
             dk = broadcastNewKey(changeAddresses);
 
             // Now we wait to receive similar key from everyone else.
             Map<VerificationKey, Message> announcement;
             try {
-                announcement = mailbox.receiveFromMultiple(playerSet(2, N), phase.get());
+                announcement = mailbox.receiveFromMultiple(playerSet(1, N), phase.get());
             } catch (BlameException e) {
                 // might receive blame messages about insufficient funds.
                 phase.set(Phase.Blame);
@@ -221,7 +225,7 @@ public class CoinShuffle {
             }
 
             Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
-            
+
             checkDoubleSpending(t);
 
             mailbox.broadcast(messages.make().attach(sk.sign(t.serialize())), phase.get());
@@ -288,19 +292,17 @@ public class CoinShuffle {
                 throws WaitingException, InterruptedException, IOException {
 
             DecryptionKey dk = null;
-            if (me != 1) {
-                dk = crypto.makeDecryptionKey();
+            dk = crypto.makeDecryptionKey();
 
-                // Broadcast the public key and store it in the set with everyone else's.
-                encryptionKeys.put(vk, dk.EncryptionKey());
-                changeAddresses.put(vk, change);
-                Message message = messages.make().attach(dk.EncryptionKey());
-                if (change != null) {
-                    message.attach(change);
-                }
-
-                mailbox.broadcast(message, phase.get());
+            // Broadcast the public key and store it in the set with everyone else's.
+            encryptionKeys.put(vk, dk.EncryptionKey());
+            changeAddresses.put(vk, change);
+            Message message = messages.make().attach(dk.EncryptionKey());
+            if (change != null) {
+                message = message.attach(change);
             }
+
+            mailbox.broadcast(message, phase.get());
             return dk;
         }
 
@@ -822,7 +824,7 @@ public class CoinShuffle {
 
             // Put all temporary encryption keys into a list and hash the result.
             Message check = messages.make();
-            for (int i = 2; i <= players.size(); i++) {
+            for (int i = 1; i <= players.size(); i++) {
                 check = check.attach(encryptionKeys.get(players.get(i)));
             }
 
@@ -928,6 +930,7 @@ public class CoinShuffle {
     private static void readAnnouncements(Map<VerificationKey, Message> messages,
                            Map<VerificationKey, EncryptionKey> encryptionKeys,
                            Map<VerificationKey, Address> change) throws FormatException {
+
         for (Map.Entry<VerificationKey, Message> entry : messages.entrySet()) {
             VerificationKey key = entry.getKey();
             Message message = entry.getValue();

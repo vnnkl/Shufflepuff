@@ -8,7 +8,26 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.Crypto;
+import com.shuffle.bitcoin.SigningKey;
+import com.shuffle.bitcoin.Transaction;
+import com.shuffle.mock.InsecureRandom;
+import com.shuffle.mock.MockCoin;
+import com.shuffle.mock.MockCrypto;
+import com.shuffle.monad.Either;
+import com.shuffle.player.SessionIdentifier;
+import com.shuffle.protocol.blame.Matrix;
+import com.shuffle.sim.InitialState;
+import com.shuffle.sim.Simulator;
+
+import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Tests for a successful run of the protocol.
@@ -34,5 +53,116 @@ public class TestSuccessfulRun extends TestShuffleMachine {
             log.info("Protocol successful run with " + numPlayer + " players.");
             SuccessfulRun(numPlayer);
         }
+    }
+
+    private static class ChangeTestInput {
+        public final int amount;
+        public final boolean change;
+
+        private ChangeTestInput(int amount, boolean change) {
+            this.amount = amount;
+            this.change = change;
+        }
+    }
+
+    private static class ChangeTestCase {
+        public final int amount;
+        public final ChangeTestInput[] inputs;
+
+        private ChangeTestCase(int amount, ChangeTestInput... inputs) {
+            for (ChangeTestInput input : inputs) {
+                if (input == null || input.amount < amount) throw new IllegalArgumentException();
+            }
+
+            this.amount = amount;
+            this.inputs = inputs;
+        }
+    }
+
+    private static class ChangeTestExpected {
+        public final Address address;
+        public final int expected;
+
+        private ChangeTestExpected(Address address, int expected) {
+            this.address = address;
+            this.expected = expected;
+        }
+    }
+
+    @Test
+    // Test that the resulting transaction has the correct outputs.
+    public void testOutputs() {
+        ChangeTestCase[] tests = new ChangeTestCase[]{
+                new ChangeTestCase(37,
+                        new ChangeTestInput(45, true), new ChangeTestInput(78, true)),
+                new ChangeTestCase(37,
+                        new ChangeTestInput(45, true), new ChangeTestInput(78, false)),
+                new ChangeTestCase(37,
+                        new ChangeTestInput(45, false),
+                        new ChangeTestInput(78, true),
+                        new ChangeTestInput(99, true)),
+        };
+
+        Crypto mc = new MockCrypto(new InsecureRandom(3928));
+
+        int i = 0;
+        for (ChangeTestCase test : tests) {
+            i ++;
+            SessionIdentifier session = SessionIdentifier.TestSession("change test case " + i);
+            InitialState init = new InitialState(session, test.amount, mc);
+
+            // First create the bitcoin mock network.
+            List<ChangeTestExpected> expected = new LinkedList<>();
+            for (ChangeTestInput input : test.inputs) {
+                init.player().initialFunds(input.amount);
+                if (input.change) {
+                    Address addr = mc.makeSigningKey().VerificationKey().address();
+                    expected.add(new ChangeTestExpected(addr, input.amount - test.amount));
+
+                    init.change(addr);
+                }
+            }
+
+            // Now run the simulation.
+
+            // Run the simulation.
+            Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init);
+
+            Assert.assertNotNull(results);
+
+            System.out.println("Got results " + results);
+
+            // All the transactions should be the same, so we only need to get one.
+            // If they are different, this will have resulted in errors being generated
+            // in other tests.
+            MockCoin.MockTransaction t = null;
+            for (Either<Transaction, Matrix> r : results.values()) {
+                t = (MockCoin.MockTransaction)r.first;
+
+                Assert.assertNotNull(t);
+            }
+
+            List<MockCoin.Output> outputs = t.outputs;
+
+            int expectedSize = test.inputs.length + expected.size();
+            Assert.assertTrue("Expected " + expectedSize + " got " + outputs.size(),
+                    outputs.size() == expectedSize);
+            List<MockCoin.Output> anon = outputs.subList(0, test.inputs.length);
+            List<MockCoin.Output> change = outputs.subList(test.inputs.length, expectedSize);
+
+            // The first set of inputs are the anonymous inputs.
+            for (MockCoin.Output output : anon ) {
+                Assert.assertEquals(test.amount, output.amountHeld);
+            }
+
+            // The second set are the change outputs.
+            Iterator<ChangeTestExpected> ex = expected.iterator();
+            for (MockCoin.Output output : change) {
+                ChangeTestExpected next = ex.next();
+                Assert.assertEquals(output.address, next.address);
+                Assert.assertEquals(output.amountHeld, next.expected);
+            }
+        }
+
     }
 }
