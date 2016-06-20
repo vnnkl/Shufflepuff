@@ -1,5 +1,6 @@
 package com.shuffle.player;
 
+import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
@@ -129,7 +130,7 @@ public class Shuffle {
 
 
         parser.accepts("minPeers")
-                .withRequiredArg().ofType(String.class);
+                .withRequiredArg().ofType(Long.class).defaultsTo(1L);
         parser.accepts("rpcuser")
                 .withRequiredArg().ofType(String.class);
         parser.accepts("rpcpass")
@@ -240,11 +241,13 @@ public class Shuffle {
                     }
                 }
 
-                int minPeers = (int)options.valueOf("minPeers");
+                Long minPeers = (Long) options.valueOf("minPeers");
                 String rpcuser = (String)options.valueOf("rpcuser");
                 String rpcpass = (String)options.valueOf("rpcpass");
 
-                coin = new Btcd(netParams, minPeers, rpcuser, rpcpass);
+                int minPeersInt = Ints.checkedCast(minPeers);
+
+                coin = new Btcd(netParams, minPeersInt, rpcuser, rpcpass);
                 break;
             }
             case "blockchain.info" : {
@@ -276,9 +279,11 @@ public class Shuffle {
                     }
                 }
 
-                int minPeers = (int)options.valueOf("minPeers");
+                Long minPeers = (Long)options.valueOf("minPeers");
 
-                coin = new BlockchainDotInfo(netParams, minPeers);
+                int minPeersInt = Ints.checkedCast(minPeers);
+
+                coin = new BlockchainDotInfo(netParams, minPeersInt);
                 break;
             }
             case "mock" : {
