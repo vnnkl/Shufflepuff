@@ -1,10 +1,13 @@
 package com.shuffle.player;
 
+import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
+import com.shuffle.bitcoin.blockchain.Btcd;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
@@ -12,6 +15,9 @@ import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.monad.Either;
 
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -122,6 +128,14 @@ public class Shuffle {
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
+
+        parser.accepts("minBitcoinNetworkPeers")
+                .withRequiredArg().ofType(Long.class).defaultsTo(5L);
+        parser.accepts("rpcuser")
+                .withRequiredArg().ofType(String.class);
+        parser.accepts("rpcpass")
+                .withRequiredArg().ofType(String.class);
+
         parser.accepts("peers",
                 "The peers we will be connecting to, formatted as a JSON array.")
                 .withRequiredArg().ofType(String.class);
@@ -201,14 +215,75 @@ public class Shuffle {
         String query = (String)options.valueOf("query");
         switch (query) {
             case "btcd" : {
-                // TODO
-                coin = null;
+
+                if (!options.has("blockchain")) {
+                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
+                } else if (!options.has("minBitcoinNetworkPeers")) {
+                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
+                } else if (!options.has("rpcuser")) {
+                    throw new IllegalArgumentException("Need to set rpcuser parameter (rpc server login)");
+                } else if (!options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Need to set rpcpass parameter (rpc server login)");
+                }
+
+                NetworkParameters netParams = null;
+
+                switch ((String)options.valueOf("blockchain")) {
+
+                    case "main" : {
+                        netParams = MainNetParams.get();
+                        break;
+                    }
+
+                    case "test" : {
+                        netParams = TestNet3Params.get();
+                        break;
+                    }
+                }
+
+                Long minBitcoinNetworkPeers = (Long) options.valueOf("minBitcoinNetworkPeers");
+                String rpcuser = (String)options.valueOf("rpcuser");
+                String rpcpass = (String)options.valueOf("rpcpass");
+
+                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
+
+                coin = new Btcd(netParams, minBitcoinNetworkPeersInt, rpcuser, rpcpass);
                 break;
             }
             case "blockchain.info" : {
                 stream.print("Warning: you have chosen to query address balances over through a " +
                         " third party service.");
-                coin = null;
+
+                if (!options.has("blockchain")) {
+                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
+                } else if (!options.has("minBitcoinNetworkPeers")) {
+                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
+                } else if (options.has("rpcuser")) {
+                    throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
+                } else if (options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Blockchain.info does not use a rpcpass parameter");
+                }
+
+                NetworkParameters netParams = null;
+
+                switch ((String)options.valueOf("blockchain")) {
+
+                    case "main" : {
+                        netParams = MainNetParams.get();
+                        break;
+                    }
+
+                    case "test" : {
+                        netParams = TestNet3Params.get();
+                        break;
+                    }
+                }
+
+                Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
+
+                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
+
+                coin = new BlockchainDotInfo(netParams, minBitcoinNetworkPeersInt);
                 break;
             }
             case "mock" : {
