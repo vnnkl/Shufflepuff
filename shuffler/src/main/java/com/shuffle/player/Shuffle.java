@@ -129,8 +129,8 @@ public class Shuffle {
                 .defaultsTo(1000L);
 
 
-        parser.accepts("minPeers")
-                .withRequiredArg().ofType(Long.class).defaultsTo(1L);
+        parser.accepts("minBitcoinNetworkPeers")
+                .withRequiredArg().ofType(Long.class).defaultsTo(5L);
         parser.accepts("rpcuser")
                 .withRequiredArg().ofType(String.class);
         parser.accepts("rpcpass")
@@ -218,8 +218,8 @@ public class Shuffle {
 
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (!options.has("minPeers")) {
-                    throw new IllegalArgumentException("Need to set minPeers parameter (min peers to connect to)");
+                } else if (!options.has("minBitcoinNetworkPeers")) {
+                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (!options.has("rpcuser")) {
                     throw new IllegalArgumentException("Need to set rpcuser parameter (rpc server login)");
                 } else if (!options.has("rpcpass")) {
@@ -241,13 +241,13 @@ public class Shuffle {
                     }
                 }
 
-                Long minPeers = (Long) options.valueOf("minPeers");
+                Long minBitcoinNetworkPeers = (Long) options.valueOf("minBitcoinNetworkPeers");
                 String rpcuser = (String)options.valueOf("rpcuser");
                 String rpcpass = (String)options.valueOf("rpcpass");
 
-                int minPeersInt = Ints.checkedCast(minPeers);
+                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
 
-                coin = new Btcd(netParams, minPeersInt, rpcuser, rpcpass);
+                coin = new Btcd(netParams, minBitcoinNetworkPeersInt, rpcuser, rpcpass);
                 break;
             }
             case "blockchain.info" : {
@@ -256,8 +256,8 @@ public class Shuffle {
 
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (!options.has("minPeers")) {
-                    throw new IllegalArgumentException("Need to set minPeers parameter (min peers to connect to)");
+                } else if (!options.has("minBitcoinNetworkPeers")) {
+                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
                 } else if (options.has("rpcpass")) {
@@ -279,11 +279,11 @@ public class Shuffle {
                     }
                 }
 
-                Long minPeers = (Long)options.valueOf("minPeers");
+                Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
 
-                int minPeersInt = Ints.checkedCast(minPeers);
+                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
 
-                coin = new BlockchainDotInfo(netParams, minPeersInt);
+                coin = new BlockchainDotInfo(netParams, minBitcoinNetworkPeersInt);
                 break;
             }
             case "mock" : {
