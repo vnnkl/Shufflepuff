@@ -21,6 +21,7 @@ dependencies {
     compile 'org.glassfish.tyrus.tests:tyrus-test-tools:1.12'
     compile 'junit:junit:4.12'
     compile 'net.sf.jopt-simple:jopt-simple:5.0.2'
+    compile group: 'org.jitsi', name: 'org.otr4j', version: '0.22'
 }
 
 project.pmd.ignoreFailures = true
