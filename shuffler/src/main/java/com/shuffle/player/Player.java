@@ -28,8 +28,8 @@ import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Phase;
 import com.shuffle.protocol.blame.Matrix;
 
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -134,6 +134,7 @@ class Player implements Runnable {
         } catch (InterruptedException | IOException e) {
             System.out.println("Error in player " + sk + ": " + e.getMessage());
         }
+
     }
 
     public String play() throws InterruptedException, IOException {
@@ -274,7 +275,7 @@ class Player implements Runnable {
             // (theoretically not all other players could have provided logically equivalent
             // evidence against him, so we just need sufficient evidence.)
             Evidence sufficient = null;
-            f: for (Evidence evidence : accusers.values()) {
+            f : for (Evidence evidence : accusers.values()) {
                 switch (evidence.reason) {
                     // TODO all cases other than default are not complete.
                     case DoubleSpend:
