@@ -1,7 +1,9 @@
 /**
+ *
  * Copyright © 2016 Mycelium.
  * Use of this source code is governed by an ISC
  * license that can be found in the LICENSE file.
+ *
  */
 
 package com.shuffle.player;
@@ -132,7 +134,6 @@ class Player implements Runnable {
         } catch (InterruptedException | IOException e) {
             System.out.println("Error in player " + sk + ": " + e.getMessage());
         }
-
     }
 
     public String play() throws InterruptedException, IOException {

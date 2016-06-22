@@ -13,7 +13,7 @@ import com.shuffle.p2p.Bytestring;
 import java.io.Serializable;
 
 /**
- * A representation of a BitcoinCrypto or other cryptocurrency transaction.
+ * A representation of a Bitcoin or other cryptocurrency transaction.
  *
  * Created by Daniel Krawisz on 12/26/15.
  */
