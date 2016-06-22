@@ -13,12 +13,10 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
     private final Channel<Address, X> inner;
     private final Map<Identity, Address> hosts;
     private final Map<Address, Identity> inverse = new HashMap<>();
-    private final Identity me;
 
-    public MappedChannel(Channel<Address, X> inner, Map<Identity, Address> hosts, Identity me) {
+    public MappedChannel(Channel<Address, X> inner, Map<Identity, Address> hosts) {
         this.inner = inner;
         this.hosts = hosts;
-        this.me = me;
 
         for (Map.Entry<Identity, Address> e : hosts.entrySet()) {
             if (inverse.containsKey(e.getValue())) {

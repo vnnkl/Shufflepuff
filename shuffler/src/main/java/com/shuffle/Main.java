@@ -59,7 +59,14 @@ public class Main {
                 default: {
 
                     OptionParser parser = getBaseOptionsParser();
-                    OptionSet options = parser.parse(args);
+                    OptionSet options;
+
+                    try {
+                        options = parser.parse(args);
+                    } catch (Exception e) {
+                        System.out.println(e.getMessage());
+                        return;
+                    }
 
                     if (options == null) {
                         parser.printHelpOn(System.out);

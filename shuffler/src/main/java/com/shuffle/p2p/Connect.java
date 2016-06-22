@@ -145,21 +145,27 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
     private final Connection<Identity> connection;
     private final Collector<Identity, P> collector;
     private final Crypto crypto;
-    private final Identity me;
 
     private boolean finished = false;
 
-    public Connect(Identity me, Channel<Identity, P> channel, Crypto crypto, int bloop) throws InterruptedException {
+    public Connect(Channel<Identity, P> channel, Crypto crypto)
+            throws InterruptedException {
+
+        this(channel, crypto, 100);
+    }
+
+    public Connect(Channel<Identity, P> channel, Crypto crypto, int capacity)
+            throws InterruptedException {
+
         if (channel == null || crypto == null) throw new NullPointerException();
 
-        collector = new Collector<>(new BasicInbox<Identity, P>(bloop));
+        collector = new Collector<>(new BasicInbox<Identity, P>(capacity));
 
         connection = channel.open(collector);
-        if (connection == null || me == null) throw new IllegalArgumentException();
+        if (connection == null ) throw new IllegalArgumentException();
 
         this.channel = channel;
         this.crypto = crypto;
-        this.me = me;
     }
 
     // Connect to all peers; remote peers can be initiating connections to us as well.
@@ -167,7 +173,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
             SortedSet<Identity> addrs,
             int maxRetries) throws IOException, InterruptedException {
 
-        if (me == null || addrs == null) throw new NullPointerException();
+        if (addrs == null) throw new NullPointerException();
 
         if (finished) return null;
 
@@ -189,7 +195,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
             identities.set(rand, identities.get(rmax));
 
             // Don't try to connect to myself.
-            if (addr.equals(me)) continue;
+            //if (addr.equals(me)) continue;
 
             peers.queue(addr);
         }

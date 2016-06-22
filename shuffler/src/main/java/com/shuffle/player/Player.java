@@ -15,8 +15,12 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Chan;
+import com.shuffle.chan.packet.Packet;
+import com.shuffle.chan.packet.Signed;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
+import com.shuffle.p2p.Collector;
+import com.shuffle.p2p.Connect;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.Mailbox;
 import com.shuffle.protocol.blame.Evidence;
@@ -27,6 +31,7 @@ import com.shuffle.protocol.blame.Matrix;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -39,7 +44,7 @@ import java.util.TreeSet;
  *
  * Created by Daniel Krawisz on 2/1/16.
  */
-class Player<Identity> implements Runnable {
+class Player implements Runnable {
     private static final Logger log = LogManager.getLogger(Player.class);
 
     private final com.shuffle.chan.packet.SessionIdentifier session;
@@ -49,6 +54,10 @@ class Player<Identity> implements Runnable {
     private final Coin coin;
 
     private final Crypto crypto;
+
+    private final Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel;
+
+    private final SortedSet<VerificationKey> addrs;
 
     private final long time; // The time at which the join is scheduled to happen.
 
@@ -60,16 +69,18 @@ class Player<Identity> implements Runnable {
     Player(
             SigningKey sk,
             SessionIdentifier session,
-            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
-            Crypto crypto,
             Address anon,
             Address change,
+            SortedSet<VerificationKey> addrs,
             long time,
             long amount,
-            long timeout
+            long timeout,
+            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
+            Crypto crypto,
+            Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel
     ) {
-        if (sk == null || coin == null || session == null
-                || crypto == null || anon == null || change == null) {
+        if (sk == null || coin == null || session == null || addrs == null
+                || crypto == null || anon == null || change == null || channel == null) {
             throw new NullPointerException();
         }
         this.session = session;
@@ -81,20 +92,24 @@ class Player<Identity> implements Runnable {
         this.anon = anon;
         this.change = change;
         this.timeout = timeout;
+        this.channel = channel;
+        this.addrs = addrs;
     }
 
     // If we want to run the protocol without a change address.
     Player(
             SigningKey sk,
             SessionIdentifier session,
-            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
-            Crypto crypto,
             Address anon,
+            SortedSet<VerificationKey> addrs,
             long time,
             long amount,
-            long timeout
+            long timeout,
+            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
+            Crypto crypto,
+            Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel
     ) {
-        if (sk == null || coin == null || session == null
+        if (sk == null || coin == null || session == null || channel == null
                 || crypto == null || anon == null) {
             throw new NullPointerException();
         }
@@ -107,24 +122,56 @@ class Player<Identity> implements Runnable {
         this.anon = anon;
         this.timeout = timeout;
         change = null;
+        this.channel = channel;
+        this.addrs = addrs;
     }
 
     @Override
     public void run() {
+        // Open channel.
+        try {
+            play();
+        } catch (InterruptedException | IOException e) {
+            System.out.println("Error in player " + sk + ": " + e.getMessage());
+        }
+        
+    }
 
+    public String play() throws InterruptedException, IOException {
+
+        // Wait until the appointed time.
+        Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> connect;
+        Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector;
+
+        connect = new Connect<>(channel, crypto);
+        Thread.sleep(time - System.currentTimeMillis());
+
+        // Remove me.
+        SortedSet<VerificationKey> connectTo = new TreeSet<>();
+        connectTo.addAll(addrs);
+        connectTo.remove(sk.VerificationKey());
+
+        // Begin connecting to all peers.
+        collector = connect.connect(connectTo, 3);
+
+        // Run the protocol.
+        new Messages(session, sk, collector.connected, collector.inbox);
+
+        // TODO
+        return "Must return some information here...";
     }
 
     public Transaction coinShuffle(
-            Set<Identity> identities,
-            Channel<Identity, Bytestring> channel,
-            Map<Identity, VerificationKey> keys, // Can be null.
+            Set<VerificationKey> identities,
+            Channel<VerificationKey, Bytestring> channel,
+            Map<VerificationKey, VerificationKey> keys, // Can be null.
             MessageFactory messages,
             Chan<Phase> chan
     ) throws ResetMessage {
 
         // Start by making connections to all the identies.
-        for (Identity identity : identities) {
-            channel.getPeer(identity);
+        for (VerificationKey VerificationKey : identities) {
+            channel.getPeer(VerificationKey);
         }
 
         SortedSet<VerificationKey> players = new TreeSet<>();

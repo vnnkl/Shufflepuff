@@ -197,7 +197,7 @@ public class TestConnect {
         for (Integer i : addresses) {
             Channel<Integer, String> channel = mock.node(i);
             Assert.assertNotNull(channel);
-            Connect<Integer, String> conn = new Connect<>(i, channel, crypto, 10);
+            Connect<Integer, String> conn = new Connect<>(channel, crypto, 10);
             connections.put(i, conn);
         }
 
