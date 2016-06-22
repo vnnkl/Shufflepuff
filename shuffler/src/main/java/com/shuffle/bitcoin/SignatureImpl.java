@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * Created by constantin on 17.05.16.
  */
-public class SignatureImpl implements Signature, Serializable {
+public class SignatureImpl implements Serializable {
 
    //signed bitcoin transaction
    ECKey.ECDSASignature signature;

@@ -2,7 +2,6 @@ package com.shuffle.bitcoin;
 
 import com.shuffle.bitcoin.impl.DecryptionKeyImpl;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
-import com.shuffle.protocol.InvalidImplementationError;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
@@ -223,7 +222,7 @@ public class BitcoinCrypto implements Crypto {
     }
 
     @Override
-    public int getRandom(int n) throws InvalidImplementationError {
+    public int getRandom(int n) {
          return sr.nextInt(n);
     }
 

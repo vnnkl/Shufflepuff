@@ -2,18 +2,11 @@ package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.BitcoinCrypto;
-import com.shuffle.bitcoin.Signature;
-import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.blockchain.Bitcoin;
-import com.shuffle.protocol.message.Packet;
+import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.ECKey.ECDSASignature;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.store.BlockStoreException;
 
-import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -34,23 +27,11 @@ public class VerificationKeyImpl implements VerificationKey {
       return Arrays.toString(this.vKey);
    }
 
+
+
    @Override
-   public boolean verify(Transaction t, Signature sig) {
-      Bitcoin.Transaction tj = (Bitcoin.Transaction) t;
-      try {
-         return ECKey.verify(tj.bitcoinj().bitcoinSerialize(), (ECDSASignature) sig, vKey);
-
-      } catch (BlockStoreException | IOException e) {
-         e.printStackTrace();
-      }
-
+   public boolean verify(Bytestring payload, Bytestring signature) {
       return false;
-   }
-
-   @Override
-   public boolean verify(Packet packet, Signature sig) {
-      String pinput = packet.toString();
-      return ecKey.verify(Sha256Hash.twiceOf(pinput.getBytes()), (ECDSASignature) sig);
    }
 
    @Override

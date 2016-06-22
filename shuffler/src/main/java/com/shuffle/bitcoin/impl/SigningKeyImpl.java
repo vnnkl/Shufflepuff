@@ -1,20 +1,11 @@
 package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.BitcoinCrypto;
-import com.shuffle.bitcoin.Signature;
-import com.shuffle.bitcoin.SignatureImpl;
 import com.shuffle.bitcoin.SigningKey;
-import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.blockchain.Bitcoin;
-import com.shuffle.protocol.message.Packet;
+import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.store.BlockStoreException;
-
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Created by conta on 10.03.16.
@@ -37,9 +28,13 @@ public class SigningKeyImpl implements SigningKey {
       return new VerificationKeyImpl(signingKey.getPubKey());
    }
 
-
    @Override
-   public Signature makeSignature(Transaction t) {
+   public Bytestring sign(Bytestring string) {
+      return null;
+   }
+
+   /**
+   @Override private Signature makeSignature(Transaction t) {
       SignatureImpl signature1;
       signature1 = null;
       try {
@@ -62,7 +57,7 @@ public class SigningKeyImpl implements SigningKey {
       byte[] signed = signature.encodeToDER();
       SignatureImpl signature1 = new SignatureImpl(signed);
       return signature1;
-   }
+   } **/
 
 
    @Override
