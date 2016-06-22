@@ -24,9 +24,9 @@ import com.shuffle.p2p.Connect;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.Mailbox;
 import com.shuffle.protocol.blame.Evidence;
-import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Phase;
+import com.shuffle.protocol.blame.Matrix;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -274,8 +274,7 @@ class Player implements Runnable {
             // (theoretically not all other players could have provided logically equivalent
             // evidence against him, so we just need sufficient evidence.)
             Evidence sufficient = null;
-            f:
-            for (Evidence evidence : accusers.values()) {
+            f: for (Evidence evidence : accusers.values()) {
                 switch (evidence.reason) {
                     // TODO all cases other than default are not complete.
                     case DoubleSpend:
