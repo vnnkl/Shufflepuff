@@ -423,7 +423,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     public class OtrPeer extends FundamentalPeer<Address, Bytestring> {
 
         Peer<Address, Bytestring> peer;
-        //SendClient sendClient;
 
         public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
             super(identity);
@@ -463,7 +462,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             @Override
             public synchronized boolean send(Bytestring message) {
                 try {
-                    // return session.send(message);
                     sendClient.send("recipient", new String(message.bytes));
                     return true;
                 } catch (OtrException e) {

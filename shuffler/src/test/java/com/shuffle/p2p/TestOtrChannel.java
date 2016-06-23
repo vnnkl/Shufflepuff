@@ -83,11 +83,39 @@ public class TestOtrChannel {
         Peer<String, Bytestring> clientPeer = otrClient.getPeer("server");
         Session<String, Bytestring> clientSession = clientPeer.openSession(clientSend);
 
+        Peer<String, Bytestring> serverPeer = otrServer.getPeer("client");
+        // serverSession is null
+        Session<String, Bytestring> serverSession = serverPeer.openSession(serverSend);
+
+        /*
+        Simply sending a test message, without the initialization string -- this works.
         String message = "shufflepuff";
         Bytestring bytestring = new Bytestring(message.getBytes());
         Boolean clientSent = clientSession.send(bytestring);
         Assert.assertTrue(clientSent);
         Assert.assertEquals(serverMessage, message);
+         */
+
+
+        // Sending with initialization string "query"
+        String query = "<p>?OTRv23?\n" +
+                "<span style=\"font-weight: bold;\">Bob@Wonderland/</span> has requested an <a href=\"http://otr.cypherpunks.ca/\">Off-the-Record private conversation</a>. However, you do not have a plugin to support that.\n" +
+                "See <a href=\"http://otr.cypherpunks.ca/\">http://otr.cypherpunks.ca/</a> for more information.</p>";
+        Bytestring bytestring = new Bytestring(query.getBytes());
+        clientSession.send(bytestring);
+
+        otrServer.sendClient.pollReceivedMessage();
+        otrClient.sendClient.pollReceivedMessage();
+        otrServer.sendClient.pollReceivedMessage();
+        otrClient.sendClient.pollReceivedMessage();
+        otrServer.sendClient.pollReceivedMessage();
+
+        String message = "hey, encryption test";
+
+        Bytestring reply = new Bytestring(message.getBytes());
+        serverSession.send(reply);
+
+        Assert.assertEquals(message, clientMessage);
     }
 
     @After
