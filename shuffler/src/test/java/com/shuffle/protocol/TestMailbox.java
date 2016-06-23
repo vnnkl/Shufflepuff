@@ -196,7 +196,7 @@ public class TestMailbox {
     @Test()
     public void testReceiveFrom()
             throws InvalidParticipantSetException, InterruptedException,
-            BlameException, FormatException, WaitingException, IOException {
+            BlameException, FormatException, TimeoutException, IOException {
 
         ReceiveFromTestCase[] tests = new ReceiveFromTestCase[]{
                 // time out exception test case.
@@ -224,7 +224,7 @@ public class TestMailbox {
             try {
                 new Mailbox(sk.VerificationKey(), players, network.messages(sk.VerificationKey())
                 ).receiveFrom(new MockVerificationKey(test.requested), test.phase);
-            } catch (WaitingException e) {
+            } catch (TimeoutException e) {
                 if (test.packet != null) {
                     Assert.fail("Waiting exception caught when not expected.");
                 }
@@ -343,7 +343,7 @@ public class TestMailbox {
 
             try {
                 mailbox.receiveFrom(disorderedSender, Phase.Shuffling);
-            } catch (WaitingException e) {
+            } catch (TimeoutException e) {
                 Assert.fail();
             }
 
@@ -365,7 +365,7 @@ public class TestMailbox {
                 if (test.timeoutExpected) {
                     Assert.fail("Failed to throw WaitingException in test case " + i);
                 }
-            } catch (WaitingException e) {
+            } catch (TimeoutException e) {
                 if (!test.timeoutExpected) {
                     Assert.fail();
                 }

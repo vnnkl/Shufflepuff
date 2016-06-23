@@ -22,7 +22,7 @@ import com.shuffle.monad.SummableMaps;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.InvalidParticipantSetException;
-import com.shuffle.protocol.WaitingException;
+import com.shuffle.protocol.TimeoutException;
 import com.shuffle.protocol.blame.Matrix;
 
 import java.io.IOException;
@@ -98,7 +98,7 @@ public class Adversary {
                     } catch (Matrix m) {
                         q.send(new Either<Transaction, Matrix>(null, m));
                     } catch (IOException
-                            | WaitingException
+                            | TimeoutException
                             | FormatException
                             | CoinNetworkException
                             | InvalidParticipantSetException e) {

@@ -37,7 +37,7 @@ import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.InvalidParticipantSetException;
 import com.shuffle.protocol.message.Phase;
-import com.shuffle.protocol.WaitingException;
+import com.shuffle.protocol.TimeoutException;
 import com.shuffle.protocol.blame.Matrix;
 
 import java.io.IOException;
@@ -284,7 +284,7 @@ class Player<Address> implements Runnable {
             );
         } catch (IOException // TODO there should be an exception which says that the internet connection failed.
                 | CoinNetworkException // Indicates a problem with the Bitcoin network.
-                | WaitingException // Indicates a lost
+                | TimeoutException // Indicates a lost
                 | FormatException // TODO also all improperly formatted messages are ignored.
                 | InvalidParticipantSetException e) {
             // TODO handle these problems appropriately.

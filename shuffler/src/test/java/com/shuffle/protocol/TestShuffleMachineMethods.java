@@ -406,7 +406,7 @@ public class TestShuffleMachineMethods {
     }
 
     @Test
-    public void testDecryptAll() throws WaitingException, InterruptedException, IOException {
+    public void testDecryptAll() throws TimeoutException, InterruptedException, IOException {
 
         MockCrypto crypto = new MockCrypto(new InsecureRandom(56));
 

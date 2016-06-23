@@ -19,6 +19,10 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.monad.Either;
+import com.shuffle.monad.NaturalSummableFuture;
+import com.shuffle.monad.SummableFuture;
+import com.shuffle.monad.SummableFutureZero;
+import com.shuffle.monad.SummableMaps;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
@@ -28,7 +32,6 @@ import com.shuffle.p2p.TcpChannel;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
-import org.glassfish.grizzly.threadpool.FixedThreadPool;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -40,14 +43,15 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -384,7 +388,7 @@ public class Shuffle {
             throw new IllegalArgumentException("Could not read " + options.valueOf("peers") + " as json array.");
         }
 
-        SortedSet<String> checkDuplicate = new TreeSet<>();
+        SortedSet<String> checkDuplicateAddress = new TreeSet<>();
         for (int i = 1; i <= jsonPeers.size(); i ++) {
             JSONObject o;
             try {
@@ -401,6 +405,11 @@ public class Shuffle {
             }
             if (addr == null) {
                 throw new IllegalArgumentException("Peer missing field \"address\".");
+            }
+            if (checkDuplicateAddress.contains(addr)) {
+                throw new IllegalArgumentException("Duplicate address.");
+            } else {
+                checkDuplicateAddress.add(addr);
             }
 
             VerificationKey vk;
@@ -531,7 +540,6 @@ public class Shuffle {
             }
         }
 
-
     }
 
     private Player readPlayer(
@@ -574,7 +582,7 @@ public class Shuffle {
         keys.add(vk);
         peers.put(vk, new Either<InetSocketAddress, Integer>(null, id));
 
-        Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> chan =
+        Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
             new MappedChannel<>(
                 new Multiplexer<>(
                     new MarshallChannel<>(
@@ -585,18 +593,10 @@ public class Shuffle {
                         mock.node(id)),
                     peers);
 
-        if (changeAddress == null) {
-            return new Player(
-                    sk, session, anonAddress, 
-                    keys, time, amount, timeout, 
-                    coin, crypto, chan);
-        } else {
-            return new Player(
-                    sk, session, anonAddress, 
-                    changeAddress, keys, time, 
-                    amount, timeout, coin, 
-                    crypto, chan);
-        }
+        return new Player(
+                sk, session, anonAddress,
+                changeAddress, keys, time,
+                amount, coin, crypto, channel, executor);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -612,6 +612,32 @@ public class Shuffle {
         } catch (ClassCastException e) {
             throw new IllegalArgumentException("Could not parse json object " + ar + ".");
         }
+    }
+
+    public Collection<Player.Report> cycle()
+            throws IOException, InterruptedException, ExecutionException {
+
+        if (local.size() == 1) {
+            for (Player p : local) {
+                Collection<Player.Report> reports = new HashSet<>();
+                reports.add(p.play());
+                return reports; // Only one here, so we can return immediately.
+            }
+        }
+
+        // Construct the future which represents all players' results.
+        SummableFuture<Map<VerificationKey, Player.Report>> future
+                = new SummableFutureZero<>(
+                new SummableMaps<VerificationKey, Player.Report>());
+
+        // Start the connection (this must be done after all Channel objects have been created
+        // because everyone must be connected to the internet at the time they attempt to start
+        // connecting to one another.
+        for (Player p : local) {
+            future = future.plus(new NaturalSummableFuture<>(p.playConcurrent()));
+        }
+
+        return future.get().values();
     }
 
     public static void main(String[] opts) throws IOException {
@@ -644,6 +670,16 @@ public class Shuffle {
             return;
         }
 
-        System.out.println("Options check out ok!");
+        Collection<Player.Report> reports;
+        try {
+            reports = shuffle.cycle();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        for (Player.Report report : reports) {
+            System.out.println(report.toString());
+        }
     }
 }
