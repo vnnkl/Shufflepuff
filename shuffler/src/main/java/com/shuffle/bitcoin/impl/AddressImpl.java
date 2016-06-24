@@ -10,25 +10,52 @@ import org.bitcoinj.core.AddressFormatException;
  */
 public class AddressImpl implements Address {
 
-   private final org.bitcoinj.core.Address address;
+   org.bitcoinj.core.Address address;
+   String encrypted;
+   boolean isEncrypted;
 
    public AddressImpl(org.bitcoinj.core.Address address) {
-      this.address = address;
-   }
-
-   public AddressImpl(String address) {
       BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
       org.bitcoinj.core.Address address1 = null;
       try {
-         address1 = new org.bitcoinj.core.Address(bitcoinCrypto.getParams(), address);
+         address1 = new org.bitcoinj.core.Address(bitcoinCrypto.getParams(), address.toString());
       } catch (AddressFormatException e) {
+         // if it fails we store in encrypted
+         this.encrypted = address1.toString();
+         this.isEncrypted = false;
          e.printStackTrace();
       }
       this.address = address1;
+      this.isEncrypted = false;
+   }
+
+   public AddressImpl(String address, boolean encrypted) {
+      if (encrypted){
+            this.encrypted = address;
+            this.isEncrypted = true;
+      }
+      else {
+         BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
+         org.bitcoinj.core.Address address1 = null;
+         try {
+            address1 = new org.bitcoinj.core.Address(bitcoinCrypto.getParams(), address);
+         } catch (AddressFormatException e) {
+            e.printStackTrace();
+         }
+         this.address = address1;
+         this.isEncrypted = false;
+      }
    }
 
    public String toString() {
+      if (this.isEncrypted){
+       return encrypted;
+      }
       return this.address.toString();
+   }
+
+   public boolean isEncrypted(){
+      return isEncrypted;
    }
 
    @Override
@@ -36,6 +63,6 @@ public class AddressImpl implements Address {
       if (!(o instanceof AddressImpl)) {
          throw new IllegalArgumentException("unable to compare with other address");
       }
-      return address.compareTo((new AddressImpl(o.toString())).address);
+      return address.compareTo((new AddressImpl(o.toString(),false)).address);
    }
 }

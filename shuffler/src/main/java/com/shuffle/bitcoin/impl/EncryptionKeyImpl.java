@@ -15,7 +15,6 @@ import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
 
 import javax.crypto.Cipher;
 
@@ -56,7 +55,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
 
    public String toString() {
       // return this.encryptionKey.getPublicKeyAsHex();
-      return Arrays.toString(publicKey.getEncoded());
+      return org.spongycastle.util.encoders.Hex.toHexString(publicKey.getEncoded());
    }
 
    @Override
@@ -75,7 +74,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
          cipher.init(Cipher.ENCRYPT_MODE, publicKey);
          byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
          byte[] encrypted = cipher.doFinal(bytes);
-         add = new AddressImpl(Hex.encodeHexString(encrypted));
+         add = new AddressImpl(Hex.encodeHexString(encrypted),true);
       } catch (Exception e) {
          e.printStackTrace();
 

@@ -70,7 +70,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
       java.lang.String input = m.toString();
       AddressImpl returnAddress = null;
       if (bitcoinCrypto.isValidAddress(input)) {
-         return new AddressImpl(input);
+         return new AddressImpl(input,true);
       } else {
          try {
             KeyFactory kf = KeyFactory.getInstance("EC");
@@ -81,7 +81,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
             byte[] decrypted = cipher.doFinal(bytes);
-            returnAddress = new AddressImpl(Hex.toHexString(decrypted));
+            returnAddress = new AddressImpl(Hex.toHexString(decrypted),false);
 
          } catch (Exception e) {
             e.printStackTrace();
