@@ -31,7 +31,9 @@ public class VerificationKeyImpl implements VerificationKey {
 
    @Override
    public boolean verify(Bytestring payload, Bytestring signature) {
-      return false;
+      ECKey.ECDSASignature ecdsaSignature;
+      ecdsaSignature = ECKey.ECDSASignature.decodeFromDER(signature.bytes);
+      return ECKey.verify(payload.bytes,ecdsaSignature,vKey);
    }
 
    @Override

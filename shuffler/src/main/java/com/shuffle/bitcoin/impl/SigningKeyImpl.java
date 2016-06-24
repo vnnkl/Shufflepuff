@@ -6,6 +6,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Sha256Hash;
 
 /**
  * Created by conta on 10.03.16.
@@ -30,7 +31,8 @@ public class SigningKeyImpl implements SigningKey {
 
    @Override
    public Bytestring sign(Bytestring string) {
-      return null;
+      ECKey.ECDSASignature ecdsaSignature = signingKey.sign(Sha256Hash.twiceOf(string.bytes));
+      return new Bytestring(ecdsaSignature.encodeToDER());
    }
 
    /**
