@@ -4,6 +4,9 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.chan.Send;
 import com.shuffle.mock.MockNetwork;
 
+import net.java.otr4j.OtrException;
+import net.java.otr4j.session.SessionStatus;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,6 +27,7 @@ public class TestOtrChannel {
     String serverMessage;
     Send<Bytestring> clientSend;
     Send<Bytestring> serverSend;
+    Session<String, Bytestring> serverSession;
 
     @Before
     public void setup() {
@@ -37,6 +41,11 @@ public class TestOtrChannel {
             @Override
             public boolean send(Bytestring bytestring) throws InterruptedException {
                 TestOtrChannel.this.clientMessage = new String(bytestring.bytes);
+                try {
+                    otrClient.sendClient.receive("server", new String(bytestring.bytes));
+                } catch (OtrException e) {
+                    return false;
+                }
                 return true;
             }
 
@@ -57,6 +66,11 @@ public class TestOtrChannel {
             @Override
             public boolean send(Bytestring bytestring) throws InterruptedException {
                 TestOtrChannel.this.serverMessage = new String(bytestring.bytes);
+                try {
+                    otrServer.sendClient.receive("client", new String(bytestring.bytes));
+                } catch (OtrException e) {
+                    return false;
+                }
                 return true;
             }
 
@@ -84,11 +98,10 @@ public class TestOtrChannel {
         Session<String, Bytestring> clientSession = clientPeer.openSession(clientSend);
 
         Peer<String, Bytestring> serverPeer = otrServer.getPeer("client");
-        // serverSession is null
         Session<String, Bytestring> serverSession = serverPeer.openSession(serverSend);
 
         /*
-        Simply sending a test message, without the initialization string -- this works.
+        //Simply sending a test message, without the initialization string -- this works.
         String message = "shufflepuff";
         Bytestring bytestring = new Bytestring(message.getBytes());
         Boolean clientSent = clientSession.send(bytestring);

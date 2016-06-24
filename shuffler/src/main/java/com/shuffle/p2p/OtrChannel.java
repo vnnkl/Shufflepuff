@@ -121,7 +121,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                     try {
                         processedMsgs.wait();
                     } catch (InterruptedException e) {
-                        return null;
+                        //return null
                     }
                 }
 
@@ -571,7 +571,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         if (you.equals(me)) return null;
 
-        return this.channel.getPeer(you);
+        //return this.channel.getPeer(you);
+        return new OtrPeer(you, this.channel.getPeer(you));
     }
 
 }
