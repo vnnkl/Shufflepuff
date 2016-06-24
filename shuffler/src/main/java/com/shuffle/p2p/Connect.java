@@ -202,7 +202,6 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
 
         final Retries retries = new Retries();
 
-        int l = 0;
         while (true) {
             Identity identity = peers.peek();
             if (identity == null) {

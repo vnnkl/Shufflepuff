@@ -32,6 +32,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -53,9 +54,11 @@ public class TestConnect {
 
         private final SortedSet<Integer> addresses;
         private final int maxRetries;
+        private final Integer me;
 
         public ConnectRun(
                 Connect<Integer, String> conn,
+                Integer me,
                 SortedSet<Integer> addresses,
                 int maxRetries,
                 Send<Collector<Integer, String>> net) {
@@ -67,13 +70,19 @@ public class TestConnect {
             this.maxRetries = maxRetries;
             this.net = net;
             this.conn = conn;
+            this.me = me;
         }
 
         @Override
         public void run() {
             try {
 
-                Collector<Integer, String> m = conn.connect(addresses, maxRetries);
+                SortedSet<Integer> connectTo = new TreeSet<>();
+
+                connectTo.addAll(addresses);
+                connectTo.remove(me);
+
+                Collector<Integer, String> m = conn.connect(connectTo, maxRetries);
 
                 if (m != null) {
                     net.send(m);
@@ -95,7 +104,7 @@ public class TestConnect {
         SummableMap<Integer, Collector<Integer, String>> net = null;
 
         volatile boolean cancelled = false;
-        
+
         int me;
 
         public ConnectFuture(
@@ -111,7 +120,7 @@ public class TestConnect {
             Chan<Collector<Integer, String>> netChan = new BasicChan<>();
             this.netChan = netChan;
 
-            new Thread(new ConnectRun(conn, addresses, 3, netChan)).start();
+            new Thread(new ConnectRun(conn, i, addresses, 3, netChan)).start();
         }
 
         @Override
