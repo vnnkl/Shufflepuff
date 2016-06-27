@@ -89,7 +89,7 @@ public class DecryptionKeyImplTest {
         System.out.println("ECKey: " + this.ecKey);
         System.out.println("String ECKey WIF: " + string);
         System.out.println("String DecryptionKey: " + this.decryptionKey.toString());
-        assertEquals("toString Method: ", string, this.decryptionKey.toString());
+        assertEquals("toString Method: ", new DecryptionKeyImpl(testKeys).toString(), this.decryptionKey.toString());
 
     }
 
@@ -108,13 +108,13 @@ public class DecryptionKeyImplTest {
         System.out.println("decryptionKey: " + decryptionKey.toString());
         System.out.println("ASN.1  " + Arrays.toString(ecKey.toASN1()));
 
-        EncryptionKeyImpl encTest = new EncryptionKeyImpl(pub);
+        EncryptionKeyImpl encTest = new EncryptionKeyImpl(ecKey.getPubKey());
         System.out.println("\nencTest: " + encTest);
         System.out.println("encryptionKey: " + encryptionKey1);
         System.out.println("EncKey.toString from ECKeys Pub: " + encTest.toString());
         System.out.println("EncKey from DecKey to string: " + decryptionKey.EncryptionKey().toString());
 
-        encryptionKey = new EncryptionKeyImpl(ecKey.getPubKey());
+        encryptionKey = new EncryptionKeyImpl(publicTestKey);
         assertEquals(encryptionKey.toString(), decryptionKey.EncryptionKey().toString());
 
     }
