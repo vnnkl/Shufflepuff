@@ -52,6 +52,8 @@ public class EncryptionKeyImplTest {
         System.out.println("pubKey                  " + pubKey);
         String pubsave = BitcoinCrypto.savePublicKey(pubKey);
         System.out.println("save pubKey                  " + pubsave);
+        String privsave = BitcoinCrypto.savePrivateKey(privKey);
+        System.out.println("save privKey                  " + privsave);
 
         // Load publicKey from String
         PublicKey publicKeyRestored = BitcoinCrypto.loadPublicKey(pubsave);

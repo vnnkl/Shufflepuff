@@ -1,5 +1,7 @@
 package com.shuffle.bitcoin.impl;
 
+import com.google.inject.Guice;
+import com.shuffle.JvmModule;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.DecryptionKey;
@@ -80,17 +82,18 @@ public class DecryptionKeyImpl implements DecryptionKey {
 
    @Override
    public Address decrypt(Address m) throws FormatException {
+      Guice.createInjector(new JvmModule()).injectMembers(this);
       java.lang.String input = m.toString();
       AddressImpl returnAddress = null;
       if (bitcoinCrypto.isValidAddress(input)) {
          return new AddressImpl(input,true);
       } else {
          try {
-            KeyFactory kf = KeyFactory.getInstance("EC");
+            KeyFactory kf = KeyFactory.getInstance("ECIES");
             PrivateKey privateKey = kf.generatePrivate(kf.getKeySpec((Key) key, KeySpec.class));
 
             //encrypt cipher
-            Cipher cipher = Cipher.getInstance("EC");
+            Cipher cipher = Cipher.getInstance("ECIES");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
             byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
             byte[] decrypted = cipher.doFinal(bytes);

@@ -2,6 +2,7 @@ package com.shuffle.bitcoin.impl;
 
 import com.google.inject.Guice;
 import com.shuffle.JvmModule;
+import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
@@ -33,7 +34,9 @@ public class DecryptionKeyImplTest {
     DecryptionKey decryptionKey;
     SecureRandom secureRandom;
     EncryptionKey encryptionKey;
-
+    PrivateKey privateTestKey;
+    PublicKey publicTestKey;
+    KeyPair testKeys;
     @Before
     public void setUp() throws Exception {
         // The module also initializes the BouncyCastle crypto
@@ -41,7 +44,11 @@ public class DecryptionKeyImplTest {
         this.bitcoinCrypto = new BitcoinCrypto();
         this.secureRandom = new SecureRandom();
         this.ecKey = new ECKey(secureRandom);
-        this.decryptionKey = new DecryptionKeyImpl(this.ecKey);
+        this.privateTestKey = BitcoinCrypto.loadPrivateKey("MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ+9oHg9jufttpUDJeJuxD36qDcJzIn7X7/kjrhCjhRzArEe0dzTE/kTS02hGHsX9OtleBaxBjJxGCIAeKh0e");
+        this.publicTestKey = BitcoinCrypto.loadPublicKey("MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibsQ9+qg3CcyJ+1+/5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==");
+        this.testKeys = new KeyPair(publicTestKey,privateTestKey);
+        this.encryptionKey = new EncryptionKeyImpl(testKeys.getPublic());
+        this.decryptionKey = new DecryptionKeyImpl(testKeys);
     }
 
     @Test
@@ -114,7 +121,12 @@ public class DecryptionKeyImplTest {
 
     @Test
     public void testDecrypt() throws Exception {
-
-
+        System.out.println(privateTestKey);
+        Address testAddress = new AddressImpl("myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG",false);
+        System.out.println("Address myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG encrypted to PublicKey :"+ encryptionKey.toString());
+        Address encAddress = encryptionKey.encrypt(testAddress);
+        System.out.println("Address myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG encrypted \n to "+ encryptionKey.toString() +" :\n" + encAddress);
+        Address decAddress = decryptionKey.decrypt(testAddress);
+        System.out.println("and then decrypted \n back to :\n" + decAddress);
     }
 }
