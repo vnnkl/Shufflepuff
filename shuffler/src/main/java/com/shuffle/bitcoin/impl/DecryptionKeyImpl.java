@@ -30,22 +30,35 @@ public class DecryptionKeyImpl implements DecryptionKey {
    final byte[] encryptionKey;
    final PrivateKey privateKey;
    final PublicKey publicKey;
-
-
-
-   BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
+   BitcoinCrypto bitcoinCrypto;
 
    public DecryptionKeyImpl(org.bitcoinj.core.ECKey key) {
       this.key = key;
       this.encryptionKey = key.getPubKey();
       this.privateKey = null;
       this.publicKey = null;
+      this.bitcoinCrypto = new BitcoinCrypto();
    }
    public DecryptionKeyImpl(KeyPair keyPair) {
       this.privateKey = keyPair.getPrivate();
       this.publicKey = keyPair.getPublic();
       this.key = ECKey.fromPrivate(this.privateKey.getEncoded());
       this.encryptionKey = this.publicKey.getEncoded();
+      this.bitcoinCrypto = new BitcoinCrypto();
+   }
+   public DecryptionKeyImpl(org.bitcoinj.core.ECKey key, BitcoinCrypto bitcoinCrypto) {
+      this.key = key;
+      this.encryptionKey = key.getPubKey();
+      this.privateKey = null;
+      this.publicKey = null;
+      this.bitcoinCrypto = bitcoinCrypto;
+   }
+   public DecryptionKeyImpl(KeyPair keyPair, BitcoinCrypto bitcoinCrypto) {
+      this.privateKey = keyPair.getPrivate();
+      this.publicKey = keyPair.getPublic();
+      this.key = ECKey.fromPrivate(this.privateKey.getEncoded());
+      this.encryptionKey = this.publicKey.getEncoded();
+      this.bitcoinCrypto = bitcoinCrypto;
    }
 
 
@@ -82,10 +95,9 @@ public class DecryptionKeyImpl implements DecryptionKey {
             byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
             byte[] decrypted = cipher.doFinal(bytes);
             returnAddress = new AddressImpl(Hex.toHexString(decrypted),false);
-
          } catch (Exception e) {
             e.printStackTrace();
-
+            throw new FormatException();
          }
       }
       return returnAddress;

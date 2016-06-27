@@ -1,7 +1,6 @@
 package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.BitcoinCrypto;
 
 import org.bitcoinj.core.AddressFormatException;
 
@@ -15,10 +14,9 @@ public class AddressImpl implements Address {
    boolean isEncrypted;
 
    public AddressImpl(org.bitcoinj.core.Address address) {
-      BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
       org.bitcoinj.core.Address address1 = null;
       try {
-         address1 = new org.bitcoinj.core.Address(bitcoinCrypto.getParams(), address.toString());
+         address1 = new org.bitcoinj.core.Address(org.bitcoinj.core.Address.getParametersFromAddress(address.toString()), address.toString());
       } catch (AddressFormatException e) {
          // if it fails we store in encrypted
          this.encrypted = address1.toString();
@@ -33,12 +31,10 @@ public class AddressImpl implements Address {
       if (encrypted){
             this.encrypted = address;
             this.isEncrypted = true;
-      }
-      else {
-         BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
+      } else {
          org.bitcoinj.core.Address address1 = null;
          try {
-            address1 = new org.bitcoinj.core.Address(bitcoinCrypto.getParams(), address);
+            address1 = new org.bitcoinj.core.Address(org.bitcoinj.core.Address.getParametersFromAddress(address), address);
          } catch (AddressFormatException e) {
             e.printStackTrace();
          }

@@ -54,8 +54,8 @@ public class EncryptionKeyImplTest {
         System.out.println("save pubKey                  " + pubsave);
 
         // Load publicKey from String
-        //PublicKey publicKeyRestored = BitcoinCrypto.loadPublicKey(pubsave);
-        //System.out.println("load pubKey                  " + publicKeyRestored.toString());
+        PublicKey publicKeyRestored = BitcoinCrypto.loadPublicKey(pubsave);
+        System.out.println("load pubKey                  " + publicKeyRestored.toString());
 
         System.out.println("privKey                  " + privKey);
 
@@ -82,7 +82,7 @@ public class EncryptionKeyImplTest {
     public void testEncrypt() throws Exception {
         System.out.println("\nTest encrypt");
         System.out.println("address                 " + address);
-        System.out.println("ek                      " + ek);
+        System.out.println("ek                      " + ek.toString());
         System.out.println(new AddressImpl(address.toString(),false));
 
         System.out.println("address encrypted to ek " + ek.encrypt(address));

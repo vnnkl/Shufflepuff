@@ -8,6 +8,8 @@ import com.shuffle.p2p.Bytestring;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.Sha256Hash;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * Created by conta on 10.03.16.
  */
@@ -18,6 +20,10 @@ public class SigningKeyImpl implements SigningKey {
 
    public SigningKeyImpl(org.bitcoinj.core.ECKey ecKey) {
       this.signingKey = ecKey;
+   }
+
+   public SigningKeyImpl(String key){
+      this.signingKey = ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8));
    }
 
    public String toString() {

@@ -13,6 +13,7 @@ import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.wallet.KeyChain;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.io.File;
 import java.security.GeneralSecurityException;
@@ -63,7 +64,7 @@ public class BitcoinCrypto implements Crypto {
    String path = HDUtils.formatPath(HDUtils.parsePath("5H/"));
    int decKeyCounter = 0;
 
-   public void initKit() {
+   private void initKit() {
       //initialize files and stuff here, add our address to the watched ones
       kit.setAutoSave(true);
       kit.connectToLocalHost();
@@ -127,7 +128,7 @@ public class BitcoinCrypto implements Crypto {
    public static PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
       byte[] clear = Base64.getDecoder().decode(key64);
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
-      KeyFactory fact = KeyFactory.getInstance("EC");
+      KeyFactory fact = KeyFactory.getInstance("ECDSA",new BouncyCastleProvider());
       PrivateKey priv = fact.generatePrivate(keySpec);
       Arrays.fill(clear, (byte) 0);
       return priv;
@@ -137,12 +138,12 @@ public class BitcoinCrypto implements Crypto {
    public static PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
       byte[] data = Base64.getDecoder().decode(stored);
       X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
-      KeyFactory fact = KeyFactory.getInstance("EC");
+      KeyFactory fact = KeyFactory.getInstance("ECDSA",new BouncyCastleProvider());
       return fact.generatePublic(spec);
    }
 
    public static String savePrivateKey(PrivateKey priv) throws GeneralSecurityException {
-      KeyFactory fact = KeyFactory.getInstance("EC");
+      KeyFactory fact = KeyFactory.getInstance("ECDSA",new BouncyCastleProvider());
       PKCS8EncodedKeySpec spec = fact.getKeySpec(priv,
             PKCS8EncodedKeySpec.class);
       byte[] packed = spec.getEncoded();
@@ -155,7 +156,7 @@ public class BitcoinCrypto implements Crypto {
 
 
    public static String savePublicKey(PublicKey publ) throws GeneralSecurityException {
-      KeyFactory fact = KeyFactory.getInstance("DSA");
+      KeyFactory fact = KeyFactory.getInstance("ECDSA",new BouncyCastleProvider());
       X509EncodedKeySpec spec = fact.getKeySpec(publ,
             X509EncodedKeySpec.class);
       return Base64.getEncoder().encodeToString(spec.getEncoded());
