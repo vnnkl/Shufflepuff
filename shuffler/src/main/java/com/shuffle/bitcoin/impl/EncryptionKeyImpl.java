@@ -1,17 +1,17 @@
 package com.shuffle.bitcoin.impl;
 
+import com.google.inject.Guice;
+import com.shuffle.JvmModule;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.ECKey;
-import org.spongycastle.jce.provider.BouncyCastleProvider;
 
 import java.nio.charset.StandardCharsets;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
@@ -26,9 +26,6 @@ public class EncryptionKeyImpl implements EncryptionKey {
    ECKey encryptionKey;
    PublicKey publicKey;
 
-   static {
-      Security.addProvider(new BouncyCastleProvider());
-   }
 
    public EncryptionKeyImpl(byte[] ecPubKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
       // this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
@@ -62,7 +59,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
    public Address encrypt(Address m) {
       AddressImpl add = null;
       try {
-
+         Guice.createInjector(new JvmModule()).injectMembers(this);
          //cast will fail, maybe
          //X509EncodedKeySpec spec = kf.getKeySpec(encryptionKey,X509EncodedKeySpec.class);
          //PublicKey pubKey = kf.generatePublic(kf.getKeySpec(((Key) encryptionKey), KeySpec.class));
