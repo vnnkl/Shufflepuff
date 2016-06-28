@@ -41,32 +41,6 @@ public class SigningKeyImpl implements SigningKey {
       return new Bytestring(ecdsaSignature.encodeToDER());
    }
 
-   /**
-   @Override private Signature makeSignature(Transaction t) {
-      SignatureImpl signature1;
-      signature1 = null;
-      try {
-         Bitcoin.Transaction tj = (Bitcoin.Transaction) t;
-         ECKey.ECDSASignature signature = signingKey.sign(tj.bitcoinj().getHash());
-         byte[] signed = signature.encodeToDER();
-         signature1 = new SignatureImpl(signed);
-      } catch (BlockStoreException e) {
-         e.printStackTrace();
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-      return signature1;
-   }
-
-   @Override
-   public Signature makeSignature(Packet p) {
-      String input = p.toString();
-      ECKey.ECDSASignature signature = signingKey.sign(Sha256Hash.twiceOf(input.getBytes(StandardCharsets.UTF_8)));
-      byte[] signed = signature.encodeToDER();
-      SignatureImpl signature1 = new SignatureImpl(signed);
-      return signature1;
-   } **/
-
 
    @Override
    public int compareTo(Object o) {

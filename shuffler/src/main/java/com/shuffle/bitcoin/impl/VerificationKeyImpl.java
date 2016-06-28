@@ -6,6 +6,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Sha256Hash;
 
 /**
  * Created by conta on 31.03.16.
@@ -32,7 +33,7 @@ public class VerificationKeyImpl implements VerificationKey {
    public boolean verify(Bytestring payload, Bytestring signature) {
       ECKey.ECDSASignature ecdsaSignature;
       ecdsaSignature = ECKey.ECDSASignature.decodeFromDER(signature.bytes);
-      return ECKey.verify(payload.bytes,ecdsaSignature,vKey);
+      return ECKey.verify(Sha256Hash.of(payload.bytes).getBytes(),ecdsaSignature,vKey);
    }
 
    @Override
