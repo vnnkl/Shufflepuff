@@ -75,8 +75,8 @@ public class DecryptionKeyImpl implements DecryptionKey {
 
    @Override
    public EncryptionKey EncryptionKey() {
-      ECKey pubkey = ECKey.fromPublicOnly(encryptionKey);
-      return new EncryptionKeyImpl(publicKey);
+      ECKey pubkey = ECKey.fromPublicOnly(key.getPubKey());
+      return new EncryptionKeyImpl(pubkey);
    }
 
 

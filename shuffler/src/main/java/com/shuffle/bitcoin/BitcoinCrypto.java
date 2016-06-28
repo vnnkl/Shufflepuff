@@ -202,16 +202,11 @@ public class BitcoinCrypto implements Crypto {
 
     @Override
     public DecryptionKey makeDecryptionKey() {
-       String ppath = getCurrentPathAsString();
-       System.out.println("Current path used by decryption key genereated: " + ppath);
-       ECKey newDecKey = keyChainGroup.getActiveKeyChain().getKeyByPath(HDUtils.parsePath(ppath),true);
-       decKeyCounter++;
-       KeyPair keyPair = null;
-       try {
-          keyPair = new KeyPair(loadPublicKey(newDecKey.getPublicKeyAsHex()),loadPrivateKey(newDecKey.getPrivateKeyAsHex()));
-       } catch (GeneralSecurityException e) {
-          e.printStackTrace();
-       }
+       // String ppath = getCurrentPathAsString();
+       // System.out.println("Current path used by decryption key genereated: " + ppath);
+       // ECKey newDecKey = keyChainGroup.getActiveKeyChain().getKeyByPath(HDUtils.parsePath(ppath),true);
+       // decKeyCounter++;
+       KeyPair keyPair = getKeyPair();
        return new DecryptionKeyImpl(keyPair);
 
     }

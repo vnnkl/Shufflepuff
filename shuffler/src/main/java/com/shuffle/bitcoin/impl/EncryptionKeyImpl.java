@@ -37,6 +37,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    public EncryptionKeyImpl(PublicKey pubKey) {
+      this.encryptionKey = ECKey.fromPublicOnly(pubKey.getEncoded());
       this.publicKey = pubKey;
    }
 
@@ -50,8 +51,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    public String toString() {
-      //return this.encryptionKey.getPublicKeyAsHex();
-       return org.spongycastle.util.encoders.Hex.toHexString(publicKey.getEncoded());
+      return this.encryptionKey.getPublicKeyAsHex();
    }
 
    @Override
