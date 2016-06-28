@@ -29,7 +29,6 @@ public class EncryptionKeyImpl implements EncryptionKey {
 
    public EncryptionKeyImpl(byte[] ecPubKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
       // this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
-
       KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
       EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
       this.publicKey = keyFactory.generatePublic(publicKeySpec);
@@ -51,8 +50,8 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    public String toString() {
-      // return this.encryptionKey.getPublicKeyAsHex();
-      return org.spongycastle.util.encoders.Hex.toHexString(publicKey.getEncoded());
+      //return this.encryptionKey.getPublicKeyAsHex();
+       return org.spongycastle.util.encoders.Hex.toHexString(publicKey.getEncoded());
    }
 
    @Override

@@ -37,7 +37,7 @@ public class SigningKeyImpl implements SigningKey {
 
    @Override
    public Bytestring sign(Bytestring string) {
-      ECKey.ECDSASignature ecdsaSignature = signingKey.sign(Sha256Hash.twiceOf(string.bytes));
+      ECKey.ECDSASignature ecdsaSignature = signingKey.sign(Sha256Hash.of(string.bytes));
       return new Bytestring(ecdsaSignature.encodeToDER());
    }
 

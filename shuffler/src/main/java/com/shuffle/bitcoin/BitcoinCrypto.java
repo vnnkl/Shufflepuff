@@ -7,14 +7,12 @@ import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Wallet;
 import org.bitcoinj.crypto.HDUtils;
-import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.net.discovery.DnsDiscovery;
+import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChain;
+import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import java.io.File;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -35,22 +33,22 @@ public class BitcoinCrypto implements Crypto {
 
    // Figure out which network we should connect to. Each one gets its own set of files.
    NetworkParameters params;
-   String fileprefix = "shufflepuff";
-   WalletAppKit kit;
+   KeyChainGroup keyChainGroup;
 
    public BitcoinCrypto(){
       this.params = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-      this.fileprefix = "shufflepuff_testnet_";
+      this.keyChainGroup = new KeyChainGroup(params);
    }
 
 
    public BitcoinCrypto(NetworkParameters networkParameters){
       this.params = networkParameters;
+      this.keyChainGroup = new KeyChainGroup(networkParameters);
    }
 
-   public BitcoinCrypto(NetworkParameters networkParameters, WalletAppKit walletKit){
+   public BitcoinCrypto(NetworkParameters networkParameters, DeterministicSeed seed){
       this.params = networkParameters;
-      this.kit = walletKit;
+      this.keyChainGroup = new KeyChainGroup(networkParameters, seed);
    }
 
 
@@ -75,23 +73,9 @@ public class BitcoinCrypto implements Crypto {
    }
 
    // create derivation path for shuffle keys
-   HDUtils hdUtils = new HDUtils();
    String path = HDUtils.formatPath(HDUtils.parsePath("5H/"));
    int decKeyCounter = 0;
 
-   private void initKit() {
-      //initialize files and stuff here, add our address to the watched ones
-
-
-      //use TOR
-      // kit.useTor();
-
-      //Download Bitcoin Blockchain and wait
-      kit.startAsync();
-      kit.awaitRunning();
-      //add other peers
-      kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
-   }
 
    //Validate addresses function
    public static boolean ValidateBitcoinAddress(String addr) {
@@ -166,9 +150,7 @@ public class BitcoinCrypto implements Crypto {
       PKCS8EncodedKeySpec spec = fact.getKeySpec(priv,
             PKCS8EncodedKeySpec.class);
       byte[] packed = spec.getEncoded();
-      //todo check
       String key64 = Base64.getEncoder().encodeToString(packed);
-
       Arrays.fill(packed, (byte) 0);
       return key64;
    }
@@ -180,7 +162,6 @@ public class BitcoinCrypto implements Crypto {
             X509EncodedKeySpec.class);
       return Base64.getEncoder().encodeToString(spec.getEncoded());
    }
-
 
 
    private KeyPairGenerator getKeyPGen() {
@@ -213,13 +194,6 @@ public class BitcoinCrypto implements Crypto {
       return decKeyCounter;
    }
 
-   public Wallet getWallet() {
-      if (kit == null) {
-         kit = new WalletAppKit(params, new File("."), fileprefix);
-         initKit();
-      }
-      return kit.wallet();
-   }
 
    public String getCurrentPathAsString() {
       System.out.println("Value of path variable: " + path);
@@ -230,14 +204,21 @@ public class BitcoinCrypto implements Crypto {
     public DecryptionKey makeDecryptionKey() {
        String ppath = getCurrentPathAsString();
        System.out.println("Current path used by decryption key genereated: " + ppath);
-       ECKey newDecKey = getWallet().getKeyByPath(HDUtils.parsePath(ppath));
+       ECKey newDecKey = keyChainGroup.getActiveKeyChain().getKeyByPath(HDUtils.parsePath(ppath),true);
        decKeyCounter++;
-       return new DecryptionKeyImpl(newDecKey);
+       KeyPair keyPair = null;
+       try {
+          keyPair = new KeyPair(loadPublicKey(newDecKey.getPublicKeyAsHex()),loadPrivateKey(newDecKey.getPrivateKeyAsHex()));
+       } catch (GeneralSecurityException e) {
+          e.printStackTrace();
+       }
+       return new DecryptionKeyImpl(keyPair);
+
     }
 
     @Override
     public SigningKey makeSigningKey() {
-       ECKey newSignKey = kit.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
+       ECKey newSignKey = keyChainGroup.freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
        return new SigningKeyImpl(newSignKey);
     }
 

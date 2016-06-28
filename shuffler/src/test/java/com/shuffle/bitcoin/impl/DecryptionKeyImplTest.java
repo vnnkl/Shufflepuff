@@ -104,7 +104,7 @@ public class DecryptionKeyImplTest {
 
         System.out.println("ecKey: " + ecKey.toString());
         System.out.println("ecKey priv: " + ecKey.getPrivateKeyAsHex());
-        System.out.println("secureRandom: " + secureRandom.toString());
+        System.out.println("secureRandom: " + secureRandom.nextInt());
         System.out.println("decryptionKey: " + decryptionKey.toString());
         System.out.println("ASN.1  " + Arrays.toString(ecKey.toASN1()));
 

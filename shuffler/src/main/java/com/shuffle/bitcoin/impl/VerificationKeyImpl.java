@@ -7,8 +7,6 @@ import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.ECKey;
 
-import java.util.Arrays;
-
 /**
  * Created by conta on 31.03.16.
  */
@@ -23,8 +21,9 @@ public class VerificationKeyImpl implements VerificationKey {
       this.vKey = this.ecKey.getPubKey();
    }
 
+   // returns PublicKey compressed, 66 chars
    public String toString() {
-      return Arrays.toString(this.vKey);
+      return this.ecKey.getPublicKeyAsHex();
    }
 
 

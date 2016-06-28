@@ -3,12 +3,13 @@ package com.shuffle.bitcoin.impl;
 import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.blockchain.Bitcoin;
+import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.junit.Before;
 import org.junit.Test;
+import org.spongycastle.util.encoders.Hex;
 
 import static org.junit.Assert.assertEquals;
 
@@ -18,7 +19,6 @@ import static org.junit.Assert.assertEquals;
 public class SigningKeyImplTest {
 
    ECKey ecKey;
-   Bitcoin bitcoin;
    SigningKey signingKey;
    VerificationKey verificationKey;
    BitcoinCrypto bitcoinCrypto;
@@ -28,7 +28,6 @@ public class SigningKeyImplTest {
 
       this.ecKey = new ECKey();
       this.signingKey = new SigningKeyImpl(ecKey);
-
       bitcoinCrypto = new BitcoinCrypto();
    }
 
@@ -43,8 +42,24 @@ public class SigningKeyImplTest {
 
       verificationKey = new VerificationKeyImpl(this.ecKey.getPubKey());
       assertEquals(verificationKey.toString(), signingKey.VerificationKey().toString());
-      System.out.println(signingKey.VerificationKey().address().toString());
-      System.out.println(signingKey.toString());
+      System.out.println("Address:    "+signingKey.VerificationKey().address().toString());
+      System.out.println("SigningKey: "+signingKey.toString());
+      System.out.println("VerficationKey: "+signingKey.VerificationKey().toString());
+      Bytestring hello = new Bytestring("Hello World".getBytes());
+      System.out.println("Bytestring :"+ hello);
+      System.out.println("Bytestring signed: "+ signingKey.sign(hello));
+      byte[] bytes = signingKey.sign(hello).bytes;
+      // deterministic should bring same result
+      byte[] bytes2 = signingKey.sign(hello).bytes;
+      byte[] bytes3 = signingKey.sign(hello).bytes;
+      System.out.println("toHexString bytes:  "+Hex.toHexString(bytes));
+      System.out.println("toHexString bytes2: "+Hex.toHexString(bytes));
+      System.out.println("toHexString bytes3: "+Hex.toHexString(bytes));
+      System.out.println(verificationKey.verify(hello,signingKey.sign(hello)));
+
+      if(verificationKey.verify(hello,signingKey.sign(hello))){
+         System.out.println("\n "+signingKey.sign(hello) + "\n is a message signed by "+ verificationKey.toString());
+      }
 
 
    }
