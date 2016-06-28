@@ -11,7 +11,6 @@ import org.bitcoinj.core.Wallet;
 import org.bitcoinj.crypto.HDUtils;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.discovery.DnsDiscovery;
-import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.wallet.KeyChain;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -33,10 +32,26 @@ import java.util.Base64;
 
 public class BitcoinCrypto implements Crypto {
 
+
    // Figure out which network we should connect to. Each one gets its own set of files.
-   NetworkParameters params = TestNet3Params.get();
-   String fileprefix = "_shuffle";
-   WalletAppKit kit = null;
+   NetworkParameters params;
+   String fileprefix = "shufflepuff";
+   WalletAppKit kit;
+
+   public BitcoinCrypto(){
+      this.params = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+      this.fileprefix = "shufflepuff_testnet_";
+   }
+
+
+   public BitcoinCrypto(NetworkParameters networkParameters){
+      this.params = networkParameters;
+   }
+
+   public BitcoinCrypto(NetworkParameters networkParameters, WalletAppKit walletKit){
+      this.params = networkParameters;
+      this.kit = walletKit;
+   }
 
 
    //Alphabet defining valid characters used in address
@@ -66,11 +81,15 @@ public class BitcoinCrypto implements Crypto {
 
    private void initKit() {
       //initialize files and stuff here, add our address to the watched ones
-      kit.setAutoSave(true);
-      kit.connectToLocalHost();
+
+
+      //use TOR
       // kit.useTor();
+
+      //Download Bitcoin Blockchain and wait
       kit.startAsync();
       kit.awaitRunning();
+      //add other peers
       kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
    }
 
