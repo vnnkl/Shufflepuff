@@ -32,7 +32,7 @@ import net.java.otr4j.session.SessionID;
  * Created by Eugene Siegel on 5/10/16.
  */
 
-public class OtrChannel<Address> implements Channel<Address, Bytestring> {
+public class OtrChannel<Address> implements Channel<Address, String> {
 
 
     /**
@@ -49,9 +49,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private SendConnection connection;
         private MessageProcessor processor;
         private Queue<ProcessedMessage> processedMsgs = new LinkedList<ProcessedMessage>();
-        private Send<Bytestring> send;
+        private Send<String> send;
 
-        public SendClient(String account, Send<Bytestring> send) {
+        public SendClient(String account, Send<String> send) {
             this.account = account;
             this.send = send;
         }
@@ -121,6 +121,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                     try {
                         processedMsgs.wait();
                     } catch (InterruptedException e) {
+                        e.printStackTrace();
                         //return null
                     }
                 }
@@ -349,15 +350,15 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         // TODO
-        private class SendConnection implements Send<Bytestring> {
+        private class SendConnection implements Send<String> {
 
             private final SendClient client;
             private final String connectionName;
             private String sentMessage;
-            private Send<Bytestring> send;
-            private Session<Address, Bytestring> session;
+            private Send<String> send;
+            private Session<Address, String> session;
 
-            public SendConnection(SendClient client, String connectionName, Send<Bytestring> send) {
+            public SendConnection(SendClient client, String connectionName, Send<String> send) {
                 this.client = client;
                 this.connectionName = connectionName;
                 this.send = send;
@@ -382,30 +383,26 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             // sends a message
             public void send(String recipient, String msg) throws OtrException, InterruptedException {
                 this.sentMessage = msg;
-                Bytestring bytestring = new Bytestring(msg.getBytes());
-                // sends the encrypted message
-                session.send(bytestring);
+                session.send(msg);
             }
 
             // TODO
             // receives a message
             // synchronized?
-            public boolean send(Bytestring msg) throws InterruptedException {
+            // THIS IS NEVER USED ??
+            public boolean send(String msg) throws InterruptedException {
                 String sender = "doesnt matter";
-                String message = new String(msg.bytes);
-
 
                 try {
                     //decrypts the message
 
-                    this.client.receive(sender, message);
+                    this.client.receive(sender, msg);
 
                     // this won't work because we could receive a new message by the time we poll...
                     // @danielk does a synchronized method solve this issue?
                     // also made SendClient's receive() method synchronized
                     String pollMessage = this.client.pollReceivedMessage().originalMessage.content;
-                    Bytestring bytestring = new Bytestring(pollMessage.getBytes());
-                    return this.send.send(bytestring);
+                    return this.send.send(pollMessage);
                 } catch (OtrException e) {
                     return false;
                 }
@@ -420,11 +417,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    public class OtrPeer extends FundamentalPeer<Address, Bytestring> {
+    public class OtrPeer extends FundamentalPeer<Address, String> {
 
-        Peer<Address, Bytestring> peer;
+        Peer<Address, String> peer;
 
-        public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
+        public OtrPeer(Address identity, Peer<Address, String> peer) {
             super(identity);
             this.peer = peer;
             sendClient = new SendClient("nothing", null);
@@ -433,9 +430,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         @Override
-        public synchronized Session<Address, Bytestring> openSession(Send<Bytestring> send) {
+        public synchronized Session<Address, String> openSession(Send<String> send) {
 
-            Session<Address, Bytestring> session;
+            Session<Address, String> session;
 
             try {
                 sendClient.send = send;
@@ -447,22 +444,22 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             OtrSession otrSession = new OtrSession(session);
-
+            sendClient.connection.session = otrSession;
             return otrSession;
         }
 
-        public class OtrSession implements Session<Address, Bytestring> {
+        public class OtrSession implements Session<Address, String> {
 
-            Session<Address, Bytestring> session;
+            Session<Address, String> session;
 
-            public OtrSession(Session<Address, Bytestring> session) {
+            public OtrSession(Session<Address, String> session) {
                 this.session = session;
             }
 
             @Override
-            public synchronized boolean send(Bytestring message) {
+            public synchronized boolean send(String message) {
                 try {
-                    sendClient.send("recipient", new String(message.bytes));
+                    sendClient.send("recipient",message);
                     return true;
                 } catch (OtrException e) {
                     return false;
@@ -491,7 +488,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             // TODO
             @Override
-            public Peer<Address, Bytestring> peer() {
+            public Peer<Address, String> peer() {
                 return OtrPeer.this;
             }
 
@@ -530,12 +527,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    Channel<Address, Bytestring> channel;
+    Channel<Address, String> channel;
     private final Address me;
     private boolean running = false;
     private final Object lock = new Object();
 
-    public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
+    public OtrChannel(Channel<Address, String> channel, Address me) {
         if (me == null) {
             throw new NullPointerException();
         }
@@ -547,7 +544,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     // TODO
     @Override
-    public Connection<Address> open(Listener<Address, Bytestring> listener) {
+    public Connection<Address> open(Listener<Address, String> listener) {
 
         if (listener == null) {
             throw new NullPointerException();
@@ -567,7 +564,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     }
 
     @Override
-    public Peer<Address, Bytestring> getPeer(Address you) {
+    public Peer<Address, String> getPeer(Address you) {
 
         if (you.equals(me)) return null;
 

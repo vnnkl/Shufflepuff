@@ -18,16 +18,16 @@ import org.junit.Test;
 
 public class TestOtrChannel {
 
-    MockNetwork<String, Bytestring> network;
-    Channel<String, Bytestring> client;
-    Channel<String, Bytestring> server;
+    MockNetwork<String, String> network;
+    Channel<String, String> client;
+    Channel<String, String> server;
     OtrChannel<String> otrClient;
     OtrChannel<String> otrServer;
     String clientMessage;
     String serverMessage;
-    Send<Bytestring> clientSend;
-    Send<Bytestring> serverSend;
-    Session<String, Bytestring> serverSession;
+    Send<String> clientSend;
+    Send<String> serverSend;
+    Session<String, String> serverSession;
 
     @Before
     public void setup() {
@@ -37,12 +37,12 @@ public class TestOtrChannel {
         otrClient = new OtrChannel<>(client, "client");
         otrServer = new OtrChannel<>(server, "server");
 
-        clientSend = new Send<Bytestring>() {
+        clientSend = new Send<String>() {
             @Override
-            public boolean send(Bytestring bytestring) throws InterruptedException {
-                TestOtrChannel.this.clientMessage = new String(bytestring.bytes);
+            public boolean send(String message) throws InterruptedException {
+                TestOtrChannel.this.clientMessage = message;
                 try {
-                    otrClient.sendClient.receive("server", new String(bytestring.bytes));
+                    otrClient.sendClient.receive("server", message);
                 } catch (OtrException e) {
                     return false;
                 }
@@ -55,19 +55,19 @@ public class TestOtrChannel {
             }
         };
 
-        Listener<String, Bytestring> clientListener = new Listener<String, Bytestring>() {
+        Listener<String, String> clientListener = new Listener<String, String>() {
             @Override
-            public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
+            public Send<String> newSession(Session<String, String> session) throws InterruptedException {
                 return clientSend;
             }
         };
 
-        serverSend = new Send<Bytestring>() {
+        serverSend = new Send<String>() {
             @Override
-            public boolean send(Bytestring bytestring) throws InterruptedException {
-                TestOtrChannel.this.serverMessage = new String(bytestring.bytes);
+            public boolean send(String message) throws InterruptedException {
+                TestOtrChannel.this.serverMessage = message;
                 try {
-                    otrServer.sendClient.receive("client", new String(bytestring.bytes));
+                    otrServer.sendClient.receive("client", message);
                 } catch (OtrException e) {
                     return false;
                 }
@@ -80,9 +80,9 @@ public class TestOtrChannel {
             }
         };
 
-        Listener<String, Bytestring> serverListener = new Listener<String, Bytestring>() {
+        Listener<String, String> serverListener = new Listener<String, String>() {
             @Override
-            public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
+            public Send<String> newSession(Session<String, String> session) throws InterruptedException {
                 return serverSend;
             }
         };
@@ -94,11 +94,11 @@ public class TestOtrChannel {
 
     @Test
     public void encryptedChat() throws InterruptedException {
-        Peer<String, Bytestring> clientPeer = otrClient.getPeer("server");
-        Session<String, Bytestring> clientSession = clientPeer.openSession(clientSend);
+        Peer<String, String> clientPeer = otrClient.getPeer("server");
+        Session<String, String> clientSession = clientPeer.openSession(clientSend);
 
-        Peer<String, Bytestring> serverPeer = otrServer.getPeer("client");
-        Session<String, Bytestring> serverSession = serverPeer.openSession(serverSend);
+        Peer<String, String> serverPeer = otrServer.getPeer("client");
+        Session<String, String> serverSession = serverPeer.openSession(serverSend);
 
         /*
         //Simply sending a test message, without the initialization string -- this works.
@@ -111,11 +111,13 @@ public class TestOtrChannel {
 
 
         // Sending with initialization string "query"
-        String query = "<p>?OTRv23?\n" +
+        /*String query = "<p>?OTRv23?\n" +
                 "<span style=\"font-weight: bold;\">Bob@Wonderland/</span> has requested an <a href=\"http://otr.cypherpunks.ca/\">Off-the-Record private conversation</a>. However, you do not have a plugin to support that.\n" +
                 "See <a href=\"http://otr.cypherpunks.ca/\">http://otr.cypherpunks.ca/</a> for more information.</p>";
-        Bytestring bytestring = new Bytestring(query.getBytes());
-        clientSession.send(bytestring);
+                */
+        String query = "?OTRv23?";
+        clientSession.send(query);
+
 
         otrServer.sendClient.pollReceivedMessage();
         otrClient.sendClient.pollReceivedMessage();
@@ -125,8 +127,7 @@ public class TestOtrChannel {
 
         String message = "hey, encryption test";
 
-        Bytestring reply = new Bytestring(message.getBytes());
-        serverSession.send(reply);
+        serverSession.send(message);
 
         Assert.assertEquals(message, clientMessage);
     }
