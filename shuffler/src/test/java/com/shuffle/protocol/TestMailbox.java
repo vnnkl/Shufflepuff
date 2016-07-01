@@ -26,6 +26,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,7 @@ public class TestMailbox {
     }
 
     @Test
-    public void testBroadcast() throws InvalidParticipantSetException, InterruptedException, IOException {
+    public void testBroadcast() throws InvalidParticipantSetException, InterruptedException, IOException, NoSuchAlgorithmException {
         BroadcastTestCase[] tests =
                 new BroadcastTestCase[]{
                         new BroadcastTestCase(1, 1),
@@ -115,7 +116,7 @@ public class TestMailbox {
     }
 
     @Test
-    public void testSend() throws InvalidParticipantSetException, InterruptedException, IOException {
+    public void testSend() throws InvalidParticipantSetException, InterruptedException, IOException, NoSuchAlgorithmException {
         SendToTestCase[] tests = new SendToTestCase[]{
                 // Case where recipient does not exist.
                 new SendToTestCase(1, 3, 2, false),
@@ -196,7 +197,7 @@ public class TestMailbox {
     @Test()
     public void testReceiveFrom()
             throws InvalidParticipantSetException, InterruptedException,
-            BlameException, FormatException, TimeoutException, IOException {
+            BlameException, FormatException, TimeoutException, IOException, NoSuchAlgorithmException {
 
         ReceiveFromTestCase[] tests = new ReceiveFromTestCase[]{
                 // time out exception test case.
@@ -285,7 +286,7 @@ public class TestMailbox {
     @Test
     public void testReceiveFromMultiple()
             throws InvalidParticipantSetException, InterruptedException, BlameException,
-            FormatException, IOException {
+            FormatException, IOException, NoSuchAlgorithmException {
 
         ReceiveFromMultipleTestCase[] tests = new ReceiveFromMultipleTestCase[]{
                 // Very simple test case.

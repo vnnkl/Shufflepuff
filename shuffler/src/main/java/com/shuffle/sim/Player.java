@@ -48,6 +48,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -270,9 +271,10 @@ class Player<Address> implements Runnable {
             e.printStackTrace();
         }
 
-        Messages messages = new Messages(param.session, param.me, m.connected, m.inbox);
+        Messages messages = null;
 
         try {
+            messages = new Messages(param.session, param.me, m.connected, m.inbox);
             return new CoinShuffle(
                     messages, param.init.crypto(), param.init.coin()
             ).runProtocol(
@@ -286,7 +288,8 @@ class Player<Address> implements Runnable {
                 | CoinNetworkException // Indicates a problem with the Bitcoin network.
                 | TimeoutException // Indicates a lost
                 | FormatException // TODO also all improperly formatted messages are ignored.
-                | InvalidParticipantSetException e) {
+                | InvalidParticipantSetException
+                | NoSuchAlgorithmException e) {
             // TODO handle these problems appropriately.
             return null;
         } catch (Matrix matrix) {

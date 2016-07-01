@@ -4,6 +4,7 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.EncryptionKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
@@ -11,6 +12,8 @@ import com.shuffle.protocol.blame.Blame;
 import com.shuffle.protocol.message.Phase;
 
 import java.io.Serializable;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Deque;
 import java.util.Iterator;
 
@@ -22,18 +25,14 @@ import java.util.Iterator;
 public class Message implements com.shuffle.protocol.message.Message, Serializable {
 
     public static class SecureHash implements Serializable {
-        public final Atom hashed;
+        public final Bytestring hashed;
 
-        public SecureHash(Atom toHash) {
-            hashed = toHash;
-        }
+        public SecureHash(MessageDigest digest, Marshaller<Atom> m, Atom toHash) {
+            digest.update(m.marshall(toHash).bytes);
 
-        public SecureHash(com.shuffle.protocol.message.Message message) {
-            if (!(message instanceof Message)) {
-                throw new IllegalArgumentException();
-            }
+            hashed = new Bytestring(digest.digest());
 
-            hashed = ((Message) message).atoms;
+            digest.reset();
         }
 
         public String toString() {
@@ -55,7 +54,7 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
         }
     }
 
-    private static class Atom implements Serializable {
+    public static class Atom implements Serializable {
         public final Address addr;
         public final EncryptionKey ek;
         public final Bytestring sig;
@@ -227,6 +226,11 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
 
             return str;
         }
+
+        public Bytestring bytestring() {
+            // TODO
+            return null;
+        }
     }
 
     public final SessionIdentifier session;
@@ -328,7 +332,8 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
 
     public com.shuffle.protocol.message.Message hashed() {
 
-        return new Message(session, from, Atom.make(new SecureHash(this)), messages);
+        return new Message(session, from, Atom.make(
+                new SecureHash(messages.sha256, messages.marshaller, this.atoms)), messages);
     }
 
     @Override

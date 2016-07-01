@@ -23,6 +23,7 @@ import com.shuffle.chan.packet.SessionIdentifier;
 
 import org.junit.Assert;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,7 +46,7 @@ public class MockNetwork  {
 
     private final Map<VerificationKey, Messages> messages = new HashMap<>();
 
-    public MockNetwork(SessionIdentifier session, SigningKey me, Set<SigningKey> others, int cap) {
+    public MockNetwork(SessionIdentifier session, SigningKey me, Set<SigningKey> others, int cap) throws NoSuchAlgorithmException {
         // First create the inbox and outbox.
         outbox = new BasicInbox<>(cap);
 

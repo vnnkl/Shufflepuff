@@ -37,6 +37,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -225,7 +226,10 @@ class Player {
             return Report.failure(m, addrs);
         } catch (TimeoutException e) {
             return Report.timeout(e);
-        } catch (CoinNetworkException | InvalidParticipantSetException | FormatException e) {
+        } catch (CoinNetworkException
+                | InvalidParticipantSetException
+                | FormatException
+                | NoSuchAlgorithmException e) {
             System.out.println(e.getMessage());
             return null;
         }

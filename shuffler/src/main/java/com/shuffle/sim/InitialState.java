@@ -24,6 +24,7 @@ import com.shuffle.protocol.blame.Evidence;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.protocol.blame.Reason;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -390,7 +391,7 @@ public class InitialState {
                 p.put(player.sk,
                         player.adversary(new Messages(session, player.sk, c.send, c.receive)));
 
-            } catch (CoinNetworkException e) {
+            } catch (CoinNetworkException | NoSuchAlgorithmException e) {
                 return null; // Should not really happen.
             }
         }

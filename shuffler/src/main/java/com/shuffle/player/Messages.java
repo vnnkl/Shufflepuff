@@ -16,6 +16,7 @@ import com.shuffle.chan.IgnoreSend;
 import com.shuffle.chan.Receive;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.JavaMarshaller;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.OutgoingPacketSend;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
@@ -28,6 +29,8 @@ import com.shuffle.protocol.message.Phase;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,12 +146,15 @@ public class Messages implements MessageFactory {
     final SessionIdentifier session;
     final SigningKey me;
 
+    public final MessageDigest sha256;
+    public final Marshaller<Message.Atom> marshaller;
+
     public Messages(SessionIdentifier session,
                     SigningKey me,
                     Map<VerificationKey,
                             Send<Signed<Packet<VerificationKey, P>>>> net,
                     Receive<Inbox.Envelope<VerificationKey,
-                            Signed<Packet<VerificationKey, P>>>> receive) {
+                            Signed<Packet<VerificationKey, P>>>> receive) throws NoSuchAlgorithmException {
 
         if (session == null || me == null || net == null || receive == null)
             throw new NullPointerException();
@@ -156,6 +162,9 @@ public class Messages implements MessageFactory {
         this.session = session;
         this.me = me;
         this.receive = new HistoryReceive<>(receive);
+
+        sha256 = MessageDigest.getInstance("SHA-256");
+        marshaller = new JavaMarshaller<>();
 
         JavaMarshaller<Packet<VerificationKey, P>> jj = new JavaMarshaller<>();
         VerificationKey vk = me.VerificationKey();

@@ -32,6 +32,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -100,7 +101,7 @@ public class TestShuffleMachineMethods {
     }
 
     @Test
-    public void testPlayerSet() throws InvalidParticipantSetException {
+    public void testPlayerSet() throws InvalidParticipantSetException, NoSuchAlgorithmException {
         PlayerSetTestCase[] tests =
                 new PlayerSetTestCase[]{
                         new PlayerSetTestCase(
@@ -184,7 +185,7 @@ public class TestShuffleMachineMethods {
 
     @Test
     // This tests some cases for the function that randomly shuffles a message.
-    public void shuffleTest() {
+    public void shuffleTest() throws NoSuchAlgorithmException {
         ShuffleTestCase[] tests = new ShuffleTestCase[]{
                 // The empty case, of course!
                 new ShuffleTestCase(
@@ -287,7 +288,7 @@ public class TestShuffleMachineMethods {
         final SigningKey sk = new MockSigningKey(1);
         final Messages messages;
 
-        AreEqualTestCase(int[] input, boolean expected) {
+        AreEqualTestCase(int[] input, boolean expected) throws NoSuchAlgorithmException {
             final Set<SigningKey> players = new TreeSet<>();
             players.add(sk);
             players.add(new MockSigningKey(2));
@@ -303,7 +304,7 @@ public class TestShuffleMachineMethods {
             this.expected = expected;
         }
 
-        AreEqualTestCase(int[][] input, boolean expected) {
+        AreEqualTestCase(int[][] input, boolean expected) throws NoSuchAlgorithmException {
             final Set<SigningKey> players = new TreeSet<>();
             players.add(sk);
             players.add(new MockSigningKey(2));
@@ -326,7 +327,7 @@ public class TestShuffleMachineMethods {
     }
 
     @Test
-    public void testAreEqual() {
+    public void testAreEqual() throws NoSuchAlgorithmException {
         AreEqualTestCase[] tests = new AreEqualTestCase[]{
                 // The empty case, of course!
                 new AreEqualTestCase(
@@ -382,7 +383,7 @@ public class TestShuffleMachineMethods {
             int me,
             Address addr,
             SortedSet<SigningKey> others,
-            Crypto crypto, Mailbox mailbox) throws InvalidParticipantSetException {
+            Crypto crypto, Mailbox mailbox) throws InvalidParticipantSetException, NoSuchAlgorithmException {
 
         int i = 1;
         Map<Integer, VerificationKey> players = new HashMap<>();
@@ -406,7 +407,7 @@ public class TestShuffleMachineMethods {
     }
 
     @Test
-    public void testDecryptAll() throws TimeoutException, InterruptedException, IOException {
+    public void testDecryptAll() throws TimeoutException, InterruptedException, IOException, NoSuchAlgorithmException {
 
         MockCrypto crypto = new MockCrypto(new InsecureRandom(56));
 
@@ -466,7 +467,7 @@ public class TestShuffleMachineMethods {
     }
 
     @Test
-    public void testReadNewAddresses() {
+    public void testReadNewAddresses() throws NoSuchAlgorithmException {
         MockCrypto crypto = new MockCrypto(new InsecureRandom(84512));
         SigningKey sk = new MockSigningKey(1);
 
