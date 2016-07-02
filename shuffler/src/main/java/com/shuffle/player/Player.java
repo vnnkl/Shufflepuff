@@ -17,10 +17,12 @@ import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.monad.Summable;
 import com.shuffle.monad.SummableMap;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Collector;
 import com.shuffle.p2p.Connect;
@@ -29,7 +31,6 @@ import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.InvalidParticipantSetException;
 import com.shuffle.protocol.TimeoutException;
 import com.shuffle.protocol.blame.Evidence;
-import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Phase;
 import com.shuffle.protocol.blame.Matrix;
 
@@ -57,7 +58,7 @@ import java.util.concurrent.TimeUnit;
 class Player {
     private static final Logger log = LogManager.getLogger(Player.class);
 
-    private final com.shuffle.chan.packet.SessionIdentifier session;
+    private final Bytestring session;
 
     private final SigningKey sk;
 
@@ -74,14 +75,16 @@ class Player {
     private final long amount;
     private final Address anon;
     private final Address change;
+    private final Marshaller<Message.Atom> am;
+    private final Marshaller<Packet<VerificationKey, P>> pm;
 
-    private Report report = null;
+    public Report report = null;
 
     private final Executor exec;
 
     Player(
             SigningKey sk,
-            SessionIdentifier session,
+            Bytestring session,
             Address anon,
             Address change, // Can be null to indicate no change address.
             SortedSet<VerificationKey> addrs,
@@ -90,6 +93,8 @@ class Player {
             Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
             Crypto crypto,
             Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel,
+            Marshaller<Message.Atom> am,
+            Marshaller<Packet<VerificationKey, P>> pm,
             Executor exec
     ) {
         if (sk == null || coin == null || session == null || addrs == null
@@ -106,6 +111,8 @@ class Player {
         this.change = change;
         this.channel = channel;
         this.addrs = addrs;
+        this.am = am;
+        this.pm = pm;
         this.exec = exec;
     }
 
@@ -121,7 +128,7 @@ class Player {
                     cr.send(play());
                     cr.close();
                 } catch (InterruptedException | IOException e) {
-                    System.out.println(e.getMessage());
+                    e.printStackTrace();
                 }
 
             }
@@ -219,7 +226,7 @@ class Player {
             // If the protocol returns correctly without throwing a Matrix, then
             // it has been successful.
             return Report.success(new CoinShuffle(
-                    new Messages(session, sk, collector.connected, collector.inbox),
+                    new Messages(session, sk, collector.connected, collector.inbox, am, pm),
                     crypto, coin).runProtocol(
                     amount, sk, addrs, anon, change, ch));
         } catch (Matrix m) {

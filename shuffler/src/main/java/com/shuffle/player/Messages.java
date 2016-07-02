@@ -15,12 +15,10 @@ import com.shuffle.chan.HistorySend;
 import com.shuffle.chan.IgnoreSend;
 import com.shuffle.chan.Receive;
 import com.shuffle.chan.Send;
-import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.OutgoingPacketSend;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
-import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.chan.packet.SigningSend;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.chan.Inbox;
@@ -143,18 +141,20 @@ public class Messages implements MessageFactory {
     private final Receive<Inbox.Envelope<VerificationKey,
             Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>>>> receive;
 
-    final SessionIdentifier session;
+    final Bytestring session;
     final SigningKey me;
 
     public final MessageDigest sha256;
-    public final Marshaller<Message.Atom> marshaller;
+    public final Marshaller<Message.Atom> atomMarshaller;
 
-    public Messages(SessionIdentifier session,
+    public Messages(Bytestring session,
                     SigningKey me,
                     Map<VerificationKey,
                             Send<Signed<Packet<VerificationKey, P>>>> net,
                     Receive<Inbox.Envelope<VerificationKey,
-                            Signed<Packet<VerificationKey, P>>>> receive) throws NoSuchAlgorithmException {
+                            Signed<Packet<VerificationKey, P>>>> receive,
+                    Marshaller<Message.Atom> am,
+                    Marshaller<Packet<VerificationKey, P>> pm) throws NoSuchAlgorithmException {
 
         if (session == null || me == null || net == null || receive == null)
             throw new NullPointerException();
@@ -164,9 +164,8 @@ public class Messages implements MessageFactory {
         this.receive = new HistoryReceive<>(receive);
 
         sha256 = MessageDigest.getInstance("SHA-256");
-        marshaller = new JavaMarshaller<>();
+        this.atomMarshaller = am;
 
-        JavaMarshaller<Packet<VerificationKey, P>> jj = new JavaMarshaller<>();
         VerificationKey vk = me.VerificationKey();
 
         for (Map.Entry<VerificationKey, Send<Signed<Packet<VerificationKey, P>>>> z : net.entrySet()) {
@@ -175,7 +174,7 @@ public class Messages implements MessageFactory {
             if (vk.equals(k)) continue;
 
             HistorySend<Signed<Packet<VerificationKey, P>>> h = new HistorySend<>(z.getValue());
-            Send<Packet<VerificationKey, P>> signer = new SigningSend<>(h, jj, me);
+            Send<Packet<VerificationKey, P>> signer = new SigningSend<>(h, pm, me);
             Send<P> p = new OutgoingPacketSend<>(signer, session, vk, k);
 
             this.net.put(k, new Outgoing(p, h, vk));
@@ -185,13 +184,13 @@ public class Messages implements MessageFactory {
         HistorySend<Signed<Packet<VerificationKey, P>>> h = new HistorySend<>(
                 new IgnoreSend<Signed<Packet<VerificationKey, P>>>());
 
-        Send<P> p = new OutgoingPacketSend<>(new SigningSend<>(h, jj, me), session, vk, vk);
+        Send<P> p = new OutgoingPacketSend<>(new SigningSend<>(h, pm, me), session, vk, vk);
         this.net.put(vk, new Outgoing(p, h, vk));
     }
 
     @Override
     public com.shuffle.protocol.message.Message make() {
-        return new Message(session, me.VerificationKey(), this);
+        return new Message(this);
     }
 
     @Override
@@ -220,14 +219,14 @@ public class Messages implements MessageFactory {
         net.clear();
     }
 
-    public SignedPacket send(Message m, Phase phase, VerificationKey to) throws InterruptedException {
+    public SignedPacket send(Message m, Phase phase, VerificationKey to) throws InterruptedException, IOException {
 
         Outgoing x = m.messages.net.get(to);
 
         if (x == null) return null;
 
         // About to send message.
-        if (!x.out.send(new P(m, phase))) {
+        if (!x.out.send(new P(phase, m))) {
             return null;
         }
 

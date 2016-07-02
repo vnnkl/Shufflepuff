@@ -16,7 +16,7 @@ import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.monad.Either;
-import com.shuffle.player.SessionIdentifier;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.Simulator;
@@ -108,7 +108,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
         int i = 0;
         for (ChangeTestCase test : tests) {
             i ++;
-            SessionIdentifier session = SessionIdentifier.TestSession("change test case " + i);
+            Bytestring session = new Bytestring(("change test case " + i).getBytes());
             InitialState init = new InitialState(session, test.amount, mc);
 
             // First create the bitcoin mock network.

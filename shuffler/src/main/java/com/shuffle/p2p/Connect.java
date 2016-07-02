@@ -80,7 +80,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
 
         public synchronized boolean openSession(
                 Identity identity,
-                Peer<Identity, P> peer) throws InterruptedException {
+                Peer<Identity, P> peer) throws InterruptedException, IOException {
 
             Send<P> processor = collector.inbox.receivesFrom(identity);
             if (processor != null) {
@@ -149,13 +149,13 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
     private boolean finished = false;
 
     public Connect(Channel<Identity, P> channel, Crypto crypto)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
 
         this(channel, crypto, 100);
     }
 
     public Connect(Channel<Identity, P> channel, Crypto crypto, int capacity)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
 
         if (channel == null || crypto == null) throw new NullPointerException();
 

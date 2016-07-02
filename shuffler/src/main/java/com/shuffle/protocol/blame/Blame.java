@@ -29,14 +29,14 @@ public class Blame implements Serializable {
     public final Transaction t;
     public final Queue<Packet> packets;
     public final DecryptionKey privateKey;
-    public final Bytestring invalid;
+    public final Bytestring invalid; // Used for an invalid signature.
 
-    private Blame(Reason reason,
-          VerificationKey accused,
-          Transaction t,
-          DecryptionKey privateKey,
-          Queue<Packet> packets,
-          Bytestring invalid) {
+    public Blame(Reason reason,
+                  VerificationKey accused,
+                  Transaction t,
+                  DecryptionKey privateKey,
+                  Bytestring invalid,
+                  Queue<Packet> packets) {
 
         if (reason == null) {
             throw new IllegalArgumentException();
@@ -138,12 +138,12 @@ public class Blame implements Serializable {
 
     // Sent when a player makes an invalid signature to the transaction.
     public static Blame InvalidSignature(VerificationKey accused, Bytestring invalid) {
-        return new Blame(Reason.InvalidSignature, accused, null, null, null, invalid);
+        return new Blame(Reason.InvalidSignature, accused, null, null, invalid, null);
     }
 
     // Sent when something goes wrong in phase 4.
     public static Blame EquivocationFailure(Queue<Packet> packets) {
-        return new Blame(Reason.EquivocationFailure, null, null, null, packets, null);
+        return new Blame(Reason.EquivocationFailure, null, null, null, null, packets);
     }
 
     // Sent when something goes wrong in phase 2.
@@ -162,6 +162,6 @@ public class Blame implements Serializable {
             Queue<Packet> packets
     ) {
         return new Blame(
-                Reason.ShuffleAndEquivocationFailure, null, null, privateKey, packets, null);
+                Reason.ShuffleAndEquivocationFailure, null, null, privateKey, null, packets);
     }
 }

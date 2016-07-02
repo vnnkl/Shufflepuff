@@ -1,5 +1,6 @@
 package com.shuffle.chan;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -55,7 +56,7 @@ public class RateLimitedSend<X> implements Chan<X> {
     }
 
     @Override
-    public boolean send(X x) throws InterruptedException {
+    public boolean send(X x) throws InterruptedException, IOException {
         // Message size and time to send.
         double xSize = size.size(x);
 

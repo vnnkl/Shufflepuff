@@ -8,6 +8,7 @@
 
 package com.shuffle.p2p;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -25,5 +26,5 @@ public interface Channel<Address, Message extends Serializable> {
     Peer<Address, Message> getPeer(Address you);
 
     // Returns null if the connection could not be opened.
-    Connection<Address> open(final Listener<Address, Message> listener) throws InterruptedException;
+    Connection<Address> open(final Listener<Address, Message> listener) throws InterruptedException, IOException;
 }

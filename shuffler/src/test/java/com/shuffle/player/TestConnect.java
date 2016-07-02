@@ -179,7 +179,7 @@ public class TestConnect {
         }
     }
 
-    private Map<Integer, Collector<Integer, String>> simulation(int n, int seed) throws InterruptedException {
+    private Map<Integer, Collector<Integer, String>> simulation(int n, int seed) throws InterruptedException, IOException {
         if (n <= 0) {
             return new HashMap<>();
         }

@@ -11,6 +11,7 @@ package com.shuffle.p2p;
 import com.shuffle.chan.Send;
 import com.shuffle.monad.Either;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -29,7 +30,7 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
         }
 
         @Override
-        public boolean send(Message message) throws InterruptedException {
+        public boolean send(Message message) throws InterruptedException, IOException {
             if (first == null) {
                 return second.send(message);
             }
@@ -84,7 +85,7 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
 
         @Override
         public Session<Either<X, Y>, Message> openSession(Send<Message> receiver)
-                throws InterruptedException {
+                throws InterruptedException, IOException {
 
             if (first == null) {
                 Session<Y, Message> sy = second.openSession(receiver);
@@ -161,7 +162,7 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
 
     @Override
     public Connection<Either<X, Y>> open(final Listener<Either<X, Y>, Message> listener)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
         
         Connection<X> cx = x.open(new Listener<X, Message>(){
             @Override

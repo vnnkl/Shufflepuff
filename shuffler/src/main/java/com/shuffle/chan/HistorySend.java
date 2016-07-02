@@ -1,5 +1,6 @@
 package com.shuffle.chan;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -15,7 +16,7 @@ public class HistorySend<X> implements Send<X> {
     }
 
     @Override
-    public boolean send(X x) throws InterruptedException {
+    public boolean send(X x) throws InterruptedException, IOException {
         boolean sent = chan.send(x);
 
         if (sent) {

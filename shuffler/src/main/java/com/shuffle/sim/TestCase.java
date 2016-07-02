@@ -12,7 +12,7 @@ import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.monad.Either;
-import com.shuffle.chan.packet.SessionIdentifier;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Matrix;
 
 import org.apache.logging.log4j.Logger;
@@ -85,9 +85,9 @@ public abstract class TestCase {
 
     private final long amount;
 
-    private final SessionIdentifier session;
+    private final Bytestring session;
 
-    protected TestCase(long amount, SessionIdentifier session) {
+    protected TestCase(long amount, Bytestring session) {
         this.amount = amount;
         this.session = session;
     }

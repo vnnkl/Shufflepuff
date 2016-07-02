@@ -16,6 +16,7 @@ import com.shuffle.p2p.Listener;
 import com.shuffle.p2p.Peer;
 import com.shuffle.p2p.Session;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -180,7 +181,7 @@ public class MockNetwork<Q, X extends Serializable> {
                 }
 
                 @Override
-                public boolean send(X x) throws InterruptedException {
+                public boolean send(X x) throws InterruptedException, IOException {
                     return !closed && send.send(x);
                 }
 

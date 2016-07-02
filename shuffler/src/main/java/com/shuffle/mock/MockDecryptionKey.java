@@ -29,6 +29,11 @@ public class MockDecryptionKey implements DecryptionKey, Serializable {
         key = new MockEncryptionKey(index);
     }
 
+    public MockDecryptionKey(String str) throws NumberFormatException {
+        index = Integer.parseInt(str);
+        key = new MockEncryptionKey(index);
+    }
+
     @Override
     public EncryptionKey EncryptionKey() {
         return key;

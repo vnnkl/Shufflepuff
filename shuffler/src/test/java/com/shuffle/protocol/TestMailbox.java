@@ -14,8 +14,8 @@ import com.shuffle.chan.Inbox;
 
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Messages;
-import com.shuffle.player.SessionIdentifier;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.player.P;
@@ -55,7 +55,7 @@ public class TestMailbox {
     }
 
     @Test
-    public void testBroadcast() throws InvalidParticipantSetException, InterruptedException, IOException, NoSuchAlgorithmException {
+    public void testBroadcast() throws InvalidParticipantSetException, InterruptedException, IOException, NoSuchAlgorithmException, FormatException {
         BroadcastTestCase[] tests =
                 new BroadcastTestCase[]{
                         new BroadcastTestCase(1, 1),
@@ -77,7 +77,7 @@ public class TestMailbox {
             }
 
             MockSigningKey me = new MockSigningKey(test.sender);
-            com.shuffle.chan.packet.SessionIdentifier session = SessionIdentifier.TestSession("test broadcast");
+            Bytestring session = new Bytestring(("test broadcast").getBytes());
 
             MockNetwork network = new MockNetwork(session, me, test.recipients, 100);
 
@@ -116,7 +116,7 @@ public class TestMailbox {
     }
 
     @Test
-    public void testSend() throws InvalidParticipantSetException, InterruptedException, IOException, NoSuchAlgorithmException {
+    public void testSend() throws InvalidParticipantSetException, InterruptedException, IOException, NoSuchAlgorithmException, FormatException {
         SendToTestCase[] tests = new SendToTestCase[]{
                 // Case where recipient does not exist.
                 new SendToTestCase(1, 3, 2, false),
@@ -132,7 +132,7 @@ public class TestMailbox {
             MockSigningKey sk = new MockSigningKey(test.sender);
 
             // Create mock network object.
-            SessionIdentifier session = SessionIdentifier.TestSession("testSend" + index);
+            Bytestring session = new Bytestring(("testSend" + index).getBytes());
             MockNetwork network = new MockNetwork(session, sk, test.players, 100);
 
             // make the set of players.
@@ -219,7 +219,7 @@ public class TestMailbox {
                 players.add(j.VerificationKey());
             }
 
-            SessionIdentifier session = SessionIdentifier.TestSession("receiveFromTest" + index);
+            Bytestring session = new Bytestring(("receiveFromTest" + index).getBytes());
             MockNetwork network = new MockNetwork(session, sk, test.players, 100);
 
             try {
@@ -314,7 +314,7 @@ public class TestMailbox {
             SigningKey sk = new MockSigningKey(test.me);
             VerificationKey vk = sk.VerificationKey();
 
-            SessionIdentifier session = SessionIdentifier.TestSession("receiveFromMultiple" + i);
+            Bytestring session = new Bytestring(("receiveFromMultiple" + i).getBytes());
 
             // Create mock network object.
             MockNetwork network = new MockNetwork(session, sk, test.players, 100);

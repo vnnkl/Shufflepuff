@@ -2,20 +2,16 @@ package com.shuffle.player;
 
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.EncryptionKey;
-import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.packet.Marshaller;
-import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.blame.Blame;
 import com.shuffle.protocol.message.Phase;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Deque;
-import java.util.Iterator;
 
 /**
  * Implementation of coin shuffle messages.
@@ -27,12 +23,16 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
     public static class SecureHash implements Serializable {
         public final Bytestring hashed;
 
-        public SecureHash(MessageDigest digest, Marshaller<Atom> m, Atom toHash) {
+        public SecureHash(MessageDigest digest, Marshaller<Atom> m, Atom toHash) throws FormatException, IOException {
             digest.update(m.marshall(toHash).bytes);
 
             hashed = new Bytestring(digest.digest());
 
             digest.reset();
+        }
+
+        public SecureHash(Bytestring b) {
+            hashed = b;
         }
 
         public String toString() {
@@ -57,65 +57,53 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
     public static class Atom implements Serializable {
         public final Address addr;
         public final EncryptionKey ek;
-        public final Bytestring sig;
         public final SecureHash secureHash;
+        public final Bytestring sig;
         public final Blame blame;
-
-        public final Transaction t;
-        // Sometimes, we have to send whole packets that we previously received.
-        public final com.shuffle.protocol.message.Packet packet;
 
         public final Atom next;
 
-        private Atom(
+        public Atom(
                 Address addr,
                 EncryptionKey ek,
-                Bytestring sig,
                 SecureHash secureHash,
+                Bytestring sig,
                 Blame blame,
-                Transaction t,
-                com.shuffle.protocol.message.Packet packet,
+                //com.shuffle.protocol.message.Packet packet,
                 Atom next
         ) {
             // Enforce the correct format.
             format:
             {
                 if (addr != null) {
-                    if (ek != null || sig != null || secureHash != null || blame != null || t != null) {
+                    if (ek != null || sig != null || secureHash != null || blame != null) {
                         throw new IllegalArgumentException();
                     }
                     break format;
                 }
 
                 if (ek != null) {
-                    if (sig != null || secureHash != null || blame != null || t != null) {
+                    if (sig != null || secureHash != null || blame != null) {
                         throw new IllegalArgumentException();
                     }
                     break format;
                 }
 
                 if (sig != null) {
-                    if (secureHash != null || blame != null || t != null) {
+                    if (secureHash != null || blame != null) {
                         throw new IllegalArgumentException();
                     }
                     break format;
                 }
 
                 if (secureHash != null) {
-                    if (blame != null || t != null) {
+                    if (blame != null) {
                         throw new IllegalArgumentException();
                     }
                     break format;
                 }
 
                 if (blame != null) {
-                    if (t != null) {
-                        throw new IllegalArgumentException();
-                    }
-                    break format;
-                }
-
-                if (t != null) {
                     break format;
                 }
 
@@ -127,38 +115,30 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
             this.sig = sig;
             this.secureHash = secureHash;
             this.blame = blame;
-            this.t = t;
-            this.packet = packet;
             this.next = next;
         }
 
         public static Atom make(Object o, Atom next) {
             if (o instanceof Address) {
-                return new Atom((Address) o, null, null, null, null, null, null, next);
+                return new Atom((Address) o, null, null, null, null, next);
             }
             if (o instanceof EncryptionKey) {
-                return new Atom(null, (EncryptionKey) o, null, null, null, null, null, next);
-            }
-            if (o instanceof Bytestring) {
-                return new Atom(null, null, (Bytestring) o, null, null, null, null, next);
+                return new Atom(null, (EncryptionKey) o, null, null, null, next);
             }
             if (o instanceof SecureHash) {
-                return new Atom(null, null, null, (SecureHash) o, null, null, null, next);
+                return new Atom(null, null, (SecureHash) o, null, null, next);
+            }
+            if (o instanceof Bytestring) {
+                return new Atom(null, null, null, (Bytestring) o, null, next);
             }
             if (o instanceof Blame) {
-                return new Atom(null, null, null, null, (Blame) o, null, null, next);
-            }
-            if (o instanceof Transaction) {
-                return new Atom(null, null, null, null, null, (Transaction) o, null, next);
-            }
-            if (o instanceof com.shuffle.protocol.message.Packet) {
-                return new Atom(null, null, null, null, null, null, (com.shuffle.protocol.message.Packet) o, next);
+                return new Atom(null, null, null, null, (Blame) o,  next);
             }
 
             throw new IllegalArgumentException();
         }
 
-        private static Atom make(Object o) {
+        public static Atom make(Object o) {
             return make(o, null);
         }
 
@@ -167,7 +147,7 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
                 return o;
             }
 
-            return new Atom(a.addr, a.ek, a.sig, a.secureHash, a.blame, a.t, a.packet, attach(a.next, o));
+            return new Atom(a.addr, a.ek, a.secureHash, a.sig, a.blame, attach(a.next, o));
         }
 
         @Override
@@ -185,9 +165,6 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
             return this == a || a.sig == sig
                     && (a.ek == null && ek == null || ek != null && ek.equals(a.ek))
                     && (a.addr == null && addr == null || addr != null && addr.equals(a.addr))
-                    && (a.t == null && t == null || t != null && t.equals(a.t))
-                    && (a.packet == null && packet == null
-                    || packet != null && packet.equals(a.packet))
                     && (a.blame == null && blame == null || blame != null && blame.equals(a.blame))
                     && (a.secureHash == null && secureHash == null || secureHash != null && secureHash.equals(a.secureHash))
                     && (a.next == null && next == null || next != null && next.equals(a.next));
@@ -216,10 +193,6 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
 
             if (secureHash != null) str += secureHash.toString();
 
-            if (t != null) str += t.toString();
-
-            if (packet != null) str += packet.toString();
-
             if (blame != null) str += blame.toString();
 
             if (next != null) str += "⊕" + next.toString();
@@ -233,59 +206,21 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
         }
     }
 
-    public final SessionIdentifier session;
     public final Atom atoms;
-    public final VerificationKey from;
 
     // If this message can be sent, then this is the network by
     // which it is sent. Otherwise, it's null.
     final transient Messages messages;
 
-    public Message(
-            SessionIdentifier session,
-            VerificationKey from,
-            Messages messages) {
-
-        if (from == null || session == null) throw new NullPointerException();
+    public Message(Messages messages) {
 
         atoms = null;
-        this.session = session;
-        this.from = from;
         this.messages = messages;
     }
 
-    private Message(
-            SessionIdentifier session,
-            VerificationKey from,
-            Atom atom,
-            Messages messages) {
+    public Message(Atom atom, Messages messages) {
 
-        if (session == null || from == null) throw new NullPointerException();
-
-        this.from = from;
         atoms = atom;
-        this.session = session;
-        this.messages = messages;
-    }
-
-    public Message(SessionIdentifier session,
-                   VerificationKey from,
-                   Deque atoms,
-                   Messages messages) {
-
-        if (session == null || from == null || atoms == null) throw new NullPointerException();
-
-        Atom atom = null;
-
-        Iterator i = atoms.descendingIterator();
-
-        while (i.hasNext()) {
-            atom = Atom.make(i.next(), atom);
-        }
-
-        this.atoms = atom;
-        this.session = session;
-        this.from = from;
         this.messages = messages;
     }
 
@@ -294,72 +229,64 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
         return atoms == null;
     }
 
-    public com.shuffle.protocol.message.Message attachAddrs(Deque<Address> addrs) {
-        if (addrs == null) throw new NullPointerException();
-
-        Message m = new Message(session, from, addrs, messages);
-
-        return new Message(session, from, Atom.attach(atoms, m.atoms), messages);
-    }
-
     @Override
     public com.shuffle.protocol.message.Message attach(EncryptionKey ek) {
         if (ek == null) throw new NullPointerException();
 
-        return new Message(session, from, Atom.attach(atoms, Atom.make(ek)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(ek)), messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Message attach(Address addr) {
         if (addr == null) throw new NullPointerException();
 
-        return new Message(session, from, Atom.attach(atoms, Atom.make(addr)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(addr)), messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Message attach(Bytestring sig) {
         if (sig == null) throw new NullPointerException();
 
-        return new Message(session, from, Atom.attach(atoms, Atom.make(sig)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(sig)), messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Message attach(Blame blame) {
         if (blame == null) throw new NullPointerException();
 
-        return new Message(session, from, Atom.attach(atoms, Atom.make(blame)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(blame)), messages);
     }
 
-    public com.shuffle.protocol.message.Message hashed() {
+    public com.shuffle.protocol.message.Message hashed() throws FormatException, IOException {
 
-        return new Message(session, from, Atom.make(
-                new SecureHash(messages.sha256, messages.marshaller, this.atoms)), messages);
+        return new Message(Atom.make(
+                new SecureHash(messages.sha256, messages.atomMarshaller, this.atoms)), messages);
     }
 
     @Override
     public EncryptionKey readEncryptionKey() throws FormatException {
-        if (atoms == null || atoms.ek == null) throw new FormatException();
+        if (atoms == null || atoms.ek == null) throw new FormatException("Encryption key not found.");
 
         return atoms.ek;
     }
 
     @Override
     public Address readAddress() throws FormatException {
-        if (atoms == null || atoms.addr == null) throw new FormatException();
+        if (atoms == null || atoms.addr == null) throw new FormatException("Address not found.");
 
         return atoms.addr;
     }
 
     @Override
     public Blame readBlame() throws FormatException {
-        if (atoms == null || atoms.blame == null) throw new FormatException();
+        if (atoms == null || atoms.blame == null) throw new FormatException("Blame not found");
 
         return atoms.blame;
     }
 
     @Override
     public Bytestring readSignature() throws FormatException {
-        if (atoms == null || atoms.sig == null) throw new FormatException();
+        if (atoms == null || atoms.sig == null) throw new FormatException("Signature not found");
 
         return atoms.sig;
     }
@@ -367,14 +294,14 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
     @Override
     public com.shuffle.protocol.message.Message rest() throws FormatException {
 
-        if (atoms == null) throw new FormatException();
+        if (atoms == null) throw new FormatException("Rest called on last element.");
 
-        return new Message(session, from, atoms.next, messages);
+        return new Message(atoms.next, messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Packet send(Phase phase, VerificationKey to)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
 
         if (messages == null) return null;
 
@@ -390,15 +317,13 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
 
         Message mock = (Message) o;
 
-        return session.equals(mock.session)
-                && ((atoms == null && mock.atoms == null)
+        return ((atoms == null && mock.atoms == null)
                 || (atoms != null && atoms.equals(mock.atoms)));
     }
 
     @Override
     public int hashCode() {
         int hash = 0;
-        hash = hash * 15 + session.hashCode();
         hash = hash * 15 + atoms.hashCode();
         return hash;
     }

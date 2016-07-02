@@ -42,7 +42,7 @@ public interface Message extends Serializable {
 
     Message rest() throws FormatException;
 
-    Message hashed();
+    Message hashed() throws FormatException, IOException;
 
     // Send across the CoinShuffle network.
     Packet send(Phase phase, VerificationKey to) throws // May be thrown if this protocol runs in an interruptable thread.

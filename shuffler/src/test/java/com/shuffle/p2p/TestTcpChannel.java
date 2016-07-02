@@ -97,7 +97,7 @@ public class TestTcpChannel {
 
             @Override
             public Session<Integer, Integer> openSession(Send<Integer> send)
-                    throws InterruptedException {
+                    throws InterruptedException, IOException {
 
                 Session<InetSocketAddress, Bytestring> p = peer.openSession(new TcpTestReceiver(send));
 
@@ -138,7 +138,7 @@ public class TestTcpChannel {
             }
 
             @Override
-            public boolean send(Integer integer) throws InterruptedException {
+            public boolean send(Integer integer) throws InterruptedException, IOException {
 
                 return session.send(new Bytestring(ByteBuffer.allocate(4).putInt(integer).array()));
             }
@@ -201,7 +201,7 @@ public class TestTcpChannel {
         }
 
         @Override
-        public Connection<Integer> open(Listener<Integer, Integer> listener) {
+        public Connection<Integer> open(Listener<Integer, Integer> listener) throws IOException {
             return new TcpTestConnection(tcp.open(new TcpTestListener(listener)));
         }
     }
@@ -217,7 +217,7 @@ public class TestTcpChannel {
         }
 
         @Override
-        public boolean send(Bytestring bytestring) throws InterruptedException {
+        public boolean send(Bytestring bytestring) throws InterruptedException, IOException {
             if (closed) return false;
 
             byte[] bytes = bytestring.bytes;
@@ -269,7 +269,7 @@ public class TestTcpChannel {
         }
 
         @Override
-        public boolean send(Integer i) throws InterruptedException {
+        public boolean send(Integer i) throws InterruptedException, IOException {
             if (closed) return false;
 
             if (from == -1) {
@@ -315,7 +315,7 @@ public class TestTcpChannel {
     }
 
     @Before
-    public void setup() throws InterruptedException, UnknownHostException {
+    public void setup() throws InterruptedException, IOException {
         int[] numbers = new int[]{0, 1, 2};
         int[] port = new int[]{9997, 9998, 9999};
         InetSocketAddress[] addresses = new InetSocketAddress[3];

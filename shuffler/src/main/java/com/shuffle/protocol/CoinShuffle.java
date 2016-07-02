@@ -138,6 +138,7 @@ public class CoinShuffle {
             }
 
             readAnnouncements(announcement, encryptionKeys, changeAddresses);
+            System.out.println("Player " + me + ":" + sk + " receives keys " + encryptionKeys);
 
             // Phase 2: Shuffle
             // In the shuffle phase, players go in order and reorder the addresses they have been
@@ -289,7 +290,7 @@ public class CoinShuffle {
 
         // Everyone except player 1 creates a new keypair and sends it around to everyone else.
         DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
-                throws TimeoutException, InterruptedException, IOException {
+                throws TimeoutException, InterruptedException, IOException, FormatException {
 
             DecryptionKey dk = null;
             dk = crypto.makeDecryptionKey();
@@ -301,6 +302,7 @@ public class CoinShuffle {
             if (change != null) {
                 message = message.attach(change);
             }
+            System.out.println("Player " + me + " broadcasts key " + message);
 
             mailbox.broadcast(message, phase.get());
             return dk;
@@ -405,6 +407,7 @@ public class CoinShuffle {
         ) throws InterruptedException, TimeoutException, Matrix, IOException, FormatException {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
+            System.out.println("Player " + me + " makes equivocation check message " + equivocationCheck);
             mailbox.broadcast(equivocationCheck, phase.get());
 
             // Wait for a similar message from everyone else and check that the result is the name.
@@ -413,6 +416,7 @@ public class CoinShuffle {
                     phase.get());
 
             hashes.put(vk, equivocationCheck);
+            System.out.println("Player " + me + " checks hashes " + hashes);
 
             if (areEqual(hashes.values())) {
                 // We may have got this far as part of a normal part of the protocol or as a part
@@ -820,7 +824,7 @@ public class CoinShuffle {
         final Message equivocationCheckHash(
                 Map<Integer, VerificationKey> players,
                 Map<VerificationKey, EncryptionKey> encryptionKeys,
-                Queue<Address> newAddresses) {
+                Queue<Address> newAddresses) throws FormatException, IOException {
 
             // Put all temporary encryption keys into a list and hash the result.
             Message check = messages.make();
@@ -1172,7 +1176,7 @@ public class CoinShuffle {
             return phase;
         }
 
-        public void set(Phase phase) throws InterruptedException {
+        public void set(Phase phase) throws InterruptedException, IOException {
             this.phase = phase;
             if (ch != null) {
                 ch.send(phase);
@@ -1183,7 +1187,7 @@ public class CoinShuffle {
             ch = null;
         }
 
-        public CurrentPhase(Send<Phase> ch) throws InterruptedException {
+        public CurrentPhase(Send<Phase> ch) throws InterruptedException, IOException {
             if (ch == null) {
                 throw new NullPointerException();
             }

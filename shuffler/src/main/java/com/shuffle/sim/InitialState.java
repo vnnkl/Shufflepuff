@@ -13,10 +13,15 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.chan.packet.JavaMarshaller;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
+import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
-import com.shuffle.chan.packet.SessionIdentifier;
 import com.shuffle.player.P;
+import com.shuffle.player.Protobuf;
+import com.shuffle.player.proto.Proto;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.MaliciousMachine;
 import com.shuffle.protocol.message.MessageFactory;
@@ -42,6 +47,11 @@ import java.util.TreeSet;
  * Created by Simulator on 2/8/16.
  */
 public class InitialState {
+    public enum MarshallType {
+        Java,
+        Protobuf,
+    }
+
     // An expected return state that matches any blame matrix, even a null one.
     // Used for ensuring a test can't fail no matter what value
     // simulated adversaries return, since we only care about testing the response of the
@@ -130,7 +140,7 @@ public class InitialState {
     private static final ExpectedPatternAny anyMatrix = new ExpectedPatternAny();
     private static final ExpectedPatternNull nullMatrix = new ExpectedPatternNull();
 
-    public final SessionIdentifier session;
+    public final Bytestring session;
     private final long amount;
     private final Crypto crypto;
     private final LinkedList<PlayerInitialState> players = new LinkedList<>();
@@ -171,7 +181,7 @@ public class InitialState {
             this.vk = vk;
         }
 
-        public SessionIdentifier getSession() {
+        public Bytestring getSession() {
             return InitialState.this.session;
         }
 
@@ -383,13 +393,34 @@ public class InitialState {
             connections.put(player.sk, initializer.connect(player.sk));
         }
 
+        Marshaller<Message.Atom> am;
+        Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> pm;
+
+        switch (mt) {
+            case Java: {
+                am = new JavaMarshaller<>();
+                pm = new JavaMarshaller<>();
+                break;
+            }
+            case Protobuf: {
+                am = Protobuf.atomMarshaller;
+                pm = Protobuf.packetMarshaller;
+                break;
+            }
+            default : {
+                // This should not happen.
+                throw new IllegalArgumentException();
+            }
+        }
+
         for (final PlayerInitialState player : players) {
 
             Initializer.Connections<Packet<VerificationKey, P>> c = connections.get(player.sk);
 
             try {
                 p.put(player.sk,
-                        player.adversary(new Messages(session, player.sk, c.send, c.receive)));
+                        player.adversary(new Messages(session, player.sk, c.send, c.receive,
+                                am, pm)));
 
             } catch (CoinNetworkException | NoSuchAlgorithmException e) {
                 return null; // Should not really happen.
@@ -417,11 +448,22 @@ public class InitialState {
 
     private Map<Integer, MockCoin> networkPoints = null;
 
-    public InitialState(SessionIdentifier session, long amount, Crypto crypto) {
+    private final MarshallType mt;
+
+    public InitialState(Bytestring session, long amount, Crypto crypto, MarshallType mt) {
 
         this.session = session;
         this.amount = amount;
         this.crypto = crypto;
+        this.mt = mt;
+    }
+
+    public InitialState(Bytestring session, long amount, Crypto crypto) {
+
+        this.session = session;
+        this.amount = amount;
+        this.crypto = crypto;
+        this.mt = MarshallType.Protobuf;
     }
 
     public InitialState player() {
@@ -536,7 +578,7 @@ public class InitialState {
 
     // An initial state containing no malicious players.
     public static InitialState successful(
-            final SessionIdentifier session,
+            final Bytestring session,
             final long amount,
             final Crypto crypto,
             final int numPlayers
@@ -553,7 +595,7 @@ public class InitialState {
     // Initial state for cases in which players cannot afford to engage in the round, for
     // one reason or another.
     public static InitialState insufficientFunds(
-            final SessionIdentifier session,
+            final Bytestring session,
             final long amount,
             final Crypto crypto,
             final int numPlayers,
@@ -589,7 +631,7 @@ public class InitialState {
 
     // Initial state for players who spend their funds while the protocol is running.
     public static InitialState doubleSpend(
-            final SessionIdentifier session,
+            final Bytestring session,
             final long amount,
             final Crypto crypto,
             final int[] views, // Each player may have a different view of the network; ie,
@@ -645,7 +687,7 @@ public class InitialState {
 
     // Initial state for malicious players who equivocate during the announcement phase.
     public static InitialState equivocateAnnouncement(
-            final SessionIdentifier session,
+            final Bytestring session,
             final long amount,
             final Crypto crypto,
             final int numPlayers,
@@ -671,7 +713,7 @@ public class InitialState {
 
     // Initial state for a player who equivocates during the broadcast phase.
     public static InitialState equivocateBroadcast(
-            final SessionIdentifier session,
+            final Bytestring session,
             final long amount,
             final Crypto crypto,
             final int numPlayers,
@@ -693,7 +735,7 @@ public class InitialState {
 
     // Initial state for players who shuffle their addresses incorrectly.
     public static InitialState dropAddress(
-            final SessionIdentifier session,
+            final Bytestring session,
             final long amount,
             final Crypto crypto,
             final int numPlayers,
@@ -752,7 +794,7 @@ public class InitialState {
     }
 
     public static InitialState invalidSignature(
-            final SessionIdentifier session,
+            final Bytestring session,
             final long amount,
             final Crypto crypto,
             final int numPlayers,

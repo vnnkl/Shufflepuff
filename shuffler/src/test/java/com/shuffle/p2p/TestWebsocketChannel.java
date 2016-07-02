@@ -15,6 +15,8 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URI;
@@ -103,7 +105,7 @@ public class TestWebsocketChannel {
     }
 
     @Test
-    public void sendAndReceive() throws InterruptedException, URISyntaxException {
+    public void sendAndReceive() throws InterruptedException, URISyntaxException, IOException {
         Peer<URI, Bytestring> peer = client.getPeer(new URI("ws://localhost:8025"));
         clientSession = peer.openSession(clientReceiverTest);
 

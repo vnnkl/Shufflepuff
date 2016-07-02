@@ -9,6 +9,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
 import com.shuffle.chan.packet.JavaMarshaller;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
@@ -23,6 +24,7 @@ import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
@@ -119,6 +121,8 @@ public class Shuffle {
 
             parser.accepts("local").withRequiredArg().ofType(String.class);
 
+            parser.accepts("format").withRequiredArg().ofType(String.class);
+
             // Five seconds from now.
             time.defaultsTo(System.currentTimeMillis() + 5000L);
 
@@ -183,7 +187,7 @@ public class Shuffle {
     public final long time;
     public final long amount;
     public final long timeout;
-    public final SessionIdentifier session;
+    public final Bytestring session;
     public final Crypto crypto;
     Set<Player> local = new HashSet<>();
     Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
@@ -239,9 +243,9 @@ public class Shuffle {
 
         // Get the session identifier.
         if (TEST_MODE) {
-            session = SessionIdentifier.TestSession((String) options.valueOf("session"));
+            session = new Bytestring(("CoinShuffle Shufflepuff test " + options.valueOf("session")).getBytes());
         } else {
-            session = SessionIdentifier.Session((String) options.valueOf("session"));
+            session = new Bytestring(("CoinShuffle Shufflepuff 1.0 beta " + options.valueOf("session")).getBytes());
         }
 
         timeout = (Long)options.valueOf("timeout");
@@ -250,6 +254,31 @@ public class Shuffle {
             report = (String)options.valueOf("report");
         } else {
             report = null;
+        }
+
+        Marshaller<Message.Atom> am;
+        Marshaller<Packet<VerificationKey, P>> pm;
+        if (TEST_MODE) {
+            if (options.has("format")) {
+                String format = (String) options.valueOf("format");
+
+                if (format.equals("java")) {
+                    am = new JavaMarshaller<>();
+                    pm = new JavaMarshaller<>();
+                } else if (format.equals("protobuf")) {
+                    am = Protobuf.atomMarshaller;
+                    pm = Protobuf.packetMarshaller;
+                } else {
+                    throw new IllegalArgumentException();
+                }
+            } else {
+
+                am = new JavaMarshaller<>();
+                pm = new JavaMarshaller<>();
+            }
+        } else {
+            am = Protobuf.atomMarshaller;
+            pm = Protobuf.packetMarshaller;
         }
 
         executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads"));
@@ -513,7 +542,7 @@ public class Shuffle {
                     throw new IllegalArgumentException("Player missing field \"port\".");
                 }
 
-                this.local.add(readPlayer(options, key, i, port, anon, change));
+                this.local.add(readPlayer(options, key, i, port, anon, change, am, pm));
             }
         } else {
             if (jsonPeers.size() == 0) {
@@ -534,9 +563,9 @@ public class Shuffle {
             String anon = (String)options.valueOf("anon");
             Long port = (Long)options.valueOf("port");
             if (!options.has("change")) {
-                this.local.add(readPlayer(options, key, 1, port, anon,  null));
+                this.local.add(readPlayer(options, key, 1, port, anon, null, am, pm));
             } else {
-                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change")));
+                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), am, pm));
             }
         }
 
@@ -548,7 +577,9 @@ public class Shuffle {
             int id,
             long port,
             String anon,
-            String change) throws UnknownHostException {
+            String change,
+            Marshaller<Message.Atom> am,
+            Marshaller<Packet<VerificationKey, P>> pm) throws UnknownHostException {
 
         SigningKey sk;
         Address anonAddress;
@@ -593,10 +624,12 @@ public class Shuffle {
                         mock.node(id)),
                     peers);
 
+
+
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, coin, crypto, channel, executor);
+                amount, coin, crypto, channel, am, pm, executor);
     }
 
     private static JSONArray readJSONArray(String ar) {

@@ -62,7 +62,8 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         @Override
-        final DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses) throws IOException, InterruptedException {
+        final DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
+                throws IOException, InterruptedException, FormatException {
 
             DecryptionKey dk = null;
 

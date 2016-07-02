@@ -10,6 +10,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,7 +80,7 @@ import java.util.Map;
                                                             }
 
                                                             @Before
-                                                public void setup() throws InterruptedException {
+                                                public void setup() throws InterruptedException, IOException {
                                                                 hosts     = new HashMap<>();
                                                                 names     = new HashMap<>();
                                                                 clients   = new HashMap<>();
@@ -155,8 +156,10 @@ import java.util.Map;
 
                                                                     Assert.assertNull(ss);
 
-                                                                } catch (NullPointerException | IllegalArgumentException e) {
-                                                                    Assert.fail("Null pointer intercepted.");
+                                                                } catch (NullPointerException
+                                                                        | IllegalArgumentException
+                                                                        | IOException e) {
+                                                                    Assert.fail("Fatal error intercepted: " + e.getMessage());
                                                                 }
                                                             }
 
@@ -166,7 +169,7 @@ import java.util.Map;
                                                                 public final Session<String, Integer> ab;
                                                                 public final Session<String, Integer> ba;
 
-                                                                private NetworkEdge(String a, String b) throws InterruptedException {
+                                                                private NetworkEdge(String a, String b) throws InterruptedException, IOException {
 
                                                                     if (a == null || b == null) {
                                                                         throw new NullPointerException();
@@ -200,7 +203,7 @@ import java.util.Map;
                                                             }
 
                                                             @Test
-                                                            public void TestOpenSessions() throws InterruptedException {
+                                                            public void TestOpenSessions() throws InterruptedException, IOException {
 
                                                                 // There is no shemp, so a session to him cannot be opened.
                                                                 openSessionFail("Moe", "Shemp");
@@ -219,7 +222,7 @@ import java.util.Map;
 
                                                             Integer msgNo = 73;
 
-                                               private void sendMessage(String a, String b, Session<String, Integer> ab) throws InterruptedException {
+                                               private void sendMessage(String a, String b, Session<String, Integer> ab) throws InterruptedException, IOException {
 
                                                                 // Send a message from A to B.
 
@@ -230,14 +233,14 @@ import java.util.Map;
 
                                                             }
 
-                                                public void sendMessages(NetworkEdge ab) throws InterruptedException {
+                                                public void sendMessages(NetworkEdge ab) throws InterruptedException, IOException {
                                                                 sendMessage(ab.a, ab.b, ab.ab);
                                                                 sendMessage(ab.b, ab.a, ab.ba);
 
                                                             }
 
                                                             @Test
-                                                            public void TestSendMessage() throws InterruptedException {
+                                                            public void TestSendMessage() throws InterruptedException, IOException {
                                                                 NetworkEdge ml = new NetworkEdge("Moe", "Larry");
 
                                                                 NetworkEdge mc = new NetworkEdge("Moe", "Curly");

@@ -65,7 +65,8 @@ public class Mailbox {
     }
 
     // Send a message into the network.
-    public void send(Message m, Phase phase, VerificationKey to) throws IOException, InterruptedException {
+    public void send(Message m, Phase phase, VerificationKey to)
+            throws IOException, InterruptedException, FormatException {
 
         // Don't send anything to a nonexistent player.
         if (!players.contains(to)) {
@@ -79,16 +80,14 @@ public class Mailbox {
         if (to.equals(me)) {
             history.add(packet);
             if (packet.phase() == Phase.Blame) {
-                try {
-                    blame.add(packet.payload().readBlame().reason);
-                } catch (FormatException e) {
-                    e.printStackTrace();
-                }
+                blame.add(packet.payload().readBlame().reason);
             }
         }
     }
 
-    public void broadcast(Message message, Phase phase) throws IOException, InterruptedException {
+    public void broadcast(Message message, Phase phase)
+            throws IOException, InterruptedException, FormatException {
+
         for (VerificationKey to : players) {
             send(message, phase, to);
         }

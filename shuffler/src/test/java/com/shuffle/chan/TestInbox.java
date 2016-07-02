@@ -4,6 +4,7 @@ package com.shuffle.chan;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -19,7 +20,7 @@ public class TestInbox {
 
     static int testNum = 0;
 
-    public static void runTest(int[] tpeers, int[] tmessages) throws InterruptedException {
+    public static void runTest(int[] tpeers, int[] tmessages) throws InterruptedException, IOException {
         testNum++;
         System.out.println("Test case " + testNum);
 
@@ -79,7 +80,7 @@ public class TestInbox {
     }
 
     @Test
-    public void testInbox() throws InterruptedException {
+    public void testInbox() throws InterruptedException, IOException {
         runTest(new int[]{}, new int[]{});
         runTest(new int[]{1}, new int[]{});
         runTest(new int[]{2, 3}, new int[]{});

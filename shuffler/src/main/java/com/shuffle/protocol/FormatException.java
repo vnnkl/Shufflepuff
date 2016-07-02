@@ -16,14 +16,7 @@ import com.shuffle.protocol.message.Message;
  * Created by Daniel Krawisz on 12/4/15.
  */
 public class FormatException extends Exception {
-    /*public FormatException(Expected expected) {
-        this.expected = expected;
+    public FormatException(String string) {
+        super(string);
     }
-
-    public enum Expected {
-
-    };
-
-    public final Expected expected;
-    public final Message message;*/
 }

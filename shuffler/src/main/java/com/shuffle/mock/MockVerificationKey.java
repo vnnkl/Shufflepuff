@@ -27,6 +27,10 @@ public class MockVerificationKey implements VerificationKey, Serializable {
         this.index = index;
     }
 
+    public MockVerificationKey(String str) throws NumberFormatException {
+        index = Integer.parseInt(str);
+    }
+
     @Override
     public boolean verify(Bytestring payload, Bytestring signature) {
         return Arrays.equals(signature.bytes, new MockSigningKey(index).sign(payload).bytes);

@@ -3,6 +3,9 @@ package com.shuffle.chan.packet;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.chan.Send;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
+
+import java.io.IOException;
 
 /**
  * A Send object that adds a signature to
@@ -29,8 +32,9 @@ public class SigningSend<X> implements Send<X> {
     }
 
     @Override
-    public boolean send(X x) throws InterruptedException {
-        Bytestring b = marshaller.marshall(x);
+    public boolean send(X x) throws InterruptedException, IOException {
+        Bytestring b;
+        b = marshaller.marshall(x);
         if (b == null) return false;
         Bytestring s = key.sign(b);
         return s != null && session.send(new Signed<>(x, s));

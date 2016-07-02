@@ -97,8 +97,7 @@ public class Adversary {
 
                     } catch (Matrix m) {
                         q.send(new Either<Transaction, Matrix>(null, m));
-                    } catch (IOException
-                            | TimeoutException
+                    } catch (TimeoutException
                             | FormatException
                             | CoinNetworkException
                             | InvalidParticipantSetException e) {
@@ -109,8 +108,10 @@ public class Adversary {
                         q.close();
                     }
 
-                }  catch (InterruptedException e) {
-                    // Ignore and we'll just return nothing.
+                }  catch (InterruptedException | IOException e) {
+                    // This should not happen! Indicates that something
+                    // went wrong with the environment our program is in.
+                    e.printStackTrace();
                 }
 
             }

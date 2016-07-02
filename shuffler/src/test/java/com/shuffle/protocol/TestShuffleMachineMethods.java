@@ -19,8 +19,8 @@ import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockEncryptedAddress;
 import com.shuffle.mock.MockEncryptionKey;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Messages;
-import com.shuffle.player.SessionIdentifier;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.mock.RandomSequence;
@@ -140,7 +140,7 @@ public class TestShuffleMachineMethods {
 
             Set<VerificationKey> result = null;
 
-            SessionIdentifier session = SessionIdentifier.TestSession("testPlayerSet" + i);
+            Bytestring session = new Bytestring(("testPlayerSet" + i).getBytes());
             MockSigningKey me = new MockSigningKey(test.player);
 
             MockNetwork network = new MockNetwork(session, me, test.players, 100);
@@ -256,7 +256,7 @@ public class TestShuffleMachineMethods {
         players.add(new MockSigningKey(3));
 
         for (ShuffleTestCase test : tests) {
-            SessionIdentifier session = SessionIdentifier.TestSession("shuffle test");
+            Bytestring session = new Bytestring(("shuffle test").getBytes());
             MockNetwork network = new MockNetwork(session, me, players, 100);
 
             Messages messages = network.messages(me.VerificationKey());
@@ -294,7 +294,7 @@ public class TestShuffleMachineMethods {
             players.add(new MockSigningKey(2));
 
             messages = new MockNetwork(
-                    SessionIdentifier.TestSession("test are equal"),
+                    new Bytestring(("test are equal").getBytes()),
                     sk, players, 100).messages(sk.VerificationKey());
 
             for (int i : input) {
@@ -304,13 +304,15 @@ public class TestShuffleMachineMethods {
             this.expected = expected;
         }
 
-        AreEqualTestCase(int[][] input, boolean expected) throws NoSuchAlgorithmException {
+        AreEqualTestCase(int[][] input, boolean expected)
+                throws NoSuchAlgorithmException, IOException, FormatException {
+
             final Set<SigningKey> players = new TreeSet<>();
             players.add(sk);
             players.add(new MockSigningKey(2));
 
             messages = new MockNetwork(
-                    SessionIdentifier.TestSession("test are equal"),
+                    new Bytestring(("test are equal").getBytes()),
                     sk, players, 100).messages(sk.VerificationKey());
 
             for (int[] in : input) {
@@ -327,7 +329,7 @@ public class TestShuffleMachineMethods {
     }
 
     @Test
-    public void testAreEqual() throws NoSuchAlgorithmException {
+    public void testAreEqual() throws NoSuchAlgorithmException, IOException, FormatException {
         AreEqualTestCase[] tests = new AreEqualTestCase[]{
                 // The empty case, of course!
                 new AreEqualTestCase(
@@ -379,7 +381,7 @@ public class TestShuffleMachineMethods {
     }
 
     private CoinShuffle.Round standardTestInitialization(
-            SessionIdentifier session,
+            Bytestring session,
             int me,
             Address addr,
             SortedSet<SigningKey> others,
@@ -416,8 +418,8 @@ public class TestShuffleMachineMethods {
             for (int i = 0; i <= 5; i++) {
 
                 // Set up a session identifier and signing key.
-                SessionIdentifier session
-                        = SessionIdentifier.TestSession("testDecryptAll" + i);
+                Bytestring session
+                        = new Bytestring(("testDecryptAll" + i).getBytes());
 
                 SortedSet<SigningKey> players = new TreeSet<>();
                 for (int j = 0; j <= i; j++) {
@@ -482,8 +484,8 @@ public class TestShuffleMachineMethods {
                     playerSet.add(vk);
                 }
 
-                SessionIdentifier sessionIdentifier
-                        = SessionIdentifier.TestSession("testReadNewAddresses" + i);
+                Bytestring sessionIdentifier
+                        = new Bytestring(("testReadNewAddresses" + i).getBytes());
                 MockNetwork net = new MockNetwork(
                         sessionIdentifier, new MockSigningKey(1), players, 100);
                 Messages messages = net.messages(sk.VerificationKey());
@@ -530,8 +532,8 @@ public class TestShuffleMachineMethods {
                     playerSet.add(vk);
                 }
 
-                SessionIdentifier sessionIdentifier
-                        = SessionIdentifier.TestSession("testReadNewAddressesfail" + i);
+                Bytestring sessionIdentifier
+                        = new Bytestring(("testReadNewAddressesfail" + i).getBytes());
                 MockNetwork net = new MockNetwork(
                         sessionIdentifier, new MockSigningKey(1), players, 100);
                 Messages messages = net.messages(sk.VerificationKey());

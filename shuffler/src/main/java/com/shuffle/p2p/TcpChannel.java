@@ -90,7 +90,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
         public synchronized TcpPeer.TcpSession putNewSession(
                 InetSocketAddress identity,
                 TcpPeer peer
-        ) {
+        ) throws IOException {
             TcpPeer.TcpSession openSession = openSessions.get(identity);
             if (openSession != null) {
                 if (openSession.socket.isConnected()) {
@@ -111,7 +111,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
         public synchronized TcpPeer.TcpSession putOpenSession(
                 InetSocketAddress identity,
                 Socket client
-        ) {
+        ) throws IOException {
             TcpPeer.TcpSession openSession = openSessions.get(identity);
             if (openSession != null) {
                 if (openSession.socket.isConnected()) {
@@ -121,12 +121,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                 openSessions.remove(identity);
             }
 
-            TcpPeer peer;
-            try {
-                peer = peers.get(identity).setSession(client);
-            } catch (IOException e) {
-                return null;
-            }
+            TcpPeer peer = peers.get(identity).setSession(client);
 
             openSessions.put(identity, peer.currentSession);
 
@@ -174,7 +169,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
             return this;
         }
 
-        TcpSession newSession() {
+        TcpSession newSession() throws IOException {
             InetSocketAddress identity = identity();
 
             InetAddress address = identity.getAddress();
@@ -183,20 +178,15 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                 return null;
             }
 
-            try {
+            Socket socket = new Socket(identity.getAddress(), identity.getPort());
 
-                Socket socket = new Socket(identity.getAddress(), identity.getPort());
-
-                return new TcpSession(socket);
-            } catch (IOException e) {
-                return null;
-            }
+            return new TcpSession(socket);
         }
 
         @Override
         public synchronized Session<InetSocketAddress, Bytestring> openSession(
                 Send<Bytestring> send
-        ) {
+        ) throws IOException {
             // Don't allow sessions to be opened when we're opening or closing the channel.
             synchronized (lock) { }
 
@@ -234,7 +224,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
             }
 
             @Override
-            public synchronized boolean send(Bytestring message) {
+            public synchronized boolean send(Bytestring message) throws IOException {
                 // Don't allow sending messages while we're opening or closing the channel.
                 synchronized (lock) { }
 
@@ -246,9 +236,8 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                     socket.getOutputStream().write(header.makeHeader(message.bytes.length).bytes);
                     socket.getOutputStream().write(message.bytes);
                 } catch (IOException e) {
-                    // socket should be closed by throwing an exception.
                     socket = null;
-                    return false;
+                    throw e;
                 }
 
                 return true;
@@ -263,7 +252,8 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                 try {
                     socket.close();
                 } catch (IOException ignored) {
-
+                    // This doesn't make any sense because you
+                    // should always be able to close a connection!
                 }
                 socket = null;
                 in = null;
@@ -320,7 +310,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
             try {
                 send.close();
             } catch (InterruptedException e) {
-
+                // This doesn't actually change how the program ends but we have to catch it anyway.
             }
         }
     }
@@ -427,7 +417,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
     @Override
     public Connection<InetSocketAddress> open(
             Listener<InetSocketAddress, Bytestring> listener
-    ) {
+    ) throws IOException {
         if (listener == null) {
             throw new NullPointerException();
         }
@@ -436,11 +426,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
             if (running) return null;
 
             if (server == null) {
-                try {
-                    server = new ServerSocket(port);
-                } catch (IOException e) {
-                    return null;
-                }
+                server = new ServerSocket(port);
             }
 
             running = true;

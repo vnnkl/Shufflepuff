@@ -2,6 +2,7 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.Send;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
 
         @Override
-        public boolean send(X x) throws InterruptedException {
+        public boolean send(X x) throws InterruptedException, IOException {
             return inner.send(x);
         }
 
@@ -76,7 +77,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
 
         @Override
-        public Session<Identity, X> openSession(Send<X> send) throws InterruptedException {
+        public Session<Identity, X> openSession(Send<X> send) throws InterruptedException, IOException {
             Session<Address, X> session = inner.openSession(send);
             if (session == null) return null;
             return new MappedSession(session, identity);
@@ -132,7 +133,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
     }
 
     @Override
-    public Connection<Identity> open(Listener<Identity, X> listener) throws InterruptedException {
+    public Connection<Identity> open(Listener<Identity, X> listener) throws InterruptedException, IOException {
         Connection<Address> c = inner.open(new MappedListener(listener));
         if (c == null) return null;
         return new MappedConnection(c);
