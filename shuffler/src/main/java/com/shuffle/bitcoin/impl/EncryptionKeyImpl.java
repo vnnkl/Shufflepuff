@@ -15,6 +15,7 @@ import java.security.PublicKey;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 
@@ -37,7 +38,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    public EncryptionKeyImpl(PublicKey pubKey) {
-      this.encryptionKey = ECKey.fromPublicOnly(pubKey.getEncoded());
+      //this.encryptionKey = ECKey.fromPublicOnly(pubKey.getEncoded());
       this.publicKey = pubKey;
    }
 
@@ -51,6 +52,13 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    public String toString() {
+      if (this.encryptionKey.getPrivateKeyAsHex() == null){
+         if (publicKey != null){
+            return Arrays.toString(this.publicKey.getEncoded());
+         }
+      }else{
+         return this.encryptionKey.getPublicKeyAsHex();
+      }
       return this.encryptionKey.getPublicKeyAsHex();
    }
 
