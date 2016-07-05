@@ -26,6 +26,8 @@ public class SigningKeyImpl implements SigningKey {
       this.signingKey = ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8));
    }
 
+
+   // returns Private Key in WIF Compressed 52 characters base58
    public String toString() {
       return this.signingKey.getPrivateKeyAsWiF(bitcoinCrypto.getParams()).toString();
    }
