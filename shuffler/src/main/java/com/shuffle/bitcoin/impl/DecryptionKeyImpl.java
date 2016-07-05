@@ -64,9 +64,9 @@ public class DecryptionKeyImpl implements DecryptionKey {
    }
 
 
-   // returns private key in Private Key WIF (compressed, 52 characters base58, starts with a 'c')
+   // returns encoded private key in hex format
    public java.lang.String toString() {
-      return this.key.getPrivateKeyAsWiF(bitcoinCrypto.getParams());
+      return org.bouncycastle.util.encoders.Hex.toHexString(privateKey.getEncoded());
    }
 
    public ECKey getKey() {
@@ -75,8 +75,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
 
    @Override
    public EncryptionKey EncryptionKey() {
-      ECKey pubkey = ECKey.fromPublicOnly(key.getPubKey());
-      return new EncryptionKeyImpl(pubkey);
+      return new EncryptionKeyImpl(publicKey);
    }
 
 

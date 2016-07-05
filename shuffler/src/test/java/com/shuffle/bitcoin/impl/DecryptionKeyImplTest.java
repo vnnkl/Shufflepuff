@@ -98,7 +98,7 @@ public class DecryptionKeyImplTest {
 
         System.out.println("\nBegin Test encryptionKey:");
         byte[] pub = ECKey.publicKeyFromPrivate(ecKey.getPrivKey(), ecKey.isCompressed());
-        EncryptionKey encryptionKey1 = new EncryptionKeyImpl(ECKey.fromPublicOnly(ecKey.getPubKey()));
+        EncryptionKey encryptionKey1 = new EncryptionKeyImpl(testKeys.getPublic());
 //
 //      PublicKey publicKey = BitcoinCrypto.loadPublicKey(Base64.getEncoder().encodeToString(ecKey.getPubKey()));
 
@@ -108,13 +108,14 @@ public class DecryptionKeyImplTest {
         System.out.println("decryptionKey: " + decryptionKey.toString());
         System.out.println("ASN.1  " + Arrays.toString(ecKey.toASN1()));
 
-        EncryptionKeyImpl encTest = new EncryptionKeyImpl(ecKey.getPubKey());
+         EncryptionKeyImpl encTest = new EncryptionKeyImpl(publicTestKey);
         System.out.println("\nencTest: " + encTest);
         System.out.println("encryptionKey: " + encryptionKey1);
         System.out.println("EncKey.toString from ECKeys Pub: " + encTest.toString());
         System.out.println("EncKey from DecKey to string: " + decryptionKey.EncryptionKey().toString());
 
         encryptionKey = new EncryptionKeyImpl(publicTestKey);
+
         assertEquals(encryptionKey.toString(), decryptionKey.EncryptionKey().toString());
 
     }

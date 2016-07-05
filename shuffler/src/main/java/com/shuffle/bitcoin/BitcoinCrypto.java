@@ -167,7 +167,7 @@ public class BitcoinCrypto implements Crypto {
    private KeyPairGenerator getKeyPGen() {
       if (keyPG == null) {
          try {
-            keyPG = KeyPairGenerator.getInstance("EC");
+            keyPG = KeyPairGenerator.getInstance("ECIES",new BouncyCastleProvider());
          } catch (NoSuchAlgorithmException exception) {
             exception.printStackTrace();
          }
@@ -206,6 +206,7 @@ public class BitcoinCrypto implements Crypto {
        // System.out.println("Current path used by decryption key genereated: " + ppath);
        // ECKey newDecKey = keyChainGroup.getActiveKeyChain().getKeyByPath(HDUtils.parsePath(ppath),true);
        // decKeyCounter++;
+       // return ECIES KeyPair
        KeyPair keyPair = getKeyPair();
        return new DecryptionKeyImpl(keyPair);
 

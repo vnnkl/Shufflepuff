@@ -15,7 +15,6 @@ import java.security.PublicKey;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Arrays;
 
 import javax.crypto.Cipher;
 
@@ -33,12 +32,12 @@ public class EncryptionKeyImpl implements EncryptionKey {
       KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
       EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
       this.publicKey = keyFactory.generatePublic(publicKeySpec);
-      this.encryptionKey = ECKey.fromPublicOnly(this.publicKey.getEncoded());
+      this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
 
    }
 
    public EncryptionKeyImpl(PublicKey pubKey) {
-      //this.encryptionKey = ECKey.fromPublicOnly(pubKey.getEncoded());
+
       this.publicKey = pubKey;
    }
 
@@ -52,32 +51,28 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    public String toString() {
-      if (this.encryptionKey.getPrivateKeyAsHex() == null){
-         if (publicKey != null){
-            return Arrays.toString(this.publicKey.getEncoded());
-         }
-      }else{
-         return this.encryptionKey.getPublicKeyAsHex();
-      }
-      return this.encryptionKey.getPublicKeyAsHex();
+
+            return org.spongycastle.util.encoders.Hex.toHexString(this.publicKey.getEncoded());
+
    }
 
    @Override
    public Address encrypt(Address m) {
+
+      // encrypts the address passed for this encryption key
       AddressImpl add = null;
       try {
          Guice.createInjector(new JvmModule()).injectMembers(this);
-         //cast will fail, maybe
-         //X509EncodedKeySpec spec = kf.getKeySpec(encryptionKey,X509EncodedKeySpec.class);
-         //PublicKey pubKey = kf.generatePublic(kf.getKeySpec(((Key) encryptionKey), KeySpec.class));
-         //PublicKey publicKey = BitcoinCrypto.loadPublicKey(org.spongycastle.util.encoders.Base64.toBase64String(encryptionKey.getPubKey()));
-         // byte[] publicKey2 = ECKey.publicKeyFromPrivate(encryptionKey.getPrivKey(), encryptionKey.isCompressed());
 
-         //encrypt cipher
+         //get cipher cipher for ECIES encryption
          Cipher cipher = Cipher.getInstance("ECIES");
+         //init cipher with with our encryption key
          cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+         //get bytes of address passed
          byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
+         //encrypt
          byte[] encrypted = cipher.doFinal(bytes);
+         //create new address with
          add = new AddressImpl(Hex.encodeHexString(encrypted),true);
       } catch (Exception e) {
          e.printStackTrace();
