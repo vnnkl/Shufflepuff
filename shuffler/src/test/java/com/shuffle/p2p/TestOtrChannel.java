@@ -1,18 +1,14 @@
 package com.shuffle.p2p;
 
-import com.shuffle.bitcoin.Address;
 import com.shuffle.chan.Send;
 import com.shuffle.mock.MockNetwork;
 
 import net.java.otr4j.OtrException;
-import net.java.otr4j.session.SessionStatus;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Stack;
 
 /**
  * Created by Eugene Siegel on 6/20/16.
@@ -122,6 +118,9 @@ public class TestOtrChannel {
         String query = "?OTRv23?";
         //clientSession.session.send(query); Executes in a different thread..?
         clientSession.send(new Bytestring(query.getBytes()));
+
+        Assert.assertNotNull(serverSession);
+        Assert.assertNotNull(otrServer.sendClient.getConnection().session);
 
         otrServer.sendClient.pollReceivedMessage();
         otrClient.sendClient.pollReceivedMessage();

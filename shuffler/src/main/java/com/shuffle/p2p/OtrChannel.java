@@ -46,7 +46,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private final String account;
         private net.java.otr4j.session.Session session;
         private OtrPolicy policy;
-        private SendConnection connection;
+        public SendConnection connection;
         private MessageProcessor processor;
         private Queue<ProcessedMessage> processedMsgs = new LinkedList<ProcessedMessage>();
         private Send<Bytestring> send;
@@ -351,13 +351,13 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         // TODO
-        private class SendConnection implements Send<Bytestring> {
+        public class SendConnection implements Send<Bytestring> {
 
             private final SendClient client;
             private final String connectionName;
             private String sentMessage;
             private Send<Bytestring> send;
-            private Session<Address, Bytestring> session;
+            public Session<Address, Bytestring> session;
 
             public SendConnection(SendClient client, String connectionName, Send<Bytestring> send) {
                 this.client = client;
@@ -447,6 +447,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             } catch (InterruptedException e) {
                 return null;
             }
+
+            /*
+            if (session == null) {
+                return null;
+            }
+            */
 
             OtrSession otrSession = new OtrSession(session);
             return otrSession;
