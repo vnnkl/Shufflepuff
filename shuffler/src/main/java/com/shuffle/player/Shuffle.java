@@ -8,12 +8,28 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
+import com.shuffle.chan.packet.JavaMarshaller;
+import com.shuffle.chan.packet.Marshaller;
+import com.shuffle.chan.packet.Packet;
+import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
+import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockSigningKey;
+import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.monad.Either;
+import com.shuffle.monad.NaturalSummableFuture;
+import com.shuffle.monad.SummableFuture;
+import com.shuffle.monad.SummableFutureZero;
+import com.shuffle.monad.SummableMaps;
+import com.shuffle.p2p.Bytestring;
+import com.shuffle.p2p.Channel;
+import com.shuffle.p2p.MappedChannel;
+import com.shuffle.p2p.MarshallChannel;
+import com.shuffle.p2p.Multiplexer;
+import com.shuffle.p2p.TcpChannel;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
@@ -25,14 +41,21 @@ import org.json.simple.JSONValue;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.StringReader;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
@@ -65,6 +88,11 @@ public class Shuffle {
                 "Which blockchain to query (test or main)")
                 .withRequiredArg().ofType(String.class);
 
+        ArgumentAcceptingOptionSpec<Long> time = parser.acceptsAll(Arrays.asList("t", "time"),
+                "time at which protocol is scheduled to take place.")
+                .withRequiredArg()
+                .ofType(Long.class);
+
         if (TEST_MODE) {
             parser.accepts("prng")
                     .withRequiredArg()
@@ -90,6 +118,14 @@ public class Shuffle {
                     .defaultsTo("{\"outputs\":[],\"transactions\":[]}");
 
             parser.accepts("me").withRequiredArg().ofType(String.class);
+
+            parser.accepts("local").withRequiredArg().ofType(String.class);
+
+            parser.accepts("format").withRequiredArg().ofType(String.class);
+
+            // Five seconds from now.
+            time.defaultsTo(System.currentTimeMillis() + 5000L);
+
         } else {
             query.defaultsTo("blockchain.info");
             blockchain.defaultsTo("main");
@@ -103,11 +139,7 @@ public class Shuffle {
         parser.acceptsAll(Arrays.asList("B", "amount"),
                 "amount to be transferred (satoshis)")
                 .withRequiredArg()
-                .ofType(Integer.class);
-        parser.acceptsAll(Arrays.asList("t", "time"),
-                "time at which protocol is scheduled to take place.")
-                .withRequiredArg()
-                .ofType(String.class);
+                .ofType(Long.class);
         parser.acceptsAll(Arrays.asList("s", "seed"),
                 "random number seed")
                 .withRequiredArg()
@@ -116,6 +148,8 @@ public class Shuffle {
         parser.acceptsAll(Arrays.asList("k", "key"), "Your private key.")
                 .requiredUnless("local")
                 .withRequiredArg().ofType(String.class);
+        parser.accepts("port", "Port on which to listen for connections.")
+                .requiredUnless("local").withRequiredArg().ofType(Long.class);
         parser.accepts("change", "Your change address. Optional")
                 .requiredUnless("local")
                 .withRequiredArg().ofType(String.class);
@@ -128,7 +162,6 @@ public class Shuffle {
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
-
         parser.accepts("minBitcoinNetworkPeers")
                 .withRequiredArg().ofType(Long.class).defaultsTo(5L);
         parser.accepts("rpcuser")
@@ -140,7 +173,11 @@ public class Shuffle {
                 "The peers we will be connecting to, formatted as a JSON array.")
                 .withRequiredArg().ofType(String.class);
 
-        parser.accepts("report").withRequiredArg().ofType(String.class);
+        parser.accepts("maxThreads", "Maximum number of threads allowed.")
+                .withRequiredArg().ofType(Long.class).defaultsTo(6L);
+
+        parser.accepts("report", "Path to store report file.")
+                .withRequiredArg().ofType(String.class);
 
         return parser;
     }
@@ -150,39 +187,47 @@ public class Shuffle {
     public final long time;
     public final long amount;
     public final long timeout;
-    public final SessionIdentifier session;
+    public final Bytestring session;
     public final Crypto crypto;
-    Set<Player<Either<InetSocketAddress, Integer>>> local = new HashSet<>();
+    Set<Player> local = new HashSet<>();
     Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
+    SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
-    public Shuffle(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException, ParseException {
+    private final Executor executor;
 
-        if (!options.has("amount")) {
+    private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
+
+    public Shuffle(OptionSet options, PrintStream stream)
+            throws IllegalArgumentException, ParseException, UnknownHostException {
+
+        if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
                     "is to be shuffled for each player in the join transaction.");
         }
 
-        if (!options.has("time")) {
+        if (options.valueOf("time") == null) {
             throw new IllegalArgumentException("No option 'time' supplied. When does the join take place?");
         }
 
-        if (!options.has("seed")) {
+        if (options.valueOf("seed") == null) {
             throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!");
         }
 
-        if (!options.has("session")) {
+        if (options.valueOf("session") == null) {
             throw new IllegalArgumentException("No option 'session' supplied.");
         }
 
-        if (!options.has("players")) {
-            throw new IllegalArgumentException("No option 'session' supplied.");
+        if (options.valueOf("peers") == null) {
+            throw new IllegalArgumentException("No option 'peers' supplied.");
+        }
+
+        if (options.valueOf("maxThreads") == null) {
+            throw new IllegalArgumentException("No option 'peers' supplied.");
         }
 
         // Check on the time.
-        time = new SimpleDateFormat()
-                .parse((String)options.valueOf("time")).getTime();
+        time = (Long)options.valueOf("time");
         long now = System.currentTimeMillis();
 
         if (time < now) {
@@ -198,9 +243,9 @@ public class Shuffle {
 
         // Get the session identifier.
         if (TEST_MODE) {
-            session = SessionIdentifier.TestSession((String) options.valueOf("session"));
+            session = new Bytestring(("CoinShuffle Shufflepuff test " + options.valueOf("session")).getBytes());
         } else {
-            session = SessionIdentifier.Session((String) options.valueOf("session"));
+            session = new Bytestring(("CoinShuffle Shufflepuff 1.0 beta " + options.valueOf("session")).getBytes());
         }
 
         timeout = (Long)options.valueOf("timeout");
@@ -210,6 +255,33 @@ public class Shuffle {
         } else {
             report = null;
         }
+
+        Marshaller<Message.Atom> am;
+        Marshaller<Packet<VerificationKey, P>> pm;
+        if (TEST_MODE) {
+            if (options.has("format")) {
+                String format = (String) options.valueOf("format");
+
+                if (format.equals("java")) {
+                    am = new JavaMarshaller<>();
+                    pm = new JavaMarshaller<>();
+                } else if (format.equals("protobuf")) {
+                    am = Protobuf.atomMarshaller;
+                    pm = Protobuf.packetMarshaller;
+                } else {
+                    throw new IllegalArgumentException();
+                }
+            } else {
+
+                am = new JavaMarshaller<>();
+                pm = new JavaMarshaller<>();
+            }
+        } else {
+            am = Protobuf.atomMarshaller;
+            pm = Protobuf.packetMarshaller;
+        }
+
+        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads"));
 
         // Detect the nature of the cryptocoin network we will use.
         String query = (String)options.valueOf("query");
@@ -289,7 +361,6 @@ public class Shuffle {
             case "mock" : {
                 if (TEST_MODE) {
                     try {
-                        System.out.println("About to parse " + (String)options.valueOf("coin"));
                         coin = MockCoin.fromJSON(new StringReader((String)options.valueOf("coin")));
                     } catch (IllegalArgumentException e) {
                         throw new IllegalArgumentException("Unable to parse mockchain data: "
@@ -340,6 +411,66 @@ public class Shuffle {
             throw new IllegalArgumentException("Amount is too small. ");
         }
 
+        // Finally, get the peers.
+        JSONArray jsonPeers = readJSONArray((String)options.valueOf("peers"));
+        if (jsonPeers == null) {
+            throw new IllegalArgumentException("Could not read " + options.valueOf("peers") + " as json array.");
+        }
+
+        SortedSet<String> checkDuplicateAddress = new TreeSet<>();
+        for (int i = 1; i <= jsonPeers.size(); i ++) {
+            JSONObject o;
+            try {
+                o = (JSONObject) jsonPeers.get(i - 1);
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read "
+                        + jsonPeers.get(i - 1) + " as json object.");
+            }
+
+            String key = (String)o.get("key");
+            String addr = (String)o.get("address");
+            if (key == null) {
+                throw new IllegalArgumentException("Peer missing field \"key\".");
+            }
+            if (addr == null) {
+                throw new IllegalArgumentException("Peer missing field \"address\".");
+            }
+            if (checkDuplicateAddress.contains(addr)) {
+                throw new IllegalArgumentException("Duplicate address.");
+            } else {
+                checkDuplicateAddress.add(addr);
+            }
+
+            VerificationKey vk;
+            if (TEST_MODE) {
+                vk = new MockVerificationKey(Integer.parseInt(key));
+            } else {
+                // TODO
+                throw new IllegalArgumentException();
+            }
+
+            // Try to read address as host:port.
+            String[] parts = addr.split(":");
+            if (parts.length != 2)
+                throw new NullPointerException("Could not read " + addr + " as tcp address");
+
+            int port;
+            try {
+                port = Integer.parseInt(parts[1]);
+            } catch (NumberFormatException eb) {
+                throw new NullPointerException("Could not read " + addr + " as tcp address");
+            }
+
+            InetSocketAddress tcp = new InetSocketAddress(parts[0], port);
+            Either<InetSocketAddress, Integer> address = new Either<>(tcp, null);
+
+            if (peers.containsKey(vk)) {
+                throw new IllegalArgumentException("Duplicate key " + key);
+            }
+            peers.put(vk, address);
+            keys.add(vk);
+        }
+
         // Get information for this player. (In test mode, one node
         // may run more than one player.)
         if (TEST_MODE && options.has("local")) {
@@ -352,8 +483,21 @@ public class Shuffle {
             if (options.has("anon")) {
                 throw new IllegalArgumentException("Option 'anon' not needed when 'local' is defined.");
             }
+            if (options.has("port")) {
+                throw new IllegalArgumentException("Option 'port' not needed when 'local' is defined.");
+            }
 
             JSONArray local = readJSONArray((String)options.valueOf("local"));
+            if (local == null) {
+                throw new IllegalArgumentException("Could not read " + options.valueOf("local") + " as json array.");
+            }
+            if (local.size() < 1) {
+                throw new IllegalArgumentException("Must provide at least one local player.");
+            }
+
+            if (jsonPeers.size() + local.size() < 2) {
+                throw new IllegalArgumentException("At least two players total must be specified.");
+            }
 
             for (int i = 1; i <= local.size(); i ++) {
                 JSONObject o = null;
@@ -364,76 +508,79 @@ public class Shuffle {
                             + local.get(i - 1) + " as json object.");
                 }
 
-                String key = (String)o.get("key");
-                String anon = (String) o.get("anon");
-                String change = (String) o.get("change");
+
+                String key, anon, change;
+                Long port;
+                try {
+                    key = (String) o.get("key");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("key") + " as string.");
+                }
+                try {
+                    anon = (String) o.get("anon");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("anon") + " as string.");
+                }
+                try {
+                    change = (String) o.get("change");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("change") + " as string.");
+                }
+                try {
+                    port = (Long) o.get("port");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("port") + " as string.");
+                }
+
                 if (key == null) {
                     throw new IllegalArgumentException("Player missing field \"key\".");
                 }
                 if (anon == null) {
                     throw new IllegalArgumentException("Player missing field \"anon\".");
                 }
+                if (port == null) {
+                    throw new IllegalArgumentException("Player missing field \"port\".");
+                }
 
-                this.local.add(readPlayer(options, key, anon, change));
+                this.local.add(readPlayer(options, key, i, port, anon, change, am, pm));
             }
         } else {
+            if (jsonPeers.size() == 0) {
+                throw new IllegalArgumentException("At least one other player must be specified.");
+            }
+
             if (!options.has("key")) {
                 throw new IllegalArgumentException("Missing option 'key'.");
             }
-            if (options.has("anon")) {
+            if (!options.has("anon")) {
                 throw new IllegalArgumentException("Missing option 'anon'.");
+            }
+            if (!options.has("port")) {
+                throw new IllegalArgumentException("Missing option 'port'.");
             }
 
             String key = (String)options.valueOf("key");
             String anon = (String)options.valueOf("anon");
+            Long port = (Long)options.valueOf("port");
             if (!options.has("change")) {
-                this.local.add(readPlayer(options, key, anon, null));
+                this.local.add(readPlayer(options, key, 1, port, anon, null, am, pm));
             } else {
-                this.local.add(readPlayer(options, key, anon, (String)options.valueOf("change")));
+                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), am, pm));
             }
         }
 
-        // Finally, get the peers.
-        Set<Either<InetSocketAddress, Integer>> addresses = new HashSet<>();
-        JSONArray peers = readJSONArray((String)options.valueOf("peers"));
-        for (int i = 1; i <= local.size(); i ++) {
-            JSONObject o = null;
-            try {
-                o = (JSONObject) peers.get(i - 1);
-            } catch (ClassCastException e) {
-                throw new IllegalArgumentException("Could not read "
-                        + peers.get(i - 1) + " as json object.");
-            }
-
-            String key = (String)o.get("key");
-            String addr = (String)o.get("address");
-            if (key == null) {
-                throw new IllegalArgumentException("Peer missing field \"key\".");
-            }
-            if (addr == null) {
-                throw new IllegalArgumentException("Peer missing field \"address\".");
-            }
-
-            VerificationKey vk;
-            if (TEST_MODE) {
-
-            } else {
-                // TODO
-                throw new IllegalArgumentException();
-            }
-
-            // Try to read address as integer.
-            Either<InetSocketAddress, Integer> address;
-            try {
-                Integer intAddr = Integer.parseInt(addr);
-                address = new Either<>(null, intAddr);
-            } catch (NumberFormatException e) {
-                // TODO: construct InetSocketAddress.
-            }
-        }
     }
 
-    private Player<Either<InetSocketAddress, Integer>> readPlayer(OptionSet options, String key, String anon, String change) {
+    private Player readPlayer(
+            OptionSet options,
+            String key,
+            int id,
+            long port,
+            String anon,
+            String change,
+            Marshaller<Message.Atom> am,
+            Marshaller<Packet<VerificationKey, P>> pm) throws UnknownHostException {
+
         SigningKey sk;
         Address anonAddress;
         Address changeAddress;
@@ -457,14 +604,32 @@ public class Shuffle {
             // TODO
             throw new IllegalArgumentException("Can only run in test mode.");
         }
-
-        if (changeAddress == null) {
-            return new Player<Either<InetSocketAddress, Integer>>(
-                    sk, session, coin, crypto, anonAddress, time, amount, timeout);
-        } else {
-            return new Player<Either<InetSocketAddress, Integer>>(
-                    sk, session, coin, crypto, anonAddress, changeAddress, time, amount, timeout);
+        
+        VerificationKey vk = sk.VerificationKey();
+        if (keys.contains(vk)) {
+            throw new IllegalArgumentException("Duplicate key.");
         }
+
+        keys.add(vk);
+        peers.put(vk, new Either<InetSocketAddress, Integer>(null, id));
+
+        Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
+            new MappedChannel<>(
+                new Multiplexer<>(
+                    new MarshallChannel<>(
+                        new TcpChannel(
+                            new InetSocketAddress(InetAddress.getLocalHost(), (int)port),
+                                executor),
+                            new JavaMarshaller<Signed<Packet<VerificationKey, P>>>()),
+                        mock.node(id)),
+                    peers);
+
+
+
+        return new Player(
+                sk, session, anonAddress,
+                changeAddress, keys, time,
+                amount, coin, crypto, channel, am, pm, executor);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -482,6 +647,32 @@ public class Shuffle {
         }
     }
 
+    public Collection<Player.Report> cycle()
+            throws IOException, InterruptedException, ExecutionException {
+
+        if (local.size() == 1) {
+            for (Player p : local) {
+                Collection<Player.Report> reports = new HashSet<>();
+                reports.add(p.play());
+                return reports; // Only one here, so we can return immediately.
+            }
+        }
+
+        // Construct the future which represents all players' results.
+        SummableFuture<Map<VerificationKey, Player.Report>> future
+                = new SummableFutureZero<>(
+                new SummableMaps<VerificationKey, Player.Report>());
+
+        // Start the connection (this must be done after all Channel objects have been created
+        // because everyone must be connected to the internet at the time they attempt to start
+        // connecting to one another.
+        for (Player p : local) {
+            future = future.plus(new NaturalSummableFuture<>(p.playConcurrent()));
+        }
+
+        return future.get().values();
+    }
+
     public static void main(String[] opts) throws IOException {
 
         OptionParser parser = getShuffleOptionsParser();
@@ -490,6 +681,7 @@ public class Shuffle {
             options = parser.parse(opts);
         } catch (Exception e) {
             System.out.println(e.getMessage());
+            parser.printHelpOn(System.out);
             return;
         }
 
@@ -502,11 +694,25 @@ public class Shuffle {
         Shuffle shuffle;
         try {
             shuffle = new Shuffle(options, System.out);
-        } catch (IllegalArgumentException | ClassCastException | ParseException e) {
+        } catch (IllegalArgumentException
+                //| ClassCastException
+                | ParseException
+                | UnknownHostException e) {
+
             System.out.println(e.getMessage());
             return;
         }
 
-        System.out.println("Options check out ok!");
+        Collection<Player.Report> reports;
+        try {
+            reports = shuffle.cycle();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        for (Player.Report report : reports) {
+            System.out.println(report.toString());
+        }
     }
 }

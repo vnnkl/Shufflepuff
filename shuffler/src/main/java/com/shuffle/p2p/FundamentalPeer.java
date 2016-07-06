@@ -10,6 +10,7 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.Send;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -33,7 +34,7 @@ public abstract class FundamentalPeer<Identity, Message extends Serializable> im
 
     // Returns null if there is a session already open.
     public abstract Session<Identity, Message> openSession(Send<Message> send)
-            throws InterruptedException;
+            throws InterruptedException, IOException;
 
     // Whether there is an open session to this peer.
     public final boolean open() throws InterruptedException {

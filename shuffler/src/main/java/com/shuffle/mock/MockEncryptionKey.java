@@ -24,6 +24,10 @@ public class MockEncryptionKey implements EncryptionKey, Serializable {
         this.index = index;
     }
 
+    public MockEncryptionKey(String str) throws NumberFormatException {
+        index = Integer.parseInt(str);
+    }
+
     @Override
     public Address encrypt(Address m) {
         if (m instanceof MockDecryptedAddress) {

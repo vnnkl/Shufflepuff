@@ -22,10 +22,10 @@ import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCrypto;
-import com.shuffle.player.SessionIdentifier;
 import com.shuffle.p2p.Collector;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
+import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.p2p.Bytestring;
@@ -37,8 +37,11 @@ import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.InvalidParticipantSetException;
 import com.shuffle.protocol.message.Phase;
-import com.shuffle.protocol.WaitingException;
+import com.shuffle.protocol.TimeoutException;
 import com.shuffle.protocol.blame.Matrix;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -48,6 +51,7 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -63,16 +67,17 @@ import java.util.regex.Pattern;
  * Created by Daniel Krawisz on 2/3/16.
  */
 class Player<Address> implements Runnable {
+    private static final Logger log = LogManager.getLogger(Player.class);
 
     private static class Parameters<Address> {
         public final SigningKey me;
-        com.shuffle.chan.packet.SessionIdentifier session;
+        public final Bytestring session;
         public final int port;
         public final int threads;
         public final InitialState.PlayerInitialState init;
         public final Map<VerificationKey, Address> identities;
 
-        public Parameters(SigningKey me, com.shuffle.chan.packet.SessionIdentifier session, int port, int threads,
+        public Parameters(SigningKey me, Bytestring session, int port, int threads,
                           InitialState.PlayerInitialState init,
                           Map<VerificationKey, Address> identities) {
 
@@ -94,7 +99,7 @@ class Player<Address> implements Runnable {
         this.param = param;
         this.msg = msg;
 
-        this.channel = new MarshallChannel<>(new MappedChannel<>(channel, param.identities, param.me.VerificationKey()),
+        this.channel = new MarshallChannel<>(new MappedChannel<>(channel, param.identities),
                 new JavaMarshaller<Signed<Packet<VerificationKey, P>>>());
     }
 
@@ -181,7 +186,7 @@ class Player<Address> implements Runnable {
         Crypto crypto = new MockCrypto(new InsecureRandom(7777));
 
         InitialState init = InitialState.successful(
-                SessionIdentifier.TestSession(options.get("-id")),
+                new Bytestring(("CoinShuffle Shufflepuff simulation " + (options.get("-id"))).getBytes()),
                 Integer.parseInt(options.get("-amount")),
                 crypto,
                 Integer.parseInt(options.get("-players")));
@@ -201,9 +206,9 @@ class Player<Address> implements Runnable {
         int i = Integer.parseInt(options.get("-identity")) - 1;
         InitialState.PlayerInitialState pinit = init.getPlayer(i);
 
-        return new Parameters<InetSocketAddress>(
+        return new Parameters<>(
                 new MockSigningKey(Integer.parseInt(options.get("-key"))),
-                SessionIdentifier.TestSession(options.get("-id")),
+                new Bytestring(("CoinShuffle Shufflepuff simulation " + options.get("-id")).getBytes()),
                 Integer.parseInt(options.get("-minport")) + i,
                 Integer.parseInt(options.get("-threads")),
                 pinit, identities);
@@ -251,14 +256,14 @@ class Player<Address> implements Runnable {
     }
     
     private Transaction play(Parameters<Address> param, Send<Phase> msg)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
 
         // Construct set of addresses we will be connecting to.
         SortedSet<VerificationKey> keys = new TreeSet<>();
         keys.addAll(param.identities.keySet());
 
         Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> conn
-                = new Connect<>(param.me.VerificationKey(), channel, param.init.crypto(), 2 * (1 + param.identities.size()));
+                = new Connect<>(channel, param.init.crypto(), 2 * (1 + param.identities.size()));
 
         // Pause here to ensure that all other instances of the program are connected to the internet.
         Thread.sleep(5000);
@@ -270,9 +275,11 @@ class Player<Address> implements Runnable {
             e.printStackTrace();
         }
 
-        Messages messages = new Messages(param.session, param.me, m.connected, m.inbox);
+        Messages messages = null;
 
         try {
+            messages = new Messages(param.session, param.me, m.connected, m.inbox,
+                    new JavaMarshaller<Message.Atom>(), new JavaMarshaller<Packet<VerificationKey, P>>());
             return new CoinShuffle(
                     messages, param.init.crypto(), param.init.coin()
             ).runProtocol(
@@ -284,9 +291,10 @@ class Player<Address> implements Runnable {
             );
         } catch (IOException // TODO there should be an exception which says that the internet connection failed.
                 | CoinNetworkException // Indicates a problem with the Bitcoin network.
-                | WaitingException // Indicates a lost
+                | TimeoutException // Indicates a lost
                 | FormatException // TODO also all improperly formatted messages are ignored.
-                | InvalidParticipantSetException e) {
+                | InvalidParticipantSetException
+                | NoSuchAlgorithmException e) {
             // TODO handle these problems appropriately.
             return null;
         } catch (Matrix matrix) {
@@ -309,7 +317,9 @@ class Player<Address> implements Runnable {
             } finally {
                 msg.close();
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | IOException e) {
+            log.fatal("Something has gone wrong: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

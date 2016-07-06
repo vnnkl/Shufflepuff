@@ -99,7 +99,7 @@ public class CoinShuffle {
         public final Mailbox mailbox;
 
         Transaction protocolDefinition(
-        ) throws WaitingException, Matrix, InterruptedException,
+        ) throws TimeoutException, Matrix, InterruptedException,
                 FormatException, IOException, CoinNetworkException {
 
             if (amount <= 0) {
@@ -138,6 +138,7 @@ public class CoinShuffle {
             }
 
             readAnnouncements(announcement, encryptionKeys, changeAddresses);
+            System.out.println("Player " + me + ":" + sk + " receives keys " + encryptionKeys);
 
             // Phase 2: Shuffle
             // In the shuffle phase, players go in order and reorder the addresses they have been
@@ -289,7 +290,7 @@ public class CoinShuffle {
 
         // Everyone except player 1 creates a new keypair and sends it around to everyone else.
         DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
-                throws WaitingException, InterruptedException, IOException {
+                throws TimeoutException, InterruptedException, IOException, FormatException {
 
             DecryptionKey dk = null;
             dk = crypto.makeDecryptionKey();
@@ -301,6 +302,7 @@ public class CoinShuffle {
             if (change != null) {
                 message = message.attach(change);
             }
+            System.out.println("Player " + me + " broadcasts key " + message);
 
             mailbox.broadcast(message, phase.get());
             return dk;
@@ -339,7 +341,7 @@ public class CoinShuffle {
         // malicious machine can override it.
         Deque<Address> readAndBroadcastNewAddresses(Message shuffled)
                 throws IOException, InterruptedException,
-                WaitingException, BlameException, FormatException {
+                TimeoutException, BlameException, FormatException {
 
             Deque<Address> newAddresses;
             if (me == N) {
@@ -387,7 +389,7 @@ public class CoinShuffle {
         // Some misbehavior that has occurred during the shuffle phase and we want to
         // find out what happened!
         private void blameShuffleMisbehavior()
-                throws WaitingException, Matrix,
+                throws TimeoutException, Matrix,
                 InterruptedException, FormatException, IOException {
 
             // First skip to phase 4 and do an equivocation check.
@@ -402,9 +404,10 @@ public class CoinShuffle {
                 EncryptionKey> encryptonKeys,
                 Queue<Address> newAddresses,
                 boolean errorCase // There is an equivocation check that occurs
-        ) throws InterruptedException, WaitingException, Matrix, IOException, FormatException {
+        ) throws InterruptedException, TimeoutException, Matrix, IOException, FormatException {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
+            System.out.println("Player " + me + " makes equivocation check message " + equivocationCheck);
             mailbox.broadcast(equivocationCheck, phase.get());
 
             // Wait for a similar message from everyone else and check that the result is the name.
@@ -413,6 +416,7 @@ public class CoinShuffle {
                     phase.get());
 
             hashes.put(vk, equivocationCheck);
+            System.out.println("Player " + me + " checks hashes " + hashes);
 
             if (areEqual(hashes.values())) {
                 // We may have got this far as part of a normal part of the protocol or as a part
@@ -443,7 +447,7 @@ public class CoinShuffle {
 
         // Check for players with insufficient funds.
         private void blameInsufficientFunds()
-                throws CoinNetworkException, WaitingException, Matrix, IOException, InterruptedException, FormatException {
+                throws CoinNetworkException, TimeoutException, Matrix, IOException, InterruptedException, FormatException {
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
@@ -478,7 +482,7 @@ public class CoinShuffle {
         }
 
         void blameBroadcastShuffleMessages()
-                throws WaitingException, Matrix, IOException,
+                throws TimeoutException, Matrix, IOException,
                 InterruptedException, FormatException {
 
             phase.set(Phase.Blame);
@@ -496,7 +500,7 @@ public class CoinShuffle {
         }
 
         void checkDoubleSpending(Transaction t) throws InterruptedException, IOException,
-                FormatException, WaitingException, Matrix {
+                FormatException, TimeoutException, Matrix {
 
             // Check for double spending.
             Message doubleSpend = messages.make();
@@ -820,7 +824,7 @@ public class CoinShuffle {
         final Message equivocationCheckHash(
                 Map<Integer, VerificationKey> players,
                 Map<VerificationKey, EncryptionKey> encryptionKeys,
-                Queue<Address> newAddresses) {
+                Queue<Address> newAddresses) throws FormatException, IOException {
 
             // Put all temporary encryption keys into a list and hash the result.
             Message check = messages.make();
@@ -1109,7 +1113,7 @@ public class CoinShuffle {
             // If this is not null, the machine is put in this channel so that another thread can
             // query the phase as it runs.
             Send<Phase> chan
-    ) throws WaitingException, Matrix, InterruptedException, InvalidParticipantSetException,
+    ) throws TimeoutException, Matrix, InterruptedException, InvalidParticipantSetException,
             FormatException, IOException, CoinNetworkException {
 
         if (amount <= 0) {
@@ -1172,7 +1176,7 @@ public class CoinShuffle {
             return phase;
         }
 
-        public void set(Phase phase) throws InterruptedException {
+        public void set(Phase phase) throws InterruptedException, IOException {
             this.phase = phase;
             if (ch != null) {
                 ch.send(phase);
@@ -1183,7 +1187,7 @@ public class CoinShuffle {
             ch = null;
         }
 
-        public CurrentPhase(Send<Phase> ch) throws InterruptedException {
+        public CurrentPhase(Send<Phase> ch) throws InterruptedException, IOException {
             if (ch == null) {
                 throw new NullPointerException();
             }

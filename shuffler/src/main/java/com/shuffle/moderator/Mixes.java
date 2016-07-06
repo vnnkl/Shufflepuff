@@ -9,7 +9,6 @@
 package com.shuffle.moderator;
 
 import com.shuffle.bitcoin.Transaction;
-import com.shuffle.chan.packet.SessionIdentifier;
 
 import java.util.List;
 import java.util.SortedSet;
@@ -27,9 +26,8 @@ public interface Mixes {
     }
 
     interface Mix {
-
         // The specific protocol and version to be run.
-        SessionIdentifier session();
+        String session();
 
         long amount(); // The amount to be mixed per person.
 

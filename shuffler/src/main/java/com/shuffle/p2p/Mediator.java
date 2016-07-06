@@ -10,6 +10,7 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.Send;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -197,7 +198,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
         private final Map<Name, SortedSet<Name>> pending = new HashMap<>();
 
         // Drop a peer and all his connections.
-        public void drop(Name name) throws InterruptedException {
+        public void drop(Name name) throws InterruptedException, IOException {
             SortedSet<Name> notify =  new TreeSet<>();
 
             // Remove from openSessions
@@ -238,7 +239,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
             }
         }
 
-        public Session<Address, Envelope<Name, Payload>> get(Name name) throws InterruptedException {
+        public Session<Address, Envelope<Name, Payload>> get(Name name) throws InterruptedException, IOException {
             if (closed) return null;
 
             Session<Address, Envelope<Name, Payload>> s = openSessions.get(name);
@@ -265,7 +266,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
         }
 
         // Initiate connection.
-        public boolean initiateConnection(Name a, Name b) throws InterruptedException {
+        public boolean initiateConnection(Name a, Name b) throws InterruptedException, IOException {
             if (a == null || b == null) throw new NullPointerException();
 
             if (closed) return false;
@@ -303,7 +304,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
         }
 
         // Open a connection between two registered peers.
-        public boolean completeConnection(Name a, Name b) throws InterruptedException {
+        public boolean completeConnection(Name a, Name b) throws InterruptedException, IOException {
             if (a == null || b == null) throw new NullPointerException();
 
             if (closed) return false;
@@ -349,7 +350,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
             return true;
         }
 
-        public boolean send(Envelope<Name, Payload> en) throws InterruptedException {
+        public boolean send(Envelope<Name, Payload> en) throws InterruptedException, IOException {
             if (closed) return false;
 
             if (en.to == null) return false;
@@ -405,7 +406,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
 
         @Override
         public synchronized boolean send(Envelope<Name, Payload> en)
-                throws InterruptedException {
+                throws InterruptedException, IOException {
 
             // Registration message.
             if (name == null && en.register) {
@@ -469,7 +470,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
     Channel<Address, Envelope<Name, Payload>> clients;
     private final Connection<Address> conn;
 
-    public Mediator(Channel<Address, Envelope<Name, Payload>> clients) throws InterruptedException {
+    public Mediator(Channel<Address, Envelope<Name, Payload>> clients) throws InterruptedException, IOException {
         this.clients = clients;
         conn = clients.open(new MediatorListener());
 

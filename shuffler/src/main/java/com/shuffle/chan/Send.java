@@ -8,6 +8,10 @@
 
 package com.shuffle.chan;
 
+import com.shuffle.protocol.FormatException;
+
+import java.io.IOException;
+
 /**
  * A chan class made to work similar to the chan type in golang.
  *
@@ -17,7 +21,7 @@ package com.shuffle.chan;
  */
 public interface Send<X> {
     // Send an X.
-    boolean send(X x) throws InterruptedException;
+    boolean send(X x) throws InterruptedException, IOException;
 
     // Close the chan.
     void close() throws InterruptedException;

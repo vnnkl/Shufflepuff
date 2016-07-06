@@ -4,6 +4,8 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Send;
 import com.shuffle.p2p.Bytestring;
 
+import java.io.IOException;
+
 /**
  * Checks whether a message sent along the channel has been signed correctly by
  * a given key. The message is ignored if it is not.
@@ -29,7 +31,7 @@ public class VerifyingSend<X> implements Send<Signed<X>> {
     }
 
     @Override
-    public boolean send(Signed<X> x) throws InterruptedException {
+    public boolean send(Signed<X> x) throws InterruptedException, IOException {
         return x != null && key.verify(marshaller.marshall(x.message), x.signature) && send.send(x);
 
     }

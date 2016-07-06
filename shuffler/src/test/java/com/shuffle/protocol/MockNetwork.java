@@ -17,12 +17,14 @@ import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.Inbox;
+import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.player.P;
-import com.shuffle.chan.packet.SessionIdentifier;
 
 import org.junit.Assert;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -45,7 +47,9 @@ public class MockNetwork  {
 
     private final Map<VerificationKey, Messages> messages = new HashMap<>();
 
-    public MockNetwork(SessionIdentifier session, SigningKey me, Set<SigningKey> others, int cap) {
+    public MockNetwork(Bytestring session, SigningKey me, Set<SigningKey> others, int cap)
+            throws NoSuchAlgorithmException {
+
         // First create the inbox and outbox.
         outbox = new BasicInbox<>(cap);
 
@@ -71,11 +75,15 @@ public class MockNetwork  {
             outFrom.put(vk, incoming);
 
             messages.put(vkp, new Messages(session, skp, outFrom,
-                    new BasicChan<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>>()));
+                    new BasicChan<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>>(),
+                    new JavaMarshaller<Message.Atom>(),
+                    new JavaMarshaller<Packet<VerificationKey, P>>()));
 
         }
 
-        messages.put(vk, new Messages(session, me, out, inbox));
+        messages.put(vk, new Messages(session, me, out, inbox,
+                new JavaMarshaller<Message.Atom>(),
+                new JavaMarshaller<Packet<VerificationKey, P>>()));
     }
 
     public Messages messages(VerificationKey k) {

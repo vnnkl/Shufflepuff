@@ -111,7 +111,12 @@ public class WebsocketServerChannel implements Channel<InetAddress, Bytestring> 
         public void onMessage(byte[] message, Session userSession) throws InterruptedException {
             Bytestring bytestring = new Bytestring(message);
             Send<Bytestring> receiver = receiveMap.get(userSession);
-            receiver.send(bytestring);
+            try {
+                receiver.send(bytestring);
+            } catch (IOException e) {
+                // Indicates that something has gone wrong with the environment.
+                e.printStackTrace();
+            }
         }
 
         // Callback for when a peer disconnects from the WebsocketServer

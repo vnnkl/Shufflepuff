@@ -65,7 +65,8 @@ public class Mailbox {
     }
 
     // Send a message into the network.
-    public void send(Message m, Phase phase, VerificationKey to) throws IOException, InterruptedException {
+    public void send(Message m, Phase phase, VerificationKey to)
+            throws IOException, InterruptedException, FormatException {
 
         // Don't send anything to a nonexistent player.
         if (!players.contains(to)) {
@@ -79,16 +80,14 @@ public class Mailbox {
         if (to.equals(me)) {
             history.add(packet);
             if (packet.phase() == Phase.Blame) {
-                try {
-                    blame.add(packet.payload().readBlame().reason);
-                } catch (FormatException e) {
-                    e.printStackTrace();
-                }
+                blame.add(packet.payload().readBlame().reason);
             }
         }
     }
 
-    public void broadcast(Message message, Phase phase) throws IOException, InterruptedException {
+    public void broadcast(Message message, Phase phase)
+            throws IOException, InterruptedException, FormatException {
+
         for (VerificationKey to : players) {
             send(message, phase, to);
         }
@@ -169,12 +168,12 @@ public class Mailbox {
 
     // Wait to receive a message from a given player.
     public Message receiveFrom(VerificationKey from, Phase expectedPhase)
-            throws BlameException, InterruptedException, IOException, WaitingException {
+            throws BlameException, InterruptedException, IOException, TimeoutException {
 
         Packet packet = receiveNextPacket(expectedPhase);
 
         if (packet == null) {
-            throw new WaitingException(from);
+            throw new TimeoutException(from);
         }
 
         if (packet.phase() == Phase.Blame && expectedPhase != Phase.Blame) {
@@ -186,12 +185,12 @@ public class Mailbox {
 
     // Wait to receive a message from a given player.
     public Message receiveFromBlameless(VerificationKey from, Phase expectedPhase)
-            throws WaitingException, InterruptedException, IOException {
+            throws TimeoutException, InterruptedException, IOException {
 
         Packet packet;
         do {
             packet = receiveNextPacket(expectedPhase);
-            if (packet == null) throw new WaitingException(from);
+            if (packet == null) throw new TimeoutException(from);
 
         } while (expectedPhase != Phase.Blame && packet.phase() == Phase.Blame);
 
@@ -203,7 +202,7 @@ public class Mailbox {
             Set<VerificationKey> from,
             Phase expectedPhase,
             boolean ignoreBlame // Whether to stop if a blame message is received.
-    ) throws InterruptedException, IOException, WaitingException, BlameException {
+    ) throws InterruptedException, IOException, TimeoutException, BlameException {
 
         // Collect the messages in here.
         Map<VerificationKey, Packet> broadcasts = new HashMap<>();
@@ -213,7 +212,7 @@ public class Mailbox {
 
         while (from.size() > 0) {
             Packet packet = receiveNextPacket(expectedPhase);
-            if (packet == null) throw new WaitingException(from);
+            if (packet == null) throw new TimeoutException(from);
 
             if (expectedPhase != Phase.Blame && packet.phase() == Phase.Blame) {
                 if (!ignoreBlame) {
@@ -249,7 +248,7 @@ public class Mailbox {
             Set<VerificationKey> from,
             Phase expectedPhase
     )
-            throws InterruptedException, BlameException, WaitingException, IOException {
+            throws InterruptedException, BlameException, TimeoutException, IOException {
 
         return receiveFromMultiple(from, expectedPhase, false);
     }
@@ -258,7 +257,7 @@ public class Mailbox {
     public Map<VerificationKey, Message> receiveFromMultipleBlameless(
             Set<VerificationKey> from,
             Phase expectedPhase
-    ) throws InterruptedException, WaitingException, IOException {
+    ) throws InterruptedException, TimeoutException, IOException {
 
         try {
             return receiveFromMultiple(from, expectedPhase, true);

@@ -22,6 +22,7 @@ dependencies {
     compile 'junit:junit:4.12'
     compile 'net.sf.jopt-simple:jopt-simple:5.0.2'
     compile group: 'org.jitsi', name: 'org.otr4j', version: '0.22'
+    compile 'com.google.protobuf:protobuf-java:3.0.0-beta-3'
 }
 
 project.pmd.ignoreFailures = true

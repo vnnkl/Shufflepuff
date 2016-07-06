@@ -6,13 +6,13 @@ import com.shuffle.chan.Inbox;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.packet.SigningSend;
-import com.shuffle.player.SessionIdentifier;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.p2p.Bytestring;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -43,12 +43,12 @@ public class TestInitializer {
     }
 
     @Test
-    public void testInitializer() throws InterruptedException {
+    public void testInitializer() throws InterruptedException, IOException {
         int players = 88;
         IntMarshaller im = new IntMarshaller();
 
         Initializer<Integer> initializer = new Initializer<Integer>(
-                SessionIdentifier.TestSession("test initializer " + players), 2 * (1 + players ));
+                new Bytestring(("test initializer " + players).getBytes()), 2 * (1 + players ));
 
         Map<SigningKey, Initializer.Connections<Integer>> connections = new HashMap<>();
 

@@ -1,6 +1,9 @@
 package com.shuffle.chan.packet;
 
+import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.proto.Proto;
+import com.shuffle.protocol.FormatException;
 
 import java.io.Serializable;
 
@@ -16,6 +19,17 @@ public class Signed<X> implements Serializable {
 
         this.message = message;
         this.signature = signature;
+    }
+
+    public Signed(Bytestring message, Bytestring signature, VerificationKey key, Marshaller<X> m) throws FormatException {
+        if (message == null || signature == null || key == null) throw new NullPointerException();
+
+        if (!key.verify(message, signature)) {
+            throw new IllegalArgumentException();
+        };
+
+        this.signature = signature;
+        this.message = m.unmarshall(message);
     }
 
     @Override

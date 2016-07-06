@@ -62,7 +62,8 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         @Override
-        final DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses) throws IOException, InterruptedException {
+        final DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
+                throws IOException, InterruptedException, FormatException {
 
             DecryptionKey dk = null;
 
@@ -91,7 +92,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 Map<VerificationKey, EncryptionKey> encryptonKeys,
                 Queue<Address> newAddresses,
                 boolean errorCase)
-                throws WaitingException, Matrix, InterruptedException, FormatException, IOException {
+                throws TimeoutException, Matrix, InterruptedException, FormatException, IOException {
 
             Map<VerificationKey, EncryptionKey> otherKeys = new HashMap<>();
             otherKeys.putAll(encryptonKeys);
@@ -150,7 +151,7 @@ public final class MaliciousMachine extends CoinShuffle {
         @Override
         final Deque<Address> readAndBroadcastNewAddresses(Message shuffled)
                 throws FormatException, InterruptedException,
-                BlameException, WaitingException, IOException {
+                BlameException, TimeoutException, IOException {
 
             Deque<Address> newAddresses;
             if (me == N) {
@@ -184,7 +185,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 boolean errorCase)
                 throws InterruptedException,
                 FormatException, IOException,
-                WaitingException, Matrix {
+                TimeoutException, Matrix {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             Message otherCheck = equivocationCheckHash(players, encryptonKeys, otherAddresses);
@@ -361,7 +362,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 boolean errorCase)
                 throws InterruptedException,
                 FormatException, IOException,
-                WaitingException, Matrix {
+                TimeoutException, Matrix {
 
             if (!spent) {
                 try {
@@ -400,7 +401,7 @@ public final class MaliciousMachine extends CoinShuffle {
             // If this is not null, the machine is put in this channel so that another thread can
             // query the phase as it runs.
             Send<Phase> chan
-    ) throws WaitingException,
+    ) throws TimeoutException,
             InvalidParticipantSetException,
             InterruptedException, FormatException,
             IOException, CoinNetworkException, Matrix {

@@ -17,6 +17,7 @@ import com.shuffle.p2p.Session;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,7 +65,7 @@ public class TestMockChannel {
     }
 
     @Test
-    public void testMockChannel() throws InterruptedException {
+    public void testMockChannel() throws InterruptedException, IOException {
         MockNetwork<Integer, String> mock = new MockNetwork<>();
 
         // Create channels.

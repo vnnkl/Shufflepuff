@@ -8,9 +8,6 @@
 
 package com.shuffle.moderator;
 
-
-import com.shuffle.chan.packet.SessionIdentifier;
-
 /**
  * REST API:
  *
@@ -19,7 +16,7 @@ import com.shuffle.chan.packet.SessionIdentifier;
 public class Scheduler {
 
     // TODO
-    public Mixes getMix(SessionIdentifier session) {
+    public Mixes getMix(String session) {
         return null;
     }
 

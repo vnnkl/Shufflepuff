@@ -7,7 +7,7 @@ import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Receive;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.Signed;
-import com.shuffle.chan.packet.SessionIdentifier;
+import com.shuffle.p2p.Bytestring;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,10 +25,10 @@ class Initializer<X> {
     // The set of channels that player use to send to other players.
     public final Map<SigningKey, Map<VerificationKey, Send<Signed<X>>>> networks = new HashMap<>();
 
-    public final SessionIdentifier session;
+    public final Bytestring session;
     public final int capacity;
 
-    Initializer(SessionIdentifier session, int capacity) {
+    Initializer(Bytestring session, int capacity) {
 
         if (session == null || capacity == 0) throw new IllegalArgumentException();
 
@@ -85,6 +85,6 @@ class Initializer<X> {
         // Put the mailbox in the set.
         mailboxes.put(sk, inbox);
 
-        return new Connections<X>(vk, inputs, inbox);
+        return new Connections<>(vk, inputs, inbox);
     }
 }

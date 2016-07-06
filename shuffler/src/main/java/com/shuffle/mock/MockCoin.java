@@ -14,11 +14,15 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.math.BigInteger;
@@ -84,6 +88,18 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
         MockTransaction(List<Output> inputs, List<Output> outputs, MockCoin coin) {
             this(inputs, outputs, 1, coin);
+        }
+
+        public static MockTransaction fromBytes(Bytestring b) throws FormatException {
+
+            ObjectInputStream str;
+            try {
+                str = new ObjectInputStream(new ByteArrayInputStream(b.bytes));
+                return (MockTransaction) str.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                throw new FormatException("Cannot read " + b + " as MockTransaction.");
+            }
+
         }
 
         public MockTransaction(List<Output> inputs, List<Output> outputs, int z, MockCoin coin) {

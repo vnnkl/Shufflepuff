@@ -10,6 +10,9 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.Send;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -38,6 +41,7 @@ import javax.websocket.WebSocketContainer;
  */
 
 public class WebsocketClientChannel implements Channel<URI, Bytestring> {
+    private static final Logger log = LogManager.getLogger(WebsocketClientChannel.class);
 
     /**
      *  Necessary class to use the javax.websocket library.
@@ -180,8 +184,13 @@ public class WebsocketClientChannel implements Channel<URI, Bytestring> {
                 public void onMessage(byte[] message) {
                     try {
                         send.send(new Bytestring(message));
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException | IOException e) {
                         session.close();
+
+                        log.error("Unable to receive message from websocket server! ");
+                        e.printStackTrace();
+                        // Indicates that a serious problem has occurred.
+                        e.printStackTrace();
                     }
                 }
             });

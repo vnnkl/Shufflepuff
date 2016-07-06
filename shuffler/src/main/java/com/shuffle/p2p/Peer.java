@@ -10,6 +10,7 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.Send;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -22,7 +23,7 @@ public interface Peer<Identity, Message extends Serializable> {
     Identity identity();
 
     // Returns null if there is a session already open.
-    Session<Identity, Message> openSession(Send<Message> send) throws InterruptedException;
+    Session<Identity, Message> openSession(Send<Message> send) throws InterruptedException, IOException;
 
     // Close any open sessions for this peer.
     void close() throws InterruptedException;

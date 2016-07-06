@@ -1,6 +1,7 @@
 package com.shuffle.chan.packet;
 
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,21 +24,16 @@ public class JavaMarshaller<X extends Serializable> implements
     private static final Logger log = LogManager.getLogger(JavaMarshaller.class);
 
     @Override
-    public Bytestring marshall(X x) {
+    public Bytestring marshall(X x) throws IOException {
 
         ByteArrayOutputStream b = new ByteArrayOutputStream();
-        try {
-            ObjectOutputStream o = new ObjectOutputStream(b);
-            o.writeObject(x);
-        } catch (IOException e) {
-            log.error("Could not marshall packet " + x + " got error " + e);
-            return null;
-        }
+        ObjectOutputStream o = new ObjectOutputStream(b);
+        o.writeObject(x);
         return new Bytestring(b.toByteArray());
     }
 
     @Override
-    public X unmarshall(Bytestring string) {
+    public X unmarshall(Bytestring string) throws FormatException {
 
         ByteArrayInputStream b = new ByteArrayInputStream(string.bytes);
         Object obj = null;
@@ -45,14 +41,13 @@ public class JavaMarshaller<X extends Serializable> implements
             ObjectInputStream o = new ObjectInputStream(b);
             obj = o.readObject();
         } catch (ClassNotFoundException | IOException e) {
-            log.error("Could not unmarshall " + string + " got error " + e);
-            return null;
+            throw new FormatException("Could not unmarshall " + string + " got error " + e);
         }
 
         try {
             return (X)obj;
         } catch (ClassCastException e) {
-            return null;
+            throw new FormatException(e.getMessage());
         }
     }
 }

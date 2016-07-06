@@ -1,7 +1,9 @@
 package com.shuffle.chan.packet;
 
 import com.shuffle.chan.Send;
+import com.shuffle.p2p.Bytestring;
 
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -12,13 +14,13 @@ import java.io.Serializable;
 public class OutgoingPacketSend<Address extends Serializable, X extends Serializable> implements Send<X> {
     private final Send<Packet<Address, X>> send;
 
-    private final SessionIdentifier session;
+    private final Bytestring session;
     private final Address from, to;
 
     int sequenceNumber = 0;
     boolean closed = false;
 
-    public OutgoingPacketSend(Send<Packet<Address, X>> send, SessionIdentifier session, Address from, Address to) {
+    public OutgoingPacketSend(Send<Packet<Address, X>> send, Bytestring session, Address from, Address to) {
         if (send == null || session == null || from == null || to == null) throw new NullPointerException();
 
         this.send = send;
@@ -28,7 +30,7 @@ public class OutgoingPacketSend<Address extends Serializable, X extends Serializ
     }
 
     @Override
-    public boolean send(X x) throws InterruptedException {
+    public boolean send(X x) throws InterruptedException, IOException {
         if (closed) return false;
 
         boolean sent = send.send(new Packet<Address, X>(session, from, to, sequenceNumber, x));

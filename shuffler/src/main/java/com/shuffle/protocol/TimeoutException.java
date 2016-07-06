@@ -20,14 +20,14 @@ import java.util.Queue;
  *
  * Created by Daniel Krawisz on 12/4/15.
  */
-public class WaitingException extends Exception {
+public class TimeoutException extends Exception {
     public final Queue<VerificationKey> waitingOn = new LinkedList<>();
 
-    public WaitingException(Collection<VerificationKey> w) {
+    public TimeoutException(Collection<VerificationKey> w) {
         waitingOn.addAll(w);
     }
 
-    public WaitingException(VerificationKey v) {
+    public TimeoutException(VerificationKey v) {
         waitingOn.add(v);
     }
 

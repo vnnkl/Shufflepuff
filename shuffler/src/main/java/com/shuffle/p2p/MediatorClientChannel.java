@@ -4,6 +4,7 @@ import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -84,7 +85,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
             return openSessions.containsKey(name);
         }
 
-        public boolean openInitiate(Name you, Send<Payload> r) throws InterruptedException {
+        public boolean openInitiate(Name you, Send<Payload> r) throws InterruptedException, IOException {
             synchronized (lock) {
                 if (pendingSessions.containsKey(you) || openSessions.containsKey(you)) return false;
 
@@ -97,7 +98,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
             return true;
         }
 
-        boolean openRespond(Name you, Listener<Name, Payload> listener) throws InterruptedException {
+        boolean openRespond(Name you, Listener<Name, Payload> listener) throws InterruptedException, IOException {
             synchronized (lock) {
                 if (pendingSessions.containsKey(you) || openSessions.containsKey(you)) return false;
 
@@ -151,11 +152,15 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
 
         public void close(Name you) throws InterruptedException {
             if (remove(you)) {
-                session.send(CloseSession(you));
+                try {
+                    session.send(CloseSession(you));
+                } catch (IOException e) {
+                    MediatorClientChannel.this.close();
+                }
             }
         }
 
-        public void clear() throws InterruptedException {
+        public void clear() throws InterruptedException, IOException {
             for (Map.Entry<Name, PendingSession> entry : pendingSessions.entrySet()) {
                 pendingSessions.remove(entry.getKey());
 
@@ -193,7 +198,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
 
         @Override
         public Session<Name, Payload> openSession(Send<Payload> send)
-                throws InterruptedException {
+                throws InterruptedException, IOException {
 
             // If the channel is not open, do not open a session.
             if (!open) return null;
@@ -233,7 +238,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         }
 
         @Override
-        public boolean send(Payload payload) throws InterruptedException {
+        public boolean send(Payload payload) throws InterruptedException, IOException {
             return session.send(PeerMessage(you, payload));
         }
 
@@ -248,7 +253,11 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
 
         synchronized (lock) {
 
-            openSessions.clear();
+            try {
+                openSessions.clear();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
 
             session.close();
             session = null;
@@ -282,7 +291,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         }
 
         @Override
-        public boolean send(Mediator.Envelope<Name, Payload> envelope) throws InterruptedException {
+        public boolean send(Mediator.Envelope<Name, Payload> envelope) throws InterruptedException, IOException {
 
             synchronized (lock) {
                 if (session == null) return false;
@@ -320,7 +329,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
     }
 
     public Connection<Name> open(final Listener<Name, Payload> listener)
-            throws InterruptedException {
+            throws InterruptedException, IOException {
 
         synchronized (lock) {
             session = virtualChannel.openSession(new MediatorClientSend(listener));
