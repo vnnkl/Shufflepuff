@@ -122,6 +122,8 @@ public class TestOtrChannel {
         Assert.assertNotNull(serverSession);
         Assert.assertNotNull(otrServer.sendClient.getConnection().session);
 
+
+        // Key Exchange starts here
         otrServer.sendClient.pollReceivedMessage();
         otrClient.sendClient.pollReceivedMessage();
         otrServer.sendClient.pollReceivedMessage();
