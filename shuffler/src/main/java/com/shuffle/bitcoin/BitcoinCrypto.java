@@ -16,7 +16,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -79,46 +78,6 @@ public class BitcoinCrypto implements Crypto {
    String path = HDUtils.formatPath(HDUtils.parsePath("5H/"));
    int decKeyCounter = 0;
 
-
-   //Validate addresses function
-   public static boolean ValidateBitcoinAddress(String addr) {
-      if (addr.length() < 26 || addr.length() > 35) return false;
-      byte[] decoded = DecodeBase58(addr, 58, 25);
-      if (decoded == null) return false;
-
-      byte[] hash = Sha256(decoded, 0, 21, 2);
-
-      return Arrays.equals(Arrays.copyOfRange(hash, 0, 4), Arrays.copyOfRange(decoded, 21, 25));
-   }
-
-   private static byte[] DecodeBase58(String input, int base, int len) {
-      byte[] output = new byte[len];
-      for (int i = 0; i < input.length(); i++) {
-         char t = input.charAt(i);
-
-         int p = ALPHABET.indexOf(t);
-         if (p == -1) return null;
-         for (int j = len - 1; j > 0; j--, p /= 256) {
-            p += base * (output[j] & 0xFF);
-            output[j] = (byte) (p % 256);
-         }
-         if (p != 0) return null;
-      }
-
-      return output;
-   }
-
-   private static byte[] Sha256(byte[] data, int start, int len, int recursion) {
-      if (recursion == 0) return data;
-
-      try {
-         MessageDigest md = MessageDigest.getInstance("SHA-256");
-         md.update(Arrays.copyOfRange(data, start, start + len));
-         return Sha256(md.digest(), 0, 32, recursion - 1);
-      } catch (NoSuchAlgorithmException e) {
-         return null;
-      }
-   }
 
 
 
@@ -193,15 +152,6 @@ public class BitcoinCrypto implements Crypto {
       return keys;
    }
 
-   public int getDecKeyCounter() {
-      return decKeyCounter;
-   }
-
-
-   public String getCurrentPathAsString() {
-      System.out.println("Value of path variable: " + path);
-      return path + "/" + getDecKeyCounter();
-   }
 
     @Override
     public DecryptionKey makeDecryptionKey() {

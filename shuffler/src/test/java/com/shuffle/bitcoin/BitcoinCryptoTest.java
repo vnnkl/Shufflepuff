@@ -49,14 +49,6 @@ public class BitcoinCryptoTest {
       assertEquals(NetworkParameters.ID_TESTNET,bitcoinCrypto.getParams().getId());
    }
 
-   @Test
-   public void testValidateBitcoinAddress() throws Exception {
-      String privMain = "1NRkTbEo8z7qj9KiGAENKTuUZzs6kszZqC";
-      String privTest = "my316CQbTLXFut87FXT8xTzsJLjwCUXKQH";
-
-      assertTrue(BitcoinCrypto.ValidateBitcoinAddress(privMain));
-      assertTrue(BitcoinCrypto.ValidateBitcoinAddress(privTest));
-   }
 
    @Test
    public void testIsValidAddress() throws Exception {
@@ -71,7 +63,7 @@ public class BitcoinCryptoTest {
 
    @Test
    public void testLoadPrivateKey() throws Exception {
-      String privK = "MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ";
+      String privK = "MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ+9oHg9jufttpUDJeJuxD36qDcJzIn7X7/kjrhCjhRzArEe0dzTE/kTS02hGHsX9OtleBaxBjJxGCIAeKh0e";
       PrivateKey privateKey = BitcoinCrypto.loadPrivateKey(privK);
    }
 
@@ -89,7 +81,7 @@ public class BitcoinCryptoTest {
       PublicKey publicKey = BitcoinCrypto.loadPublicKey(pubK);
    }
 
-   @Test(expected=GeneralSecurityException.class)
+   @Test(expected=IllegalArgumentException.class)
    public void testWrongArgsPubK() throws GeneralSecurityException {
       String pub = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibs5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==";
       PublicKey publicKey = BitcoinCrypto.loadPublicKey(pub);
@@ -97,18 +89,18 @@ public class BitcoinCryptoTest {
 
    @Test
    public void testSavePrivateKey() throws Exception {
-
+      String privK = "MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ+9oHg9jufttpUDJeJuxD36qDcJzIn7X7/kjrhCjhRzArEe0dzTE/kTS02hGHsX9OtleBaxBjJxGCIAeKh0e";
+      PrivateKey privateKey = BitcoinCrypto.loadPrivateKey(privK);
+      assertEquals(privK,BitcoinCrypto.savePrivateKey(privateKey));
    }
 
    @Test
    public void testSavePublicKey() throws Exception {
-
+      String pubK = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibsQ9+qg3CcyJ+1+/5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==";
+      PublicKey publicKey = BitcoinCrypto.loadPublicKey(pubK);
+      assertEquals(pubK,BitcoinCrypto.savePublicKey(publicKey));
    }
 
-   @Test
-   public void testGetCurrentPathAsString() throws Exception {
-
-   }
 
    @Test
    public void testMakeDecryptionKey() throws Exception {
