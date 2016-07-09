@@ -6,8 +6,11 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -48,22 +51,48 @@ public class BitcoinCryptoTest {
 
    @Test
    public void testValidateBitcoinAddress() throws Exception {
+      String privMain = "1NRkTbEo8z7qj9KiGAENKTuUZzs6kszZqC";
+      String privTest = "my316CQbTLXFut87FXT8xTzsJLjwCUXKQH";
 
+      assertTrue(BitcoinCrypto.ValidateBitcoinAddress(privMain));
+      assertTrue(BitcoinCrypto.ValidateBitcoinAddress(privTest));
    }
 
    @Test
    public void testIsValidAddress() throws Exception {
 
+      String privMain = "1NRkTbEo8z7qj9KiGAENKTuUZzs6kszZqC";
+      String privTest = "my316CQbTLXFut87FXT8xTzsJLjwCUXKQH";
+
+      assertTrue(bitcoinCryptoMain.isValidAddress(privMain));
+      assertTrue(bitcoinCryptoNoP.isValidAddress(privTest));
+
    }
 
    @Test
    public void testLoadPrivateKey() throws Exception {
-
+      String privK = "MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ";
+      PrivateKey privateKey = BitcoinCrypto.loadPrivateKey(privK);
    }
+
+   @Test(expected=GeneralSecurityException.class)
+   public void testWrongArgsPrivK() throws GeneralSecurityException {
+      String privK = "MIGNAgEAMBAGByKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ";
+      PrivateKey privateKey = BitcoinCrypto.loadPrivateKey(privK);
+   }
+
+
 
    @Test
    public void testLoadPublicKey() throws Exception {
+      String pubK = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibsQ9+qg3CcyJ+1+/5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==";
+      PublicKey publicKey = BitcoinCrypto.loadPublicKey(pubK);
+   }
 
+   @Test(expected=GeneralSecurityException.class)
+   public void testWrongArgsPubK() throws GeneralSecurityException {
+      String pub = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibs5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==";
+      PublicKey publicKey = BitcoinCrypto.loadPublicKey(pub);
    }
 
    @Test
