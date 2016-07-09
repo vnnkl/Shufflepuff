@@ -8,7 +8,6 @@ import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.crypto.HDUtils;
-import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -31,25 +30,27 @@ import java.util.Base64;
 public class BitcoinCrypto implements Crypto {
 
 
+   private final SecureRandom sr;
    // Figure out which network we should connect to. Each one gets its own set of files.
    NetworkParameters params;
    KeyChainGroup keyChainGroup;
 
    public BitcoinCrypto(){
-      this.params = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
-      this.keyChainGroup = new KeyChainGroup(params);
+      this(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
    }
 
 
    public BitcoinCrypto(NetworkParameters networkParameters){
       this.params = networkParameters;
       this.keyChainGroup = new KeyChainGroup(networkParameters);
+      try {
+         //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
+         this.sr = SecureRandom.getInstanceStrong();
+      } catch (NoSuchAlgorithmException e) {
+         throw new RuntimeException("Error DRGB", e);
+      }
    }
 
-   public BitcoinCrypto(NetworkParameters networkParameters, DeterministicSeed seed){
-      this.params = networkParameters;
-      this.keyChainGroup = new KeyChainGroup(networkParameters, seed);
-   }
 
 
    //Alphabet defining valid characters used in address
@@ -66,7 +67,9 @@ public class BitcoinCrypto implements Crypto {
    //DeterministicSeed seed = kit.wallet().getKeyChainSeed();
    // if we generate new keys no need for mnemonic, apparently we don't
    //List<String> mnemonicCode = seed.getMnemonicCode();
-   SecureRandom sr = new SecureRandom();
+
+
+
 
    public NetworkParameters getParams() {
       return params;
@@ -222,30 +225,6 @@ public class BitcoinCrypto implements Crypto {
     public int getRandom(int n) {
          return sr.nextInt(n);
     }
-
-
-   /**
-    * Phase 1: Key exchange
-    * Each participant (except for Alice) creates an key pair of a public key encryption scheme ( makeDecryptionKey() ), consisting of a public encryption key and a private decryption key. We call the public encryption keys ekB, ekC, and ekD. Each participant announces his public encryption key (EncryptionKey), signed with the signature key (SigningKey -> VerificationKey.Address() ) corresponding to his input address.
-    * <p>
-    * Phase 2: Shuffling
-    * Once everybody knows the public encryption key each other, the shuffling can start:
-    * <p>
-    * Alice encrypts her output address A' with all the encryption keys, in a layered manner. That is, Alice encrypts A' first for Dave, obtaining enc(ekD, A'). Then this ciphertext is encrypted for Charlie, obtaining enc(ekC, enc(ekD, A')) and so on for Dave. This resulting message is sent to Bob:
-    * Alice ⟶ Bob: enc(ekB, enc(ekC, enc(ekD, A')))
-    * <p>
-    * Bob gets the message, decrypts it, obtaining enc(ekC, enc(ekD, A')).
-    * He also creates a nested encryption of his address, obtaining enc(ekC, enc(ekD, B')).
-    * Now Bob has a list two ciphertexts, containing A' and B'. Bob shuffles this list randomly, i.e., either exchanges the two entries or leave them. Say we are in the case that they are exchanged. Bob sends the shuffled list to Charlie:
-    * Bob ⟶ Charlie: enc(ekC, enc(ekD, B')) ; enc(ekC, enc(ekD, A'))
-    * <p>
-    * Charlie does the same: He decrypts the two entries in the list, adds his own entry and shuffles the list:
-    * Charlie ⟶ Dave: enc(ekD, B') ; enc(ekD, C') ; enc(ekD, A')
-    * <p>
-    * Dave does the same again: He decrypts all entries, obtaining B', C', A'. He adds his own address D' and
-    * shuffles the list. The resulting shuffled list is sent to everybody:
-    * Dave ⟶ everybody: D', B', C', A'
-    **/
 
 
 

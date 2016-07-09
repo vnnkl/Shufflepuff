@@ -57,7 +57,7 @@ public class VerificationKeyImpl implements VerificationKey {
       }
       //get netParams to create right address and check by address.
       org.bitcoinj.core.Address a = ((VerificationKeyImpl) o).ecKey.toAddress(bitcoinCrypto.getParams());
-      return a.compareTo(((org.bitcoinj.core.Address) o));
+      return a.compareTo(this.ecKey.toAddress(bitcoinCrypto.getParams()));
 
 
 
