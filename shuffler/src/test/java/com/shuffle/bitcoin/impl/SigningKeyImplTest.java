@@ -42,7 +42,7 @@ public class SigningKeyImplTest {
    @Test
    public void testVerificationKey() throws Exception {
 
-      verificationKey = new VerificationKeyImpl(this.ecKey.getPubKey());
+      verificationKey = new VerificationKeyImpl(this.ecKey.getPubKey(), bitcoinCrypto);
       assertEquals(verificationKey.toString(), signingKey.VerificationKey().toString());
       System.out.println("Address:    "+signingKey.VerificationKey().address().toString());
       System.out.println("SigningKey: "+signingKey.toString());

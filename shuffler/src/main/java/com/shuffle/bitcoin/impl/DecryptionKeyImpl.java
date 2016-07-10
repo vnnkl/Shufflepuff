@@ -12,14 +12,20 @@ import org.bitcoinj.core.ECKey;
 import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 
 /**
@@ -87,20 +93,48 @@ public class DecryptionKeyImpl implements DecryptionKey {
       if (bitcoinCrypto.isValidAddress(input)) {
          return new AddressImpl(input,true);
       } else {
-         try {
-            KeyFactory kf = KeyFactory.getInstance("ECIES");
-            PrivateKey privateKey = kf.generatePrivate(kf.getKeySpec((Key) key, KeySpec.class));
 
-            //encrypt cipher
-            Cipher cipher = Cipher.getInstance("ECIES");
-            cipher.init(Cipher.DECRYPT_MODE, privateKey);
-            byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
-            byte[] decrypted = cipher.doFinal(bytes);
-            returnAddress = new AddressImpl(Hex.toHexString(decrypted),false);
-         } catch (Exception e) {
+         KeyFactory kf = null;
+         try {
+            kf = KeyFactory.getInstance("ECIES");
+         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-            throw new FormatException();
+            throw new RuntimeException(e);
          }
+         PrivateKey privateKey = null;
+         try {
+            privateKey = kf.generatePrivate(kf.getKeySpec((Key) key, KeySpec.class));
+         } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+         }
+
+         //encrypt cipher
+         Cipher cipher = null;
+         try {
+            cipher = Cipher.getInstance("ECIES");
+         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+         }
+         try {
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+         } catch (InvalidKeyException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+         }
+         byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
+         byte[] decrypted = new byte[0];
+         try {
+            decrypted = cipher.doFinal(bytes);
+         } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+         } catch (BadPaddingException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+         }
+         returnAddress = new AddressImpl(Hex.toHexString(decrypted),false);
+
       }
       return returnAddress;
    }

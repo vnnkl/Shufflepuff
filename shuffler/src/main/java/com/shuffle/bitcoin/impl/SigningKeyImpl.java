@@ -36,7 +36,7 @@ public class SigningKeyImpl implements SigningKey {
 
    @Override
    public VerificationKey VerificationKey() {
-      return new VerificationKeyImpl(signingKey.getPubKey());
+      return new VerificationKeyImpl(signingKey.getPubKey(), bitcoinCrypto);
    }
 
    @Override

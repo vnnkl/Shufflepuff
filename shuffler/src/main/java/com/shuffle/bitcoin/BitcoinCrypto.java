@@ -11,6 +11,7 @@ import org.bitcoinj.crypto.HDUtils;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.encoders.Base64;
 
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -20,10 +21,11 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-import java.util.Base64;
+
 
 
 public class BitcoinCrypto implements Crypto {
@@ -91,7 +93,7 @@ public class BitcoinCrypto implements Crypto {
    }
 
    public static PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
-      byte[] clear = Base64.getDecoder().decode(key64);
+      byte[] clear = Base64.decode(key64);
       PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
       KeyFactory fact = KeyFactory.getInstance("ECDSA",new BouncyCastleProvider());
       PrivateKey priv = fact.generatePrivate(keySpec);
@@ -101,10 +103,14 @@ public class BitcoinCrypto implements Crypto {
 
 
    public static PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
-      byte[] data = Base64.getDecoder().decode(stored);
+      byte[] data = Base64.decode(stored);
       X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
       KeyFactory fact = KeyFactory.getInstance("ECDSA",new BouncyCastleProvider());
-      return fact.generatePublic(spec);
+      try {
+         return fact.generatePublic(spec);
+      } catch (InvalidKeySpecException e){
+         throw new IllegalArgumentException(e);
+      }
    }
 
    public static String savePrivateKey(PrivateKey priv) throws GeneralSecurityException {
@@ -112,7 +118,7 @@ public class BitcoinCrypto implements Crypto {
       PKCS8EncodedKeySpec spec = fact.getKeySpec(priv,
             PKCS8EncodedKeySpec.class);
       byte[] packed = spec.getEncoded();
-      String key64 = Base64.getEncoder().encodeToString(packed);
+      String key64 = Base64.toBase64String(packed);
       Arrays.fill(packed, (byte) 0);
       return key64;
    }
@@ -122,7 +128,7 @@ public class BitcoinCrypto implements Crypto {
       KeyFactory fact = KeyFactory.getInstance("ECDSA",new BouncyCastleProvider());
       X509EncodedKeySpec spec = fact.getKeySpec(publ,
             X509EncodedKeySpec.class);
-      return Base64.getEncoder().encodeToString(spec.getEncoded());
+      return Base64.toBase64String(spec.getEncoded());
    }
 
 
