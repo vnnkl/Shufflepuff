@@ -15,15 +15,17 @@ import java.nio.charset.StandardCharsets;
  */
 public class SigningKeyImpl implements SigningKey {
 
-   ECKey signingKey;
-   BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
+   final ECKey signingKey;
+   final BitcoinCrypto bitcoinCrypto;
 
-   public SigningKeyImpl(org.bitcoinj.core.ECKey ecKey) {
+
+   public SigningKeyImpl(org.bitcoinj.core.ECKey ecKey, BitcoinCrypto bitcoinCrypto) {
       this.signingKey = ecKey;
+      this.bitcoinCrypto = bitcoinCrypto;
    }
 
-   public SigningKeyImpl(String key){
-      this.signingKey = ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8));
+   public SigningKeyImpl(String key, BitcoinCrypto bitcoinCrypto){
+      this(ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8)),bitcoinCrypto);
    }
 
 

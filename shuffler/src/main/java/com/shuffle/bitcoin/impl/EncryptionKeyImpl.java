@@ -9,6 +9,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.ECKey;
 
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
@@ -16,7 +17,10 @@ import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 
 /**
  * Created by conta on 01.04.16.
@@ -61,23 +65,35 @@ public class EncryptionKeyImpl implements EncryptionKey {
 
       // encrypts the address passed for this encryption key
       AddressImpl add = null;
+      Guice.createInjector(new JvmModule()).injectMembers(this);
+
+      //get cipher cipher for ECIES encryption
+      Cipher cipher = null;
       try {
-         Guice.createInjector(new JvmModule()).injectMembers(this);
-
-         //get cipher cipher for ECIES encryption
-         Cipher cipher = Cipher.getInstance("ECIES");
-         //init cipher with with our encryption key
-         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-         //get bytes of address passed
-         byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
-         //encrypt
-         byte[] encrypted = cipher.doFinal(bytes);
-         //create new address with
-         add = new AddressImpl(Hex.encodeHexString(encrypted),true);
-      } catch (Exception e) {
+         cipher = Cipher.getInstance("ECIES");
+      } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
          e.printStackTrace();
-
+         throw new RuntimeException(e);
       }
+      //init cipher with with our encryption key
+      try {
+         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+      } catch (InvalidKeyException e) {
+         e.printStackTrace();
+      }
+      //get bytes of address passed
+      byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
+      //encrypt
+      byte[] encrypted = new byte[0];
+      try {
+         encrypted = cipher.doFinal(bytes);
+      } catch (IllegalBlockSizeException | BadPaddingException e) {
+         e.printStackTrace();
+         throw new RuntimeException(e);
+      }
+      //create new address with
+      add = new AddressImpl(Hex.encodeHexString(encrypted), true);
+
       return add;
    }
    

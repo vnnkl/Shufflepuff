@@ -29,8 +29,8 @@ public class SigningKeyImplTest {
    public void setUp() throws Exception {
 
       this.ecKey = new ECKey();
-      this.signingKey = new SigningKeyImpl(ecKey);
       bitcoinCrypto = new BitcoinCrypto();
+      this.signingKey = new SigningKeyImpl(ecKey,bitcoinCrypto);
    }
 
    @Test

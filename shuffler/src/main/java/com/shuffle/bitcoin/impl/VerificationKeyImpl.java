@@ -15,11 +15,12 @@ public class VerificationKeyImpl implements VerificationKey {
 
    private final ECKey ecKey;
    private final byte[] vKey;
-   private final BitcoinCrypto bitcoinCrypto = new BitcoinCrypto();
+   private final BitcoinCrypto bitcoinCrypto;
 
-   public VerificationKeyImpl(byte[] ecKey) {
+   public VerificationKeyImpl(byte[] ecKey, BitcoinCrypto bitcoinCrypto) {
       this.ecKey = ECKey.fromPublicOnly(ecKey);
       this.vKey = this.ecKey.getPubKey();
+      this.bitcoinCrypto = bitcoinCrypto;
    }
 
    // returns PublicKey compressed, 66 chars

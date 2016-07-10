@@ -168,7 +168,7 @@ public class BitcoinCrypto implements Crypto {
     @Override
     public SigningKey makeSigningKey() {
        ECKey newSignKey = keyChainGroup.freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
-       return new SigningKeyImpl(newSignKey);
+       return new SigningKeyImpl(newSignKey,this);
     }
 
     @Override
