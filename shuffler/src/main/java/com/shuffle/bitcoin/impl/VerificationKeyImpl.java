@@ -41,7 +41,7 @@ public class VerificationKeyImpl implements VerificationKey {
    public boolean equals(Object vk) {
       if (vk.getClass() == this.getClass()) {
          VerificationKey oKey = (VerificationKey) vk;
-         return this.address() == oKey.address() && oKey.getClass() == this.getClass();
+         return this.address().equals(oKey.address());
       }
       return false;
    }

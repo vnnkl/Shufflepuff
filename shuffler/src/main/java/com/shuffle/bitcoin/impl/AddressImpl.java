@@ -61,4 +61,9 @@ public class AddressImpl implements Address {
       }
       return address.compareTo((new AddressImpl(o.toString(),false)).address);
    }
+
+   @Override
+   public boolean equals(Object obj) {
+      return address.equals(obj);
+   }
 }

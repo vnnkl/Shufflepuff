@@ -8,17 +8,18 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.mock.AlwaysZero;
-import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.TestCase;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.bitcoinj.core.NetworkParameters;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -81,7 +82,7 @@ public class TestShuffleMachine {
 
         @Override
         protected Crypto crypto() {
-            return new MockCrypto(new InsecureRandom(++seed));
+            return new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
         }
     }
 
