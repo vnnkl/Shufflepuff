@@ -37,6 +37,7 @@ public class AddressImpl implements Address {
             address1 = new org.bitcoinj.core.Address(org.bitcoinj.core.Address.getParametersFromAddress(address), address);
          } catch (AddressFormatException e) {
             e.printStackTrace();
+            throw new RuntimeException(e);
          }
          this.address = address1;
          this.isEncrypted = false;

@@ -127,7 +127,8 @@ public class DecryptionKeyImplTest {
         System.out.println("Address myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG encrypted to PublicKey :"+ encryptionKey.toString());
         Address encAddress = encryptionKey.encrypt(testAddress);
         System.out.println("Address myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG encrypted \n to "+ encryptionKey.toString() +" :\n" + encAddress);
-        Address decAddress = decryptionKey.decrypt(testAddress);
+        Address decAddress = decryptionKey.decrypt(encAddress);
         System.out.println("and then decrypted \n back to :\n" + decAddress);
+        assertEquals(testAddress.toString(), decAddress.toString());
     }
 }

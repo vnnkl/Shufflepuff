@@ -86,7 +86,7 @@ public class EncryptionKeyImplTest {
         System.out.println("address                 " + address);
         System.out.println("ek                      " + ek.toString());
         System.out.println(new AddressImpl(address.toString(),false));
-
-        System.out.println("address encrypted to ek " + ek.encrypt(address));
+        Address encrypt = ek.encrypt(address);
+        System.out.println("address encrypted to ek " + encrypt);
     }
 }
