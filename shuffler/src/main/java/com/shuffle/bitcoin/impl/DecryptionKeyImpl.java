@@ -131,7 +131,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
             throw new RuntimeException(e);
          }
          String addrString = new String(decrypted, StandardCharsets.UTF_8);
-         returnAddress = new AddressImpl(addrString,false);
+         returnAddress = new AddressImpl(addrString,!bitcoinCrypto.isValidAddress(addrString));
 
       }
       return returnAddress;
