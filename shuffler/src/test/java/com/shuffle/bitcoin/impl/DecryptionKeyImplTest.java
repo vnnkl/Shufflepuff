@@ -97,7 +97,6 @@ public class DecryptionKeyImplTest {
     public void testEncryptionKey() throws Exception {
 
         System.out.println("\nBegin Test encryptionKey:");
-        byte[] pub = ECKey.publicKeyFromPrivate(ecKey.getPrivKey(), ecKey.isCompressed());
         EncryptionKey encryptionKey1 = new EncryptionKeyImpl(testKeys.getPublic());
 //
 //      PublicKey publicKey = BitcoinCrypto.loadPublicKey(Base64.getEncoder().encodeToString(ecKey.getPubKey()));
