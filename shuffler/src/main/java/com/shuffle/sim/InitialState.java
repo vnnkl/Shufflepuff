@@ -380,7 +380,9 @@ public class InitialState {
         }
     }
 
-    public Map<SigningKey, Adversary> getPlayers(Initializer<Packet<VerificationKey, P>> initializer) {
+    public Map<SigningKey, Adversary> getPlayers(
+            Initializer<Packet<VerificationKey, P>> initializer) {
+
         Map<SigningKey, Adversary> p = new HashMap<>();
         Map<SigningKey, Initializer.Connections<Packet<VerificationKey, P>>> connections = new HashMap<>();
 
@@ -422,6 +424,7 @@ public class InitialState {
                                 am, pm)));
 
             } catch (CoinNetworkException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
                 throw new RuntimeException(e);
             }
         }

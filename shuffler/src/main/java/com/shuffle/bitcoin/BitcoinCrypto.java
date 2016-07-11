@@ -46,7 +46,7 @@ public class BitcoinCrypto implements Crypto {
       this.keyChainGroup = new KeyChainGroup(networkParameters);
       try {
          //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
-         this.sr = SecureRandom.getInstanceStrong();
+         this.sr = SecureRandom.getInstance("SHA1PRNG");
       } catch (NoSuchAlgorithmException e) {
          throw new RuntimeException("Error DRGB", e);
       }
@@ -179,9 +179,7 @@ public class BitcoinCrypto implements Crypto {
 
     @Override
     public int getRandom(int n) {
-         return sr.nextInt(n);
+         return sr.nextInt(n + 1);
     }
-
-
 
 }

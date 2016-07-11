@@ -73,6 +73,10 @@ public class AddressImpl implements Address {
 
    @Override
    public boolean equals(Object obj) {
-      return address.equals(obj);
+      if (!(obj instanceof AddressImpl)) {
+         return false;
+      }
+
+      return address.equals(((AddressImpl)obj).address);
    }
 }

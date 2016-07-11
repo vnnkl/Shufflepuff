@@ -4,6 +4,7 @@ import junit.framework.TestCase;
 
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
+import org.junit.Assert;
 import org.junit.Test;
 
 import java.security.SecureRandom;
@@ -11,7 +12,7 @@ import java.security.SecureRandom;
 /**
  * Created by conta on 31.03.16.
  */
-public class AddressImplTest extends TestCase {
+public class AddressImplTest {
    NetworkParameters pnpar = org.bitcoinj.params.MainNetParams.get();
    NetworkParameters tnpar = org.bitcoinj.params.TestNet3Params.get();
 
@@ -32,12 +33,12 @@ public class AddressImplTest extends TestCase {
       System.out.println("addressi: " + addressi.toString());
       System.out.println("addressi2: " + addressi2.toString());
 
-      assertEquals(1, addressi.compareTo(new AddressImpl(address)));
+      Assert.assertEquals(1, addressi.compareTo(new AddressImpl(address)));
    }
 
    @Test
    public void testCompareTo2() {
 
-      assertEquals(0, addressi2.compareTo(addressi2));
+      Assert.assertEquals(0, addressi2.compareTo(addressi2));
    }
 }
