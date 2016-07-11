@@ -43,9 +43,18 @@ public class AddressImpl implements Address {
       }
    }
 
+   @Override
+   public int hashCode() {
+      int result = address != null ? address.hashCode() : 0;
+      result = 31 * result + (encrypted != null ? encrypted.hashCode() : 0);
+      result = 31 * result + (isEncrypted ? 1 : 0);
+      return result;
+   }
+
    public String toString() {
       if (this.isEncrypted){
        return encrypted;
+
       }
       return this.address.toString();
    }

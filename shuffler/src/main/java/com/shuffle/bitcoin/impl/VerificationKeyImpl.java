@@ -8,6 +8,8 @@ import com.shuffle.p2p.Bytestring;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.Sha256Hash;
 
+import java.util.Arrays;
+
 /**
  * Created by conta on 31.03.16.
  */
@@ -59,8 +61,14 @@ public class VerificationKeyImpl implements VerificationKey {
       //get netParams to create right address and check by address.
       org.bitcoinj.core.Address a = ((VerificationKeyImpl) o).ecKey.toAddress(bitcoinCrypto.getParams());
       return a.compareTo(this.ecKey.toAddress(bitcoinCrypto.getParams()));
-
-
-
    }
+
+   @Override
+   public int hashCode() {
+      int result = ecKey.hashCode();
+      result = 31 * result + Arrays.hashCode(vKey);
+      result = 31 * result + bitcoinCrypto.hashCode();
+      return result;
+   }
+
 }

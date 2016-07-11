@@ -55,4 +55,23 @@ public class SigningKeyImpl implements SigningKey {
       org.bitcoinj.core.Address a = ((SigningKeyImpl) o).signingKey.toAddress(bitcoinCrypto.getParams());
       return a.compareTo(((org.bitcoinj.core.Address) o));
    }
+
+   @Override
+   public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      SigningKeyImpl that = (SigningKeyImpl) o;
+
+      if (!signingKey.equals(that.signingKey)) return false;
+      return bitcoinCrypto.equals(that.bitcoinCrypto);
+
+   }
+
+   @Override
+   public int hashCode() {
+      int result = signingKey.hashCode();
+      result = 31 * result + bitcoinCrypto.hashCode();
+      return result;
+   }
 }

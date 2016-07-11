@@ -96,6 +96,23 @@ public class EncryptionKeyImpl implements EncryptionKey {
 
       return add;
    }
-   
 
+   @Override
+   public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      EncryptionKeyImpl that = (EncryptionKeyImpl) o;
+
+      if (!encryptionKey.equals(that.encryptionKey)) return false;
+      return publicKey.equals(that.publicKey);
+
+   }
+
+   @Override
+   public int hashCode() {
+      int result = encryptionKey.hashCode();
+      result = 31 * result + publicKey.hashCode();
+      return result;
+   }
 }

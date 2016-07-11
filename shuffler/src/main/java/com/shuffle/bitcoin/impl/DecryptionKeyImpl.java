@@ -21,6 +21,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -139,4 +140,28 @@ public class DecryptionKeyImpl implements DecryptionKey {
       return returnAddress;
    }
 
+   @Override
+   public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      DecryptionKeyImpl that = (DecryptionKeyImpl) o;
+
+      if (!key.equals(that.key)) return false;
+      if (!Arrays.equals(encryptionKey, that.encryptionKey)) return false;
+      if (!privateKey.equals(that.privateKey)) return false;
+      if (!publicKey.equals(that.publicKey)) return false;
+      return bitcoinCrypto.equals(that.bitcoinCrypto);
+
+   }
+
+   @Override
+   public int hashCode() {
+      int result = key.hashCode();
+      result = 31 * result + Arrays.hashCode(encryptionKey);
+      result = 31 * result + privateKey.hashCode();
+      result = 31 * result + publicKey.hashCode();
+      result = 31 * result + bitcoinCrypto.hashCode();
+      return result;
+   }
 }

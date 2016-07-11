@@ -21,13 +21,12 @@ import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.player.P;
 import com.shuffle.player.Protobuf;
-import com.shuffle.player.proto.Proto;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.MaliciousMachine;
-import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.blame.Evidence;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.protocol.blame.Reason;
+import com.shuffle.protocol.message.MessageFactory;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -423,7 +422,7 @@ public class InitialState {
                                 am, pm)));
 
             } catch (CoinNetworkException | NoSuchAlgorithmException e) {
-                return null; // Should not really happen.
+                throw new RuntimeException(e);
             }
         }
 
