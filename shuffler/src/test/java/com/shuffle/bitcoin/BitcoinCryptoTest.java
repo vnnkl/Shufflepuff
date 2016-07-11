@@ -119,15 +119,16 @@ public class BitcoinCryptoTest {
       // get a lot of numbers and make sure they change?
 
       // make sure it is within our boundary
-      assertTrue(bitcoinCryptoNoP.getRandom(5)<5);
-      assertTrue(bitcoinCryptoNoP.getRandom(15)<15);
-      assertTrue(bitcoinCryptoNoP.getRandom(25)<25);
-      assertTrue(bitcoinCryptoNoP.getRandom(35)<35);
+      assertTrue(bitcoinCryptoNoP.getRandom(5)<6);
+      assertTrue(bitcoinCryptoNoP.getRandom(15)<16);
+      assertTrue(bitcoinCryptoNoP.getRandom(25)<26);
+      assertTrue(bitcoinCryptoNoP.getRandom(35)<36);
       // same with main
-      assertTrue(bitcoinCryptoMain.getRandom(5)<5);
-      assertTrue(bitcoinCryptoMain.getRandom(15)<15);
-      assertTrue(bitcoinCryptoMain.getRandom(25)<25);
-      assertTrue(bitcoinCryptoMain.getRandom(35)<35);
+      assertTrue(bitcoinCryptoMain.getRandom(5)<6);
+      assertTrue(bitcoinCryptoMain.getRandom(15)<16);
+      assertTrue(bitcoinCryptoMain.getRandom(25)<26);
+      assertTrue(bitcoinCryptoMain.getRandom(35)<36);
+      assertTrue(bitcoinCryptoMain.getRandom(0)<1);
    }
 
    @Test(expected=IllegalArgumentException.class)
