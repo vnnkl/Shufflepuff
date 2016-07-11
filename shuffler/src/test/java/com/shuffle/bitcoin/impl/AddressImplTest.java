@@ -1,7 +1,5 @@
 package com.shuffle.bitcoin.impl;
 
-import junit.framework.TestCase;
-
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.junit.Assert;
@@ -22,7 +20,7 @@ public class AddressImplTest {
    ECKey ecKey2 = new ECKey(sr2);
    org.bitcoinj.core.Address address = new org.bitcoinj.core.Address(tnpar, ecKey.getPubKeyHash());
    org.bitcoinj.core.Address address2 = new org.bitcoinj.core.Address(tnpar, ecKey2.getPubKeyHash());
-   AddressImpl addressi = new AddressImpl(address);
+   AddressImpl addressi = new AddressImpl(address.toString(),false);
    AddressImpl addressi2 = new AddressImpl(address2);
 
    @Test
@@ -33,7 +31,7 @@ public class AddressImplTest {
       System.out.println("addressi: " + addressi.toString());
       System.out.println("addressi2: " + addressi2.toString());
 
-      Assert.assertEquals(1, addressi.compareTo(new AddressImpl(address)));
+      Assert.assertEquals(0, addressi.compareTo(new AddressImpl(address.toString(),false)));
    }
 
    @Test
