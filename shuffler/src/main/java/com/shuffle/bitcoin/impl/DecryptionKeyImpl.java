@@ -13,14 +13,10 @@ import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.KeySpec;
 import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
@@ -92,12 +88,12 @@ public class DecryptionKeyImpl implements DecryptionKey {
       java.lang.String input = m.toString();
       AddressImpl returnAddress = null;
       if (bitcoinCrypto.isValidAddress(input)) {
-         return new AddressImpl(input,true);
+         return new AddressImpl(input,false);
       } else {
 
-         KeyFactory kf = null;
+         /**KeyFactory kf = null;
          try {
-            kf = KeyFactory.getInstance("ECIES");
+         kf = KeyFactory.getInstance("ECIES",new BouncyCastleProvider());
          } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -109,7 +105,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
             e.printStackTrace();
             throw new RuntimeException(e);
          }
-
+         **/
          //encrypt cipher
          Cipher cipher = null;
          try {
@@ -124,7 +120,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
             e.printStackTrace();
             throw new RuntimeException(e);
          }
-         byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
+         byte[] bytes = Hex.decode(m.toString());
          byte[] decrypted = new byte[0];
          try {
             decrypted = cipher.doFinal(bytes);
@@ -134,7 +130,8 @@ public class DecryptionKeyImpl implements DecryptionKey {
             e.printStackTrace();
             throw new RuntimeException(e);
          }
-         returnAddress = new AddressImpl(Hex.toHexString(decrypted),false);
+         String addrString = new String(decrypted, StandardCharsets.UTF_8);
+         returnAddress = new AddressImpl(addrString,false);
 
       }
       return returnAddress;
