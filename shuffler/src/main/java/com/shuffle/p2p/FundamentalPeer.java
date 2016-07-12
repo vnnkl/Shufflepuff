@@ -42,7 +42,7 @@ public abstract class FundamentalPeer<Identity, Message extends Serializable> im
     }
 
     // Close any open sessions for this peer.
-    public final void close() throws InterruptedException {
+    public final void close() {
         if (currentSession != null) {
             currentSession.close();
         }

@@ -43,7 +43,7 @@ public class OutgoingPacketSend<Address extends Serializable, X extends Serializ
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         if (!closed) {
             send.close();
             closed = true;

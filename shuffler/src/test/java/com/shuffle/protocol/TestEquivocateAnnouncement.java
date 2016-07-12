@@ -26,7 +26,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
             InitialState.Equivocation[] equivocators
     ) {
         String description = "case " + caseNo + "; announcement equivocation test case.";
-        check(new MockTestCase(description).equivocateAnnouncementTestCase(
+        check(new RealTestCase(description).equivocateAnnouncementTestCase(
                 numPlayers, equivocators
         ));
     }

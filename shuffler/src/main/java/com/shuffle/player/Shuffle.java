@@ -2,12 +2,15 @@ package com.shuffle.player;
 
 import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
+import com.shuffle.bitcoin.impl.AddressImpl;
+import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
@@ -94,17 +97,7 @@ public class Shuffle {
                 .ofType(Long.class);
 
         if (TEST_MODE) {
-            parser.accepts("prng")
-                    .withRequiredArg()
-                    .ofType(String.class)
-                    .defaultsTo("mock");
-
-            parser.accepts("signatures")
-                    .withRequiredArg()
-                    .ofType(String.class)
-                    .defaultsTo("mock");
-
-            parser.accepts("encryption")
+            parser.accepts("crypto")
                     .withRequiredArg()
                     .ofType(String.class)
                     .defaultsTo("mock");
@@ -211,7 +204,16 @@ public class Shuffle {
         }
 
         if (options.valueOf("seed") == null) {
-            throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!");
+            //throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!");
+            seed = null;
+        } else {
+
+            // Check the random seed for apparent randomness.
+            seed = (String)options.valueOf("seed");
+            // Check entropy.
+            if (new EntropyEstimator().put(seed) <= MIN_APPARENT_ENTROPY) {
+                throw new IllegalArgumentException("Seed may not be random enough. Please provide longer seed.");
+            }
         }
 
         if (options.valueOf("session") == null) {
@@ -232,13 +234,6 @@ public class Shuffle {
 
         if (time < now) {
             throw new IllegalArgumentException("Cannot join protocol in the past.");
-        }
-
-        // Check the random seed for apparent randomness.
-        seed = (String)options.valueOf("seed");
-        // Check entropy.
-        if (new EntropyEstimator().put(seed) <= MIN_APPARENT_ENTROPY) {
-            throw new IllegalArgumentException("Seed may not be random enough. Please provide longer seed.");
         }
 
         // Get the session identifier.
@@ -382,29 +377,34 @@ public class Shuffle {
 
         // Check cryptography options.
         if (TEST_MODE) {
-            String prng = (String) options.valueOf("prng");
-            String signatures = (String) options.valueOf("signatures");
-            String encryption = (String) options.valueOf("encryption");
+            String cryptography = (String) options.valueOf("crypto");
 
-            if (!prng.equals("mock")) {
-                throw new IllegalArgumentException("mock crypto only supported currently.");
-            }
-            if (!signatures.equals("mock")) {
-                throw new IllegalArgumentException("mock crypto only supported currently.");
-            }
-            if (!encryption.equals("mock")) {
-                throw new IllegalArgumentException("mock crypto only supported currently.");
+            switch (cryptography) {
+                case "mock":
+                    if (seed == null) {
+                        crypto = new MockCrypto(new InsecureRandom(0));
+                    } else {
+                        crypto = new MockCrypto(new InsecureRandom(seed.hashCode()));
+                    }
+
+                    if (!query.equals("mock")) {
+                        throw new IllegalArgumentException("Can only use mock Bitcoin network with mock cryptography.");
+                    }
+
+                    break;
+                case "real":
+
+                    crypto = new BitcoinCrypto();
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unrecognized crypto option value " + cryptography);
             }
 
-            if (!query.equals("mock")) {
-                throw new IllegalArgumentException("Can only use mock Bitcoin network with mock cryptography.");
-            }
         } else {
             throw new IllegalArgumentException("Shufflepuff pre-alpha must be compiled in test mode.");
         }
 
         // Create the crypto interface.
-        crypto = new MockCrypto(new InsecureRandom(seed.hashCode()));
 
         amount = (Long)options.valueOf("amount");
         if (amount <= MIN_AMMOUNT) {
@@ -508,7 +508,6 @@ public class Shuffle {
                             + local.get(i - 1) + " as json object.");
                 }
 
-
                 String key, anon, change;
                 Long port;
                 try {
@@ -585,7 +584,7 @@ public class Shuffle {
         Address anonAddress;
         Address changeAddress;
         if (TEST_MODE) {
-            switch ((String)options.valueOf("signatures")) {
+            switch ((String)options.valueOf("crypto")) {
                 case "mock" : {
                     sk = new MockSigningKey(Integer.parseInt(key));
                     anonAddress = new MockAddress(anon);
@@ -593,6 +592,16 @@ public class Shuffle {
                         changeAddress = null;
                     } else {
                         changeAddress = new MockAddress(change);
+                    }
+                    break;
+                }
+                case "real" : {
+                    sk = new SigningKeyImpl(key, (BitcoinCrypto)crypto);
+                    anonAddress = new AddressImpl(anon, false);
+                    if (change == null) {
+                        changeAddress = null;
+                    } else {
+                        changeAddress = new AddressImpl(change, false);
                     }
                     break;
                 }

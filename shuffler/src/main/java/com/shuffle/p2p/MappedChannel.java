@@ -40,7 +40,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
             return inner.closed();
         }
 
@@ -55,7 +55,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             inner.close();
         }
     }
@@ -105,14 +105,14 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             if (connection != null) {
                 connection.close();
             }
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
             return connection.closed();
         }
     }

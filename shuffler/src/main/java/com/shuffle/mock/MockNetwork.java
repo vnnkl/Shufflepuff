@@ -69,7 +69,7 @@ public class MockNetwork<Q, X extends Serializable> {
             boolean closed = false;
 
             @Override
-            public void close() throws InterruptedException {
+            public void close() {
                 synchronized (lock) {
                     if (closed || MockChannel.this.closed) {
                         return;

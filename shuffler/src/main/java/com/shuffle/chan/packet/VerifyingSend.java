@@ -37,7 +37,7 @@ public class VerifyingSend<X> implements Send<Signed<X>> {
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         send.close();
     }
 }

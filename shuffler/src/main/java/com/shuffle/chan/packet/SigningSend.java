@@ -42,7 +42,7 @@ public class SigningSend<X> implements Send<X> {
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         session.close();
     }
 }

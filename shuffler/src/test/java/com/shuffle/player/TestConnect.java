@@ -91,9 +91,7 @@ public class TestConnect {
                 e.printStackTrace();
             }
 
-            try {
-                net.close();
-            } catch (InterruptedException e) {}
+            net.close();
         }
     }
 

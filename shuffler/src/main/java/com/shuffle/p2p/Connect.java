@@ -200,6 +200,8 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
             peers.queue(addr);
         }
 
+        System.out.println("Attempting to connect to " + peers);
+
         final Retries retries = new Retries();
 
         while (true) {
@@ -245,12 +247,12 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         connection.close();
     }
 
     @Override
-    public boolean closed() throws InterruptedException {
+    public boolean closed() {
         return connection.closed();
     }
 }

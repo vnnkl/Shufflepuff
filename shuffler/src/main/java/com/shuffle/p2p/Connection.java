@@ -19,9 +19,9 @@ public interface Connection<Address> {
 
     // Once closed, a Connection cannot be reopened. Instead, a new Connection is created
     // by the Channel's open method.
-    void close() throws InterruptedException;
+    void close();
 
     // Whether the channel has been closed. After this method returns true, it can only return true
     // after that.
-    boolean closed() throws InterruptedException;
+    boolean closed();
 }

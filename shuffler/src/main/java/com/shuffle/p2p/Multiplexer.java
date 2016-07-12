@@ -39,7 +39,7 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             if (first == null) {
                 second.close();
                 return;
@@ -49,7 +49,7 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
             if (first == null) {
                 return second.closed();
             }
@@ -148,13 +148,13 @@ public class Multiplexer<X, Y, Message extends Serializable> implements Channel<
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             x.close();
             y.close();
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
             // It should not actually happen that both channels are in a different state.
             return x.closed() || y.closed();
         }

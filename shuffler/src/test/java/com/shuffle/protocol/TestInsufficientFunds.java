@@ -23,7 +23,7 @@ public class TestInsufficientFunds extends TestShuffleMachine{
             int[] poor,
             int[] spenders) {
         String description = "case " + caseNo + "; Insufficient funds test case.";
-        check(new MockTestCase(description).insufficientFundsTestCase(
+        check(new RealTestCase(description).insufficientFundsTestCase(
                 numPlayers, deadbeats, poor, spenders
         ));
     }
