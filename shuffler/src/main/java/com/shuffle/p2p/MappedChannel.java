@@ -18,14 +18,6 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
     public MappedChannel(Channel<Address, X> inner, Map<Identity, Address> hosts) {
         this.inner = inner;
         this.hosts = hosts;
-
-        for (Map.Entry<Identity, Address> e : hosts.entrySet()) {
-            if (inverse.containsKey(e.getValue())) {
-                hosts.remove(e.getKey());
-            }
-
-            inverse.put(e.getValue(), e.getKey());
-        }
     }
 
     private class MappedSession implements Session<Identity, X> {
@@ -57,6 +49,11 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         @Override
         public void close() {
             inner.close();
+        }
+
+        @Override
+        public String toString() {
+            return "MappedSession[" + inner + "]";
         }
     }
 
@@ -128,7 +125,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         public Send<X> newSession(Session<Address, X> session) throws InterruptedException {
             Identity you = inverse.get(session.peer().identity());
             if (you == null) return null;
-            return new MappedSession(session, you);
+            return inner.newSession(new MappedSession(session, you));
         }
     }
 
@@ -136,6 +133,20 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
     public Connection<Identity> open(Listener<Identity, X> listener) throws InterruptedException, IOException {
         Connection<Address> c = inner.open(new MappedListener(listener));
         if (c == null) return null;
+
+        for (Map.Entry<Identity, Address> e : hosts.entrySet()) {
+            if (inverse.containsKey(e.getValue())) {
+                hosts.remove(e.getKey());
+            }
+
+            inverse.put(e.getValue(), e.getKey());
+        }
+
         return new MappedConnection(c);
+    }
+
+    @Override
+    public String toString() {
+        return "Mapped[" + hosts + ", " + inner +  "]";
     }
 }

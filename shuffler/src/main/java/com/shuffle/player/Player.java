@@ -244,123 +244,160 @@ class Player {
                 | FormatException
                 | NoSuchAlgorithmException e) {
             System.out.println(e.getMessage());
-            return null;
+            throw new RuntimeException(e);
+        } finally {
+            connect.close();
         }
 
-   }
+    }
 
-   public static class Report {
+    public static class Report {
+        public final Transaction t;
+        public final TimeoutException timeout;
+        public final Matrix blame;
 
-       public static Report success(Transaction t) {
-         return null;
+        private Report(Transaction t) {
+            this.t = t;
+            this.timeout = null;
+            this.blame = null;
+        }
+
+        private Report(TimeoutException timeout) {
+            this.t = null;
+            this.timeout = timeout;
+            this.blame = null;
+        }
+
+        private Report(Matrix blame) {
+            this.blame = blame;
+            timeout = null;
+            t = null;
+        }
+
+        @Override
+        public String toString() {
+            if (t != null) {
+                return "Successful round; transaction is " + t;
+            }
+            if (blame != null) {
+                return "Unsuccessful round; blame is " + blame;
+            }
+            if (timeout != null) {
+                return "Unsuccessful round; timeout error " + timeout;
+            }
+            throw new NullPointerException();
+        }
+
+        public static Report success(Transaction t) {
+            return new Report(t);
+        }
+
+        public static Report failure(Matrix blame, SortedSet<VerificationKey> identities) {
+
+
+            // The eliminated players.
+            SortedSet<VerificationKey> eliminated = new TreeSet<>();
+
+            // *** construct error report ***
+
+            // We must construct a message that informs other players of who will be eliminated.
+            // This message must say who will be eliminated and who will remain, and it must
+            // provide evidence as to why the eliminated players should be eliminated, if it would
+            // not be obvious to everyone.
+
+            // The set of players who are not eliminated.
+            SortedSet<VerificationKey> remaining = new TreeSet<>();
+
+            // The set of players who have been blamed, the players blaming them,
+            // and the evidence provided.
+            Map<VerificationKey, Map<VerificationKey, Evidence>> blamed = new HashMap<>();
+
+            // Next we go through players and find those which are not eliminated.
+            for (VerificationKey player : identities) {
+                // Who blames this player?
+                Map<VerificationKey, Evidence> accusers = blame.getAccusations(player);
+
+                // If nobody has blamed this player, then he's ok and can be stored in remaining.
+                if (accusers == null || accusers.isEmpty()) {
+                    remaining.add(player);
+                } else {
+                    blamed.put(player, accusers);
+                }
+            }
+
+            // Stores evidences required to eliminate players.
+            Map<VerificationKey, Evidence> evidences = new HashMap<>();
+
+            // Next go through the set of blamed players and decide what to do with them.
+            for (Map.Entry<VerificationKey, Map<VerificationKey, Evidence>> entry : blamed.entrySet()) {
+                VerificationKey player = entry.getKey();
+
+                Map<VerificationKey, Evidence> accusers = entry.getValue();
+
+                // Does everyone blame this player except himself?
+                Set<VerificationKey> everyone = new HashSet<>();
+                everyone.addAll(identities);
+                everyone.removeAll(accusers.keySet());
+
+                if (everyone.size() == 0 || everyone.size() == 1 && everyone.contains(player)) {
+                    eliminated.add(player); // Can eliminate this player without extra evidence.
+                    continue;
+                }
+
+                // Why is this player blamed? Is it objective?
+                // If not, include evidence.
+                // sufficient contains sufficient evidence to eliminate the player.
+                // (theoretically not all other players could have provided logically equivalent
+                // evidence against him, so we just need sufficient evidence.)
+                Evidence sufficient = null;
+                f : for (Evidence evidence : accusers.values()) {
+                    switch (evidence.reason) {
+                            // TODO all cases other than default are not complete.
+                        case DoubleSpend:
+                            // fallthrough
+                        case InsufficientFunds:
+                            // fallthrough
+                        case InvalidSignature: {
+                            sufficient = evidence;
+                            break;
+                        }
+                        case NoFundsAtAll: {
+                            if (sufficient == null) {
+                                sufficient = evidence;
+                            }
+                            break;
+                        }
+                        default: {
+                            // Other cases than those specified above are are objective.
+                            // We can be sure that other players agree
+                            // that this player should be eliminated.
+                            sufficient = null;
+                            eliminated.add(player);
+                            break f;
+                        }
+                    }
+                }
+
+                // Include evidence if required.
+                if (sufficient != null) {
+                    evidences.put(player, sufficient);
+                }
+            }
+
+            // Remove eliminated players from blamed.
+            for (VerificationKey player : eliminated) {
+                blamed.remove(player);
+            }
+
+            if (blamed.size() > 0) {
+                // TODO How could this happen and what to do about it?
+            }
+
+            return new Report(blame);
+        }
+
+        public static Report timeout(TimeoutException e) {
+         return new Report(e);
       }
-
-       public static Report failure(Matrix blame, SortedSet<VerificationKey> identities) {
-
-
-           // The eliminated players.
-           SortedSet<VerificationKey> eliminated = new TreeSet<>();
-
-           // *** construct error report ***
-
-           // We must construct a message that informs other players of who will be eliminated.
-           // This message must say who will be eliminated and who will remain, and it must
-           // provide evidence as to why the eliminated players should be eliminated, if it would
-           // not be obvious to everyone.
-
-           // The set of players who are not eliminated.
-           SortedSet<VerificationKey> remaining = new TreeSet<>();
-
-           // The set of players who have been blamed, the players blaming them,
-           // and the evidence provided.
-           Map<VerificationKey, Map<VerificationKey, Evidence>> blamed = new HashMap<>();
-
-           // Next we go through players and find those which are not eliminated.
-           for (VerificationKey player : identities) {
-               // Who blames this player?
-               Map<VerificationKey, Evidence> accusers = blame.getAccusations(player);
-
-               // If nobody has blamed this player, then he's ok and can be stored in remaining.
-               if (accusers == null || accusers.isEmpty()) {
-                   remaining.add(player);
-               } else {
-                   blamed.put(player, accusers);
-               }
-           }
-
-           // Stores evidences required to eliminate players.
-           Map<VerificationKey, Evidence> evidences = new HashMap<>();
-
-           // Next go through the set of blamed players and decide what to do with them.
-           for (Map.Entry<VerificationKey, Map<VerificationKey, Evidence>> entry : blamed.entrySet()) {
-               VerificationKey player = entry.getKey();
-
-               Map<VerificationKey, Evidence> accusers = entry.getValue();
-
-               // Does everyone blame this player except himself?
-               Set<VerificationKey> everyone = new HashSet<>();
-               everyone.addAll(identities);
-               everyone.removeAll(accusers.keySet());
-
-               if (everyone.size() == 0 || everyone.size() == 1 && everyone.contains(player)) {
-                   eliminated.add(player); // Can eliminate this player without extra evidence.
-                   continue;
-               }
-
-               // Why is this player blamed? Is it objective?
-               // If not, include evidence.
-               // sufficient contains sufficient evidence to eliminate the player.
-               // (theoretically not all other players could have provided logically equivalent
-               // evidence against him, so we just need sufficient evidence.)
-               Evidence sufficient = null;
-               f : for (Evidence evidence : accusers.values()) {
-                   switch (evidence.reason) {
-                           // TODO all cases other than default are not complete.
-                       case DoubleSpend:
-                           // fallthrough
-                       case InsufficientFunds:
-                           // fallthrough
-                       case InvalidSignature: {
-                          sufficient = evidence;
-                          break;
-                       }
-                       case NoFundsAtAll: {
-                           if (sufficient == null) {
-                               sufficient = evidence;
-                           }
-                           break;
-                       }
-                       default: {
-                           // Other cases than those specified above are are objective.
-                           // We can be sure that other players agree
-                           // that this player should be eliminated.
-                           sufficient = null;
-                           eliminated.add(player);
-                           break f;
-                       }
-                   }
-               }
-
-               // Include evidence if required.
-               if (sufficient != null) {
-                   evidences.put(player, sufficient);
-               }
-           }
-
-           // Remove eliminated players from blamed.
-           for (VerificationKey player : eliminated) {
-               blamed.remove(player);
-           }
-
-           if (blamed.size() > 0) {
-               // TODO How could this happen and what to do about it?
-           }
-
-           return null;
-       }
-
-       public static Report timeout(TimeoutException e) {
-         return null;
-      }
-   }
+    }
 }

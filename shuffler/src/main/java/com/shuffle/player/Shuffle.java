@@ -58,6 +58,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import joptsimple.ArgumentAcceptingOptionSpec;
@@ -187,7 +188,7 @@ public class Shuffle {
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
-    private final Executor executor;
+    public final ExecutorService executor;
 
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
 
@@ -275,8 +276,6 @@ public class Shuffle {
             am = Protobuf.atomMarshaller;
             pm = Protobuf.packetMarshaller;
         }
-
-        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads"));
 
         // Detect the nature of the cryptocoin network we will use.
         String query = (String)options.valueOf("query");
@@ -471,6 +470,8 @@ public class Shuffle {
             keys.add(vk);
         }
 
+        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads"));
+
         // Get information for this player. (In test mode, one node
         // may run more than one player.)
         if (TEST_MODE && options.has("local")) {
@@ -499,7 +500,6 @@ public class Shuffle {
                 throw new IllegalArgumentException("At least two players total must be specified.");
             }
 
-            System.out.println("LOCAL size is " + local.size());
             for (int i = 1; i <= local.size(); i ++) {
                 JSONObject o = null;
                 try {
@@ -686,6 +686,10 @@ public class Shuffle {
         return reportMap.values();
     }
 
+    public void close() {
+        executor.shutdownNow();
+    }
+
     public static void main(String[] opts) throws IOException {
 
         OptionParser parser = getShuffleOptionsParser();
@@ -721,6 +725,8 @@ public class Shuffle {
             reports = shuffle.cycle();
         } catch (InterruptedException | ExecutionException | NullPointerException e) {
             throw new RuntimeException(e);
+        } finally {
+            shuffle.close();
         }
 
         for (Player.Report report : reports) {

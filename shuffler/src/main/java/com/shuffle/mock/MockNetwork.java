@@ -151,7 +151,8 @@ public class MockNetwork<Q, X extends Serializable> {
                 MockSession session = this.new MockSession(r);
 
                 // If the session is not open, the connection didn't work for some reason.
-                if (session.closed()) return null;
+                // This should not really happen.
+                if (session.closed()) throw new RuntimeException();
 
                 // Set the new session as the officially connected one for this peer.
                 this.currentSession = session;
