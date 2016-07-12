@@ -499,6 +499,7 @@ public class Shuffle {
                 throw new IllegalArgumentException("At least two players total must be specified.");
             }
 
+            System.out.println("LOCAL size is " + local.size());
             for (int i = 1; i <= local.size(); i ++) {
                 JSONObject o = null;
                 try {
@@ -633,8 +634,6 @@ public class Shuffle {
                         mock.node(id)),
                     peers);
 
-
-
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
@@ -679,7 +678,12 @@ public class Shuffle {
             future = future.plus(new NaturalSummableFuture<>(p.playConcurrent()));
         }
 
-        return future.get().values();
+        Map<VerificationKey, Player.Report> reportMap = future.get();
+        if (reportMap == null) {
+            throw new NullPointerException();
+        }
+
+        return reportMap.values();
     }
 
     public static void main(String[] opts) throws IOException {
@@ -715,9 +719,8 @@ public class Shuffle {
         Collection<Player.Report> reports;
         try {
             reports = shuffle.cycle();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return;
+        } catch (InterruptedException | ExecutionException | NullPointerException e) {
+            throw new RuntimeException(e);
         }
 
         for (Player.Report report : reports) {

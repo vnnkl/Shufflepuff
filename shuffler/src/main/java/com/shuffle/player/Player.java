@@ -119,18 +119,18 @@ class Player {
     public synchronized Future<Summable.SummableElement<Map<VerificationKey, Report>>> playConcurrent()
             throws InterruptedException {
 
-        final Chan<Report> cr = new BasicChan<>(1);
+        final Chan<Report> cr = new BasicChan<>(2);
 
         exec.execute(new Runnable() {
             @Override
             public void run() {
                 try {
                     cr.send(play());
+                } catch (InterruptedException | IOException | NullPointerException e) {
+                    throw new RuntimeException(e);
+                } finally {
                     cr.close();
-                } catch (InterruptedException | IOException e) {
-                    e.printStackTrace();
                 }
-
             }
         });
 
@@ -159,17 +159,19 @@ class Player {
                 if (done) return null;
                 Report r = cr.receive();
                 done = true;
+                if (r == null) return null;
                 return new SummableMap<>(sk.VerificationKey(), r);
             }
 
             @Override
             public Summable.SummableElement<Map<VerificationKey, Report>> get(long l, TimeUnit timeUnit)
-                    throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
+                    throws InterruptedException, ExecutionException,
+                    java.util.concurrent.TimeoutException {
 
                 if (done) return null;
                 Report r = cr.receive(l, timeUnit);
-                if (r == null) return null;
                 done = true;
+                if (r == null) return null;
                 Map<VerificationKey, Report> map = new HashMap<>();
                 map.put(sk.VerificationKey(), r);
                 return new SummableMap<>(map);
@@ -180,8 +182,8 @@ class Player {
     public synchronized Report play() throws IOException, InterruptedException {
         if (report != null) return report;
 
-        final Chan<Phase> ch = new BasicChan<>(1);
-        final Chan<Report> r = new BasicChan<>(1);
+        final Chan<Phase> ch = new BasicChan<>(2);
+        final Chan<Report> r = new BasicChan<>(2);
 
         exec.execute(new Runnable() {
             @Override
@@ -189,9 +191,11 @@ class Player {
                 try {
                     r.send(playInner(ch));
                 } catch (InterruptedException | IOException | NullPointerException e) {
-                    e.printStackTrace();
+                    throw new RuntimeException(e);
+                } finally {
+                    ch.close();
+                    r.close();
                 }
-                r.close();
             }
         });
 
@@ -201,8 +205,9 @@ class Player {
             System.out.println("Player " + sk.VerificationKey() + " reaches phase " + phase);
         }
 
-       report = r.receive();
-       return report;
+        report = r.receive();
+        if (report == null) throw new NullPointerException();
+        return report;
     }
 
     private Report playInner(Chan<Phase> ch) throws InterruptedException, IOException {
@@ -253,108 +258,108 @@ class Player {
        public static Report failure(Matrix blame, SortedSet<VerificationKey> identities) {
 
 
-         // The eliminated players.
-         SortedSet<VerificationKey> eliminated = new TreeSet<>();
+           // The eliminated players.
+           SortedSet<VerificationKey> eliminated = new TreeSet<>();
 
-         // *** construct error report ***
+           // *** construct error report ***
 
-         // We must construct a message that informs other players of who will be eliminated.
-         // This message must say who will be eliminated and who will remain, and it must
-         // provide evidence as to why the eliminated players should be eliminated, if it would
-         // not be obvious to everyone.
+           // We must construct a message that informs other players of who will be eliminated.
+           // This message must say who will be eliminated and who will remain, and it must
+           // provide evidence as to why the eliminated players should be eliminated, if it would
+           // not be obvious to everyone.
 
-         // The set of players who are not eliminated.
-         SortedSet<VerificationKey> remaining = new TreeSet<>();
+           // The set of players who are not eliminated.
+           SortedSet<VerificationKey> remaining = new TreeSet<>();
 
-         // The set of players who have been blamed, the players blaming them,
-         // and the evidence provided.
-         Map<VerificationKey, Map<VerificationKey, Evidence>> blamed = new HashMap<>();
+           // The set of players who have been blamed, the players blaming them,
+           // and the evidence provided.
+           Map<VerificationKey, Map<VerificationKey, Evidence>> blamed = new HashMap<>();
 
-         // Next we go through players and find those which are not eliminated.
-         for (VerificationKey player : identities) {
-            // Who blames this player?
-            Map<VerificationKey, Evidence> accusers = blame.getAccusations(player);
+           // Next we go through players and find those which are not eliminated.
+           for (VerificationKey player : identities) {
+               // Who blames this player?
+               Map<VerificationKey, Evidence> accusers = blame.getAccusations(player);
 
-            // If nobody has blamed this player, then he's ok and can be stored in remaining.
-            if (accusers == null || accusers.isEmpty()) {
-               remaining.add(player);
-            } else {
-               blamed.put(player, accusers);
-            }
-         }
-
-         // Stores evidences required to eliminate players.
-         Map<VerificationKey, Evidence> evidences = new HashMap<>();
-
-         // Next go through the set of blamed players and decide what to do with them.
-         for (Map.Entry<VerificationKey, Map<VerificationKey, Evidence>> entry : blamed.entrySet()) {
-            VerificationKey player = entry.getKey();
-
-            Map<VerificationKey, Evidence> accusers = entry.getValue();
-
-            // Does everyone blame this player except himself?
-            Set<VerificationKey> everyone = new HashSet<>();
-            everyone.addAll(identities);
-            everyone.removeAll(accusers.keySet());
-
-            if (everyone.size() == 0 || everyone.size() == 1 && everyone.contains(player)) {
-               eliminated.add(player); // Can eliminate this player without extra evidence.
-               continue;
-            }
-
-            // Why is this player blamed? Is it objective?
-            // If not, include evidence.
-            // sufficient contains sufficient evidence to eliminate the player.
-            // (theoretically not all other players could have provided logically equivalent
-            // evidence against him, so we just need sufficient evidence.)
-            Evidence sufficient = null;
-            f : for (Evidence evidence : accusers.values()) {
-               switch (evidence.reason) {
-                  // TODO all cases other than default are not complete.
-                  case DoubleSpend:
-                     // fallthrough
-                  case InsufficientFunds:
-                     // fallthrough
-                  case InvalidSignature: {
-                     sufficient = evidence;
-                     break;
-                  }
-                  case NoFundsAtAll: {
-                     if (sufficient == null) {
-                        sufficient = evidence;
-                     }
-                     break;
-                  }
-                  default: {
-                     // Other cases than those specified above are are objective.
-                     // We can be sure that other players agree
-                     // that this player should be eliminated.
-                     sufficient = null;
-                     eliminated.add(player);
-                     break f;
-                  }
+               // If nobody has blamed this player, then he's ok and can be stored in remaining.
+               if (accusers == null || accusers.isEmpty()) {
+                   remaining.add(player);
+               } else {
+                   blamed.put(player, accusers);
                }
-            }
+           }
 
-            // Include evidence if required.
-            if (sufficient != null) {
-               evidences.put(player, sufficient);
-            }
-         }
+           // Stores evidences required to eliminate players.
+           Map<VerificationKey, Evidence> evidences = new HashMap<>();
 
-         // Remove eliminated players from blamed.
-         for (VerificationKey player : eliminated) {
-            blamed.remove(player);
-         }
+           // Next go through the set of blamed players and decide what to do with them.
+           for (Map.Entry<VerificationKey, Map<VerificationKey, Evidence>> entry : blamed.entrySet()) {
+               VerificationKey player = entry.getKey();
 
-         if (blamed.size() > 0) {
-            // TODO How could this happen and what to do about it?
-         }
+               Map<VerificationKey, Evidence> accusers = entry.getValue();
 
-         return null;
-      }
+               // Does everyone blame this player except himself?
+               Set<VerificationKey> everyone = new HashSet<>();
+               everyone.addAll(identities);
+               everyone.removeAll(accusers.keySet());
 
-      public static Report timeout(TimeoutException e) {
+               if (everyone.size() == 0 || everyone.size() == 1 && everyone.contains(player)) {
+                   eliminated.add(player); // Can eliminate this player without extra evidence.
+                   continue;
+               }
+
+               // Why is this player blamed? Is it objective?
+               // If not, include evidence.
+               // sufficient contains sufficient evidence to eliminate the player.
+               // (theoretically not all other players could have provided logically equivalent
+               // evidence against him, so we just need sufficient evidence.)
+               Evidence sufficient = null;
+               f : for (Evidence evidence : accusers.values()) {
+                   switch (evidence.reason) {
+                           // TODO all cases other than default are not complete.
+                       case DoubleSpend:
+                           // fallthrough
+                       case InsufficientFunds:
+                           // fallthrough
+                       case InvalidSignature: {
+                          sufficient = evidence;
+                          break;
+                       }
+                       case NoFundsAtAll: {
+                           if (sufficient == null) {
+                               sufficient = evidence;
+                           }
+                           break;
+                       }
+                       default: {
+                           // Other cases than those specified above are are objective.
+                           // We can be sure that other players agree
+                           // that this player should be eliminated.
+                           sufficient = null;
+                           eliminated.add(player);
+                           break f;
+                       }
+                   }
+               }
+
+               // Include evidence if required.
+               if (sufficient != null) {
+                   evidences.put(player, sufficient);
+               }
+           }
+
+           // Remove eliminated players from blamed.
+           for (VerificationKey player : eliminated) {
+               blamed.remove(player);
+           }
+
+           if (blamed.size() > 0) {
+               // TODO How could this happen and what to do about it?
+           }
+
+           return null;
+       }
+
+       public static Report timeout(TimeoutException e) {
          return null;
       }
    }
