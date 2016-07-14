@@ -6,7 +6,7 @@
  *
  */
 
-package com.shuffle.player;
+package com.shuffle.p2p;
 
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.chan.BasicChan;

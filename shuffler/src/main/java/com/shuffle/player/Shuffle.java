@@ -20,6 +20,7 @@ import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockNetwork;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.monad.Either;
@@ -52,6 +53,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
@@ -255,6 +258,9 @@ public class Shuffle {
         Marshaller<Message.Atom> am;
         Marshaller<Packet<VerificationKey, P>> pm;
         if (TEST_MODE) {
+
+            Protobuf proto = new MockProtobuf();
+
             if (options.has("format")) {
                 String format = (String) options.valueOf("format");
 
@@ -262,8 +268,8 @@ public class Shuffle {
                     am = new JavaMarshaller<>();
                     pm = new JavaMarshaller<>();
                 } else if (format.equals("protobuf")) {
-                    am = Protobuf.atomMarshaller;
-                    pm = Protobuf.packetMarshaller;
+                    am = proto.atomMarshaller;
+                    pm = proto.packetMarshaller;
                 } else {
                     throw new IllegalArgumentException();
                 }
@@ -273,8 +279,11 @@ public class Shuffle {
                 pm = new JavaMarshaller<>();
             }
         } else {
-            am = Protobuf.atomMarshaller;
-            pm = Protobuf.packetMarshaller;
+
+            Protobuf proto = new MockProtobuf();
+
+            am = proto.atomMarshaller;
+            pm = proto.packetMarshaller;
         }
 
         // Detect the nature of the cryptocoin network we will use.
@@ -317,12 +326,10 @@ public class Shuffle {
                 break;
             }
             case "blockchain.info" : {
-                stream.print("Warning: you have chosen to query address balances over through a " +
-                        " third party service.");
 
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (!options.has("minBitcoinNetworkPeers")) {
+                } else if (options.has("minBitcoinNetworkPeers")) {
                     throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
@@ -470,7 +477,7 @@ public class Shuffle {
             keys.add(vk);
         }
 
-        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads"));
+        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads") + 10);
 
         // Get information for this player. (In test mode, one node
         // may run more than one player.)
@@ -637,7 +644,7 @@ public class Shuffle {
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, coin, crypto, channel, am, pm, executor);
+                amount, coin, crypto, channel, am, pm, executor, System.out);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -658,8 +665,14 @@ public class Shuffle {
     public Collection<Player.Report> cycle()
             throws IOException, InterruptedException, ExecutionException {
 
-        if (local.size() == 1) {
-            for (Player p : local) {
+        List<Player.Running> running = new LinkedList<>();
+
+        for(Player p : local) {
+            running.add(p.start());
+        }
+
+        if (running.size() == 1) {
+            for (Player.Running p : running) {
                 Collection<Player.Report> reports = new HashSet<>();
                 reports.add(p.play());
                 return reports; // Only one here, so we can return immediately.
@@ -674,7 +687,7 @@ public class Shuffle {
         // Start the connection (this must be done after all Channel objects have been created
         // because everyone must be connected to the internet at the time they attempt to start
         // connecting to one another.
-        for (Player p : local) {
+        for (Player.Running p : running) {
             future = future.plus(new NaturalSummableFuture<>(p.playConcurrent()));
         }
 
@@ -718,6 +731,12 @@ public class Shuffle {
 
             System.out.println(e.getMessage());
             return;
+        }
+
+        // Warn for blockchain.info or other blockchain service.
+        if (options.valueOf("query").equals("blockchain.info")) {
+            System.out.print("Warning: you have chosen to query address " +
+                    "balances over through a third party service.\n");
         }
 
         Collection<Player.Report> reports;

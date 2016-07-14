@@ -144,6 +144,7 @@ public class InitialState {
     private final Crypto crypto;
     private final LinkedList<PlayerInitialState> players = new LinkedList<>();
     private MockCoin mockCoin = null;
+    private final Protobuf proto;
 
     // The initial state of an individual player. (includes malicious players)
     public final class PlayerInitialState {
@@ -404,8 +405,8 @@ public class InitialState {
                 break;
             }
             case Protobuf: {
-                am = Protobuf.atomMarshaller;
-                pm = Protobuf.packetMarshaller;
+                am = proto.atomMarshaller;
+                pm = proto.packetMarshaller;
                 break;
             }
             default : {
@@ -452,19 +453,21 @@ public class InitialState {
 
     private final MarshallType mt;
 
-    public InitialState(Bytestring session, long amount, Crypto crypto, MarshallType mt) {
+    public InitialState(Bytestring session, long amount, Crypto crypto, Protobuf proto, MarshallType mt) {
 
         this.session = session;
         this.amount = amount;
         this.crypto = crypto;
+        this.proto = proto;
         this.mt = mt;
     }
 
-    public InitialState(Bytestring session, long amount, Crypto crypto) {
+    public InitialState(Bytestring session, long amount, Crypto crypto, Protobuf proto) {
 
         this.session = session;
         this.amount = amount;
         this.crypto = crypto;
+        this.proto = proto;
         this.mt = MarshallType.Protobuf;
     }
 
@@ -583,9 +586,10 @@ public class InitialState {
             final Bytestring session,
             final long amount,
             final Crypto crypto,
+            final Protobuf proto,
             final int numPlayers
     ) {
-        InitialState init = new InitialState(session, amount, crypto);
+        InitialState init = new InitialState(session, amount, crypto, proto);
 
         for (int i = 1; i <= numPlayers; i++) {
             init.player().initialFunds(20);
@@ -600,12 +604,13 @@ public class InitialState {
             final Bytestring session,
             final long amount,
             final Crypto crypto,
+            final Protobuf proto,
             final int numPlayers,
             final int[] deadbeats, // Players who put no money in their address.
             final int[] poor, // Players who didn't put enough in their address.
             final int[] spenders // Players who don't have enough because they spent it.
     ) {
-        InitialState init = new InitialState(session, amount, crypto);
+        InitialState init = new InitialState(session, amount, crypto, proto);
 
         pit : for (int i = 1; i <= numPlayers; i++) {
             init.player().initialFunds(20);
@@ -636,6 +641,7 @@ public class InitialState {
             final Bytestring session,
             final long amount,
             final Crypto crypto,
+            final Protobuf proto,
             final int[] views, // Each player may have a different view of the network; ie,
             // some players may be able to observe that the double spend has
             // occurred but others may not.
@@ -647,7 +653,7 @@ public class InitialState {
             doubleSpenders.add(d);
         }
 
-        InitialState init = new InitialState(session, amount, crypto);
+        InitialState init = new InitialState(session, amount, crypto, proto);
         for (int i = 0; i < views.length; i ++) {
             init.player().initialFunds(20).networkPoint(views[i]);
 
@@ -692,10 +698,11 @@ public class InitialState {
             final Bytestring session,
             final long amount,
             final Crypto crypto,
+            final Protobuf proto,
             final int numPlayers,
             final Equivocation[] equivocators
     ) {
-        InitialState init = new InitialState(session, amount, crypto);
+        InitialState init = new InitialState(session, amount, crypto, proto);
 
         int eq = 0;
         for (int i = 1; i <= numPlayers; i ++) {
@@ -718,11 +725,12 @@ public class InitialState {
             final Bytestring session,
             final long amount,
             final Crypto crypto,
+            final Protobuf proto,
             final int numPlayers,
             final int[] equivocation
     ) {
 
-        InitialState init = new InitialState(session, amount, crypto);
+        InitialState init = new InitialState(session, amount, crypto, proto);
 
         // Only the last player can equivocate.
         for (int i = 1; i < numPlayers; i ++) {
@@ -740,6 +748,7 @@ public class InitialState {
             final Bytestring session,
             final long amount,
             final Crypto crypto,
+            final Protobuf proto,
             final int numPlayers,
             final int[][] drop,
             final int[][] replaceNew,
@@ -776,7 +785,7 @@ public class InitialState {
         }
 
 
-        InitialState init = new InitialState(session, amount, crypto);
+        InitialState init = new InitialState(session, amount, crypto, proto);
 
         for (int i = 1; i <= numPlayers; i ++) {
 
@@ -799,6 +808,7 @@ public class InitialState {
             final Bytestring session,
             final long amount,
             final Crypto crypto,
+            final Protobuf proto,
             final int numPlayers,
             final int[] mutants) {
         final Set<Integer> mutantsSet = new HashSet<>();
@@ -807,7 +817,7 @@ public class InitialState {
             mutantsSet.add(mutant);
         }
 
-        InitialState init = new InitialState(session, amount, crypto);
+        InitialState init = new InitialState(session, amount, crypto, proto);
 
         for (int i = 1; i <= numPlayers; i ++) {
             init.player().initialFunds(20);

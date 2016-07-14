@@ -35,7 +35,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
    final byte[] encryptionKey;
    final PrivateKey privateKey;
    final PublicKey publicKey;
-   BitcoinCrypto bitcoinCrypto;
+   transient BitcoinCrypto bitcoinCrypto;
 
    public DecryptionKeyImpl(org.bitcoinj.core.ECKey key) {
       this.key = key;

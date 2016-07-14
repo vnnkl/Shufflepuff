@@ -180,7 +180,6 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
             return null;
         }
 
-        // TODO make there be a parameter for max messages rather than just doing 100.
         Peers peers = new Peers(collector);
 
         // Randomly arrange the list of peers.
