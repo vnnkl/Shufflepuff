@@ -5,7 +5,9 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
+import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
 
 import java.nio.charset.StandardCharsets;
@@ -16,27 +18,27 @@ import java.nio.charset.StandardCharsets;
 public class SigningKeyImpl implements SigningKey {
 
    final ECKey signingKey;
-   final BitcoinCrypto bitcoinCrypto;
+   final NetworkParameters params;
 
 
-   public SigningKeyImpl(org.bitcoinj.core.ECKey ecKey, BitcoinCrypto bitcoinCrypto) {
+   public SigningKeyImpl(org.bitcoinj.core.ECKey ecKey, NetworkParameters params) {
       this.signingKey = ecKey;
-      this.bitcoinCrypto = bitcoinCrypto;
+      this.params = params;
    }
 
-   public SigningKeyImpl(String key, BitcoinCrypto bitcoinCrypto){
-      this(ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8)),bitcoinCrypto);
+   public SigningKeyImpl(String key, NetworkParameters params){
+      this(ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8)), params);
    }
 
 
    // returns Private Key in WIF Compressed 52 characters base58
    public String toString() {
-      return this.signingKey.getPrivateKeyAsWiF(bitcoinCrypto.getParams()).toString();
+      return this.signingKey.getPrivateKeyAsWiF(params);
    }
 
    @Override
    public VerificationKey VerificationKey() {
-      return new VerificationKeyImpl(signingKey.getPubKey(), bitcoinCrypto);
+      return new VerificationKeyImpl(signingKey.getPubKey(), params);
    }
 
    @Override
@@ -46,15 +48,15 @@ public class SigningKeyImpl implements SigningKey {
    }
 
 
-   @Override
-   public int compareTo(Object o) {
-      if (!(o instanceof SigningKeyImpl) && o.getClass() == this.getClass()) {
-         throw new IllegalArgumentException("unable to compare with other SingingKey");
-      }
-      //get netParams to create correct address and check by address.
-      org.bitcoinj.core.Address a = ((SigningKeyImpl) o).signingKey.toAddress(bitcoinCrypto.getParams());
-      return a.compareTo(((org.bitcoinj.core.Address) o));
-   }
+    @Override
+    public int compareTo(Object o) {
+        if (!(o instanceof SigningKeyImpl)) {
+            throw new IllegalArgumentException("unable to compare with other SingingKey");
+        }
+        //get netParams to create correct address and check by address.
+        Address a = ((SigningKeyImpl) o).signingKey.toAddress(params);
+        return a.compareTo(a);
+    }
 
    @Override
    public boolean equals(Object o) {
@@ -64,14 +66,14 @@ public class SigningKeyImpl implements SigningKey {
       SigningKeyImpl that = (SigningKeyImpl) o;
 
       if (!signingKey.equals(that.signingKey)) return false;
-      return bitcoinCrypto.equals(that.bitcoinCrypto);
+      return params.equals(that.params);
 
    }
 
    @Override
    public int hashCode() {
       int result = signingKey.hashCode();
-      result = 31 * result + bitcoinCrypto.hashCode();
+      result = 31 * result + params.hashCode();
       return result;
    }
 }

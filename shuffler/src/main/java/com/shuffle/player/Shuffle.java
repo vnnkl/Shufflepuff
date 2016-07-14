@@ -93,7 +93,7 @@ public class Shuffle {
 
         ArgumentAcceptingOptionSpec<String> blockchain = parser.acceptsAll(Arrays.asList("b", "blockchain"),
                 "Which blockchain to query (test or main)")
-                .withRequiredArg().ofType(String.class);
+                .withRequiredArg().ofType(String.class).defaultsTo("testnet");
 
         ArgumentAcceptingOptionSpec<Long> time = parser.acceptsAll(Arrays.asList("t", "time"),
                 "time at which protocol is scheduled to take place.")
@@ -287,7 +287,26 @@ public class Shuffle {
         }
 
         // Detect the nature of the cryptocoin network we will use.
-        String query = (String)options.valueOf("query");
+        final String query = (String)options.valueOf("query");
+        final NetworkParameters netParams;
+
+        switch ((String)options.valueOf("blockchain")) {
+
+            case "main" : {
+                netParams = MainNetParams.get();
+                break;
+            }
+
+            case "test" : {
+                netParams = TestNet3Params.get();
+                break;
+            }
+
+            default : {
+                throw new IllegalArgumentException("Invalid value for blockchain.");
+            }
+        }
+
         switch (query) {
             case "btcd" : {
 
@@ -299,21 +318,6 @@ public class Shuffle {
                     throw new IllegalArgumentException("Need to set rpcuser parameter (rpc server login)");
                 } else if (!options.has("rpcpass")) {
                     throw new IllegalArgumentException("Need to set rpcpass parameter (rpc server login)");
-                }
-
-                NetworkParameters netParams = null;
-
-                switch ((String)options.valueOf("blockchain")) {
-
-                    case "main" : {
-                        netParams = MainNetParams.get();
-                        break;
-                    }
-
-                    case "test" : {
-                        netParams = TestNet3Params.get();
-                        break;
-                    }
                 }
 
                 Long minBitcoinNetworkPeers = (Long) options.valueOf("minBitcoinNetworkPeers");
@@ -335,21 +339,6 @@ public class Shuffle {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
                 } else if (options.has("rpcpass")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcpass parameter");
-                }
-
-                NetworkParameters netParams = null;
-
-                switch ((String)options.valueOf("blockchain")) {
-
-                    case "main" : {
-                        netParams = MainNetParams.get();
-                        break;
-                    }
-
-                    case "test" : {
-                        netParams = TestNet3Params.get();
-                        break;
-                    }
                 }
 
                 Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
@@ -400,7 +389,7 @@ public class Shuffle {
                     break;
                 case "real":
 
-                    crypto = new BitcoinCrypto();
+                    crypto = new BitcoinCrypto(netParams);
                     break;
                 default:
                     throw new IllegalArgumentException("Unrecognized crypto option value " + cryptography);
@@ -604,7 +593,7 @@ public class Shuffle {
                     break;
                 }
                 case "real" : {
-                    sk = new SigningKeyImpl(key, (BitcoinCrypto)crypto);
+                    sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
                     anonAddress = new AddressImpl(anon, false);
                     if (change == null) {
                         changeAddress = null;

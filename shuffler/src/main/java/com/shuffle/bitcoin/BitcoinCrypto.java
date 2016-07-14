@@ -30,15 +30,10 @@ import java.util.Arrays;
 
 public class BitcoinCrypto implements Crypto {
 
-
    private final SecureRandom sr;
    // Figure out which network we should connect to. Each one gets its own set of files.
    NetworkParameters params;
    KeyChainGroup keyChainGroup;
-
-   public BitcoinCrypto(){
-      this(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
-   }
 
 
    public BitcoinCrypto(NetworkParameters networkParameters){
@@ -83,7 +78,7 @@ public class BitcoinCrypto implements Crypto {
 
 
 
-   public boolean isValidAddress(String address) {
+   public static boolean isValidAddress(String address, NetworkParameters params) {
       try {
          new Address(params, address);
          return true;
@@ -167,14 +162,14 @@ public class BitcoinCrypto implements Crypto {
        // decKeyCounter++;
        // return ECIES KeyPair
        KeyPair keyPair = getKeyPair();
-       return new DecryptionKeyImpl(keyPair);
+       return new DecryptionKeyImpl(keyPair, this.getParams());
 
     }
 
     @Override
     public SigningKey makeSigningKey() {
        ECKey newSignKey = keyChainGroup.freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
-       return new SigningKeyImpl(newSignKey,this);
+       return new SigningKeyImpl(newSignKey, this.getParams());
     }
 
     @Override

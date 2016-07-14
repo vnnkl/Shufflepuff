@@ -50,7 +50,8 @@ public class AddressImplTest {
       this.publicTestKey = BitcoinCrypto.loadPublicKey("MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibsQ9+qg3CcyJ+1+/5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==");
       this.testKeys = new KeyPair(publicTestKey,privateTestKey);
       this.encryptionKey = new EncryptionKeyImpl(testKeys.getPublic());
-      this.decryptionKey = new DecryptionKeyImpl(testKeys);
+      this.decryptionKey = new DecryptionKeyImpl(testKeys,
+              NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
    }
 
    @Test
@@ -67,7 +68,7 @@ public class AddressImplTest {
    @Test
    public void multipleAddressEncryption() throws FormatException {
 
-      bitcoinCrypto = new BitcoinCrypto();
+      bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
       Address encAddress1 = encryptionKey.encrypt(addressi);
       Address encAddress2 = encryptionKey.encrypt(encAddress1);
       Address decAddress2 = decryptionKey.decrypt(encAddress2);

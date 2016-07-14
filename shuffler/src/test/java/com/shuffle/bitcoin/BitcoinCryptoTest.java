@@ -24,8 +24,11 @@ public class BitcoinCryptoTest {
    BitcoinCrypto bitcoinCrypto;
    SigningKey signingKey;
    DecryptionKey decryptionKey;
-   BitcoinCrypto bitcoinCryptoNoP = new BitcoinCrypto();
-   BitcoinCrypto bitcoinCryptoMain = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
+   NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+   NetworkParameters mainnet = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
+   BitcoinCrypto bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
+   BitcoinCrypto bitcoinCryptoMain = new BitcoinCrypto(mainnet);
+
 
    @Before
    public void setUp(){
@@ -56,8 +59,8 @@ public class BitcoinCryptoTest {
       String privMain = "1NRkTbEo8z7qj9KiGAENKTuUZzs6kszZqC";
       String privTest = "my316CQbTLXFut87FXT8xTzsJLjwCUXKQH";
 
-      assertTrue(bitcoinCryptoMain.isValidAddress(privMain));
-      assertTrue(bitcoinCryptoNoP.isValidAddress(privTest));
+      assertTrue(BitcoinCrypto.isValidAddress(privMain, testnet3));
+      assertTrue(BitcoinCrypto.isValidAddress(privTest, mainnet));
 
    }
 

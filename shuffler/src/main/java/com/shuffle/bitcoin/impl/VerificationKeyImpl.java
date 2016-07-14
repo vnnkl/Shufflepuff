@@ -6,6 +6,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
 
 import java.util.Arrays;
@@ -17,12 +18,12 @@ public class VerificationKeyImpl implements VerificationKey {
 
    private final ECKey ecKey;
    private final byte[] vKey;
-   private final BitcoinCrypto bitcoinCrypto;
+   private final NetworkParameters params;
 
-   public VerificationKeyImpl(byte[] ecKey, BitcoinCrypto bitcoinCrypto) {
+   public VerificationKeyImpl(byte[] ecKey, NetworkParameters params) {
       this.ecKey = ECKey.fromPublicOnly(ecKey);
       this.vKey = this.ecKey.getPubKey();
-      this.bitcoinCrypto = bitcoinCrypto;
+      this.params = params;
    }
 
    // returns PublicKey compressed, 66 chars
@@ -50,7 +51,7 @@ public class VerificationKeyImpl implements VerificationKey {
 
    @Override
    public Address address() {
-      return new AddressImpl(ecKey.toAddress(bitcoinCrypto.getParams()));
+      return new AddressImpl(ecKey.toAddress(params));
    }
 
    @Override
@@ -59,15 +60,15 @@ public class VerificationKeyImpl implements VerificationKey {
          throw new IllegalArgumentException("unable to compare with other VerificationKey");
       }
       //get netParams to create right address and check by address.
-      org.bitcoinj.core.Address a = ((VerificationKeyImpl) o).ecKey.toAddress(bitcoinCrypto.getParams());
-      return a.compareTo(this.ecKey.toAddress(bitcoinCrypto.getParams()));
+      org.bitcoinj.core.Address a = ((VerificationKeyImpl) o).ecKey.toAddress(params);
+      return a.compareTo(this.ecKey.toAddress(params));
    }
 
    @Override
    public int hashCode() {
       int result = ecKey.hashCode();
       result = 31 * result + Arrays.hashCode(vKey);
-      result = 31 * result + bitcoinCrypto.hashCode();
+      result = 31 * result + params.hashCode();
       return result;
    }
 

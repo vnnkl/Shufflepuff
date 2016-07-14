@@ -9,6 +9,8 @@ import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.params.TestNet3Params;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,18 +39,19 @@ public class DecryptionKeyImplTest {
     PrivateKey privateTestKey;
     PublicKey publicTestKey;
     KeyPair testKeys;
+    NetworkParameters params = TestNet3Params.get();
     @Before
     public void setUp() throws Exception {
         // The module also initializes the BouncyCastle crypto
         Guice.createInjector(new JvmModule()).injectMembers(this);
-        this.bitcoinCrypto = new BitcoinCrypto();
+        this.bitcoinCrypto = new BitcoinCrypto(params);
         this.secureRandom = new SecureRandom();
         this.ecKey = new ECKey(secureRandom);
         this.privateTestKey = BitcoinCrypto.loadPrivateKey("MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ+9oHg9jufttpUDJeJuxD36qDcJzIn7X7/kjrhCjhRzArEe0dzTE/kTS02hGHsX9OtleBaxBjJxGCIAeKh0e");
         this.publicTestKey = BitcoinCrypto.loadPublicKey("MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibsQ9+qg3CcyJ+1+/5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==");
         this.testKeys = new KeyPair(publicTestKey,privateTestKey);
         this.encryptionKey = new EncryptionKeyImpl(testKeys.getPublic());
-        this.decryptionKey = new DecryptionKeyImpl(testKeys);
+        this.decryptionKey = new DecryptionKeyImpl(testKeys, params);
     }
 
     @Test
@@ -89,7 +92,7 @@ public class DecryptionKeyImplTest {
         System.out.println("ECKey: " + this.ecKey);
         System.out.println("String ECKey WIF: " + string);
         System.out.println("String DecryptionKey: " + this.decryptionKey.toString());
-        assertEquals("toString Method: ", new DecryptionKeyImpl(testKeys).toString(), this.decryptionKey.toString());
+        assertEquals("toString Method: ", new DecryptionKeyImpl(testKeys, params).toString(), this.decryptionKey.toString());
 
     }
 
