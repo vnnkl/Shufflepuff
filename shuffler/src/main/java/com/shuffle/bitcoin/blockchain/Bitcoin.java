@@ -16,6 +16,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Transaction;
@@ -108,8 +109,9 @@ public abstract class Bitcoin implements Coin {
     }
 
     public com.shuffle.bitcoin.Transaction fromBytes(byte[] bytes) {
-        // TODO
-        throw new IllegalArgumentException();
+        Context context = Context.getOrCreate(this.netParams);
+        org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(this.netParams, bytes);
+        return new Transaction(tx.getHashAsString(), tx, false);
     }
 
     public NetworkParameters getNetParams(){
