@@ -93,7 +93,7 @@ public class Shuffle {
 
         ArgumentAcceptingOptionSpec<String> blockchain = parser.acceptsAll(Arrays.asList("b", "blockchain"),
                 "Which blockchain to query (test or main)")
-                .withRequiredArg().ofType(String.class).defaultsTo("testnet");
+                .withRequiredArg().ofType(String.class);
 
         ArgumentAcceptingOptionSpec<Long> time = parser.acceptsAll(Arrays.asList("t", "time"),
                 "time at which protocol is scheduled to take place.")
@@ -118,14 +118,14 @@ public class Shuffle {
 
             parser.accepts("local").withRequiredArg().ofType(String.class);
 
-            parser.accepts("format").withRequiredArg().ofType(String.class);
+            parser.accepts("format").withRequiredArg().ofType(String.class).defaultsTo("protobuf");
 
             // Five seconds from now.
             time.defaultsTo(System.currentTimeMillis() + 5000L);
 
         } else {
             query.defaultsTo("blockchain.info");
-            blockchain.defaultsTo("main");
+            blockchain.defaultsTo("test");
         }
 
         parser.acceptsAll(Arrays.asList("S", "session"),

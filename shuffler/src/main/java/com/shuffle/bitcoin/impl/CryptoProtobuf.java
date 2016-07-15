@@ -1,43 +1,50 @@
 package com.shuffle.bitcoin.impl;
 
+import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.DecryptionKey;
+import com.shuffle.bitcoin.EncryptionKey;
+import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.chan.packet.Signed;
-import com.shuffle.player.Message;
-import com.shuffle.player.P;
+import com.shuffle.bitcoin.blockchain.Bitcoin;
 import com.shuffle.player.Protobuf;
-import com.shuffle.player.proto.Proto;
 import com.shuffle.protocol.FormatException;
-import com.shuffle.protocol.blame.Blame;
-import com.shuffle.protocol.message.Packet;
 
-import java.util.Queue;
+import org.bitcoinj.core.NetworkParameters;
 
 /**
  * Created by Daniel Krawisz on 7/14/16.
  */
 public class CryptoProtobuf extends Protobuf {
+    NetworkParameters params;
+    Bitcoin bitcoin;
+
     @Override
-    public Message.Atom unmarshallAtom(Proto.Message atom) throws FormatException {
-        return null;
+    // Unmarshall an address from its string representation.
+    public Address unmarshallAdress(String str) {
+        return new AddressImpl(str);
     }
 
     @Override
-    public Blame unmarshallBlame(Proto.Blame blame) throws FormatException {
-        return null;
+    // Unmarshall an encryption key from a string.
+    public EncryptionKey unmarshallEncryptionKey(String str) {
+        return new EncryptionKeyImpl(str);
     }
 
     @Override
-    public Queue<com.shuffle.protocol.message.Packet> unmarshallPackets(Proto.Packets pp) throws FormatException {
-        return null;
+    // Unmarshall a decryption key.
+    public DecryptionKey unmarshallDecryptionKey(String str) {
+        return new DecryptionKeyImpl(str, params);
     }
 
     @Override
-    public Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> unmarshallSignedPacket(Proto.Signed sp) throws FormatException {
-        return null;
+    // Unmarshall a verification key.
+    public VerificationKey unmarshallVerificationKey(String str) {
+        return new VerificationKeyImpl(str, params);
     }
 
     @Override
-    public com.shuffle.chan.packet.Packet<VerificationKey, P> unmarshallPacket(Proto.Packet p) throws FormatException {
-        return null;
+    // Unmarshall a Transaction
+    public Transaction unmarshallTransaction(byte[] bytes) throws FormatException {
+        return bitcoin.fromBytes(bytes);
     }
 }

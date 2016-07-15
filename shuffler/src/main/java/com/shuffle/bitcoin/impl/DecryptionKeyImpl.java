@@ -45,6 +45,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
         this.publicKey = null;
         this.params = params;
     }
+
     public DecryptionKeyImpl(KeyPair keyPair, NetworkParameters params) {
         this.privateKey = keyPair.getPrivate();
         this.publicKey = keyPair.getPublic();
@@ -53,6 +54,10 @@ public class DecryptionKeyImpl implements DecryptionKey {
         this.params = params;
     }
 
+    public DecryptionKeyImpl(String string, NetworkParameters params) {
+        // TODO
+        throw new IllegalArgumentException();
+    }
 
     // returns encoded private key in hex format
     public java.lang.String toString() {

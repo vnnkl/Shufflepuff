@@ -31,7 +31,9 @@ public class EncryptionKeyImpl implements EncryptionKey {
    PublicKey publicKey;
 
 
-   public EncryptionKeyImpl(byte[] ecPubKey) throws NoSuchAlgorithmException, InvalidKeySpecException {
+   public EncryptionKeyImpl(byte[] ecPubKey)
+           throws NoSuchAlgorithmException, InvalidKeySpecException {
+
       // this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
       KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
       EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
@@ -53,6 +55,11 @@ public class EncryptionKeyImpl implements EncryptionKey {
          this.encryptionKey = ecPubKey;
       }
    }
+
+    public EncryptionKeyImpl(String string) {
+        // TODO
+        throw new IllegalArgumentException();
+    }
 
    public String toString() {
 

@@ -34,7 +34,8 @@ public class AddressImpl implements Address {
       } else {
          org.bitcoinj.core.Address address1 = null;
          try {
-            address1 = new org.bitcoinj.core.Address(org.bitcoinj.core.Address.getParametersFromAddress(address), address);
+            address1 = new org.bitcoinj.core.Address(
+                    org.bitcoinj.core.Address.getParametersFromAddress(address), address);
          } catch (AddressFormatException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -42,6 +43,22 @@ public class AddressImpl implements Address {
          this.address = address1;
          this.isEncrypted = false;
       }
+   }
+
+   // Construct an address from a string and detect whether it is
+   // encrypted or not.
+   public AddressImpl(String address) {
+      org.bitcoinj.core.Address addr;
+      try {
+         addr = new org.bitcoinj.core.Address(
+                 org.bitcoinj.core.Address.getParametersFromAddress(address), address);
+      } catch (AddressFormatException e) {
+         this.encrypted = address;
+         this.isEncrypted = true;
+         return;
+      }
+      this.address = addr;
+      this.isEncrypted = false;
    }
 
    @Override

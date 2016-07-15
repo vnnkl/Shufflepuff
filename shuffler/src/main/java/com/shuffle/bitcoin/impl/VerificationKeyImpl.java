@@ -26,6 +26,11 @@ public class VerificationKeyImpl implements VerificationKey {
       this.params = params;
    }
 
+   public VerificationKeyImpl(String string, NetworkParameters params) {
+      // TODO
+      throw new IllegalArgumentException();
+   }
+
    // returns PublicKey compressed, 66 chars
    public String toString() {
       return this.ecKey.getPublicKeyAsHex();
