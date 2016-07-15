@@ -307,11 +307,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                 }
             }
 
-            try {
-                send.close();
-            } catch (InterruptedException e) {
-                // This doesn't actually change how the program ends but we have to catch it anyway.
-            }
+            send.close();
         }
     }
 

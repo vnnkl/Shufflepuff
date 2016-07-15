@@ -9,11 +9,6 @@ import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Signed;
-import com.shuffle.mock.MockAddress;
-import com.shuffle.mock.MockCoin;
-import com.shuffle.mock.MockDecryptionKey;
-import com.shuffle.mock.MockEncryptionKey;
-import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.proto.Proto;
 import com.shuffle.protocol.FormatException;
@@ -23,16 +18,28 @@ import com.shuffle.protocol.message.Phase;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
-import java.util.Stack;
 
 /**
  * Created by Daniel Krawisz on 7/2/16.
  */
-public class Protobuf {
+public abstract class Protobuf {
+
+    // Unmarshall an address from its string representation.
+    public abstract Address unmarshallAdress(String str);
+
+    // Unmarshall an encryption key from a string.
+    public abstract EncryptionKey unmarshallEncryptionKey(String str);
+
+    // Unmarshall a decryption key.
+    public abstract DecryptionKey unmarshallDecryptionKey(String str);
+
+    // Unmarshall a verification key.
+    public abstract VerificationKey unmarshallVerificationKey(String str);
+
+    // Unmarshall a Transaction
+    public abstract Transaction unmarshallTransaction(byte[] bytes) throws FormatException;
 
     public static Proto.Signed.Builder marshallSignedPacket(com.shuffle.protocol.message.Packet p) {
         if (p == null || !(p instanceof Messages.SignedPacket)) {
@@ -184,9 +191,7 @@ public class Protobuf {
         return bb;
     }
 
-    // TODO switch to use only real crypto objects not mock objects. Mock objects
-    // should not be allowed with protobuf!
-    public static Message.Atom unmarshallAtom(Proto.Message atom) throws FormatException {
+    public final Message.Atom unmarshallAtom(Proto.Message atom) throws FormatException {
 
         Object o;
         // Only one field is allowed to be set in the Atom.
@@ -195,14 +200,14 @@ public class Protobuf {
                 throw new FormatException("Atom contains more than one value.");
             }
 
-            o = new MockAddress(atom.getAddress().getAddress());
+            o = unmarshallAdress(atom.getAddress().getAddress());
         } else if (atom.hasKey()) {
             if (atom.hasHash() || atom.hasSignature() || atom.hasBlame()) {
                 throw new FormatException("Atom contains more than one value.");
             }
 
             try {
-                o = new MockEncryptionKey(atom.getKey().getKey());
+                o = unmarshallEncryptionKey(atom.getKey().getKey());
             } catch (NumberFormatException e) {
                 throw new FormatException("Could not read " + atom.getKey().getKey() + " as number.");
             }
@@ -229,7 +234,7 @@ public class Protobuf {
         }
     }
 
-    public static Blame unmarshallBlame(Proto.Blame blame) throws FormatException {
+    public final Blame unmarshallBlame(Proto.Blame blame) throws FormatException {
         Reason reason;
         switch (blame.getReason()) {
             case INSUFFICIENTFUNDS: {
@@ -272,7 +277,7 @@ public class Protobuf {
                 reason = Reason.InvalidFormat;
                 break;
             }
-            default : {
+            default: {
                 throw new FormatException("Unknown blame reason " + blame.getReason());
             }
         }
@@ -280,7 +285,7 @@ public class Protobuf {
         VerificationKey accused = null;
         if (blame.hasAccused()) {
             try {
-                accused = new MockVerificationKey(blame.getAccused().getKey());
+                accused = unmarshallVerificationKey(blame.getAccused().getKey());
             } catch (NumberFormatException e) {
                 throw new FormatException(e.getMessage());
             }
@@ -289,7 +294,7 @@ public class Protobuf {
         DecryptionKey key = null;
         if (blame.hasKey()) {
             try {
-                key = new MockDecryptionKey(blame.getKey().getKey());
+                key = unmarshallDecryptionKey(blame.getKey().getKey());
             } catch (NumberFormatException e) {
                 throw new FormatException(e.getMessage());
             }
@@ -297,8 +302,7 @@ public class Protobuf {
 
         Transaction t = null;
         if (blame.hasTransaction()) {
-            t = MockCoin.MockTransaction.fromBytes(
-                    new Bytestring(blame.getTransaction().getTransaction().toByteArray()));
+            t = unmarshallTransaction(blame.getTransaction().getTransaction().toByteArray());
         }
 
         Bytestring invalid = null;
@@ -314,7 +318,7 @@ public class Protobuf {
         return new Blame(reason, accused, t, key, invalid, packets);
     }
 
-    public static Queue<com.shuffle.protocol.message.Packet> unmarshallPackets(Proto.Packets pp) throws FormatException {
+    public final Queue<com.shuffle.protocol.message.Packet> unmarshallPackets(Proto.Packets pp) throws FormatException {
         Queue<com.shuffle.protocol.message.Packet> packets = new LinkedList<>();
 
         for (Proto.Signed p : pp.getPacketList()) {
@@ -324,25 +328,25 @@ public class Protobuf {
         return packets;
     }
 
-    public static Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> unmarshallSignedPacket(Proto.Signed sp) throws FormatException {
+    public final Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> unmarshallSignedPacket(Proto.Signed sp) throws FormatException {
         if (!(sp.hasSignature() && sp.hasPacket() && sp.getPacket().hasFrom())) {
             throw new FormatException("All entries in Signed must be filled:" + sp);
         }
 
-        return new Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>>(
+        return new Signed<>(
                 new Bytestring(sp.getPacket().toByteArray()),
                 new Bytestring(sp.getSignature().getSignature().toByteArray()),
-                new MockVerificationKey(sp.getPacket().getFrom().getKey()),
+                unmarshallVerificationKey(sp.getPacket().getFrom().getKey()),
                 packetMarshaller);
     }
 
-    public static com.shuffle.chan.packet.Packet<VerificationKey, P> unmarshallPacket(Proto.Packet p) throws FormatException {
+    public final com.shuffle.chan.packet.Packet<VerificationKey, P> unmarshallPacket(Proto.Packet p) throws FormatException {
         if (!(p.hasFrom() && p.hasTo() && p.hasMessage())) {
             throw new FormatException("All entries in Packet must be filled: " + p);
         }
 
         Phase phase;
-        switch(p.getPhase()) {
+        switch (p.getPhase()) {
             case ANNOUNCEMENT: {
                 phase = Phase.Announcement;
                 break;
@@ -367,35 +371,30 @@ public class Protobuf {
                 phase = Phase.Blame;
                 break;
             }
-            default : {
+            default: {
                 throw new FormatException("Invalid phase " + p.getPhase());
             }
-        };
-
-        /*Message.Atom last = null;
-        Proto.Message last = p.getMessage();
-        for (Proto.Message a : p.getMessage()) {
-            Address address = null;
-            EncryptionKey key = null;
-            Message.SecureHash hash = null;
-            Bytestring signature = null;
-            Blame blame = null;
-
-            Message.Atom atom = new Message.Atom(address, key, hash, signature, blame, last);
-            last = atom;
-        } while ();*/
+        }
 
         return new com.shuffle.chan.packet.Packet<>(
                 new Bytestring(p.getSession().toByteArray()),
-                (VerificationKey)new MockVerificationKey(p.getFrom().getKey()),
-                new MockVerificationKey(p.getTo().getKey()),
+                unmarshallVerificationKey(p.getFrom().getKey()),
+                unmarshallVerificationKey(p.getTo().getKey()),
                 p.getNumber(),
                 new P(phase, new Message(unmarshallAtom(p.getMessage()), null)));
+
     }
 
-    private Protobuf() {}
+    public final Packet packetMarshaller;
+    public final Atom atomMarshaller;
 
-    public static class Atom implements Marshaller<Message.Atom> {
+    public Protobuf() {
+        packetMarshaller = new Packet();
+        atomMarshaller = new Atom();
+
+    }
+
+    public class Atom implements Marshaller<Message.Atom> {
 
         @Override
         public Bytestring marshall(Message.Atom atom) {
@@ -416,10 +415,8 @@ public class Protobuf {
         }
     }
 
-    public static Packet packetMarshaller = new Packet();
-    public static Atom atomMarshaller = new Atom();
+    public class Packet implements Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> {
 
-    public static class Packet implements Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> {
         @Override
         public Bytestring marshall(com.shuffle.chan.packet.Packet<VerificationKey, P> p) throws IOException {
             return new Bytestring(marshallPacket(p).build().toByteArray());

@@ -75,14 +75,9 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
             return openSessions.get(name);
         }
 
-        public boolean connected(Name name) throws InterruptedException {
-            PendingSession p = pendingSessions.get(name);
+        public boolean connected(Name name) {
+            return pendingSessions.containsKey(name) || openSessions.containsKey(name);
 
-            if (p != null) {
-                p.connected.receive();
-            }
-
-            return openSessions.containsKey(name);
         }
 
         public boolean openInitiate(Name you, Send<Payload> r) throws InterruptedException, IOException {
@@ -150,13 +145,17 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
             return false;
         }
 
-        public void close(Name you) throws InterruptedException {
-            if (remove(you)) {
-                try {
-                    session.send(CloseSession(you));
-                } catch (IOException e) {
-                    MediatorClientChannel.this.close();
+        public void close(Name you) {
+            try {
+                if (remove(you)) {
+                    try {
+                        session.send(CloseSession(you));
+                    } catch (IOException e) {
+                        MediatorClientChannel.this.close();
+                    }
                 }
+            } catch (InterruptedException e) {
+                // This should not happen.
             }
         }
 
@@ -214,7 +213,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             openSessions.close(you);
         }
     }
@@ -227,7 +226,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
 
             return !openSessions.connected(you);
         }
@@ -243,19 +242,20 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             new MediatorClientPeer(you).close();
         }
     }
 
-    private void close() throws InterruptedException {
+    private void close() {
         if (session == null) return;
 
         synchronized (lock) {
 
             try {
                 openSessions.clear();
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException e) {
+                // This should not happen.
                 e.printStackTrace();
             }
 
@@ -268,7 +268,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         private boolean closed = false;
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             if (closed) return;
 
             closed = true;
@@ -323,7 +323,7 @@ public class MediatorClientChannel<Name, Address, Payload extends Serializable> 
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             MediatorClientChannel.this.close();
         }
     }

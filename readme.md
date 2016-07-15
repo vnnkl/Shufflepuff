@@ -1,11 +1,19 @@
-Shufflepuff implementation of the CoinShuffle protocol in java. This is a work
-in progress. If you wish to support this project, please contact me 
+## Mycelium Shufflepuff
+
+**Mycelium Shufflepuff** is an implementation of the CoinShuffle protocol in java.
+This code is experimental, so don't trust it with your life savings. A bug is 
+much more likely to cause the protocol to fail than to result in lost funds, 
+however. Shufflepuff does not yet use end-to-end encryption. I don't think that
+this makes the protocol insecure, but I would like this feature to be working
+before it is used for serious purposes. 
+
+If you wish to support this project, please contact 
 (daniel.krawisz@thingobjectentity.net) for tasks that you might try completing.
 
 CoinShuffle description: 
 http://crypsys.mmci.uni-saarland.de/projects/CoinShuffle/coinshuffle.pdf
 
--- Functionality 
+## Functionality 
 
 Shufflepuff can run on its own or it can be used as a library and encorporated
 into a java program. 
@@ -23,7 +31,7 @@ For lite applications there is an option for querying blockchain.info. For
 players with full nodes, an option is provided to look up balances using btcd. 
 The user could also provide other options by extending the Bitcoin class. 
 
--- Overall Organization of the Project
+## Organization of the Project
 
 Package protocol implements Coin Shuffle according to the same concepts as in
 the original paper. It abstracts away a lot. In order to implement this version
@@ -60,22 +68,22 @@ Package bitcoin will provide an implementation of Coin and Crypto which is
 specific to the Bitcoin network and which provides the cryptography as described
 in the paper. It relies on bitcoinj and Spongey Castle.
 
-status: coming along.
+status: nearly ready.
 
 Package p2p includes classes for constructing various internet channels, by
 which instances of this program will communicate. 
 
-status: Partly tested, some classes still needed. 
+status: Working. 
 
 Package player provides for some peripheral issues about running the protocol, 
 such as collecting the initial data and re-running the protocol if some players
 have to be eliminated. Player is also quite abstract and could be implemented in
 various ways. 
 
-status: lots to do. 
+status: Working
 
 Package moderator will have a server which will eventually help people to find
 one another to create joins. It will also provide for a client that can schedule
 and commit to joins. 
 
-status: barely started
+status: coming along

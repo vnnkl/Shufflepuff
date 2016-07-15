@@ -15,6 +15,7 @@ import com.shuffle.bitcoin.Transaction;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Matrix;
@@ -39,7 +40,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     // Create a test case representing a successful run.
     private void SuccessfulRun(int numPlayer) {
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
-        check(new MockTestCase(description).successfulTestCase(numPlayer));
+        check(new RealTestCase(description).successfulTestCase(numPlayer));
     }
 
     @Test
@@ -109,7 +110,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
         for (ChangeTestCase test : tests) {
             i ++;
             Bytestring session = new Bytestring(("change test case " + i).getBytes());
-            InitialState init = new InitialState(session, test.amount, mc);
+            InitialState init = new InitialState(session, test.amount, mc, new MockProtobuf());
 
             // First create the bitcoin mock network.
             List<ChangeTestExpected> expected = new LinkedList<>();

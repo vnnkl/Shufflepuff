@@ -32,7 +32,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
             return s.closed();
         }
 
@@ -48,7 +48,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             s.close();
         }
     }
@@ -75,7 +75,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             z.close();
         }
     }
@@ -121,12 +121,12 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             inner.close();
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
             return inner.closed();
         }
     }

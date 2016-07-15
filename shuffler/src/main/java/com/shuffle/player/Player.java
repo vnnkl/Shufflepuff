@@ -31,13 +31,14 @@ import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.InvalidParticipantSetException;
 import com.shuffle.protocol.TimeoutException;
 import com.shuffle.protocol.blame.Evidence;
-import com.shuffle.protocol.message.Phase;
 import com.shuffle.protocol.blame.Matrix;
+import com.shuffle.protocol.message.Phase;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -77,25 +78,29 @@ class Player {
     private final Address change;
     private final Marshaller<Message.Atom> am;
     private final Marshaller<Packet<VerificationKey, P>> pm;
+    private final PrintStream stream;
 
     public Report report = null;
 
     private final Executor exec;
 
+    private Running running = null;
+
     Player(
-            SigningKey sk,
-            Bytestring session,
-            Address anon,
-            Address change, // Can be null to indicate no change address.
-            SortedSet<VerificationKey> addrs,
-            long time,
-            long amount,
-            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
-            Crypto crypto,
-            Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel,
-            Marshaller<Message.Atom> am,
-            Marshaller<Packet<VerificationKey, P>> pm,
-            Executor exec
+         SigningKey sk,
+         Bytestring session,
+         Address anon,
+         Address change, // Can be null to indicate no change address.
+         SortedSet<VerificationKey> addrs,
+         long time,
+         long amount,
+         Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
+         Crypto crypto,
+         Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel,
+         Marshaller<Message.Atom> am,
+         Marshaller<Packet<VerificationKey, P>> pm,
+         Executor exec,
+         PrintStream stream
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null || exec == null) {
@@ -114,139 +119,199 @@ class Player {
         this.am = am;
         this.pm = pm;
         this.exec = exec;
+        this.stream = stream;
     }
 
-    public synchronized Future<Summable.SummableElement<Map<VerificationKey, Report>>> playConcurrent()
-            throws InterruptedException {
+    public Running start() throws IOException, InterruptedException {
+        if (running != null) return running;
 
-        final Chan<Report> cr = new BasicChan<>(1);
-
-        exec.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    cr.send(play());
-                    cr.close();
-                } catch (InterruptedException | IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
-
-        return new Future<Summable.SummableElement<Map<VerificationKey, Report>>>() {
-            private boolean done = false;
-
-            @Override
-            public boolean cancel(boolean b) {
-                return false;
-            }
-
-            @Override
-            public boolean isCancelled() {
-                return false;
-            }
-
-            @Override
-            public boolean isDone() {
-                return done;
-            }
-
-            @Override
-            public Summable.SummableElement<Map<VerificationKey, Report>> get()
-                    throws InterruptedException, ExecutionException {
-
-                if (done) return null;
-                Report r = cr.receive();
-                done = true;
-                return new SummableMap<>(sk.VerificationKey(), r);
-            }
-
-            @Override
-            public Summable.SummableElement<Map<VerificationKey, Report>> get(long l, TimeUnit timeUnit)
-                    throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
-
-                if (done) return null;
-                Report r = cr.receive(l, timeUnit);
-                if (r == null) return null;
-                done = true;
-                Map<VerificationKey, Report> map = new HashMap<>();
-                map.put(sk.VerificationKey(), r);
-                return new SummableMap<>(map);
-            }
-        };
+        return new Running(new Connect<>(channel, crypto));
     }
 
-    public synchronized Report play() throws IOException, InterruptedException {
-        if (report != null) return report;
+    public class Running {
 
-        final Chan<Phase> ch = new BasicChan<>(1);
-        final Chan<Report> r = new BasicChan<>(1);
-
-        exec.execute(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    r.send(playInner(ch));
-                    r.close();
-                } catch (InterruptedException | IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-
-        while(true) {
-            Phase phase = ch.receive();
-            if (phase == null) break;
-            System.out.println("Player " + sk.VerificationKey() + " reaches phase " + phase);
-        }
-
-        report = r.receive();
-        return report;
-    }
-
-    private Report playInner(Chan<Phase> ch) throws InterruptedException, IOException {
         // Wait until the appointed time.
-        final Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> connect
-                = new Connect<>(channel, crypto);
+        final Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> connect;
 
-        // Remove me.
-        SortedSet<VerificationKey> connectTo = new TreeSet<>();
-        connectTo.addAll(addrs);
-        connectTo.remove(sk.VerificationKey());
-
-        Thread.sleep(time - System.currentTimeMillis());
-
-        // Begin connecting to all peers.
-        final Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector
-                = connect.connect(connectTo, 3);
-
-        // Run the protocol.
-        try {
-            // If the protocol returns correctly without throwing a Matrix, then
-            // it has been successful.
-            return Report.success(new CoinShuffle(
-                    new Messages(session, sk, collector.connected, collector.inbox, am, pm),
-                    crypto, coin).runProtocol(
-                    amount, sk, addrs, anon, change, ch));
-        } catch (Matrix m) {
-            return Report.failure(m, addrs);
-        } catch (TimeoutException e) {
-            return Report.timeout(e);
-        } catch (CoinNetworkException
-                | InvalidParticipantSetException
-                | FormatException
-                | NoSuchAlgorithmException e) {
-            System.out.println(e.getMessage());
-            return null;
+        Running(Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> connect) {
+            this.connect = connect;
         }
 
+        private Report playInner(Chan<Phase> ch) throws InterruptedException, IOException {
+
+            // Remove me.
+            SortedSet<VerificationKey> connectTo = new TreeSet<>();
+            connectTo.addAll(addrs);
+            connectTo.remove(sk.VerificationKey());
+
+            long wait = time - System.currentTimeMillis();
+            Thread.sleep(wait);
+
+            // Begin connecting to all peers.
+            final Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector
+                    = connect.connect(connectTo, 3);
+
+            if (collector == null) throw new NullPointerException();
+
+            // Run the protocol.
+            try {
+                // If the protocol returns correctly without throwing a Matrix, then
+                // it has been successful.
+                Messages messages = new Messages(session, sk, collector.connected, collector.inbox, am, pm);
+                CoinShuffle cs = new CoinShuffle(messages, crypto, coin);
+                return Report.success(cs.runProtocol(amount, sk, addrs, anon, change, ch));
+            } catch (Matrix m) {
+                return Report.failure(m, addrs);
+            } catch (TimeoutException e) {
+                return Report.timeout(e);
+            } catch (CoinNetworkException
+                    | InvalidParticipantSetException
+                    | FormatException
+                    | NoSuchAlgorithmException e) {
+                stream.println(e.getMessage());
+                throw new RuntimeException(e);
+            } finally {
+                connect.close();
+            }
+
+        }
+
+        public synchronized Report play() throws IOException, InterruptedException {
+            if (report != null) return report;
+
+            final Chan<Phase> ch = new BasicChan<>(2);
+            final Chan<Report> r = new BasicChan<>(2);
+
+            stream.println("  Player " + sk.VerificationKey() + " begins " + session);
+
+            exec.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        r.send(playInner(ch));
+                    } catch (InterruptedException | IOException | NullPointerException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        ch.close();
+                        r.close();
+                    }
+                }
+            });
+
+            while(true) {
+                Phase phase = ch.receive();
+                if (phase == null) break;
+                stream.println("  Player " + sk.VerificationKey() + " reaches phase " + phase);
+            }
+
+            report = r.receive();
+            if (report == null) throw new NullPointerException();
+            return report;
+        }
+
+        public synchronized Future<Summable.SummableElement<Map<VerificationKey, Report>>> playConcurrent()
+                throws InterruptedException {
+
+            final Chan<Report> cr = new BasicChan<>(2);
+
+            exec.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        cr.send(play());
+                    } catch (InterruptedException | IOException | NullPointerException e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        cr.close();
+                    }
+                }
+            });
+
+            return new Future<Summable.SummableElement<Map<VerificationKey, Report>>>() {
+                private boolean done = false;
+
+                @Override
+                public boolean cancel(boolean b) {
+                    return false;
+                }
+
+                @Override
+                public boolean isCancelled() {
+                    return false;
+                }
+
+                @Override
+                public boolean isDone() {
+                    return done;
+                }
+
+                @Override
+                public Summable.SummableElement<Map<VerificationKey, Report>> get()
+                        throws InterruptedException, ExecutionException {
+
+                    if (done) return null;
+                    Report r = cr.receive();
+                    done = true;
+                    if (r == null) return null;
+                    return new SummableMap<>(sk.VerificationKey(), r);
+                }
+
+                @Override
+                public Summable.SummableElement<Map<VerificationKey, Report>> get(long l, TimeUnit timeUnit)
+                        throws InterruptedException, ExecutionException,
+                        java.util.concurrent.TimeoutException {
+
+                    if (done) return null;
+                    Report r = cr.receive(l, timeUnit);
+                    done = true;
+                    if (r == null) return null;
+                    Map<VerificationKey, Report> map = new HashMap<>();
+                    map.put(sk.VerificationKey(), r);
+                    return new SummableMap<>(map);
+                }
+            };
+        }
     }
 
     public static class Report {
+        public final Transaction t;
+        public final TimeoutException timeout;
+        public final Matrix blame;
+
+        private Report(Transaction t) {
+            this.t = t;
+            this.timeout = null;
+            this.blame = null;
+        }
+
+        private Report(TimeoutException timeout) {
+            this.t = null;
+            this.timeout = timeout;
+            this.blame = null;
+        }
+
+        private Report(Matrix blame) {
+            this.blame = blame;
+            timeout = null;
+            t = null;
+        }
+
+        @Override
+        public String toString() {
+            if (t != null) {
+                return "Successful round; transaction is " + t;
+            }
+            if (blame != null) {
+                return "Unsuccessful round; blame is " + blame;
+            }
+            if (timeout != null) {
+                return "Unsuccessful round; timeout error " + timeout;
+            }
+            throw new NullPointerException();
+        }
 
         public static Report success(Transaction t) {
-            return null;
+            return new Report(t);
         }
 
         public static Report failure(Matrix blame, SortedSet<VerificationKey> identities) {
@@ -309,7 +374,7 @@ class Player {
                 Evidence sufficient = null;
                 f : for (Evidence evidence : accusers.values()) {
                     switch (evidence.reason) {
-                        // TODO all cases other than default are not complete.
+                            // TODO all cases other than default are not complete.
                         case DoubleSpend:
                             // fallthrough
                         case InsufficientFunds:
@@ -350,11 +415,11 @@ class Player {
                 // TODO How could this happen and what to do about it?
             }
 
-            return null;
+            return new Report(blame);
         }
 
         public static Report timeout(TimeoutException e) {
-            return null;
-        }
+         return new Report(e);
+      }
     }
 }

@@ -128,7 +128,7 @@ public class TestTcpChannel {
             }
 
             @Override
-            public boolean closed() throws InterruptedException {
+            public boolean closed() {
                 return session.closed();
             }
 
@@ -144,7 +144,7 @@ public class TestTcpChannel {
             }
 
             @Override
-            public void close() throws InterruptedException {
+            public void close() {
                 session.close();
             }
         }
@@ -174,12 +174,12 @@ public class TestTcpChannel {
             }
 
             @Override
-            public void close() throws InterruptedException {
+            public void close() {
                 conn.close();
             }
 
             @Override
-            public boolean closed() throws InterruptedException {
+            public boolean closed() {
                 return conn.closed();
             }
         }
@@ -239,7 +239,7 @@ public class TestTcpChannel {
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             inner.close();
             closed = true;
         }

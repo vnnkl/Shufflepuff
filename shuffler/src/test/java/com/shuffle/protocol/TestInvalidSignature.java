@@ -21,7 +21,7 @@ public class TestInvalidSignature extends TestShuffleMachine{
 
     private void InvalidTransactionSignature(int numPlayers, int[] mutants) {
         String description = "case " + caseNo + "; invalid transaction signature test case.";
-        check(new MockTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
+        check(new RealTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
     }
 
     @Test

@@ -369,7 +369,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
         }
 
         // TODO
-        public void close() throws InterruptedException {
+        public void close() {
             // Close all pending connections.
             for (Map.Entry<Name, SortedSet<Name>> p : pending.entrySet()) {
                 Name from = p.getKey();
@@ -449,7 +449,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
         }
 
         @Override
-        public synchronized void close() throws InterruptedException {
+        public synchronized void close() {
             conn.close();
         }
     }
@@ -482,7 +482,7 @@ public class Mediator<Name extends Comparable<Name>, Address, Payload extends Se
     private boolean closed = false;
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         if (closed) return;
         closed = true;
 

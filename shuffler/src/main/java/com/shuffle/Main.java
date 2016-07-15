@@ -3,9 +3,7 @@ package com.shuffle;
 import com.shuffle.player.Shuffle;
 
 import java.io.PrintStream;
-import java.util.Arrays;
 
-import joptsimple.OptionException;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 

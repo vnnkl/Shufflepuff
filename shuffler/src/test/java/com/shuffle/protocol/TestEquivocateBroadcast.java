@@ -22,7 +22,7 @@ public class TestEquivocateBroadcast extends TestShuffleMachine {
     // Run a test case for equivocation during phase 3.
     private void EquivocateOutput(int numPlayers, int[] equivocation) {
         String description = "case " + caseNo + "; broadcast equivocation test case.";
-        check(new MockTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
+        check(new RealTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
     }
 
     @Test

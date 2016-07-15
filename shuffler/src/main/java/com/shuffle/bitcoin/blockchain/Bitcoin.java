@@ -107,6 +107,15 @@ public abstract class Bitcoin implements Coin {
         }
     }
 
+    public com.shuffle.bitcoin.Transaction fromBytes(byte[] bytes) {
+        // TODO
+        throw new IllegalArgumentException();
+    }
+
+    public NetworkParameters getNetParams(){
+        return netParams;
+    }
+
     // TODO
     // Take transaction fees into account
 

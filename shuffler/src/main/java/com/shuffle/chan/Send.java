@@ -24,5 +24,5 @@ public interface Send<X> {
     boolean send(X x) throws InterruptedException, IOException;
 
     // Close the chan.
-    void close() throws InterruptedException;
+    void close();
 }

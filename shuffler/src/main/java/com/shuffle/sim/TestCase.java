@@ -8,16 +8,19 @@
 
 package com.shuffle.sim;
 
+import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.blame.Matrix;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -95,9 +98,10 @@ public abstract class TestCase {
     // Get the cryptography service for this test case (could be mock crypto or real, depending
     // on what we're testing.)
     protected abstract Crypto crypto();
+    protected abstract Protobuf proto();
 
     public final InitialState successfulTestCase(final int numPlayers) {
-        return InitialState.successful(session, amount, crypto(), numPlayers);
+        return InitialState.successful(session, amount, crypto(), proto(), numPlayers);
     }
 
     public final InitialState insufficientFundsTestCase(
@@ -106,14 +110,14 @@ public abstract class TestCase {
             final int[] poor,
             final int[] spenders) {
         return InitialState.insufficientFunds(
-                session, amount, crypto(), numPlayers, deadbeats, poor, spenders);
+                session, amount, crypto(), proto(), numPlayers, deadbeats, poor, spenders);
     }
 
     public final InitialState doubleSpendTestCase(
             final int[] views,
             final int[] spenders
     ) {
-        return InitialState.doubleSpend(session, amount, crypto(), views, spenders);
+        return InitialState.doubleSpend(session, amount, crypto(), proto(), views, spenders);
     }
 
     public final InitialState equivocateAnnouncementTestCase(
@@ -121,14 +125,14 @@ public abstract class TestCase {
             final InitialState.Equivocation[] equivocators
     ) {
         return InitialState.equivocateAnnouncement(
-                session, amount, crypto(), numPlayers, equivocators);
+                session, amount, crypto(), proto(), numPlayers, equivocators);
     }
 
     public final InitialState equivocateBroadcastTestCase(
             final int numPlayers,
             final int[] equivocation) {
         return InitialState.equivocateBroadcast(
-                session, amount, crypto(), numPlayers, equivocation);
+                session, amount, crypto(), proto(), numPlayers, equivocation);
     }
 
     public final InitialState dropAddressTestCase(
@@ -137,13 +141,13 @@ public abstract class TestCase {
             final int[][] replaceNew,
             final int[][] replaceDuplicate) {
         return InitialState.dropAddress(
-                session, amount, crypto(), numPlayers, drop, replaceNew, replaceDuplicate);
+                session, amount, crypto(), proto(), numPlayers, drop, replaceNew, replaceDuplicate);
     }
 
     public final InitialState invalidSignatureTestCase(
             final int numPlayers,
             final int[] mutants
     ) {
-        return InitialState.invalidSignature(session, amount, crypto(), numPlayers, mutants);
+        return InitialState.invalidSignature(session, amount, crypto(), proto(), numPlayers, mutants);
     }
 }

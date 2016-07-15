@@ -2,12 +2,15 @@ package com.shuffle.player;
 
 import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
+import com.shuffle.bitcoin.impl.AddressImpl;
+import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
@@ -17,6 +20,7 @@ import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockNetwork;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.monad.Either;
@@ -49,12 +53,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import joptsimple.ArgumentAcceptingOptionSpec;
@@ -94,17 +101,7 @@ public class Shuffle {
                 .ofType(Long.class);
 
         if (TEST_MODE) {
-            parser.accepts("prng")
-                    .withRequiredArg()
-                    .ofType(String.class)
-                    .defaultsTo("mock");
-
-            parser.accepts("signatures")
-                    .withRequiredArg()
-                    .ofType(String.class)
-                    .defaultsTo("mock");
-
-            parser.accepts("encryption")
+            parser.accepts("crypto")
                     .withRequiredArg()
                     .ofType(String.class)
                     .defaultsTo("mock");
@@ -121,14 +118,14 @@ public class Shuffle {
 
             parser.accepts("local").withRequiredArg().ofType(String.class);
 
-            parser.accepts("format").withRequiredArg().ofType(String.class);
+            parser.accepts("format").withRequiredArg().ofType(String.class).defaultsTo("protobuf");
 
             // Five seconds from now.
             time.defaultsTo(System.currentTimeMillis() + 5000L);
 
         } else {
             query.defaultsTo("blockchain.info");
-            blockchain.defaultsTo("main");
+            blockchain.defaultsTo("test");
         }
 
         parser.acceptsAll(Arrays.asList("S", "session"),
@@ -194,7 +191,7 @@ public class Shuffle {
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
-    private final Executor executor;
+    public final ExecutorService executor;
 
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
 
@@ -211,7 +208,16 @@ public class Shuffle {
         }
 
         if (options.valueOf("seed") == null) {
-            throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!");
+            //throw new IllegalArgumentException("No option 'seed' supplied. Random seed needed!");
+            seed = null;
+        } else {
+
+            // Check the random seed for apparent randomness.
+            seed = (String)options.valueOf("seed");
+            // Check entropy.
+            if (new EntropyEstimator().put(seed) <= MIN_APPARENT_ENTROPY) {
+                throw new IllegalArgumentException("Seed may not be random enough. Please provide longer seed.");
+            }
         }
 
         if (options.valueOf("session") == null) {
@@ -234,13 +240,6 @@ public class Shuffle {
             throw new IllegalArgumentException("Cannot join protocol in the past.");
         }
 
-        // Check the random seed for apparent randomness.
-        seed = (String)options.valueOf("seed");
-        // Check entropy.
-        if (new EntropyEstimator().put(seed) <= MIN_APPARENT_ENTROPY) {
-            throw new IllegalArgumentException("Seed may not be random enough. Please provide longer seed.");
-        }
-
         // Get the session identifier.
         if (TEST_MODE) {
             session = new Bytestring(("CoinShuffle Shufflepuff test " + options.valueOf("session")).getBytes());
@@ -259,6 +258,9 @@ public class Shuffle {
         Marshaller<Message.Atom> am;
         Marshaller<Packet<VerificationKey, P>> pm;
         if (TEST_MODE) {
+
+            Protobuf proto = new MockProtobuf();
+
             if (options.has("format")) {
                 String format = (String) options.valueOf("format");
 
@@ -266,8 +268,8 @@ public class Shuffle {
                     am = new JavaMarshaller<>();
                     pm = new JavaMarshaller<>();
                 } else if (format.equals("protobuf")) {
-                    am = Protobuf.atomMarshaller;
-                    pm = Protobuf.packetMarshaller;
+                    am = proto.atomMarshaller;
+                    pm = proto.packetMarshaller;
                 } else {
                     throw new IllegalArgumentException();
                 }
@@ -277,14 +279,34 @@ public class Shuffle {
                 pm = new JavaMarshaller<>();
             }
         } else {
-            am = Protobuf.atomMarshaller;
-            pm = Protobuf.packetMarshaller;
+
+            Protobuf proto = new MockProtobuf();
+
+            am = proto.atomMarshaller;
+            pm = proto.packetMarshaller;
         }
 
-        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads"));
-
         // Detect the nature of the cryptocoin network we will use.
-        String query = (String)options.valueOf("query");
+        final String query = (String)options.valueOf("query");
+        final NetworkParameters netParams;
+
+        switch ((String)options.valueOf("blockchain")) {
+
+            case "main" : {
+                netParams = MainNetParams.get();
+                break;
+            }
+
+            case "test" : {
+                netParams = TestNet3Params.get();
+                break;
+            }
+
+            default : {
+                throw new IllegalArgumentException("Invalid value for blockchain.");
+            }
+        }
+
         switch (query) {
             case "btcd" : {
 
@@ -298,21 +320,6 @@ public class Shuffle {
                     throw new IllegalArgumentException("Need to set rpcpass parameter (rpc server login)");
                 }
 
-                NetworkParameters netParams = null;
-
-                switch ((String)options.valueOf("blockchain")) {
-
-                    case "main" : {
-                        netParams = MainNetParams.get();
-                        break;
-                    }
-
-                    case "test" : {
-                        netParams = TestNet3Params.get();
-                        break;
-                    }
-                }
-
                 Long minBitcoinNetworkPeers = (Long) options.valueOf("minBitcoinNetworkPeers");
                 String rpcuser = (String)options.valueOf("rpcuser");
                 String rpcpass = (String)options.valueOf("rpcpass");
@@ -323,32 +330,15 @@ public class Shuffle {
                 break;
             }
             case "blockchain.info" : {
-                stream.print("Warning: you have chosen to query address balances over through a " +
-                        " third party service.");
 
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (!options.has("minBitcoinNetworkPeers")) {
+                } else if (options.has("minBitcoinNetworkPeers")) {
                     throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
                 } else if (options.has("rpcpass")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcpass parameter");
-                }
-
-                NetworkParameters netParams = null;
-
-                switch ((String)options.valueOf("blockchain")) {
-
-                    case "main" : {
-                        netParams = MainNetParams.get();
-                        break;
-                    }
-
-                    case "test" : {
-                        netParams = TestNet3Params.get();
-                        break;
-                    }
                 }
 
                 Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
@@ -382,29 +372,34 @@ public class Shuffle {
 
         // Check cryptography options.
         if (TEST_MODE) {
-            String prng = (String) options.valueOf("prng");
-            String signatures = (String) options.valueOf("signatures");
-            String encryption = (String) options.valueOf("encryption");
+            String cryptography = (String) options.valueOf("crypto");
 
-            if (!prng.equals("mock")) {
-                throw new IllegalArgumentException("mock crypto only supported currently.");
-            }
-            if (!signatures.equals("mock")) {
-                throw new IllegalArgumentException("mock crypto only supported currently.");
-            }
-            if (!encryption.equals("mock")) {
-                throw new IllegalArgumentException("mock crypto only supported currently.");
+            switch (cryptography) {
+                case "mock":
+                    if (seed == null) {
+                        crypto = new MockCrypto(new InsecureRandom(0));
+                    } else {
+                        crypto = new MockCrypto(new InsecureRandom(seed.hashCode()));
+                    }
+
+                    if (!query.equals("mock")) {
+                        throw new IllegalArgumentException("Can only use mock Bitcoin network with mock cryptography.");
+                    }
+
+                    break;
+                case "real":
+
+                    crypto = new BitcoinCrypto(netParams);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Unrecognized crypto option value " + cryptography);
             }
 
-            if (!query.equals("mock")) {
-                throw new IllegalArgumentException("Can only use mock Bitcoin network with mock cryptography.");
-            }
         } else {
             throw new IllegalArgumentException("Shufflepuff pre-alpha must be compiled in test mode.");
         }
 
         // Create the crypto interface.
-        crypto = new MockCrypto(new InsecureRandom(seed.hashCode()));
 
         amount = (Long)options.valueOf("amount");
         if (amount <= MIN_AMMOUNT) {
@@ -471,6 +466,8 @@ public class Shuffle {
             keys.add(vk);
         }
 
+        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads") + 10);
+
         // Get information for this player. (In test mode, one node
         // may run more than one player.)
         if (TEST_MODE && options.has("local")) {
@@ -507,7 +504,6 @@ public class Shuffle {
                     throw new IllegalArgumentException("Could not read "
                             + local.get(i - 1) + " as json object.");
                 }
-
 
                 String key, anon, change;
                 Long port;
@@ -585,7 +581,7 @@ public class Shuffle {
         Address anonAddress;
         Address changeAddress;
         if (TEST_MODE) {
-            switch ((String)options.valueOf("signatures")) {
+            switch ((String)options.valueOf("crypto")) {
                 case "mock" : {
                     sk = new MockSigningKey(Integer.parseInt(key));
                     anonAddress = new MockAddress(anon);
@@ -593,6 +589,16 @@ public class Shuffle {
                         changeAddress = null;
                     } else {
                         changeAddress = new MockAddress(change);
+                    }
+                    break;
+                }
+                case "real" : {
+                    sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
+                    anonAddress = new AddressImpl(anon, false);
+                    if (change == null) {
+                        changeAddress = null;
+                    } else {
+                        changeAddress = new AddressImpl(change, false);
                     }
                     break;
                 }
@@ -624,12 +630,10 @@ public class Shuffle {
                         mock.node(id)),
                     peers);
 
-
-
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, coin, crypto, channel, am, pm, executor);
+                amount, coin, crypto, channel, am, pm, executor, System.out);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -650,8 +654,14 @@ public class Shuffle {
     public Collection<Player.Report> cycle()
             throws IOException, InterruptedException, ExecutionException {
 
-        if (local.size() == 1) {
-            for (Player p : local) {
+        List<Player.Running> running = new LinkedList<>();
+
+        for(Player p : local) {
+            running.add(p.start());
+        }
+
+        if (running.size() == 1) {
+            for (Player.Running p : running) {
                 Collection<Player.Report> reports = new HashSet<>();
                 reports.add(p.play());
                 return reports; // Only one here, so we can return immediately.
@@ -666,11 +676,20 @@ public class Shuffle {
         // Start the connection (this must be done after all Channel objects have been created
         // because everyone must be connected to the internet at the time they attempt to start
         // connecting to one another.
-        for (Player p : local) {
+        for (Player.Running p : running) {
             future = future.plus(new NaturalSummableFuture<>(p.playConcurrent()));
         }
 
-        return future.get().values();
+        Map<VerificationKey, Player.Report> reportMap = future.get();
+        if (reportMap == null) {
+            throw new NullPointerException();
+        }
+
+        return reportMap.values();
+    }
+
+    public void close() {
+        executor.shutdownNow();
     }
 
     public static void main(String[] opts) throws IOException {
@@ -703,12 +722,19 @@ public class Shuffle {
             return;
         }
 
+        // Warn for blockchain.info or other blockchain service.
+        if (options.valueOf("query").equals("blockchain.info")) {
+            System.out.print("Warning: you have chosen to query address " +
+                    "balances over through a third party service.\n");
+        }
+
         Collection<Player.Report> reports;
         try {
             reports = shuffle.cycle();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-            return;
+        } catch (InterruptedException | ExecutionException | NullPointerException e) {
+            throw new RuntimeException(e);
+        } finally {
+            shuffle.close();
         }
 
         for (Player.Report report : reports) {

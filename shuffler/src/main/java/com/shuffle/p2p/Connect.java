@@ -9,7 +9,7 @@
 package com.shuffle.p2p;
 
 import com.shuffle.bitcoin.Crypto;
-import com.shuffle.chan.BasicInbox;
+import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Send;
 
 import java.io.IOException;
@@ -159,7 +159,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
 
         if (channel == null || crypto == null) throw new NullPointerException();
 
-        collector = new Collector<>(new BasicInbox<Identity, P>(capacity));
+        collector = new Collector<>(new Inbox<Identity, P>(capacity));
 
         connection = channel.open(collector);
         if (connection == null ) throw new IllegalArgumentException();
@@ -175,9 +175,11 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
 
         if (addrs == null) throw new NullPointerException();
 
-        if (finished) return null;
+        if (finished) {
+            connection.close();
+            return null;
+        }
 
-        // TODO make there be a parameter for max messages rather than just doing 100.
         Peers peers = new Peers(collector);
 
         // Randomly arrange the list of peers.
@@ -230,6 +232,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
                 // Maximum number of retries has prevented us from making all connections.
                 // TODO In some instances, it should be possible to run coin shuffle with fewer
                 // players, so we should still return the network object.
+                connection.close();
                 return null;
             }
 
@@ -245,12 +248,12 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
     }
 
     @Override
-    public void close() throws InterruptedException {
+    public void close() {
         connection.close();
     }
 
     @Override
-    public boolean closed() throws InterruptedException {
+    public boolean closed() {
         return connection.closed();
     }
 }

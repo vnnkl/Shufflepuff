@@ -22,6 +22,7 @@ import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCrypto;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.p2p.Collector;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
@@ -33,6 +34,7 @@ import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.p2p.Connect;
 import com.shuffle.player.P;
+import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.InvalidParticipantSetException;
@@ -189,6 +191,7 @@ class Player<Address> implements Runnable {
                 new Bytestring(("CoinShuffle Shufflepuff simulation " + (options.get("-id"))).getBytes()),
                 Integer.parseInt(options.get("-amount")),
                 crypto,
+                new MockProtobuf(),
                 Integer.parseInt(options.get("-players")));
         List<VerificationKey> keys = init.getKeys();
 
