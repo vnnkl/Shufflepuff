@@ -10,6 +10,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
+
 /**
  * Created by Eugene Siegel on 6/20/16.
  */
@@ -27,7 +29,7 @@ public class TestOtrChannel {
     Send<Bytestring> serverSend;
 
     @Before
-    public void setup() {
+    public void setup() throws InterruptedException, IOException {
         network = new MockNetwork<>();
         client = network.node("client");
         server = network.node("server");
@@ -90,7 +92,7 @@ public class TestOtrChannel {
     }
 
     @Test
-    public void encryptedChat() throws InterruptedException {
+    public void encryptedChat() throws InterruptedException, IOException {
         OtrChannel.OtrPeer clientPeer = otrClient.getPeer("server");
         OtrChannel.OtrPeer.OtrSession clientSession = clientPeer.openSession(clientSend);
 
@@ -98,38 +100,20 @@ public class TestOtrChannel {
         OtrChannel.OtrPeer.OtrSession serverSession = serverPeer.openSession(serverSend);
 
         /*
-        Simply sending a test message, without the initialization string -- this works.
-
-        String message = "shufflepuff";
-        Bytestring bytestring = new Bytestring(message.getBytes());
-        Boolean clientSent = clientSession.send(bytestring);
-        Assert.assertTrue(clientSent);
-        Assert.assertEquals(serverMessage, message);
-        */
-
-        /*
-        Sending with initialization string "query"
-
-        String query = "<p>?OTRv23?\n" +
-                "<span style=\"font-weight: bold;\">Bob@Wonderland/</span> has requested an <a href=\"http://otr.cypherpunks.ca/\">Off-the-Record private conversation</a>. However, you do not have a plugin to support that.\n" +
-                "See <a href=\"http://otr.cypherpunks.ca/\">http://otr.cypherpunks.ca/</a> for more information.</p>";
-        */
-
         String query = "?OTRv23?";
-        //clientSession.session.send(query); Executes in a different thread..?
         clientSession.send(new Bytestring(query.getBytes()));
 
         Assert.assertNotNull(serverSession);
-        Assert.assertNotNull(otrServer.sendClient.getConnection().session);
-
+        Assert.assertNotNull(serverPeer.sendClient.getConnection().session);
 
         // Key Exchange starts here
-        otrServer.sendClient.pollReceivedMessage();
-        otrClient.sendClient.pollReceivedMessage();
-        otrServer.sendClient.pollReceivedMessage();
-        otrClient.sendClient.pollReceivedMessage();
-        otrServer.sendClient.pollReceivedMessage();
+        serverPeer.sendClient.pollReceivedMessage();
+        clientPeer.sendClient.pollReceivedMessage();
+        serverPeer.sendClient.pollReceivedMessage();
+        clientPeer.sendClient.pollReceivedMessage();
+        serverPeer.sendClient.pollReceivedMessage();*/
 
+        // This should be encrypted
         String message = "hey, encryption test";
 
         serverSession.send(new Bytestring(message.getBytes()));

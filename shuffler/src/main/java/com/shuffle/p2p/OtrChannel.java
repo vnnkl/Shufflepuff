@@ -11,6 +11,7 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.Send;
 
+import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -34,13 +35,6 @@ import net.java.otr4j.session.SessionID;
 
 public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
-
-    /**
-     * Need a global SendClient so that we can do the Key Exchange with pollReceivedMessage()
-     */
-    SendClient sendClient;
-
-    // TODO
     public class SendClient {
 
         private final String account;
@@ -48,7 +42,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private OtrPolicy policy;
         public SendConnection connection;
         private MessageProcessor processor;
-        private Queue<ProcessedMessage> processedMsgs = new LinkedList<ProcessedMessage>();
+        private Queue<ProcessedMessage> processedMsgs = new LinkedList<>();
         private Send<Bytestring> send;
 
         public SendClient(String account, Send<Bytestring> send) {
@@ -70,7 +64,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         // sends a message
         // does this create a new session with every message?
-        public void send(String recipient, Bytestring s) throws OtrException, InterruptedException {
+        public void send(String recipient, Bytestring s) throws OtrException, InterruptedException, IOException {
             if (session == null) {
                 final SessionID sessionID = new SessionID(account, recipient, "SendProtocol");
                 session = new SessionImpl(sessionID, new SendOtrEngineHost());
@@ -115,16 +109,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             return connection;
         }
 
-        public ProcessedMessage pollReceivedMessage() {
+        public ProcessedMessage pollReceivedMessage() throws InterruptedException {
             synchronized (processedMsgs) {
                 ProcessedMessage m;
                 while ((m = processedMsgs.poll()) == null) {
-                    try {
-                        processedMsgs.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                        //return null
-                    }
+                    processedMsgs.wait();
                 }
 
                 return m;
@@ -162,7 +151,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         private class MessageProcessor implements Runnable {
 
-            private final Queue<Message> messageQueue = new LinkedList<Message>();
+            private final Queue<Message> messageQueue = new LinkedList<>();
             private boolean stopped;
 
             private void process(Message m) throws OtrException {
@@ -178,24 +167,16 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 }
             }
 
-            public void run() {
+            public void run() throws OtrException, InterruptedException {
                 synchronized (messageQueue) {
                     while (true) {
 
                         Message m = messageQueue.poll();
 
                         if (m == null) {
-                            try {
-                                messageQueue.wait();
-                            } catch (InterruptedException e) {
-
-                            }
+                            messageQueue.wait();
                         } else {
-                            try {
-                                process(m);
-                            } catch (OtrException e) {
-                                e.printStackTrace();
-                            }
+                            process(m);
                         }
 
                         if (stopped)
@@ -224,12 +205,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         private class SendOtrEngineHost implements OtrEngineHost {
 
-            public void injectMessage(SessionID sessionID, String msg) throws OtrException {
-                try {
-                    connection.send(sessionID.getUserID(), msg);
-                } catch (InterruptedException e) {
-                    return;
-                }
+            public void injectMessage(SessionID sessionID, String msg) throws OtrException, InterruptedException, IOException {
+                connection.send(sessionID.getUserID(), msg);
             }
 
             public void smpError(SessionID sessionID, int tlvType, boolean cheated)
@@ -350,7 +327,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         }
 
-        // TODO
         public class SendConnection implements Send<Bytestring> {
 
             private final SendClient client;
@@ -382,7 +358,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             // TODO
             // sends a message
-            public void send(String recipient, String msg) throws OtrException, InterruptedException {
+            public void send(String recipient, String msg) throws OtrException, InterruptedException, IOException {
                 this.sentMessage = msg;
                 Bytestring bytestring = new Bytestring(msg.getBytes());
                 session.send(bytestring);
@@ -394,23 +370,22 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             // synchronized?
             // THIS IS NEVER USED ??
             // THIS FUNCTION IS POINTLESS BUT WE NEED IT FOR openSession() !!
-            public boolean send(Bytestring msg) throws InterruptedException {
+            public boolean send(Bytestring msg) throws IOException, InterruptedException {
                 String sender = "doesnt matter";
 
+                //decrypts the message
                 try {
-                    //decrypts the message
-
                     this.client.receive(sender, msg);
-
-                    // this won't work because we could receive a new message by the time we poll...
-                    // @danielk does a synchronized method solve this issue?
-                    // also made SendClient's receive() method synchronized
-                    String pollMessage = this.client.pollReceivedMessage().originalMessage.content;
-                    Bytestring bytestring = new Bytestring(pollMessage.getBytes());
-                    return this.send.send(bytestring);
                 } catch (OtrException e) {
                     return false;
                 }
+
+                // this won't work because we could receive a new message by the time we poll...
+                // @danielk does a synchronized method solve this issue?
+                // also made SendClient's receive() method synchronized
+                String pollMessage = this.client.pollReceivedMessage().originalMessage.content;
+                Bytestring bytestring = new Bytestring(pollMessage.getBytes());
+                return this.send.send(bytestring);
             }
 
             // TODO
@@ -425,6 +400,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     public class OtrPeer extends FundamentalPeer<Address, Bytestring> {
 
         Peer<Address, Bytestring> peer;
+        SendClient sendClient;
 
         public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
             super(identity);
@@ -435,18 +411,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         @Override
-        public synchronized OtrSession openSession(Send<Bytestring> send) {
+        public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
 
             Session<Address, Bytestring> session;
 
-            try {
-                sendClient.send = send;
-                sendClient.connect();
-                session = peer.openSession(sendClient.connection);
-                sendClient.connection.session = session;
-            } catch (InterruptedException e) {
-                return null;
-            }
+            sendClient.send = send;
+            sendClient.connect();
+            session = peer.openSession(sendClient.connection);
+            sendClient.connection.session = session;
 
             /*
             if (session == null) {
@@ -454,8 +426,37 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
             */
 
+            // There should probably be two separate methods for Alice and Bob
+
             OtrSession otrSession = new OtrSession(session);
+
+            // only Alice should send the query string.
+            String query = "?OTRv23?"; // This depends on the type of encryption that the user wants.
+            otrSession.send(new Bytestring(query.getBytes()));
+
+            // Is this correct?
+            // Alice should call pollReceivedMessage() twice, Bob should call it thrice.
+            // sendClient.pollReceivedMessage();
+            sendClient.pollReceivedMessage();
+            sendClient.pollReceivedMessage();
+
             return otrSession;
+        }
+
+        // TODO
+        public synchronized OtrSession openBobSession(Send<Bytestring> send) throws InterruptedException, IOException {
+
+            // How does Bob's session variable get set?
+            // One cannot call BOTH openSession() AND openBobsession()
+            Session<Address, Bytestring> session;
+
+
+
+            sendClient.pollReceivedMessage();
+            sendClient.pollReceivedMessage();
+            sendClient.pollReceivedMessage();
+
+            return null;
         }
 
         public class OtrSession implements Session<Address, Bytestring> {
@@ -467,36 +468,25 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             @Override
-            public synchronized boolean send(Bytestring message) {
+            public synchronized boolean send(Bytestring message) throws InterruptedException, IOException {
                 try {
                     sendClient.send("recipient",message);
                     return true;
                 } catch (OtrException e) {
                     return false;
-                } catch (InterruptedException er) {
-                    return false;
                 }
             }
 
             @Override
-            public synchronized void close() {
-                try {
-                    session.close();
-                } catch (InterruptedException e) {
-                    return;
-                }
+            public synchronized void close() throws InterruptedException {
+                session.close();
             }
 
             @Override
-            public synchronized boolean closed() {
-                try {
-                    return session.closed();
-                } catch (InterruptedException e) {
-                    return false;
-                }
+            public synchronized boolean closed() throws InterruptedException {
+                return session.closed();
             }
 
-            // TODO
             @Override
             public Peer<Address, Bytestring> peer() {
                 return OtrPeer.this;
@@ -505,6 +495,29 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
     }
+
+    private class OtrListener implements Runnable {
+        final Listener<Address, Bytestring> listener;
+
+        private OtrListener(Listener<Address, Bytestring> listener) {
+            this.listener = listener;
+        }
+
+
+        // Why would we need an OtrListener??
+        @Override
+        public void run() {
+
+        }
+
+    }
+
+    Listener<Address, Bytestring> bobListener = new Listener<Address, Bytestring>() {
+        @Override
+        public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
+            return null;
+        }
+    };
 
     private class OtrConnection implements Connection<Address> {
 
@@ -515,24 +528,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         @Override
-        public void close() {
-            synchronized (lock) {
-                running = false;
-                try {
-                    this.connection.close();
-                } catch (InterruptedException e) {
-                    running = true;
-                }
-            }
+        public void close() throws InterruptedException {
+            running = false;
+            this.connection.close();
         }
 
         @Override
-        public boolean closed() {
-            try {
-                return connection.closed();
-            } catch (InterruptedException e) {
-                return false;
-            }
+        public boolean closed() throws InterruptedException {
+            return connection.closed();
         }
 
     }
@@ -540,7 +543,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     Channel<Address, Bytestring> channel;
     private final Address me;
     private boolean running = false;
-    private final Object lock = new Object();
+    Listener<Address, Bytestring> listener;
 
     public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
         if (me == null) {
@@ -552,24 +555,18 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    // TODO
     @Override
-    public OtrConnection open(Listener<Address, Bytestring> listener) {
+    public OtrConnection open(Listener<Address, Bytestring> listener) throws InterruptedException, IOException {
 
         if (listener == null) {
             throw new NullPointerException();
         }
 
-        synchronized (lock) {
-            try {
-                if (running) return null;
-                running = true;
-                return new OtrConnection(this.channel.open(listener));
-            } catch (InterruptedException e) {
-                running = false;
-                return null;
-            }
-        }
+        this.listener = listener;
+
+        if (running) return null;
+        running = true;
+        return new OtrConnection(this.channel.open(listener));
 
     }
 
@@ -578,7 +575,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         if (you.equals(me)) return null;
 
-        //return this.channel.getPeer(you);
         return new OtrPeer(you, this.channel.getPeer(you));
     }
 
