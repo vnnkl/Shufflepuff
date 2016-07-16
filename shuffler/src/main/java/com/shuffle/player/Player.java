@@ -47,7 +47,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -82,8 +81,6 @@ class Player {
 
     public Report report = null;
 
-    private final Executor exec;
-
     private Running running = null;
 
     Player(
@@ -99,11 +96,10 @@ class Player {
          Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel,
          Marshaller<Message.Atom> am,
          Marshaller<Packet<VerificationKey, P>> pm,
-         Executor exec,
          PrintStream stream
     ) {
         if (sk == null || coin == null || session == null || addrs == null
-                || crypto == null || anon == null || channel == null || exec == null) {
+                || crypto == null || anon == null || channel == null) {
             throw new NullPointerException();
         }
         this.session = session;
@@ -118,7 +114,6 @@ class Player {
         this.addrs = addrs;
         this.am = am;
         this.pm = pm;
-        this.exec = exec;
         this.stream = stream;
     }
 
@@ -184,7 +179,7 @@ class Player {
 
             stream.println("  Player " + sk.VerificationKey() + " begins " + session);
 
-            exec.execute(new Runnable() {
+            new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -196,7 +191,7 @@ class Player {
                         r.close();
                     }
                 }
-            });
+            }).start();
 
             while(true) {
                 Phase phase = ch.receive();
@@ -214,7 +209,7 @@ class Player {
 
             final Chan<Report> cr = new BasicChan<>(2);
 
-            exec.execute(new Runnable() {
+            new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
@@ -225,7 +220,7 @@ class Player {
                         cr.close();
                     }
                 }
-            });
+            }).start();
 
             return new Future<Summable.SummableElement<Map<VerificationKey, Report>>>() {
                 private boolean done = false;

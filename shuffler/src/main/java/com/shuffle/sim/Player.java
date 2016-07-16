@@ -233,7 +233,7 @@ class Player<Address> implements Runnable {
 
         // The tcp channel over which we will be connecting.
         Channel<InetSocketAddress, Bytestring> tcp =
-                new TcpChannel(InetSocketAddress.createUnresolved("localhost", param.port), exec);
+                new TcpChannel(InetSocketAddress.createUnresolved("localhost", param.port));
         Player<InetSocketAddress> player = new Player<>(param, msg, tcp);
         Thread thread = new Thread(player);
 

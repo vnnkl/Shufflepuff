@@ -60,7 +60,6 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -170,9 +169,6 @@ public class Shuffle {
                 "The peers we will be connecting to, formatted as a JSON array.")
                 .withRequiredArg().ofType(String.class);
 
-        parser.accepts("maxThreads", "Maximum number of threads allowed.")
-                .withRequiredArg().ofType(Long.class).defaultsTo(6L);
-
         parser.accepts("report", "Path to store report file.")
                 .withRequiredArg().ofType(String.class);
 
@@ -225,10 +221,6 @@ public class Shuffle {
         }
 
         if (options.valueOf("peers") == null) {
-            throw new IllegalArgumentException("No option 'peers' supplied.");
-        }
-
-        if (options.valueOf("maxThreads") == null) {
             throw new IllegalArgumentException("No option 'peers' supplied.");
         }
 
@@ -466,7 +458,7 @@ public class Shuffle {
             keys.add(vk);
         }
 
-        executor = Executors.newFixedThreadPool((int)(long)options.valueOf("maxThreads") + 10);
+        executor = Executors.newFixedThreadPool(10);
 
         // Get information for this player. (In test mode, one node
         // may run more than one player.)
@@ -624,8 +616,7 @@ public class Shuffle {
                 new Multiplexer<>(
                     new MarshallChannel<>(
                         new TcpChannel(
-                            new InetSocketAddress(InetAddress.getLocalHost(), (int)port),
-                                executor),
+                            new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
                             new JavaMarshaller<Signed<Packet<VerificationKey, P>>>()),
                         mock.node(id)),
                     peers);
@@ -633,7 +624,7 @@ public class Shuffle {
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, coin, crypto, channel, am, pm, executor, System.out);
+                amount, coin, crypto, channel, am, pm, System.out);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -660,6 +651,7 @@ public class Shuffle {
             running.add(p.start());
         }
 
+        // If there's just one player, we don't need to run in a separate thread. 
         if (running.size() == 1) {
             for (Player.Running p : running) {
                 Collection<Player.Report> reports = new HashSet<>();

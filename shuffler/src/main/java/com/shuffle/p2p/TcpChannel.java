@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 
 /**
  * A manager for a bunch of tcp connections.
@@ -204,7 +203,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                 return null;
             }
 
-            executor.execute(new TcpReceiver(session, send));
+            new Thread(new TcpReceiver(session, send)).start();
 
             return session;
         }
@@ -345,7 +344,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                         continue;
                     }
 
-                    executor.execute(new TcpReceiver(session, send));
+                    new Thread(new TcpReceiver(session, send)).start();
                 } catch (IOException | InterruptedException e) {
                     return;
                 }
@@ -358,27 +357,24 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
 
     private ServerSocket server;
     private boolean running = false;
-    private final Executor executor;
 
     private final Object lock = new Object();
 
     public TcpChannel(
             Header header,
-            InetSocketAddress me,
-            Executor executor) {
+            InetSocketAddress me) {
 
-        if (executor == null || header == null || me == null) {
+        if (header == null || me == null) {
             throw new NullPointerException();
         }
 
         this.me = me;
         this.header = header;
-        this.executor = executor;
         this.port = me.getPort();
     }
 
-    public TcpChannel(InetSocketAddress me, Executor executor) {
-        this(defaultHeader(), me, executor);
+    public TcpChannel(InetSocketAddress me) {
+        this(defaultHeader(), me);
     }
 
     private class TcpConnection implements Connection<InetSocketAddress> {
@@ -429,7 +425,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
 
             openSessions = new OpenSessions();
 
-            executor.execute(new TcpListener(listener, server));
+            new Thread(new TcpListener(listener, server)).start();
 
             return new TcpConnection();
         }
