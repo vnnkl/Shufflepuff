@@ -410,6 +410,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                     | OtrPolicy.ERROR_START_AKE));
         }
 
+        // This method is ONLY for Alice
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
 
@@ -426,17 +427,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
             */
 
-            // There should probably be two separate methods for Alice and Bob
-
             OtrSession otrSession = new OtrSession(session);
 
-            // only Alice should send the query string.
             String query = "?OTRv23?"; // This depends on the type of encryption that the user wants.
             otrSession.send(new Bytestring(query.getBytes()));
 
-            // Is this correct?
-            // Alice should call pollReceivedMessage() twice, Bob should call it thrice.
-            // sendClient.pollReceivedMessage();
             sendClient.pollReceivedMessage();
             sendClient.pollReceivedMessage();
 
@@ -444,19 +439,24 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         // TODO
+        // This method is ONLY for Bob
         public synchronized OtrSession openBobSession(Send<Bytestring> send) throws InterruptedException, IOException {
 
             // How does Bob's session variable get set?
-            // One cannot call BOTH openSession() AND openBobsession()
             Session<Address, Bytestring> session;
 
+            sendClient.send = send;
+            sendClient.connect();
+            // session here
 
+            // initialize this variable
+            OtrSession otrSession;
 
             sendClient.pollReceivedMessage();
             sendClient.pollReceivedMessage();
             sendClient.pollReceivedMessage();
 
-            return null;
+            return otrSession;
         }
 
         public class OtrSession implements Session<Address, Bytestring> {
