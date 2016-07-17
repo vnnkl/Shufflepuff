@@ -34,7 +34,7 @@ public class EncryptionKeyImplTest {
         ecKey = new ECKey();
         pub = ECKey.fromPublicOnly(ecKey.getPubKey());
         //ek = new EncryptionKeyImpl(pub);
-        address = new AddressImpl("myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG",false);
+        address = new AddressImpl("myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG");
 
         System.out.println("ecKey pubHex            " + ecKey.getPublicKeyAsHex());
         System.out.println("ecKey privHex           " + ecKey.getPrivateKeyAsHex());
@@ -78,15 +78,5 @@ public class EncryptionKeyImplTest {
         System.out.println("EncKey.toString:        " + ek.toString());
 
         assertEquals("toString of ecKeyPubHex same as EncryptionKeyToString ", (new EncryptionKeyImpl(pubKey)).toString(), ek.toString());
-    }
-
-    @Test
-    public void testEncrypt() throws Exception {
-        System.out.println("\nTest encrypt");
-        System.out.println("address                 " + address);
-        System.out.println("ek                      " + ek.toString());
-        System.out.println(new AddressImpl(address.toString(),false));
-        Address encrypt = ek.encrypt(address);
-        System.out.println("address encrypted to ek " + encrypt);
     }
 }

@@ -4,6 +4,7 @@ import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.ECKey;
@@ -19,14 +20,15 @@ public class SigningKeyImpl implements SigningKey {
 
    final ECKey signingKey;
    final NetworkParameters params;
-
+   private final VerificationKey vk;
 
    public SigningKeyImpl(org.bitcoinj.core.ECKey ecKey, NetworkParameters params) {
-      this.signingKey = ecKey;
+      signingKey = ecKey;
       this.params = params;
+      vk = new VerificationKeyImpl(signingKey.getPubKey(), params);
    }
 
-   public SigningKeyImpl(String key, NetworkParameters params){
+   public SigningKeyImpl(String key, NetworkParameters params) throws FormatException {
       this(ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8)), params);
    }
 
@@ -38,7 +40,7 @@ public class SigningKeyImpl implements SigningKey {
 
    @Override
    public VerificationKey VerificationKey() {
-      return new VerificationKeyImpl(signingKey.getPubKey(), params);
+      return vk;
    }
 
    @Override

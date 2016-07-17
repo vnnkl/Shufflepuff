@@ -75,8 +75,7 @@ class Player {
     private final long amount;
     private final Address anon;
     private final Address change;
-    private final Marshaller<Message.Atom> am;
-    private final Marshaller<Packet<VerificationKey, P>> pm;
+    private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
 
     public Report report = null;
@@ -94,8 +93,7 @@ class Player {
          Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
          Crypto crypto,
          Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel,
-         Marshaller<Message.Atom> am,
-         Marshaller<Packet<VerificationKey, P>> pm,
+         Messages.ShuffleMarshaller m,
          PrintStream stream
     ) {
         if (sk == null || coin == null || session == null || addrs == null
@@ -112,8 +110,7 @@ class Player {
         this.change = change;
         this.channel = channel;
         this.addrs = addrs;
-        this.am = am;
-        this.pm = pm;
+        this.m = m;
         this.stream = stream;
     }
 
@@ -152,7 +149,7 @@ class Player {
             try {
                 // If the protocol returns correctly without throwing a Matrix, then
                 // it has been successful.
-                Messages messages = new Messages(session, sk, collector.connected, collector.inbox, am, pm);
+                Messages messages = new Messages(session, sk, collector.connected, collector.inbox, m);
                 CoinShuffle cs = new CoinShuffle(messages, crypto, coin);
                 return Report.success(cs.runProtocol(amount, sk, addrs, anon, change, ch));
             } catch (Matrix m) {

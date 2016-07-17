@@ -17,6 +17,7 @@ import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.Inbox;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.JavaShuffleMarshaller;
 import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.player.P;
@@ -57,8 +58,6 @@ public class MockNetwork  {
 
         VerificationKey vk = me.VerificationKey();
 
-        JavaMarshaller<Packet<VerificationKey, P>> jm = new JavaMarshaller<>();
-
         for (SigningKey skp : others) {
             if (skp.equals(me)) continue;
 
@@ -75,14 +74,11 @@ public class MockNetwork  {
 
             messages.put(vkp, new Messages(session, skp, outFrom,
                     new BasicChan<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>>(),
-                    new JavaMarshaller<Message.Atom>(),
-                    new JavaMarshaller<Packet<VerificationKey, P>>()));
+                    new JavaShuffleMarshaller()));
 
         }
 
-        messages.put(vk, new Messages(session, me, out, inbox,
-                new JavaMarshaller<Message.Atom>(),
-                new JavaMarshaller<Packet<VerificationKey, P>>()));
+        messages.put(vk, new Messages(session, me, out, inbox, new JavaShuffleMarshaller()));
     }
 
     public Messages messages(VerificationKey k) {

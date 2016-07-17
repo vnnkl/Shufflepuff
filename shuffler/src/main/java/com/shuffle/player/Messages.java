@@ -8,6 +8,7 @@
 
 package com.shuffle.player;
 
+import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.HistoryReceive;
@@ -40,6 +41,11 @@ import java.util.concurrent.TimeUnit;
  * Created by Daniel Krawisz on 12/9/15.
  */
 public class Messages implements MessageFactory {
+    public interface ShuffleMarshaller {
+        Marshaller<Message.Atom> atomMarshaller();
+        Marshaller<Address> addressMarshaller();
+        Marshaller<Packet<VerificationKey, P>> packetMarshaller();
+    }
 
     /**
      * Represents a packet that has been digitally signed.
@@ -146,6 +152,7 @@ public class Messages implements MessageFactory {
 
     public final MessageDigest sha256;
     public final Marshaller<Message.Atom> atomMarshaller;
+    public final Marshaller<Address> addressMarshaller;
 
     public Messages(Bytestring session,
                     SigningKey me,
@@ -153,8 +160,7 @@ public class Messages implements MessageFactory {
                             Send<Signed<Packet<VerificationKey, P>>>> net,
                     Receive<Inbox.Envelope<VerificationKey,
                             Signed<Packet<VerificationKey, P>>>> receive,
-                    Marshaller<Message.Atom> am,
-                    Marshaller<Packet<VerificationKey, P>> pm) throws NoSuchAlgorithmException {
+                    ShuffleMarshaller m) throws NoSuchAlgorithmException {
 
         if (session == null || me == null || net == null || receive == null)
             throw new NullPointerException();
@@ -164,7 +170,9 @@ public class Messages implements MessageFactory {
         this.receive = new HistoryReceive<>(receive);
 
         sha256 = MessageDigest.getInstance("SHA-256");
-        this.atomMarshaller = am;
+        this.atomMarshaller = m.atomMarshaller();
+        this.addressMarshaller = m.addressMarshaller();
+        Marshaller<Packet<VerificationKey, P>> pm = m.packetMarshaller();
 
         VerificationKey vk = me.VerificationKey();
 

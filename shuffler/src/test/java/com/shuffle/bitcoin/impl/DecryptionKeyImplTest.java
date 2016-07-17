@@ -6,6 +6,7 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
+import com.shuffle.protocol.FormatException;
 
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.ECKey;
@@ -123,13 +124,13 @@ public class DecryptionKeyImplTest {
     }
 
     @Test
-    public void testDecrypt() throws Exception {
+    public void testDecrypt() throws FormatException {
         System.out.println(privateTestKey);
-        Address testAddress = new AddressImpl("myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG",false);
+        Address testAddress = new AddressImpl("myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG");
         System.out.println("Address myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG encrypted to PublicKey :"+ encryptionKey.toString());
-        Address encAddress = encryptionKey.encrypt(testAddress);
+        String encAddress = encryptionKey.encrypt(testAddress.toString());
         System.out.println("Address myGgn8UojMsyqn6KGQLEbVbpYSePcKfawG encrypted \n to "+ encryptionKey.toString() +" :\n" + encAddress);
-        Address decAddress = decryptionKey.decrypt(encAddress);
+        Address decAddress = new AddressImpl(decryptionKey.decrypt(encAddress));
         System.out.println("and then decrypted \n back to :\n" + decAddress);
         assertEquals(testAddress.toString(), decAddress.toString());
     }

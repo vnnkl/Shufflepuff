@@ -6,10 +6,14 @@ import com.shuffle.bitcoin.EncryptionKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
+import com.shuffle.chan.packet.Marshaller;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.NetworkParameters;
+
+import java.io.IOException;
 
 /**
  * Created by Daniel Krawisz on 7/14/16.
@@ -20,7 +24,7 @@ public class CryptoProtobuf extends Protobuf {
 
     @Override
     // Unmarshall an address from its string representation.
-    public Address unmarshallAdress(String str) {
+    public Address unmarshallAdress(String str) throws FormatException {
         return new AddressImpl(str);
     }
 
@@ -46,5 +50,21 @@ public class CryptoProtobuf extends Protobuf {
     // Unmarshall a Transaction
     public Transaction unmarshallTransaction(byte[] bytes) throws FormatException {
         return bitcoin.fromBytes(bytes);
+    }
+
+    @Override
+    public Marshaller<Address> addressMarshaller() {
+        return new Marshaller<Address>() {
+
+            @Override
+            public Bytestring marshall(Address address) throws IOException {
+                return new Bytestring(address.toString().getBytes());
+            }
+
+            @Override
+            public Address unmarshall(Bytestring string) throws FormatException {
+                return new AddressImpl(new String(string.bytes));
+            }
+        };
     }
 }

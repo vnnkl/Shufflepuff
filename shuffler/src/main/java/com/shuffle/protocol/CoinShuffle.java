@@ -326,7 +326,7 @@ public class CoinShuffle {
 
             // Add our own address to the mix. Note that if me == N, ie, the last player, then no
             // encryption is done. That is because we have reached the last layer of encryption.
-            Address encrypted = addrNew;
+            String encrypted = addrNew.toString();
             for (int i = N; i > me; i--) {
                 // Successively encrypt with the keys of the players who haven't had their turn yet.
                 encrypted = encryptionKeys.get(players.get(i)).encrypt(encrypted);
@@ -350,6 +350,7 @@ public class CoinShuffle {
                 newAddresses = readNewAddresses(shuffled);
                 mailbox.broadcast(shuffled, phase.get());
             } else {
+                // All other players just receive their addresses from the last one.
                 newAddresses = readNewAddresses(mailbox.receiveFrom(players.get(N), phase.get()));
             }
 
@@ -364,15 +365,15 @@ public class CoinShuffle {
             Message decrypted = messages.make();
 
             int count = 0;
-            Set<Address> addrs = new HashSet<>(); // Used to check that all addresses are different.
+            Set<String> addrs = new HashSet<>(); // Used to check that all addresses are different.
 
             while (!message.isEmpty()) {
-                Address address = message.readAddress();
+                String encrypted = message.readString();
                 message = message.rest();
 
-                addrs.add(address);
+                addrs.add(encrypted);
                 count++;
-                decrypted = decrypted.attach(key.decrypt(address));
+                decrypted = decrypted.attach(key.decrypt(encrypted));
             }
 
             if (addrs.size() != count || count != expected) {
@@ -1030,28 +1031,12 @@ public class CoinShuffle {
                 || shuffleMessages == null || broadcastMessages == null)
             throw new NullPointerException();
 
-        SortedSet<Address> outputs = new TreeSet<>();
+        SortedSet<String> outputs = new TreeSet<>();
 
         // Go through the steps of shuffling messages.
-        for (int i = 1; i <= players.size(); i++) {
+        for (int i = 1; i < players.size(); i++) {
 
-            // The last step is from phase three, so we have to check for that.
-            Packet packet = null;
-            if (i < players.size()) {
-                packet = shuffleMessages.get(players.get(i + 1));
-            } else {
-                // All broadcast messages should have the same content and we should
-                // have already checked for this. Therefore we just look for the first
-                // one that is available. (The message for player 1 should always be available.)
-                for (int j = 1; j <= players.size(); j++) {
-                    packet = broadcastMessages.get(players.get(j));
-
-                    if (packet != null) {
-                        break;
-                    }
-                }
-            }
-
+            Packet packet = shuffleMessages.get(players.get(i + 1));
             if (packet == null) {
                 // TODO Blame a player for lying.
 
@@ -1061,43 +1046,61 @@ public class CoinShuffle {
             Message message = packet.payload();
 
             // Grab the correct number of addresses and decrypt them.
-            SortedSet<Address> addresses = new TreeSet<>();
+            // SortedSet<Address> addresses = new TreeSet<>();
+            SortedSet<String> decrypted = new TreeSet<>();
             for (int j = 0; j < i; j++) {
                 if (message.isEmpty()) {
                     return Evidence.ShuffleMisbehaviorDropAddress(
                             players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
                 }
 
-                Address address = message.readAddress();
+                String address = message.readString();
                 message = message.rest();
                 for (int k = i + 1; k <= players.size(); k++) {
                     address = decryptionKeys.get(players.get(k)).decrypt(address);
                 }
 
                 // There shouldn't be duplicates.
-                if (addresses.contains(address)) {
+                if (decrypted.contains(address)) {
                     return Evidence.ShuffleMisbehaviorDropAddress(
                             players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
                 }
-                addresses.add(address);
+                decrypted.add(address);
             }
 
             // Does this contain all the previous addresses?
-            if (!addresses.containsAll(outputs)) {
+            if (!decrypted.containsAll(outputs)) {
                 return Evidence.ShuffleMisbehaviorDropAddress(
                         players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
             }
 
-            addresses.removeAll(outputs);
+            decrypted.removeAll(outputs);
 
             // There should be one new address.
-            if (addresses.size() != 1) {
+            if (decrypted.size() != 1) {
                 return Evidence.ShuffleMisbehaviorDropAddress(
                         players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
             }
 
-            outputs.add(addresses.first());
+            outputs.add(decrypted.first());
         }
+
+        // Now check the last set of messages from player N.
+        // All broadcast messages should have the same content and we should
+        // have already checked for this. Therefore we just look for the first
+        // one that is available.
+        // (The message for player 1 should always be available, so theoretically
+        // we don't need to loop through everybody, but who knows what might have happened.)
+        Packet packet = null;
+        for (int j = 1; j <= players.size(); j++) {
+            packet = broadcastMessages.get(players.get(j));
+
+            if (packet != null) {
+                break;
+            }
+        }
+
+        // TODO
 
         return null;
     }

@@ -51,13 +51,6 @@ public class MockAddress implements Address, Serializable {
 
     @Override
     public int compareTo(Address address) {
-        if (address instanceof MockDecryptedAddress) {
-            return -1;
-        }
-
-        if (address instanceof MockEncryptedAddress) {
-            return 1;
-        }
 
         if (!(address instanceof MockAddress)) {
             return 0;

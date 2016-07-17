@@ -26,6 +26,7 @@ import com.shuffle.mock.MockProtobuf;
 import com.shuffle.p2p.Collector;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
+import com.shuffle.player.JavaShuffleMarshaller;
 import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.mock.MockSigningKey;
@@ -272,17 +273,15 @@ class Player<Address> implements Runnable {
         Thread.sleep(5000);
 
         Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> m = null;
-        try {
-            m = conn.connect(keys, 3);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        m = conn.connect(keys, 3);
+        if (m == null) throw new NullPointerException();
 
         Messages messages = null;
 
         try {
             messages = new Messages(param.session, param.me, m.connected, m.inbox,
-                    new JavaMarshaller<Message.Atom>(), new JavaMarshaller<Packet<VerificationKey, P>>());
+                    new JavaShuffleMarshaller());
             return new CoinShuffle(
                     messages, param.init.crypto(), param.init.coin()
             ).runProtocol(

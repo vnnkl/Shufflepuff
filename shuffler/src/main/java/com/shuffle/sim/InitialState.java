@@ -46,10 +46,6 @@ import java.util.TreeSet;
  * Created by Simulator on 2/8/16.
  */
 public class InitialState {
-    public enum MarshallType {
-        Java,
-        Protobuf,
-    }
 
     // An expected return state that matches any blame matrix, even a null one.
     // Used for ensuring a test can't fail no matter what value
@@ -144,7 +140,6 @@ public class InitialState {
     private final Crypto crypto;
     private final LinkedList<PlayerInitialState> players = new LinkedList<>();
     private MockCoin mockCoin = null;
-    private final Protobuf proto;
 
     // The initial state of an individual player. (includes malicious players)
     public final class PlayerInitialState {
@@ -395,26 +390,6 @@ public class InitialState {
             connections.put(player.sk, initializer.connect(player.sk));
         }
 
-        Marshaller<Message.Atom> am;
-        Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> pm;
-
-        switch (mt) {
-            case Java: {
-                am = new JavaMarshaller<>();
-                pm = new JavaMarshaller<>();
-                break;
-            }
-            case Protobuf: {
-                am = proto.atomMarshaller;
-                pm = proto.packetMarshaller;
-                break;
-            }
-            default : {
-                // This should not happen.
-                throw new IllegalArgumentException();
-            }
-        }
-
         for (final PlayerInitialState player : players) {
 
             Initializer.Connections<Packet<VerificationKey, P>> c = connections.get(player.sk);
@@ -422,7 +397,7 @@ public class InitialState {
             try {
                 p.put(player.sk,
                         player.adversary(new Messages(session, player.sk, c.send, c.receive,
-                                am, pm)));
+                                m)));
 
             } catch (CoinNetworkException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
@@ -451,24 +426,14 @@ public class InitialState {
 
     private Map<Integer, MockCoin> networkPoints = null;
 
-    private final MarshallType mt;
+    private final Messages.ShuffleMarshaller m;
 
-    public InitialState(Bytestring session, long amount, Crypto crypto, Protobuf proto, MarshallType mt) {
-
-        this.session = session;
-        this.amount = amount;
-        this.crypto = crypto;
-        this.proto = proto;
-        this.mt = mt;
-    }
-
-    public InitialState(Bytestring session, long amount, Crypto crypto, Protobuf proto) {
+    public InitialState(Bytestring session, long amount, Crypto crypto, Messages.ShuffleMarshaller m) {
 
         this.session = session;
         this.amount = amount;
         this.crypto = crypto;
-        this.proto = proto;
-        this.mt = MarshallType.Protobuf;
+        this.m = m;
     }
 
     public InitialState player() {

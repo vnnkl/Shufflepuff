@@ -75,13 +75,8 @@ public class DecryptionKeyImpl implements DecryptionKey {
 
 
     @Override
-    public Address decrypt(Address m) throws FormatException {
+    public String decrypt(String input) {
         Guice.createInjector(new JvmModule()).injectMembers(this);
-        java.lang.String input = m.toString();
-        AddressImpl returnAddress = null;
-        if (BitcoinCrypto.isValidAddress(input, params)) {
-            return new AddressImpl(input,false);
-        } else {
 
         //encrypt cipher
         Cipher cipher = null;
@@ -97,7 +92,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
            e.printStackTrace();
            throw new RuntimeException(e);
         }
-        byte[] bytes = Hex.decode(m.toString());
+        byte[] bytes = Hex.decode(input);
         byte[] decrypted = new byte[0];
         try {
            decrypted = cipher.doFinal(bytes);
@@ -107,12 +102,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
            e.printStackTrace();
            throw new RuntimeException(e);
         }
-        String addrString = new String(decrypted, StandardCharsets.UTF_8);
-        returnAddress = new AddressImpl(addrString,
-                !BitcoinCrypto.isValidAddress(addrString, params));
-
-        }
-        return returnAddress;
+        return new String(decrypted, StandardCharsets.UTF_8);
     }
 
     @Override

@@ -10,7 +10,9 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
 import com.shuffle.bitcoin.impl.AddressImpl;
+import com.shuffle.bitcoin.impl.CryptoProtobuf;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
+import com.shuffle.bitcoin.impl.VerificationKeyImpl;
 import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
@@ -34,6 +36,7 @@ import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.Multiplexer;
 import com.shuffle.p2p.TcpChannel;
+import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
@@ -117,7 +120,8 @@ public class Shuffle {
 
             parser.accepts("local").withRequiredArg().ofType(String.class);
 
-            parser.accepts("format").withRequiredArg().ofType(String.class).defaultsTo("protobuf");
+            parser.accepts("format").withRequiredArg().ofType(String.class)
+                    .defaultsTo("protobuf");
 
             // Five seconds from now.
             time.defaultsTo(System.currentTimeMillis() + 5000L);
@@ -192,7 +196,7 @@ public class Shuffle {
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException, ParseException, UnknownHostException {
+            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException {
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
@@ -247,40 +251,10 @@ public class Shuffle {
             report = null;
         }
 
-        Marshaller<Message.Atom> am;
-        Marshaller<Packet<VerificationKey, P>> pm;
-        if (TEST_MODE) {
-
-            Protobuf proto = new MockProtobuf();
-
-            if (options.has("format")) {
-                String format = (String) options.valueOf("format");
-
-                if (format.equals("java")) {
-                    am = new JavaMarshaller<>();
-                    pm = new JavaMarshaller<>();
-                } else if (format.equals("protobuf")) {
-                    am = proto.atomMarshaller;
-                    pm = proto.packetMarshaller;
-                } else {
-                    throw new IllegalArgumentException();
-                }
-            } else {
-
-                am = new JavaMarshaller<>();
-                pm = new JavaMarshaller<>();
-            }
-        } else {
-
-            Protobuf proto = new MockProtobuf();
-
-            am = proto.atomMarshaller;
-            pm = proto.packetMarshaller;
-        }
-
         // Detect the nature of the cryptocoin network we will use.
         final String query = (String)options.valueOf("query");
         final NetworkParameters netParams;
+        final Messages.ShuffleMarshaller m;
 
         switch ((String)options.valueOf("blockchain")) {
 
@@ -363,11 +337,14 @@ public class Shuffle {
         }
 
         // Check cryptography options.
+        boolean mockCrypto = false;
         if (TEST_MODE) {
             String cryptography = (String) options.valueOf("crypto");
+            String format = (String) options.valueOf("format");
 
             switch (cryptography) {
                 case "mock":
+                    mockCrypto = true;
                     if (seed == null) {
                         crypto = new MockCrypto(new InsecureRandom(0));
                     } else {
@@ -387,11 +364,25 @@ public class Shuffle {
                     throw new IllegalArgumentException("Unrecognized crypto option value " + cryptography);
             }
 
-        } else {
-            throw new IllegalArgumentException("Shufflepuff pre-alpha must be compiled in test mode.");
-        }
+            switch (format) {
+                case "java":
+                    m = new JavaShuffleMarshaller();
+                    break;
+                case "protobuf":
+                    if (mockCrypto) {
+                        m = new MockProtobuf();
+                    } else {
+                        m = new CryptoProtobuf();
+                    }
+                    break;
+                default:
+                    throw new IllegalArgumentException();
+            }
 
-        // Create the crypto interface.
+        } else {
+            crypto = new BitcoinCrypto(netParams);
+            m = new CryptoProtobuf();
+        }
 
         amount = (Long)options.valueOf("amount");
         if (amount <= MIN_AMMOUNT) {
@@ -429,11 +420,10 @@ public class Shuffle {
             }
 
             VerificationKey vk;
-            if (TEST_MODE) {
+            if (TEST_MODE && mockCrypto) {
                 vk = new MockVerificationKey(Integer.parseInt(key));
             } else {
-                // TODO
-                throw new IllegalArgumentException();
+                vk = new VerificationKeyImpl(key, netParams);
             }
 
             // Try to read address as host:port.
@@ -530,7 +520,7 @@ public class Shuffle {
                     throw new IllegalArgumentException("Player missing field \"port\".");
                 }
 
-                this.local.add(readPlayer(options, key, i, port, anon, change, am, pm));
+                this.local.add(readPlayer(options, key, i, port, anon, change, m));
             }
         } else {
             if (jsonPeers.size() == 0) {
@@ -551,9 +541,9 @@ public class Shuffle {
             String anon = (String)options.valueOf("anon");
             Long port = (Long)options.valueOf("port");
             if (!options.has("change")) {
-                this.local.add(readPlayer(options, key, 1, port, anon, null, am, pm));
+                this.local.add(readPlayer(options, key, 1, port, anon, null, m));
             } else {
-                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), am, pm));
+                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), m));
             }
         }
 
@@ -566,8 +556,7 @@ public class Shuffle {
             long port,
             String anon,
             String change,
-            Marshaller<Message.Atom> am,
-            Marshaller<Packet<VerificationKey, P>> pm) throws UnknownHostException {
+            Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException {
 
         SigningKey sk;
         Address anonAddress;
@@ -586,11 +575,11 @@ public class Shuffle {
                 }
                 case "real" : {
                     sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
-                    anonAddress = new AddressImpl(anon, false);
+                    anonAddress = new AddressImpl(anon);
                     if (change == null) {
                         changeAddress = null;
                     } else {
-                        changeAddress = new AddressImpl(change, false);
+                        changeAddress = new AddressImpl(change);
                     }
                     break;
                 }
@@ -599,8 +588,13 @@ public class Shuffle {
                 }
             }
         } else {
-            // TODO
-            throw new IllegalArgumentException("Can only run in test mode.");
+            sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
+            anonAddress = new AddressImpl(anon);
+            if (change == null) {
+                changeAddress = null;
+            } else {
+                changeAddress = new AddressImpl(change);
+            }
         }
         
         VerificationKey vk = sk.VerificationKey();
@@ -624,7 +618,7 @@ public class Shuffle {
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, coin, crypto, channel, am, pm, System.out);
+                amount, coin, crypto, channel, m, System.out);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -651,7 +645,7 @@ public class Shuffle {
             running.add(p.start());
         }
 
-        // If there's just one player, we don't need to run in a separate thread. 
+        // If there's just one player, we don't need to run in a separate thread.
         if (running.size() == 1) {
             for (Player.Running p : running) {
                 Collection<Player.Report> reports = new HashSet<>();
@@ -708,6 +702,7 @@ public class Shuffle {
         } catch (IllegalArgumentException
                 //| ClassCastException
                 | ParseException
+                | FormatException
                 | UnknownHostException e) {
 
             System.out.println(e.getMessage());

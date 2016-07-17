@@ -19,5 +19,5 @@ import com.shuffle.protocol.FormatException;
 public interface DecryptionKey {
     EncryptionKey EncryptionKey();
 
-    Address decrypt(Address m) throws FormatException;
+    String decrypt(String m);
 }

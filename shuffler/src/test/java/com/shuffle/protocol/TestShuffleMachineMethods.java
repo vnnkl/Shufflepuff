@@ -17,7 +17,6 @@ import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
-import com.shuffle.mock.MockEncryptedAddress;
 import com.shuffle.mock.MockEncryptionKey;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Messages;
@@ -418,8 +417,7 @@ public class TestShuffleMachineMethods {
             for (int i = 0; i <= 5; i++) {
 
                 // Set up a session identifier and signing key.
-                Bytestring session
-                        = new Bytestring(("testDecryptAll" + i).getBytes());
+                Bytestring session = new Bytestring(("testDecryptAll" + i).getBytes());
 
                 SortedSet<SigningKey> players = new TreeSet<>();
                 for (int j = 0; j <= i; j++) {
@@ -444,12 +442,11 @@ public class TestShuffleMachineMethods {
                     playersPublic.add(key);
                     Address addr = key.address();
 
-                    output = output.attach(addr);
-                    input = input.attach(new MockEncryptedAddress(addr, dk.EncryptionKey()));
+                    output = output.attach(addr.toString());
+                    input = input.attach(dk.EncryptionKey().encrypt(addr.toString()));
                 }
 
-                Mailbox mailbox
-                        = new Mailbox(sk.VerificationKey(), playersPublic, messages);
+                Mailbox mailbox = new Mailbox(sk.VerificationKey(), playersPublic, messages);
 
                 CoinShuffle.Round round = standardTestInitialization(
                         session, 1, new MockAddress(-1), players, crypto, mailbox

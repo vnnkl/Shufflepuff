@@ -8,6 +8,7 @@ import com.shuffle.bitcoin.EncryptionKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.packet.Marshaller;
+import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.proto.Proto;
@@ -24,10 +25,10 @@ import java.util.Queue;
 /**
  * Created by Daniel Krawisz on 7/2/16.
  */
-public abstract class Protobuf {
+public abstract class Protobuf implements Messages.ShuffleMarshaller {
 
     // Unmarshall an address from its string representation.
-    public abstract Address unmarshallAdress(String str);
+    public abstract Address unmarshallAdress(String str) throws FormatException;
 
     // Unmarshall an encryption key from a string.
     public abstract EncryptionKey unmarshallEncryptionKey(String str);
@@ -385,16 +386,26 @@ public abstract class Protobuf {
 
     }
 
-    public final Packet packetMarshaller;
-    public final Atom atomMarshaller;
+    public final Marshaller<Packet<VerificationKey, P>> packetMarshaller;
+    public final Marshaller<Message.Atom> atomMarshaller;
 
     public Protobuf() {
-        packetMarshaller = new Packet();
-        atomMarshaller = new Atom();
+        packetMarshaller = new PacketMarshaller();
+        atomMarshaller = new AtomMarshaller();
 
     }
 
-    public class Atom implements Marshaller<Message.Atom> {
+    @Override
+    public Marshaller<Message.Atom> atomMarshaller() {
+        return atomMarshaller;
+    }
+
+    @Override
+    public Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> packetMarshaller() {
+        return packetMarshaller;
+    }
+
+    class AtomMarshaller implements Marshaller<Message.Atom> {
 
         @Override
         public Bytestring marshall(Message.Atom atom) {
@@ -415,7 +426,7 @@ public abstract class Protobuf {
         }
     }
 
-    public class Packet implements Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> {
+    class PacketMarshaller implements Marshaller<Packet<VerificationKey, P>> {
 
         @Override
         public Bytestring marshall(com.shuffle.chan.packet.Packet<VerificationKey, P> p) throws IOException {

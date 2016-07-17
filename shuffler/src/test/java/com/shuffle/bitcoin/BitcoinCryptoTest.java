@@ -59,8 +59,11 @@ public class BitcoinCryptoTest {
       String privMain = "1NRkTbEo8z7qj9KiGAENKTuUZzs6kszZqC";
       String privTest = "my316CQbTLXFut87FXT8xTzsJLjwCUXKQH";
 
-      assertTrue(BitcoinCrypto.isValidAddress(privMain, testnet3));
-      assertTrue(BitcoinCrypto.isValidAddress(privTest, mainnet));
+      assertTrue(BitcoinCrypto.isValidAddress(privTest, testnet3));
+      assertTrue(BitcoinCrypto.isValidAddress(privMain, mainnet));
+
+      assertFalse(BitcoinCrypto.isValidAddress(privMain, testnet3));
+      assertFalse(BitcoinCrypto.isValidAddress(privTest, mainnet));
 
    }
 

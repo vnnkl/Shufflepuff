@@ -17,5 +17,5 @@ import com.shuffle.protocol.FormatException;
  * Created by Daniel Krawisz on 12/4/15.
  */
 public interface EncryptionKey {
-    Address encrypt(Address m) throws FormatException;
+    String encrypt(String m);
 }

@@ -68,10 +68,9 @@ public class EncryptionKeyImpl implements EncryptionKey {
    }
 
    @Override
-   public Address encrypt(Address m) {
+   public String encrypt(String input) {
 
       // encrypts the address passed for this encryption key
-      AddressImpl add = null;
       Guice.createInjector(new JvmModule()).injectMembers(this);
 
       //get cipher cipher for ECIES encryption
@@ -89,7 +88,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
          e.printStackTrace();
       }
       //get bytes of address passed
-      byte[] bytes = m.toString().getBytes(StandardCharsets.UTF_8);
+      byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
       //encrypt
       byte[] encrypted = new byte[0];
       try {
@@ -99,9 +98,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
          throw new RuntimeException(e);
       }
       //create new address with
-      add = new AddressImpl(Hex.encodeHexString(encrypted), true);
-
-      return add;
+      return Hex.encodeHexString(encrypted);
    }
 
    @Override
@@ -111,8 +108,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
 
       EncryptionKeyImpl that = (EncryptionKeyImpl) o;
 
-      if (!encryptionKey.equals(that.encryptionKey)) return false;
-      return publicKey.equals(that.publicKey);
+      return encryptionKey.equals(that.encryptionKey) && publicKey.equals(that.publicKey);
 
    }
 
