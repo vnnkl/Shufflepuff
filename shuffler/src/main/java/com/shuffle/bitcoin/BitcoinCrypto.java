@@ -76,8 +76,6 @@ public class BitcoinCrypto implements Crypto {
    int decKeyCounter = 0;
 
 
-
-
    public static boolean isValidAddress(String address, NetworkParameters params) {
       try {
          new Address(params, address);
@@ -127,42 +125,42 @@ public class BitcoinCrypto implements Crypto {
    }
 
 
-   private KeyPairGenerator getKeyPGen() {
-      if (keyPG == null) {
-         try {
-            keyPG = KeyPairGenerator.getInstance("ECIES",new BouncyCastleProvider());
-         } catch (NoSuchAlgorithmException exception) {
-            exception.printStackTrace();
-         }
-         final int keylength = 256;
-         keyPG.initialize(keylength, sr);
-         return keyPG;
-      }
-      return keyPG;
-   }
+    private KeyPairGenerator getKeyPGen() {
+        if (keyPG == null) {
+            try {
+                keyPG = KeyPairGenerator.getInstance("ECIES",new BouncyCastleProvider());
+            } catch (NoSuchAlgorithmException exception) {
+                exception.printStackTrace();
+            }
+            final int keylength = 256;
+            keyPG.initialize(keylength, sr);
+            return keyPG;
+        }
+        return keyPG;
+    }
 
-   private KeyPair getKeyPair() {
-      if (keys == null || keyPG == null) {
-         if (keyPG == null) {
-            keyPG = getKeyPGen();
-         }
+    private KeyPair getKeyPair() {
+        if (keys == null || keyPG == null) {
+            if (keyPG == null) {
+                keyPG = getKeyPGen();
+            }
 
-         keys = keyPG.generateKeyPair();
-         return keys;
-      }
-      return keys;
-   }
+            keys = keyPG.generateKeyPair();
+            return keys;
+        }
+        return keys;
+    }
 
 
     @Override
     public DecryptionKey makeDecryptionKey() {
-       // String ppath = getCurrentPathAsString();
-       // System.out.println("Current path used by decryption key genereated: " + ppath);
-       // ECKey newDecKey = keyChainGroup.getActiveKeyChain().getKeyByPath(HDUtils.parsePath(ppath),true);
-       // decKeyCounter++;
-       // return ECIES KeyPair
-       KeyPair keyPair = getKeyPair();
-       return new DecryptionKeyImpl(keyPair, this.getParams());
+        // String ppath = getCurrentPathAsString();
+        // System.out.println("Current path used by decryption key genereated: " + ppath);
+        // ECKey newDecKey = keyChainGroup.getActiveKeyChain().getKeyByPath(HDUtils.parsePath(ppath),true);
+        // decKeyCounter++;
+        // return ECIES KeyPair
+        KeyPair keyPair = getKeyPair();
+        return new DecryptionKeyImpl(keyPair);
 
     }
 
@@ -175,6 +173,16 @@ public class BitcoinCrypto implements Crypto {
     @Override
     public int getRandom(int n) {
          return sr.nextInt(n + 1);
+    }
+
+    public static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 
 }

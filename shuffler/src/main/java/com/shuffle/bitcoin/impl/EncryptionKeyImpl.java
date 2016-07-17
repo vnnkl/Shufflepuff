@@ -3,6 +3,7 @@ package com.shuffle.bitcoin.impl;
 import com.google.inject.Guice;
 import com.shuffle.JvmModule;
 import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
@@ -27,95 +28,79 @@ import javax.crypto.NoSuchPaddingException;
  */
 public class EncryptionKeyImpl implements EncryptionKey {
 
-   ECKey encryptionKey;
-   PublicKey publicKey;
+    private final PublicKey publicKey;
 
+    public EncryptionKeyImpl(byte[] ecPubKey)
+            throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-   public EncryptionKeyImpl(byte[] ecPubKey)
-           throws NoSuchAlgorithmException, InvalidKeySpecException {
+        KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
+        EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
+        this.publicKey = keyFactory.generatePublic(publicKeySpec);
 
-      // this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
-      KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
-      EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
-      this.publicKey = keyFactory.generatePublic(publicKeySpec);
-      this.encryptionKey = ECKey.fromPublicOnly(ecPubKey);
-
-   }
-
-   public EncryptionKeyImpl(PublicKey pubKey) {
-
-      this.publicKey = pubKey;
-   }
-
-
-   public EncryptionKeyImpl(ECKey ecPubKey) {
-      if (ecPubKey.hasPrivKey()) {
-         this.encryptionKey = ECKey.fromPublicOnly(ecPubKey.getPubKey());
-      } else {
-         this.encryptionKey = ecPubKey;
-      }
-   }
-
-    public EncryptionKeyImpl(String string) {
-        // TODO
-        throw new IllegalArgumentException();
     }
 
-   public String toString() {
+    public EncryptionKeyImpl(PublicKey pubKey) {
 
-            return org.spongycastle.util.encoders.Hex.toHexString(this.publicKey.getEncoded());
+        this.publicKey = pubKey;
+    }
 
-   }
+    public EncryptionKeyImpl(String string)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
 
-   @Override
-   public String encrypt(String input) {
+        this(BitcoinCrypto.hexStringToByteArray(string));
+    }
 
-      // encrypts the address passed for this encryption key
-      Guice.createInjector(new JvmModule()).injectMembers(this);
+    public String toString() {
+        return org.spongycastle.util.encoders.Hex.toHexString(this.publicKey.getEncoded());
+    }
 
-      //get cipher cipher for ECIES encryption
-      Cipher cipher = null;
-      try {
-         cipher = Cipher.getInstance("ECIES");
-      } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
-         e.printStackTrace();
-         throw new RuntimeException(e);
-      }
-      //init cipher with with our encryption key
-      try {
-         cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-      } catch (InvalidKeyException e) {
-         e.printStackTrace();
-      }
-      //get bytes of address passed
-      byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
-      //encrypt
-      byte[] encrypted = new byte[0];
-      try {
-         encrypted = cipher.doFinal(bytes);
-      } catch (IllegalBlockSizeException | BadPaddingException e) {
-         e.printStackTrace();
-         throw new RuntimeException(e);
-      }
-      //create new address with
-      return Hex.encodeHexString(encrypted);
-   }
+    @Override
+    public String encrypt(String input) {
 
-   @Override
-   public boolean equals(Object o) {
-      if (this == o) return true;
-      if (o == null || getClass() != o.getClass()) return false;
+        // encrypts the address passed for this encryption key
+        Guice.createInjector(new JvmModule()).injectMembers(this);
 
-      EncryptionKeyImpl that = (EncryptionKeyImpl) o;
+        //get cipher cipher for ECIES encryption
+        Cipher cipher = null;
+        try {
+            cipher = Cipher.getInstance("ECIES");
+        } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        //init cipher with with our encryption key
+        try {
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+        //get bytes of address passed
+        byte[] bytes = input.getBytes(StandardCharsets.UTF_8);
+        //encrypt
+        byte[] encrypted = new byte[0];
+        try {
+            encrypted = cipher.doFinal(bytes);
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        //create new address with
+        return Hex.encodeHexString(encrypted);
+    }
 
-      return encryptionKey.equals(that.encryptionKey) && publicKey.equals(that.publicKey);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
 
-   }
+        EncryptionKeyImpl that = (EncryptionKeyImpl) o;
 
-   @Override
-   public int hashCode() {
-      int result = encryptionKey.hashCode();
-      result = 31 * result + publicKey.hashCode();
-      return result;
-   }
+        return publicKey.equals(that.publicKey);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return publicKey.hashCode();
+    }
 }

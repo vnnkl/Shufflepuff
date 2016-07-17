@@ -33,28 +33,16 @@ import javax.crypto.NoSuchPaddingException;
 public class DecryptionKeyImpl implements DecryptionKey {
 
     final ECKey key;
-    final byte[] encryptionKey;
     final PrivateKey privateKey;
-    final PublicKey publicKey;
-    final transient NetworkParameters params;
+    private final EncryptionKey ek;
 
-    public DecryptionKeyImpl(org.bitcoinj.core.ECKey key, NetworkParameters params) {
-        this.key = key;
-        this.encryptionKey = key.getPubKey();
-        this.privateKey = null;
-        this.publicKey = null;
-        this.params = params;
-    }
-
-    public DecryptionKeyImpl(KeyPair keyPair, NetworkParameters params) {
+    public DecryptionKeyImpl(KeyPair keyPair) {
         this.privateKey = keyPair.getPrivate();
-        this.publicKey = keyPair.getPublic();
         this.key = ECKey.fromPrivate(this.privateKey.getEncoded());
-        this.encryptionKey = this.publicKey.getEncoded();
-        this.params = params;
+        ek = new EncryptionKeyImpl(keyPair.getPublic());
     }
 
-    public DecryptionKeyImpl(String string, NetworkParameters params) {
+    public DecryptionKeyImpl(String string) {
         // TODO
         throw new IllegalArgumentException();
     }
@@ -70,7 +58,7 @@ public class DecryptionKeyImpl implements DecryptionKey {
 
     @Override
     public EncryptionKey EncryptionKey() {
-      return new EncryptionKeyImpl(publicKey);
+      return ek;
    }
 
 
@@ -112,19 +100,15 @@ public class DecryptionKeyImpl implements DecryptionKey {
 
         DecryptionKeyImpl that = (DecryptionKeyImpl) o;
 
-        return key.equals(that.key) && Arrays.equals(encryptionKey, that.encryptionKey)
-                && privateKey.equals(that.privateKey) && publicKey.equals(that.publicKey)
-                && params.equals(that.params);
+        return key.equals(that.key)
+                && privateKey.equals(that.privateKey);
 
     }
 
     @Override
     public int hashCode() {
         int result = key.hashCode();
-        result = 31 * result + Arrays.hashCode(encryptionKey);
         result = 31 * result + privateKey.hashCode();
-        result = 31 * result + publicKey.hashCode();
-        result = 31 * result + params.hashCode();
         return result;
     }
 }

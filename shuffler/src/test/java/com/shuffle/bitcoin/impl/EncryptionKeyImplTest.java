@@ -78,5 +78,6 @@ public class EncryptionKeyImplTest {
         System.out.println("EncKey.toString:        " + ek.toString());
 
         assertEquals("toString of ecKeyPubHex same as EncryptionKeyToString ", (new EncryptionKeyImpl(pubKey)).toString(), ek.toString());
+        assertEquals(ek, new EncryptionKeyImpl(ek.toString()));
     }
 }

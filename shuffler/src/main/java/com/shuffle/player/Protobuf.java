@@ -18,6 +18,8 @@ import com.shuffle.protocol.blame.Reason;
 import com.shuffle.protocol.message.Phase;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -31,7 +33,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
     public abstract Address unmarshallAdress(String str) throws FormatException;
 
     // Unmarshall an encryption key from a string.
-    public abstract EncryptionKey unmarshallEncryptionKey(String str);
+    public abstract EncryptionKey unmarshallEncryptionKey(String str) throws InvalidKeySpecException, NoSuchAlgorithmException;
 
     // Unmarshall a decryption key.
     public abstract DecryptionKey unmarshallDecryptionKey(String str);
@@ -209,7 +211,9 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
 
             try {
                 o = unmarshallEncryptionKey(atom.getKey().getKey());
-            } catch (NumberFormatException e) {
+            } catch (NumberFormatException
+                    | NoSuchAlgorithmException
+                    | InvalidKeySpecException e) {
                 throw new FormatException("Could not read " + atom.getKey().getKey() + " as number.");
             }
         } else if (atom.hasHash()) {

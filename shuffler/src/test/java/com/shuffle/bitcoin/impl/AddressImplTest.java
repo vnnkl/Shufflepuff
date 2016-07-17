@@ -57,8 +57,7 @@ public class AddressImplTest {
       this.publicTestKey = BitcoinCrypto.loadPublicKey("MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibsQ9+qg3CcyJ+1+/5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==");
       this.testKeys = new KeyPair(publicTestKey,privateTestKey);
       this.encryptionKey = new EncryptionKeyImpl(testKeys.getPublic());
-      this.decryptionKey = new DecryptionKeyImpl(testKeys,
-              NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
+      this.decryptionKey = new DecryptionKeyImpl(testKeys);
    }
 
    @Test

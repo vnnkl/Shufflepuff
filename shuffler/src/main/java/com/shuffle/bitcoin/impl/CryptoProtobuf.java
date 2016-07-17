@@ -14,6 +14,8 @@ import com.shuffle.protocol.FormatException;
 import org.bitcoinj.core.NetworkParameters;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
 
 /**
  * Created by Daniel Krawisz on 7/14/16.
@@ -30,14 +32,16 @@ public class CryptoProtobuf extends Protobuf {
 
     @Override
     // Unmarshall an encryption key from a string.
-    public EncryptionKey unmarshallEncryptionKey(String str) {
+    public EncryptionKey unmarshallEncryptionKey(String str)
+            throws InvalidKeySpecException, NoSuchAlgorithmException {
+
         return new EncryptionKeyImpl(str);
     }
 
     @Override
     // Unmarshall a decryption key.
     public DecryptionKey unmarshallDecryptionKey(String str) {
-        return new DecryptionKeyImpl(str, params);
+        return new DecryptionKeyImpl(str);
     }
 
     @Override
