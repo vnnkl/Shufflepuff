@@ -36,7 +36,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
     public abstract EncryptionKey unmarshallEncryptionKey(String str) throws InvalidKeySpecException, NoSuchAlgorithmException;
 
     // Unmarshall a decryption key.
-    public abstract DecryptionKey unmarshallDecryptionKey(String str);
+    public abstract DecryptionKey unmarshallDecryptionKey(String privString, String pubString);
 
     // Unmarshall a verification key.
     public abstract VerificationKey unmarshallVerificationKey(String str);
@@ -82,7 +82,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
             default : {
                 throw new IllegalArgumentException("Invalid phase " + p.payload.phase);
             }
-        };
+        }
 
         Proto.Message.Builder mb = Proto.Message.newBuilder();
         Object msg = p.payload.message;
@@ -299,7 +299,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         DecryptionKey key = null;
         if (blame.hasKey()) {
             try {
-                key = unmarshallDecryptionKey(blame.getKey().getKey());
+                key = unmarshallDecryptionKey(blame.getKey().getKey(),unmarshallBlame(blame).privateKey.EncryptionKey().toString());
             } catch (NumberFormatException e) {
                 throw new FormatException(e.getMessage());
             }

@@ -1,14 +1,13 @@
 package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.util.Arrays;
 
@@ -31,6 +30,11 @@ public class VerificationKeyImpl implements VerificationKey {
 
    public VerificationKeyImpl(String string, NetworkParameters params) {
       // TODO
+      byte[] bytes = Hex.decode(string);
+      this.ecKey = ECKey.fromPublicOnly(bytes);
+      this.vKey = this.ecKey.getPubKey();
+      this.params = params;
+      this.address = new AddressImpl(this.ecKey.toAddress(params));
       throw new IllegalArgumentException();
    }
 

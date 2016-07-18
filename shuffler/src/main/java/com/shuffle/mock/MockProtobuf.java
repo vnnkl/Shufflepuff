@@ -31,8 +31,8 @@ public class MockProtobuf extends Protobuf {
 
     @Override
     // Unmarshall a decryption key.
-    public DecryptionKey unmarshallDecryptionKey(String str) {
-        return new MockDecryptionKey(str);
+    public DecryptionKey unmarshallDecryptionKey(String privString, String pubString) {
+        return new MockDecryptionKey(privString);
     }
 
     @Override

@@ -10,12 +10,9 @@ import org.apache.commons.codec.binary.Hex;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -29,15 +26,6 @@ public class EncryptionKeyImpl implements EncryptionKey {
 
     private final PublicKey publicKey;
 
-    public EncryptionKeyImpl(byte[] ecPubKey)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-        KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
-        EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
-        this.publicKey = keyFactory.generatePublic(publicKeySpec);
-
-    }
-
     public EncryptionKeyImpl(PublicKey pubKey) {
         this.publicKey = pubKey;
     }
@@ -46,6 +34,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
     public EncryptionKeyImpl(String hexString)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
         try {
+            // get base64 of passed hexstring and use BitcoinCrypto to load publickey
             this.publicKey = BitcoinCrypto.loadPublicKey(org.bouncycastle.util.encoders.Base64.toBase64String(org.spongycastle.util.encoders.Hex.decode(hexString)));
         } catch (GeneralSecurityException e) {
             e.printStackTrace();
