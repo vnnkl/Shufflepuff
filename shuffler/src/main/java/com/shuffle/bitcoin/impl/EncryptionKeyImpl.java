@@ -2,14 +2,13 @@ package com.shuffle.bitcoin.impl;
 
 import com.google.inject.Guice;
 import com.shuffle.JvmModule;
-import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
-import org.bitcoinj.core.ECKey;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -40,14 +39,22 @@ public class EncryptionKeyImpl implements EncryptionKey {
     }
 
     public EncryptionKeyImpl(PublicKey pubKey) {
-
         this.publicKey = pubKey;
     }
 
-    public EncryptionKeyImpl(String string)
+    // takes a key in hex as string
+    public EncryptionKeyImpl(String hexString)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
+        try {
+            this.publicKey = BitcoinCrypto.loadPublicKey(org.bouncycastle.util.encoders.Base64.toBase64String(org.spongycastle.util.encoders.Hex.decode(hexString)));
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+    }
 
-        this(BitcoinCrypto.hexStringToByteArray(string));
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 
     public String toString() {
