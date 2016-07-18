@@ -78,6 +78,6 @@ public class EncryptionKeyImplTest {
         System.out.println("EncKey.toString:        " + ek.toString());
 
         assertEquals("toString of ecKeyPubHex same as EncryptionKeyToString ", (new EncryptionKeyImpl(pubKey)).toString(), ek.toString());
-        assertEquals(ek, new EncryptionKeyImpl(ek.toString()));
+        assertEquals(ek, new EncryptionKeyImpl(BitcoinCrypto.loadPublicKey(org.bouncycastle.util.encoders.Base64.toBase64String(org.spongycastle.util.encoders.Hex.decode(ek.toString())))));
     }
 }
