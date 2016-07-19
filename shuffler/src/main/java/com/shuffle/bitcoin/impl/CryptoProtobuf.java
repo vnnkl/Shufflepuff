@@ -1,6 +1,7 @@
 package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
 import com.shuffle.bitcoin.Transaction;
@@ -14,6 +15,7 @@ import com.shuffle.protocol.FormatException;
 import org.bitcoinj.core.NetworkParameters;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
 
@@ -34,14 +36,18 @@ public class CryptoProtobuf extends Protobuf {
     // Unmarshall an encryption key from a string.
     public EncryptionKey unmarshallEncryptionKey(String str)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
-
-        return new EncryptionKeyImpl(str);
+        try {
+            return new EncryptionKeyImpl(BitcoinCrypto.loadPublicKey(org.bouncycastle.util.encoders.Base64.toBase64String(org.spongycastle.util.encoders.Hex.decode(str))));
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
     }
 
     @Override
     // Unmarshall a decryption key.
-    public DecryptionKey unmarshallDecryptionKey(String str) {
-        return new DecryptionKeyImpl(str);
+    public DecryptionKey unmarshallDecryptionKey(String privString, String pubString) {
+        return new DecryptionKeyImpl(privString,pubString);
     }
 
     @Override

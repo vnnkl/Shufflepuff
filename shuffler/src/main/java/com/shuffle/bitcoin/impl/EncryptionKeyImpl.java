@@ -2,21 +2,17 @@ package com.shuffle.bitcoin.impl;
 
 import com.google.inject.Guice;
 import com.shuffle.JvmModule;
-import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
-import org.bitcoinj.core.ECKey;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
-import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -30,24 +26,24 @@ public class EncryptionKeyImpl implements EncryptionKey {
 
     private final PublicKey publicKey;
 
-    public EncryptionKeyImpl(byte[] ecPubKey)
-            throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-        KeyFactory keyFactory = KeyFactory.getInstance("ECIES");
-        EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(ecPubKey);
-        this.publicKey = keyFactory.generatePublic(publicKeySpec);
-
-    }
-
     public EncryptionKeyImpl(PublicKey pubKey) {
-
         this.publicKey = pubKey;
     }
 
-    public EncryptionKeyImpl(String string)
+    // takes a key in hex as string
+    public EncryptionKeyImpl(String hexString)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
+        try {
+            // get base64 of passed hexstring and use BitcoinCrypto to load publickey
+            this.publicKey = BitcoinCrypto.loadPublicKey(org.bouncycastle.util.encoders.Base64.toBase64String(org.spongycastle.util.encoders.Hex.decode(hexString)));
+        } catch (GeneralSecurityException e) {
+            e.printStackTrace();
+            throw new RuntimeException();
+        }
+    }
 
-        this(BitcoinCrypto.hexStringToByteArray(string));
+    public PublicKey getPublicKey() {
+        return publicKey;
     }
 
     public String toString() {

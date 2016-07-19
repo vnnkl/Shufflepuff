@@ -2,23 +2,20 @@ package com.shuffle.bitcoin.impl;
 
 import com.google.inject.Guice;
 import com.shuffle.JvmModule;
-import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
-import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
+import org.spongycastle.crypto.RuntimeCryptoException;
 import org.spongycastle.util.encoders.Hex;
 
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.util.Arrays;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
@@ -42,9 +39,17 @@ public class DecryptionKeyImpl implements DecryptionKey {
         ek = new EncryptionKeyImpl(keyPair.getPublic());
     }
 
-    public DecryptionKeyImpl(String string) {
-        // TODO
-        throw new IllegalArgumentException();
+    public DecryptionKeyImpl(String privString, String publicString) {
+       try {
+          // will take keys as string in hex and convert to base64 and then load keys from that
+          this.privateKey = BitcoinCrypto.loadPrivateKey(org.bouncycastle.util.encoders.Base64.toBase64String(Hex.decode(privString)));
+          this.ek = new EncryptionKeyImpl(BitcoinCrypto.loadPublicKey(org.bouncycastle.util.encoders.Base64.toBase64String(Hex.decode(publicString))));
+          this.key = ECKey.fromPrivate(this.privateKey.getEncoded());
+       } catch (GeneralSecurityException e) {
+          e.printStackTrace();
+          throw new RuntimeCryptoException();
+       }
+       throw new IllegalArgumentException();
     }
 
     // returns encoded private key in hex format
