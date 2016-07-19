@@ -184,7 +184,7 @@ public class TestShuffleMachineMethods {
 
     @Test
     // This tests some cases for the function that randomly shuffles a message.
-    public void shuffleTest() throws NoSuchAlgorithmException {
+    public void shuffleTest() throws NoSuchAlgorithmException, FormatException {
         ShuffleTestCase[] tests = new ShuffleTestCase[]{
                 // The empty case, of course!
                 new ShuffleTestCase(
@@ -264,20 +264,16 @@ public class TestShuffleMachineMethods {
 
             Message input = messages.make();
             for (int i : test.input) {
-                input = input.attach(new MockAddress(i));
+                input = input.attach(new MockAddress(i).toString());
             }
             Message expected = messages.make();
             for (int i : test.expected) {
-                expected = expected.attach(new MockAddress(i));
+                expected = expected.attach(new MockAddress(i).toString());
             }
-            try {
-                Message result = machine.shuffle(input);
-                log.info("got " + result.toString() + "; expected " + expected.toString());
-                Assert.assertTrue(result.equals(expected));
-            } catch (FormatException e) {
-                e.printStackTrace();
-                Assert.fail("Unexpected FormatException: ");
-            }
+
+            Message result = machine.shuffle(input);
+            log.info("got " + result.toString() + "; expected " + expected.toString());
+            Assert.assertTrue(result.equals(expected));
         }
     }
 

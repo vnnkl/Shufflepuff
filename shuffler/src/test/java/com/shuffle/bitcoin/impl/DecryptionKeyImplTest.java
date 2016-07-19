@@ -96,6 +96,9 @@ public class DecryptionKeyImplTest {
         assertEquals("toString Method: ", new DecryptionKeyImpl(testKeys).toString(),
                 this.decryptionKey.toString());
 
+        assertEquals(decryptionKey,
+                new DecryptionKeyImpl(decryptionKey.toString(),
+                        decryptionKey.EncryptionKey().toString()));
     }
 
     @Test

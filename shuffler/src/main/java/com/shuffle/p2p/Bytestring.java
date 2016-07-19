@@ -92,23 +92,8 @@ public class Bytestring implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Bytestring)) {
-            return false;
-        }
+        return o instanceof Bytestring && Arrays.equals(bytes, ((Bytestring) o).bytes);
 
-        Bytestring b = (Bytestring)o;
-
-        if (b.bytes.length != bytes.length) {
-            return false;
-        }
-
-        for (int i = 0; i < bytes.length; i ++) {
-            if (bytes[i] != b.bytes[i]) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     @Override
@@ -123,6 +108,6 @@ public class Bytestring implements Serializable {
 
     @Override
     public String toString() {
-        return Arrays.toString(bytes);
+        return "Bytestring" + Arrays.toString(bytes);
     }
 }

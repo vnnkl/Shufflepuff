@@ -28,6 +28,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +86,7 @@ public class TestShuffleMachine {
         }
 
         @Override
-        protected Crypto crypto() {
+        protected Crypto crypto() throws NoSuchAlgorithmException {
             return new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
         }
 
@@ -175,7 +176,7 @@ public class TestShuffleMachine {
             i ++;
         }
 
-        Assert.assertTrue(success);
+            Assert.assertTrue(success);
     }
 
     /*@Test

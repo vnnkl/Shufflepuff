@@ -46,7 +46,7 @@ public class MockAddress implements Address, Serializable {
 
     @Override
     public String toString() {
-        return "ad[" + addr + "]";
+        return addr;
     }
 
     @Override

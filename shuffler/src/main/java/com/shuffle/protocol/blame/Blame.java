@@ -94,10 +94,10 @@ public class Blame implements Serializable {
     public String toString() {
         String str = "Blame[";
         if (accused != null) {
-            str += (accused.toString() + ", ");
+            str += ("accused: " + accused.toString() + ", ");
         }
         if (packets != null) {
-            str += (packets.toString() + ", ");
+            str += ("packets: " + packets.toString() + ", ");
         }
         return str + reason.toString() + "]";
     }

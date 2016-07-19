@@ -4989,6 +4989,16 @@ public final class Proto {
      */
     com.google.protobuf.ByteString
         getKeyBytes();
+
+    /**
+     * <code>optional string public = 2;</code>
+     */
+    java.lang.String getPublic();
+    /**
+     * <code>optional string public = 2;</code>
+     */
+    com.google.protobuf.ByteString
+        getPublicBytes();
   }
   /**
    * Protobuf type {@code DecryptionKey}
@@ -5003,6 +5013,7 @@ public final class Proto {
     }
     private DecryptionKey() {
       key_ = "";
+      public_ = "";
     }
 
     @java.lang.Override
@@ -5034,6 +5045,12 @@ public final class Proto {
               java.lang.String s = input.readStringRequireUtf8();
 
               key_ = s;
+              break;
+            }
+            case 18: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              public_ = s;
               break;
             }
           }
@@ -5093,6 +5110,40 @@ public final class Proto {
       }
     }
 
+    public static final int PUBLIC_FIELD_NUMBER = 2;
+    private volatile java.lang.Object public_;
+    /**
+     * <code>optional string public = 2;</code>
+     */
+    public java.lang.String getPublic() {
+      java.lang.Object ref = public_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        public_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>optional string public = 2;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPublicBytes() {
+      java.lang.Object ref = public_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        public_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     public final boolean isInitialized() {
       byte isInitialized = memoizedIsInitialized;
@@ -5108,6 +5159,9 @@ public final class Proto {
       if (!getKeyBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessage.writeString(output, 1, key_);
       }
+      if (!getPublicBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessage.writeString(output, 2, public_);
+      }
     }
 
     public int getSerializedSize() {
@@ -5117,6 +5171,9 @@ public final class Proto {
       size = 0;
       if (!getKeyBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessage.computeStringSize(1, key_);
+      }
+      if (!getPublicBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessage.computeStringSize(2, public_);
       }
       memoizedSize = size;
       return size;
@@ -5237,6 +5294,8 @@ public final class Proto {
         super.clear();
         key_ = "";
 
+        public_ = "";
+
         return this;
       }
 
@@ -5260,6 +5319,7 @@ public final class Proto {
       public com.shuffle.player.proto.Proto.DecryptionKey buildPartial() {
         com.shuffle.player.proto.Proto.DecryptionKey result = new com.shuffle.player.proto.Proto.DecryptionKey(this);
         result.key_ = key_;
+        result.public_ = public_;
         onBuilt();
         return result;
       }
@@ -5277,6 +5337,10 @@ public final class Proto {
         if (other == com.shuffle.player.proto.Proto.DecryptionKey.getDefaultInstance()) return this;
         if (!other.getKey().isEmpty()) {
           key_ = other.key_;
+          onChanged();
+        }
+        if (!other.getPublic().isEmpty()) {
+          public_ = other.public_;
           onChanged();
         }
         onChanged();
@@ -5370,6 +5434,75 @@ public final class Proto {
   checkByteStringIsUtf8(value);
         
         key_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object public_ = "";
+      /**
+       * <code>optional string public = 2;</code>
+       */
+      public java.lang.String getPublic() {
+        java.lang.Object ref = public_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          public_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string public = 2;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPublicBytes() {
+        java.lang.Object ref = public_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          public_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string public = 2;</code>
+       */
+      public Builder setPublic(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        public_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string public = 2;</code>
+       */
+      public Builder clearPublic() {
+        
+        public_ = getDefaultInstance().getPublic();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string public = 2;</code>
+       */
+      public Builder setPublicBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        public_ = value;
         onChanged();
         return this;
       }
@@ -9011,26 +9144,27 @@ public final class Proto {
       "str\030\005 \001(\t\022\025\n\005blame\030\006 \001(\0132\006.Blame\022\026\n\004next" +
       "\030\007 \001(\0132\010.Message\"\032\n\007Address\022\017\n\007address\030\001" +
       " \001(\t\"\036\n\017VerificationKey\022\013\n\003key\030\001 \001(\t\"\034\n\r" +
-      "EncryptionKey\022\013\n\003key\030\001 \001(\t\"\034\n\rDecryption" +
-      "Key\022\013\n\003key\030\001 \001(\t\"\024\n\004Hash\022\014\n\004hash\030\001 \001(\014\"\036" +
-      "\n\tSignature\022\021\n\tsignature\030\001 \001(\014\"\"\n\013Transa" +
-      "ction\022\023\n\013transaction\030\001 \001(\014\"\271\001\n\005Blame\022\027\n\006" +
-      "reason\030\001 \001(\0162\007.Reason\022!\n\007accused\030\002 \001(\0132\020" +
-      ".VerificationKey\022\033\n\003key\030\003 \001(\0132\016.Decrypti" +
-      "onKey\022!\n\013transaction\030\004 \001(\0132\014.Transaction",
-      "\022\031\n\007invalid\030\005 \001(\0132\010.Invalid\022\031\n\007packets\030\006" +
-      " \001(\0132\010.Packets\"\032\n\007Invalid\022\017\n\007invalid\030\001 \001" +
-      "(\014\"\"\n\007Packets\022\027\n\006packet\030\001 \003(\0132\007.Signed*\220" +
-      "\001\n\005Phase\022\010\n\004NONE\020\000\022\020\n\014ANNOUNCEMENT\020\001\022\013\n\007" +
-      "SHUFFLE\020\002\022\r\n\tBROADCAST\020\003\022\026\n\022EQUIVOCATION" +
-      "_CHECK\020\004\022\013\n\007SIGNING\020\005\022\037\n\033VERIFICATION_AN" +
-      "D_SUBMISSION\020\006\022\t\n\005BLAME\020\007*\306\001\n\006Reason\022\025\n\021" +
-      "INSUFFICIENTFUNDS\020\000\022\017\n\013DOUBLESPEND\020\001\022\027\n\023" +
-      "EQUIVOCATIONFAILURE\020\002\022\022\n\016SHUFFLEFAILURE\020" +
-      "\003\022!\n\035SHUFFLEANDEQUIVOCATIONFAILURE\020\004\022\024\n\020",
-      "INVALIDSIGNATURE\020\005\022\021\n\rMISSINGOUTPUT\020\006\022\010\n" +
-      "\004LIAR\020\007\022\021\n\rINVALIDFORMAT\020\010B!\n\030com.shuffl" +
-      "e.player.protoB\005Protob\006proto3"
+      "EncryptionKey\022\013\n\003key\030\001 \001(\t\",\n\rDecryption" +
+      "Key\022\013\n\003key\030\001 \001(\t\022\016\n\006public\030\002 \001(\t\"\024\n\004Hash" +
+      "\022\014\n\004hash\030\001 \001(\014\"\036\n\tSignature\022\021\n\tsignature" +
+      "\030\001 \001(\014\"\"\n\013Transaction\022\023\n\013transaction\030\001 \001" +
+      "(\014\"\271\001\n\005Blame\022\027\n\006reason\030\001 \001(\0162\007.Reason\022!\n" +
+      "\007accused\030\002 \001(\0132\020.VerificationKey\022\033\n\003key\030" +
+      "\003 \001(\0132\016.DecryptionKey\022!\n\013transaction\030\004 \001",
+      "(\0132\014.Transaction\022\031\n\007invalid\030\005 \001(\0132\010.Inva" +
+      "lid\022\031\n\007packets\030\006 \001(\0132\010.Packets\"\032\n\007Invali" +
+      "d\022\017\n\007invalid\030\001 \001(\014\"\"\n\007Packets\022\027\n\006packet\030" +
+      "\001 \003(\0132\007.Signed*\220\001\n\005Phase\022\010\n\004NONE\020\000\022\020\n\014AN" +
+      "NOUNCEMENT\020\001\022\013\n\007SHUFFLE\020\002\022\r\n\tBROADCAST\020\003" +
+      "\022\026\n\022EQUIVOCATION_CHECK\020\004\022\013\n\007SIGNING\020\005\022\037\n" +
+      "\033VERIFICATION_AND_SUBMISSION\020\006\022\t\n\005BLAME\020" +
+      "\007*\306\001\n\006Reason\022\025\n\021INSUFFICIENTFUNDS\020\000\022\017\n\013D" +
+      "OUBLESPEND\020\001\022\027\n\023EQUIVOCATIONFAILURE\020\002\022\022\n" +
+      "\016SHUFFLEFAILURE\020\003\022!\n\035SHUFFLEANDEQUIVOCAT",
+      "IONFAILURE\020\004\022\024\n\020INVALIDSIGNATURE\020\005\022\021\n\rMI" +
+      "SSINGOUTPUT\020\006\022\010\n\004LIAR\020\007\022\021\n\rINVALIDFORMAT" +
+      "\020\010B!\n\030com.shuffle.player.protoB\005Protob\006p" +
+      "roto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -9085,7 +9219,7 @@ public final class Proto {
     internal_static_DecryptionKey_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
         internal_static_DecryptionKey_descriptor,
-        new java.lang.String[] { "Key", });
+        new java.lang.String[] { "Key", "Public", });
     internal_static_Hash_descriptor =
       getDescriptor().getMessageTypes().get(7);
     internal_static_Hash_fieldAccessorTable = new

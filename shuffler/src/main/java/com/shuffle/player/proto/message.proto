@@ -54,6 +54,7 @@ message EncryptionKey {
 
 message DecryptionKey {
     string key = 1;
+    string public = 2;
 }
 
 message Hash {

@@ -10,6 +10,8 @@ package com.shuffle.protocol;
 
 import org.junit.Test;
 
+import java.security.NoSuchAlgorithmException;
+
 /**
  * It is possible for the last player to equivocate during the broadcast phase by sending a
  * different list of addresses to different players. This should also be detected in the
@@ -20,14 +22,14 @@ import org.junit.Test;
 public class TestEquivocateBroadcast extends TestShuffleMachine {
 
     // Run a test case for equivocation during phase 3.
-    private void EquivocateOutput(int numPlayers, int[] equivocation) {
+    private void EquivocateOutput(int numPlayers, int[] equivocation) throws NoSuchAlgorithmException {
         String description = "case " + caseNo + "; broadcast equivocation test case.";
         check(new RealTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
     }
 
     @Test
     // Tests for malicious players who send different output vectors to different players.
-    public void testEquivocationBroadcast() {
+    public void testEquivocationBroadcast() throws NoSuchAlgorithmException {
         int caseNo = 0;
 
         // A player sends different output vectors to different players.

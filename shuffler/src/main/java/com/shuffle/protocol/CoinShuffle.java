@@ -138,7 +138,6 @@ public class CoinShuffle {
             }
 
             readAnnouncements(announcement, encryptionKeys, changeAddresses);
-            System.out.println("Player " + me + ":" + sk + " receives keys " + encryptionKeys);
 
             // Phase 2: Shuffle
             // In the shuffle phase, players go in order and reorder the addresses they have been
@@ -190,7 +189,6 @@ public class CoinShuffle {
                         // Continue on to next case.
                     }
                     case ShuffleFailure: {
-                        // This was sent
                         blameShuffleMisbehavior();
                     }
                     default: {
@@ -302,7 +300,6 @@ public class CoinShuffle {
             if (change != null) {
                 message = message.attach(change);
             }
-            System.out.println("Player " + me + " broadcasts key " + message);
 
             mailbox.broadcast(message, phase.get());
             return dk;
@@ -393,7 +390,7 @@ public class CoinShuffle {
                 throws TimeoutException, Matrix,
                 InterruptedException, FormatException, IOException {
 
-            // First skip to phase 4 and do an equivocation check.
+            // Skip to phase 4 and do an equivocation check.
             phase.set(Phase.EquivocationCheck);
             equivocationCheck(encryptionKeys, newAddresses, true);
         }
@@ -408,7 +405,6 @@ public class CoinShuffle {
         ) throws InterruptedException, TimeoutException, Matrix, IOException, FormatException {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
-            System.out.println("Player " + me + " makes equivocation check message " + equivocationCheck);
             mailbox.broadcast(equivocationCheck, phase.get());
 
             // Wait for a similar message from everyone else and check that the result is the name.
@@ -417,7 +413,6 @@ public class CoinShuffle {
                     phase.get());
 
             hashes.put(vk, equivocationCheck);
-            System.out.println("Player " + me + " checks hashes " + hashes);
 
             if (areEqual(hashes.values())) {
                 // We may have got this far as part of a normal part of the protocol or as a part
@@ -564,12 +559,14 @@ public class CoinShuffle {
 
                         switch (blame.reason) {
                             case InsufficientFunds: {
-
                                 // Is the evidence included sufficient?
                                 // TODO check whether this is a conflicting transaction.
                                 matrix.put(from, Evidence.InsufficientFunds(blame.accused));
                                 break;
                             }
+
+                            // If there is an equivocation failure, all players must send a blame
+                            // message containing the messages they received in phases 1 and 4.
                             case EquivocationFailure: {
                                 // These are the keys received by
                                 // this player in the announcement phase.
@@ -604,9 +601,10 @@ public class CoinShuffle {
 
                                 // Check if this player correctly reported
                                 // the hash previously sent to us.
-                                if (!hashes.get(from).equals(
-                                        equivocationCheckHash(players, receivedKeys, addresses))
-                                        ) {
+                                Message newHash =
+                                        equivocationCheckHash(players, receivedKeys, addresses);
+
+                                if (!hashes.get(from).equals(newHash)) {
                                     matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
                                 }
 
@@ -716,7 +714,6 @@ public class CoinShuffle {
 
                         if (next == null) {
                             // blame player to. He should have sent us this.
-
                             matrix.put(vk, Evidence.Placeholder(to, Reason.Liar));
                             continue;
                         }
@@ -743,7 +740,7 @@ public class CoinShuffle {
                 leftover.removeAll(outputVectors.keySet());
                 if (leftover.size() > 0) {
                     for (VerificationKey key : leftover) {
-                        matrix.put(vk, Evidence.Placeholder(key, Reason.Liar));
+                        //matrix.put(vk, Evidence.Placeholder(key, Reason.Liar));
                     }
                 }
 
@@ -872,10 +869,10 @@ public class CoinShuffle {
         Message shuffled = messages.make();
 
         // Read all elements of the packet and insert them in a Queue.
-        Queue<Address> old = new LinkedList<>();
+        Queue<String> old = new LinkedList<>();
         int N = 0;
         while (!message.isEmpty()) {
-            old.add(message.readAddress());
+            old.add(message.readString());
             message = message.rest();
             N++;
         }
@@ -897,14 +894,18 @@ public class CoinShuffle {
     }
 
     // Test whether a set of messages are equal.
-    static boolean areEqual(Iterable<Message> messages) {
+    static synchronized boolean areEqual(Iterable<Message> messages) {
+
         Message last = null;
         for (Message m : messages) {
-            if (last != null) {
-                boolean equal = last.equals(m);
-                if (!equal) {
-                    return false;
-                }
+            if (last == null) {
+                last = m;
+                continue;
+            }
+
+            boolean equal = last.equals(m);
+            if (!equal) {
+                return false;
             }
 
             last = m;

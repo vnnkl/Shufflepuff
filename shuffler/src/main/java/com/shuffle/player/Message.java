@@ -200,15 +200,15 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
         public String toString() {
             String str = "";
 
-            if (addr != null) str += addr.toString();
+            if (addr != null) str += ("\"" + addr.toString() + "\"");
 
-            if (ek != null) str += ek.toString();
+            if (ek != null) str += ("\"" + ek.toString() + "\"");
 
             if (sig != null) str += sig.toString();
 
             if (secureHash != null) str += secureHash.toString();
 
-            if (string != null) str += string;
+            if (string != null) str += ("\"" + string + "\"");
 
             if (blame != null) str += blame.toString();
 

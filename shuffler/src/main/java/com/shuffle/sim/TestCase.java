@@ -97,10 +97,10 @@ public abstract class TestCase {
 
     // Get the cryptography service for this test case (could be mock crypto or real, depending
     // on what we're testing.)
-    protected abstract Crypto crypto();
+    protected abstract Crypto crypto() throws NoSuchAlgorithmException;
     protected abstract Protobuf proto();
 
-    public final InitialState successfulTestCase(final int numPlayers) {
+    public final InitialState successfulTestCase(final int numPlayers) throws NoSuchAlgorithmException {
         return InitialState.successful(session, amount, crypto(), proto(), numPlayers);
     }
 
@@ -108,7 +108,7 @@ public abstract class TestCase {
             final int numPlayers,
             final int[] deadbeats,
             final int[] poor,
-            final int[] spenders) {
+            final int[] spenders) throws NoSuchAlgorithmException {
         return InitialState.insufficientFunds(
                 session, amount, crypto(), proto(), numPlayers, deadbeats, poor, spenders);
     }
@@ -116,21 +116,21 @@ public abstract class TestCase {
     public final InitialState doubleSpendTestCase(
             final int[] views,
             final int[] spenders
-    ) {
+    ) throws NoSuchAlgorithmException {
         return InitialState.doubleSpend(session, amount, crypto(), proto(), views, spenders);
     }
 
     public final InitialState equivocateAnnouncementTestCase(
             final int numPlayers,
             final InitialState.Equivocation[] equivocators
-    ) {
+    ) throws NoSuchAlgorithmException {
         return InitialState.equivocateAnnouncement(
                 session, amount, crypto(), proto(), numPlayers, equivocators);
     }
 
     public final InitialState equivocateBroadcastTestCase(
             final int numPlayers,
-            final int[] equivocation) {
+            final int[] equivocation) throws NoSuchAlgorithmException {
         return InitialState.equivocateBroadcast(
                 session, amount, crypto(), proto(), numPlayers, equivocation);
     }
@@ -139,7 +139,7 @@ public abstract class TestCase {
             final int numPlayers,
             final int[][] drop,
             final int[][] replaceNew,
-            final int[][] replaceDuplicate) {
+            final int[][] replaceDuplicate) throws NoSuchAlgorithmException {
         return InitialState.dropAddress(
                 session, amount, crypto(), proto(), numPlayers, drop, replaceNew, replaceDuplicate);
     }
@@ -147,7 +147,7 @@ public abstract class TestCase {
     public final InitialState invalidSignatureTestCase(
             final int numPlayers,
             final int[] mutants
-    ) {
+    ) throws NoSuchAlgorithmException {
         return InitialState.invalidSignature(session, amount, crypto(), proto(), numPlayers, mutants);
     }
 }

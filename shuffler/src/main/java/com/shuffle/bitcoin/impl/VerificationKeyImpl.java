@@ -19,7 +19,7 @@ public class VerificationKeyImpl implements VerificationKey {
    private final ECKey ecKey;
    private final byte[] vKey;
    private final NetworkParameters params;
-   private final Address address;
+   public final Address address;
 
    public VerificationKeyImpl(byte[] ecKey, NetworkParameters params) {
       this.ecKey = ECKey.fromPublicOnly(ecKey);
@@ -35,7 +35,6 @@ public class VerificationKeyImpl implements VerificationKey {
       this.vKey = this.ecKey.getPubKey();
       this.params = params;
       this.address = new AddressImpl(this.ecKey.toAddress(params));
-      throw new IllegalArgumentException();
    }
 
    // returns PublicKey compressed, 66 chars
@@ -54,11 +53,10 @@ public class VerificationKeyImpl implements VerificationKey {
 
    @Override
    public boolean equals(Object vk) {
-      if (vk.getClass() == this.getClass()) {
-         VerificationKey oKey = (VerificationKey) vk;
-         return this.address().equals(oKey.address());
-      }
-      return false;
+      return vk != null
+              && vk instanceof VerificationKeyImpl
+              && address.equals(((VerificationKeyImpl) vk).address);
+
    }
 
    @Override
@@ -68,12 +66,11 @@ public class VerificationKeyImpl implements VerificationKey {
 
    @Override
    public int compareTo(Object o) {
-      if (!(o instanceof VerificationKeyImpl && o.getClass() == this.getClass())) {
+      if (!(o instanceof VerificationKeyImpl)) {
          throw new IllegalArgumentException("unable to compare with other VerificationKey");
       }
       //get netParams to create right address and check by address.
-      org.bitcoinj.core.Address a = ((VerificationKeyImpl) o).ecKey.toAddress(params);
-      return a.compareTo(this.ecKey.toAddress(params));
+      return address.toString().compareTo((((VerificationKeyImpl) o).address).toString());
    }
 
    @Override

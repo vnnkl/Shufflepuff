@@ -49,7 +49,6 @@ public class DecryptionKeyImpl implements DecryptionKey {
           e.printStackTrace();
           throw new RuntimeCryptoException();
        }
-       throw new IllegalArgumentException();
     }
 
     // returns encoded private key in hex format

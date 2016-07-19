@@ -25,6 +25,7 @@ import com.shuffle.sim.Simulator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,14 +39,14 @@ import java.util.Map;
 public class TestSuccessfulRun extends TestShuffleMachine {
 
     // Create a test case representing a successful run.
-    private void SuccessfulRun(int numPlayer) {
+    private void SuccessfulRun(int numPlayer) throws NoSuchAlgorithmException {
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
         check(new MockTestCase(description).successfulTestCase(numPlayer));
     }
 
     @Test
     // Tests for successful runs of the protocol.
-    public void testSuccess() {
+    public void testSuccess() throws NoSuchAlgorithmException {
 
         // Tests for successful runs.
         int minPlayers = 2;

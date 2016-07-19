@@ -27,7 +27,7 @@ public class Packet<Address extends Serializable, X extends Serializable> implem
 
     @Override
     public String toString() {
-        return "{" + session + " " + from + " -> " + to + " " + sequenceNumber + " : " + payload + "}";
+        return "Packet[session: " + session + ", from: \"" + from + "\", to: \"" + to + "\", number: " + sequenceNumber + ", payload: " + payload + "]";
     }
 
     @Override

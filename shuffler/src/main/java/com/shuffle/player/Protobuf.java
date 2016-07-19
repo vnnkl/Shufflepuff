@@ -122,6 +122,8 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         } else if (atom.sig != null) {
             ab.setSignature(Proto.Signature.newBuilder().setSignature(
                     ByteString.copyFrom(atom.sig.bytes)));
+        } else if (atom.string != null) {
+            ab.setStr(atom.string);
         } else if (atom.blame != null) {
             ab.setBlame(marshallBlame(atom.blame));
         } else {
@@ -172,7 +174,9 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         }
 
         if (b.privateKey != null) {
-            bb.setKey(Proto.DecryptionKey.newBuilder().setKey(b.privateKey.toString()));
+            bb.setKey(Proto.DecryptionKey.newBuilder()
+                    .setKey(b.privateKey.toString())
+                    .setPublic(b.privateKey.EncryptionKey().toString()));
         }
 
         if (b.t != null) {
@@ -196,7 +200,13 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
 
         Object o;
         // Only one field is allowed to be set in the Atom.
-        if (atom.hasAddress()) {
+        if (!atom.getStr().equals("")) {
+            if (atom.hasAddress() || atom.hasKey() || atom.hasSignature() || atom.hasBlame()) {
+                throw new FormatException("Atom contains more than one value.");
+            }
+
+            o = atom.getStr();
+        } else if (atom.hasAddress()) {
             if (atom.hasKey() || atom.hasHash() || atom.hasSignature() || atom.hasBlame()) {
                 throw new FormatException("Atom contains more than one value.");
             }

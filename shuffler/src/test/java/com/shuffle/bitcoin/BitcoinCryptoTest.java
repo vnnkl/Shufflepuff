@@ -9,6 +9,7 @@ import org.junit.Test;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
@@ -26,12 +27,17 @@ public class BitcoinCryptoTest {
    DecryptionKey decryptionKey;
    NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
    NetworkParameters mainnet = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-   BitcoinCrypto bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
-   BitcoinCrypto bitcoinCryptoMain = new BitcoinCrypto(mainnet);
+   BitcoinCrypto bitcoinCryptoNoP;
+   BitcoinCrypto bitcoinCryptoMain;
+
+   public BitcoinCryptoTest() throws NoSuchAlgorithmException {
+      bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
+      bitcoinCryptoMain = new BitcoinCrypto(mainnet);
+   }
 
 
    @Before
-   public void setUp(){
+   public void setUp() throws NoSuchAlgorithmException {
 
       // create testnet crypto class
       bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
@@ -87,38 +93,20 @@ public class BitcoinCryptoTest {
       PublicKey publicKey = BitcoinCrypto.loadPublicKey(pubK);
    }
 
-   @Test(expected=IllegalArgumentException.class)
-   public void testWrongArgsPubK() throws GeneralSecurityException {
-      String pub = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibs5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==";
-      PublicKey publicKey = BitcoinCrypto.loadPublicKey(pub);
-   }
-
-   @Test
-   public void testSavePrivateKey() throws Exception {
-      String privK = "MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ+9oHg9jufttpUDJeJuxD36qDcJzIn7X7/kjrhCjhRzArEe0dzTE/kTS02hGHsX9OtleBaxBjJxGCIAeKh0e";
-      PrivateKey privateKey = BitcoinCrypto.loadPrivateKey(privK);
-      assertEquals(privK,BitcoinCrypto.savePrivateKey(privateKey));
-   }
-
-   @Test
-   public void testSavePublicKey() throws Exception {
-      String pubK = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibsQ9+qg3CcyJ+1+/5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==";
-      PublicKey publicKey = BitcoinCrypto.loadPublicKey(pubK);
-      assertEquals(pubK,BitcoinCrypto.savePublicKey(publicKey));
-   }
+    @Test(expected=IllegalArgumentException.class)
+    public void testWrongArgsPubK() throws GeneralSecurityException {
+        String pub = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEnCfvaB4PY7n7baVAyXibs5I64Qo4UcwKxHtHc0xP5E0tNoRh7F/TrZXgWsQYycRgiAHiodHg==";
+        PublicKey publicKey = BitcoinCrypto.loadPublicKey(pub);
+    }
 
 
-   @Test
-   public void testMakeDecryptionKey() throws Exception {
+    @Test
+    public void testMakeDecryptionKey() throws NoSuchAlgorithmException {
 
-      // generate Keypair to compare
-      KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
-      KeyPair keyPair = keyPairGenerator.genKeyPair();
+        // generate Keypair to compare
+        KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
 
-      // generate keypair using our class to test against
-
-
-   }
+    }
 
    @Test
    public void testgetRandom() throws Exception {

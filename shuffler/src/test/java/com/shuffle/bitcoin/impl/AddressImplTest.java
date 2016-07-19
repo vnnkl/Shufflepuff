@@ -15,6 +15,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -72,7 +73,7 @@ public class AddressImplTest {
    }
 
    @Test
-   public void multipleAddressEncryption() throws FormatException {
+   public void multipleAddressEncryption() throws FormatException, NoSuchAlgorithmException {
       BitcoinCrypto bc = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
 
       // Try a sequence of 0 to 9 successive encryptions.

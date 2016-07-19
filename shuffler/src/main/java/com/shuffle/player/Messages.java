@@ -68,7 +68,7 @@ public class Messages implements MessageFactory {
 
         @Override
         public String toString() {
-            return packet.toString() + "[" + packet.signature.toString() + "]";
+            return packet.toString();
         }
 
         @Override

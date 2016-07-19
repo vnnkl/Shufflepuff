@@ -41,6 +41,10 @@ public class SigningKeyImplTest {
    public void testToString() throws Exception {
       String ks = ecKey.getPrivateKeyAsWiF(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
       assertEquals(ks, signingKey.toString());
+
+      assertEquals(signingKey.VerificationKey(),
+              new VerificationKeyImpl(signingKey.VerificationKey().toString(),
+                      NetworkParameters.fromID(NetworkParameters.ID_TESTNET)));
    }
 
    @Test
