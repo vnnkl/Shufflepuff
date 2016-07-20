@@ -300,6 +300,13 @@ public abstract class Bitcoin implements Coin {
                     return false;
                 }
                 long txAmount = 0;
+                if (tx.bitcoinj == null) {
+                    try {
+                        tx.bitcoinj = getTransaction(tx.hash);
+                    } catch (IOException e) {
+                        return false;
+                    }
+                }
                 for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
                     String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
                     if (address.equals(addressP2pkh)) {
@@ -316,9 +323,41 @@ public abstract class Bitcoin implements Coin {
         }
     }
 
-    // TODO
     @Override
-    public com.shuffle.bitcoin.Transaction getConflictingTransaction(Bitcoin.Transaction transaction, long amount) {
+    public com.shuffle.bitcoin.Transaction getConflictingTransaction(Bitcoin.Transaction transaction, Address addr, long amount) {
+        String address = addr.toString();
+
+        List<Bitcoin.Transaction> transactions = null;
+        try {
+            transactions = getAddressTransactions(address);
+        } catch (IOException e) {
+            // Can we return null here?
+            return null;
+        }
+
+        // Ensures that all transactions have the bitcoinj field set
+        for (Bitcoin.Transaction tx : transactions) {
+            if (tx.bitcoinj == null) {
+                try {
+                    tx.bitcoinj = getTransaction(tx.hash);
+                } catch (IOException e) {
+                    // We should not have an IOException
+                    return null;
+                }
+            }
+        }
+
+        for (Bitcoin.Transaction tx : transactions) {
+            for (TransactionInput input : tx.bitcoinj.getInputs()) {
+                // Can be multiple inputs for transaction parameter.
+                for (TransactionInput txInput : transaction.bitcoinj.getInputs()) {
+                    if (input.equals(txInput)) {
+                        return tx;
+                    }
+                }
+            }
+        }
+
         return null;
     }
 

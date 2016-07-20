@@ -47,7 +47,7 @@ public interface Coin {
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.
-    Transaction getConflictingTransaction(Bitcoin.Transaction transaction, long amount);
+    Transaction getConflictingTransaction(Bitcoin.Transaction transaction, Address addr, long amount);
 
     // Whether the given transaction spends the funds in the given address.
     Transaction getSpendingTransaction(Address addr, long amount);
