@@ -58,9 +58,6 @@ public class Evidence {
 
         switch (reason) {
             case InsufficientFunds: {
-                if (t == null) {
-                    throw new IllegalArgumentException();
-                }
                 break;
             }
             case DoubleSpend: {
@@ -87,8 +84,6 @@ public class Evidence {
                 }
                 break;
             }
-            case NoFundsAtAll:
-                break;
             case InvalidFormat: {
                 if (packets == null || packets.length != 1 || packets[0] == null)
                     throw new IllegalArgumentException();
@@ -174,13 +169,9 @@ public class Evidence {
         return str;
     }
 
-    public static Evidence NoFundsAtAll(VerificationKey accused) {
-        return new Evidence(accused, Reason.NoFundsAtAll, null, null, null, null, null, null, null, null);
-    }
-
-    public static Evidence InsufficientFunds(VerificationKey accused, Transaction t) {
+    public static Evidence InsufficientFunds(VerificationKey accused) {
         return new Evidence(accused,
-                Reason.InsufficientFunds, t, null, null, null, null, null, null, null);
+                Reason.InsufficientFunds, null, null, null, null, null, null, null, null);
     }
 
     public static Evidence DoubleSpend(VerificationKey accused, Transaction t) {

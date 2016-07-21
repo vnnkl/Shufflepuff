@@ -24,6 +24,9 @@ public interface MockCoin extends Coin {
 
     // Make a transaction that spends the coins from a given address.
     Transaction makeSpendingTransaction(Address from, Address to, long amount);
+    
+    // Whether the given transaction spends the funds in the given address.
+    Transaction getSpendingTransaction(Address addr, long amount);
 
     MockCoin copy();
 }

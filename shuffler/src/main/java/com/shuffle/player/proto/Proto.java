@@ -170,41 +170,37 @@ public final class Proto {
      */
     INSUFFICIENTFUNDS(0),
     /**
-     * <code>NOFUNDSATALL = 1;</code>
+     * <code>DOUBLESPEND = 1;</code>
      */
-    NOFUNDSATALL(1),
+    DOUBLESPEND(1),
     /**
-     * <code>DOUBLESPEND = 2;</code>
+     * <code>EQUIVOCATIONFAILURE = 2;</code>
      */
-    DOUBLESPEND(2),
+    EQUIVOCATIONFAILURE(2),
     /**
-     * <code>EQUIVOCATIONFAILURE = 3;</code>
+     * <code>SHUFFLEFAILURE = 3;</code>
      */
-    EQUIVOCATIONFAILURE(3),
+    SHUFFLEFAILURE(3),
     /**
-     * <code>SHUFFLEFAILURE = 4;</code>
+     * <code>SHUFFLEANDEQUIVOCATIONFAILURE = 4;</code>
      */
-    SHUFFLEFAILURE(4),
+    SHUFFLEANDEQUIVOCATIONFAILURE(4),
     /**
-     * <code>SHUFFLEANDEQUIVOCATIONFAILURE = 5;</code>
+     * <code>INVALIDSIGNATURE = 5;</code>
      */
-    SHUFFLEANDEQUIVOCATIONFAILURE(5),
+    INVALIDSIGNATURE(5),
     /**
-     * <code>INVALIDSIGNATURE = 6;</code>
+     * <code>MISSINGOUTPUT = 6;</code>
      */
-    INVALIDSIGNATURE(6),
+    MISSINGOUTPUT(6),
     /**
-     * <code>MISSINGOUTPUT = 7;</code>
+     * <code>LIAR = 7;</code>
      */
-    MISSINGOUTPUT(7),
+    LIAR(7),
     /**
-     * <code>LIAR = 8;</code>
+     * <code>INVALIDFORMAT = 8;</code>
      */
-    LIAR(8),
-    /**
-     * <code>INVALIDFORMAT = 9;</code>
-     */
-    INVALIDFORMAT(9),
+    INVALIDFORMAT(8),
     UNRECOGNIZED(-1),
     ;
 
@@ -213,41 +209,37 @@ public final class Proto {
      */
     public static final int INSUFFICIENTFUNDS_VALUE = 0;
     /**
-     * <code>NOFUNDSATALL = 1;</code>
+     * <code>DOUBLESPEND = 1;</code>
      */
-    public static final int NOFUNDSATALL_VALUE = 1;
+    public static final int DOUBLESPEND_VALUE = 1;
     /**
-     * <code>DOUBLESPEND = 2;</code>
+     * <code>EQUIVOCATIONFAILURE = 2;</code>
      */
-    public static final int DOUBLESPEND_VALUE = 2;
+    public static final int EQUIVOCATIONFAILURE_VALUE = 2;
     /**
-     * <code>EQUIVOCATIONFAILURE = 3;</code>
+     * <code>SHUFFLEFAILURE = 3;</code>
      */
-    public static final int EQUIVOCATIONFAILURE_VALUE = 3;
+    public static final int SHUFFLEFAILURE_VALUE = 3;
     /**
-     * <code>SHUFFLEFAILURE = 4;</code>
+     * <code>SHUFFLEANDEQUIVOCATIONFAILURE = 4;</code>
      */
-    public static final int SHUFFLEFAILURE_VALUE = 4;
+    public static final int SHUFFLEANDEQUIVOCATIONFAILURE_VALUE = 4;
     /**
-     * <code>SHUFFLEANDEQUIVOCATIONFAILURE = 5;</code>
+     * <code>INVALIDSIGNATURE = 5;</code>
      */
-    public static final int SHUFFLEANDEQUIVOCATIONFAILURE_VALUE = 5;
+    public static final int INVALIDSIGNATURE_VALUE = 5;
     /**
-     * <code>INVALIDSIGNATURE = 6;</code>
+     * <code>MISSINGOUTPUT = 6;</code>
      */
-    public static final int INVALIDSIGNATURE_VALUE = 6;
+    public static final int MISSINGOUTPUT_VALUE = 6;
     /**
-     * <code>MISSINGOUTPUT = 7;</code>
+     * <code>LIAR = 7;</code>
      */
-    public static final int MISSINGOUTPUT_VALUE = 7;
+    public static final int LIAR_VALUE = 7;
     /**
-     * <code>LIAR = 8;</code>
+     * <code>INVALIDFORMAT = 8;</code>
      */
-    public static final int LIAR_VALUE = 8;
-    /**
-     * <code>INVALIDFORMAT = 9;</code>
-     */
-    public static final int INVALIDFORMAT_VALUE = 9;
+    public static final int INVALIDFORMAT_VALUE = 8;
 
 
     public final int getNumber() {
@@ -269,15 +261,14 @@ public final class Proto {
     public static Reason forNumber(int value) {
       switch (value) {
         case 0: return INSUFFICIENTFUNDS;
-        case 1: return NOFUNDSATALL;
-        case 2: return DOUBLESPEND;
-        case 3: return EQUIVOCATIONFAILURE;
-        case 4: return SHUFFLEFAILURE;
-        case 5: return SHUFFLEANDEQUIVOCATIONFAILURE;
-        case 6: return INVALIDSIGNATURE;
-        case 7: return MISSINGOUTPUT;
-        case 8: return LIAR;
-        case 9: return INVALIDFORMAT;
+        case 1: return DOUBLESPEND;
+        case 2: return EQUIVOCATIONFAILURE;
+        case 3: return SHUFFLEFAILURE;
+        case 4: return SHUFFLEANDEQUIVOCATIONFAILURE;
+        case 5: return INVALIDSIGNATURE;
+        case 6: return MISSINGOUTPUT;
+        case 7: return LIAR;
+        case 8: return INVALIDFORMAT;
         default: return null;
       }
     }
@@ -9033,14 +9024,13 @@ public final class Proto {
       "\001\n\005Phase\022\010\n\004NONE\020\000\022\020\n\014ANNOUNCEMENT\020\001\022\013\n\007" +
       "SHUFFLE\020\002\022\r\n\tBROADCAST\020\003\022\026\n\022EQUIVOCATION" +
       "_CHECK\020\004\022\013\n\007SIGNING\020\005\022\037\n\033VERIFICATION_AN" +
-      "D_SUBMISSION\020\006\022\t\n\005BLAME\020\007*\330\001\n\006Reason\022\025\n\021" +
-      "INSUFFICIENTFUNDS\020\000\022\020\n\014NOFUNDSATALL\020\001\022\017\n" +
-      "\013DOUBLESPEND\020\002\022\027\n\023EQUIVOCATIONFAILURE\020\003\022" +
-      "\022\n\016SHUFFLEFAILURE\020\004\022!\n\035SHUFFLEANDEQUIVOC",
-      "ATIONFAILURE\020\005\022\024\n\020INVALIDSIGNATURE\020\006\022\021\n\r" +
-      "MISSINGOUTPUT\020\007\022\010\n\004LIAR\020\010\022\021\n\rINVALIDFORM" +
-      "AT\020\tB!\n\030com.shuffle.player.protoB\005Protob" +
-      "\006proto3"
+      "D_SUBMISSION\020\006\022\t\n\005BLAME\020\007*\306\001\n\006Reason\022\025\n\021" +
+      "INSUFFICIENTFUNDS\020\000\022\017\n\013DOUBLESPEND\020\001\022\027\n\023" +
+      "EQUIVOCATIONFAILURE\020\002\022\022\n\016SHUFFLEFAILURE\020" +
+      "\003\022!\n\035SHUFFLEANDEQUIVOCATIONFAILURE\020\004\022\024\n\020",
+      "INVALIDSIGNATURE\020\005\022\021\n\rMISSINGOUTPUT\020\006\022\010\n" +
+      "\004LIAR\020\007\022\021\n\rINVALIDFORMAT\020\010B!\n\030com.shuffl" +
+      "e.player.protoB\005Protob\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {

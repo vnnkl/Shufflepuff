@@ -15,7 +15,6 @@ package com.shuffle.protocol.blame;
  */
 public enum Reason {
     InsufficientFunds, // A player does not have enough funds.
-    NoFundsAtAll, // No funds at all in a player's address.
     DoubleSpend, // A player spends his funds while the protocol is in progress.
     EquivocationFailure, // Something goes wrong during the equivocation phase.
     ShuffleFailure, // Something goes wrong during the shuffle phase.

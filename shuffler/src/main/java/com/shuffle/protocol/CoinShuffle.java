@@ -453,7 +453,7 @@ public class CoinShuffle {
 
             // Check that each participant has the required amounts.
             for (VerificationKey player : players.values()) {
-                if (coin.valueHeld(player.address()) < amount) {
+                if (coin.insufficientFunds(player.address(), amount)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }
@@ -466,13 +466,7 @@ public class CoinShuffle {
             phase.set(Phase.Blame);
             Message blameMessage = messages.make();
             for (VerificationKey offender : offenders) {
-                Transaction t = coin.getConflictingTransaction(offender.address(), amount);
-
-                if (t == null) {
-                    blameMessage = blameMessage.attach(Blame.NoFundsAtAll(offender));
-                } else {
-                    blameMessage = blameMessage.attach(Blame.InsufficientFunds(offender, t));
-                }
+                blameMessage = blameMessage.attach(Blame.InsufficientFunds(offender));
             }
 
             // Broadcast offending transactions.
@@ -506,7 +500,7 @@ public class CoinShuffle {
             // Check for double spending.
             Message doubleSpend = messages.make();
             for (VerificationKey key : players.values()) {
-                Transaction o = coin.getConflictingTransaction(key.address(), amount);
+                Transaction o = coin.getConflictingTransaction(t, key.address(), amount);
                 if (o != null) {
                     doubleSpend = doubleSpend.attach(Blame.DoubleSpend(key, o));
                 }
@@ -569,21 +563,11 @@ public class CoinShuffle {
                         message = message.rest();
 
                         switch (blame.reason) {
-                            case NoFundsAtAll: {
-                                // TODO Do we agree that this player has insufficient funds?
-                                matrix.put(from, Evidence.NoFundsAtAll(blame.accused));
-                                break;
-                            }
                             case InsufficientFunds: {
-                                if (blame.t == null) {
-                                    // A transaction must be included to claim insufficient funds.
-                                    matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
-                                    break;
-                                }
 
                                 // Is the evidence included sufficient?
                                 // TODO check whether this is a conflicting transaction.
-                                matrix.put(from, Evidence.InsufficientFunds(blame.accused, blame.t));
+                                matrix.put(from, Evidence.InsufficientFunds(blame.accused));
                                 break;
                             }
                             case EquivocationFailure: {

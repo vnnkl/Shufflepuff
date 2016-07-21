@@ -281,6 +281,11 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
+    public boolean insufficientFunds(Address addr, long amount) {
+        return false;
+    }
+
+    @Override
     // TODO transaction fees.
     public Transaction shuffleTransaction(
             final long amount,
@@ -318,7 +323,9 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
-    public Transaction getConflictingTransaction(Address addr, long amount) {
+    public Transaction getConflictingTransaction(
+            Transaction transaction, Address addr, long amount) {
+
         if (valueHeld(addr) >= amount) return null;
 
         Output output = blockchain.get(addr);

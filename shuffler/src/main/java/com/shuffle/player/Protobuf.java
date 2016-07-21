@@ -145,8 +145,6 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
 
         if (b.reason == Reason.InsufficientFunds) {
             reason = Proto.Reason.INSUFFICIENTFUNDS;
-        } else if (b.reason == Reason.NoFundsAtAll) {
-            reason = Proto.Reason.NOFUNDSATALL;
         } else if (b.reason == Reason.DoubleSpend) {
             reason = Proto.Reason.DOUBLESPEND;
         } else if (b.reason == Reason.EquivocationFailure) {
@@ -244,10 +242,6 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         switch (blame.getReason()) {
             case INSUFFICIENTFUNDS: {
                 reason = Reason.InsufficientFunds;
-                break;
-            }
-            case NOFUNDSATALL: {
-                reason = Reason.NoFundsAtAll;
                 break;
             }
             case DOUBLESPEND: {

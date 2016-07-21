@@ -369,13 +369,11 @@ class Player {
                             // TODO all cases other than default are not complete.
                         case DoubleSpend:
                             // fallthrough
-                        case InsufficientFunds:
-                            // fallthrough
                         case InvalidSignature: {
                             sufficient = evidence;
                             break;
                         }
-                        case NoFundsAtAll: {
+                        case InsufficientFunds: {
                             if (sufficient == null) {
                                 sufficient = evidence;
                             }

@@ -89,7 +89,7 @@ public class InitialState {
 
     private static final class EvidencePatternAny extends Evidence {
         private EvidencePatternAny(VerificationKey accused) {
-            super(accused, Reason.NoFundsAtAll, null, null, null, null, null, null, null, null);
+            super(accused, Reason.InsufficientFunds, null, null, null, null, null, null, null, null);
 
         }
 
@@ -283,7 +283,7 @@ public class InitialState {
         public Reason maliciousBehavior() {
             // Does the player have enough funds?
             if (initialAmount == 0) {
-                return Reason.NoFundsAtAll;
+                return Reason.InvalidSignature;
             }
 
             if (initialAmount < amount || initialAmount - spend < amount) {
@@ -359,7 +359,7 @@ public class InitialState {
                         continue;
                     }
 
-                    if (reason == Reason.NoFundsAtAll || reason == Reason.InsufficientFunds
+                    if (reason == Reason.InsufficientFunds
                             || reason == Reason.InvalidSignature) {
 
                         bm.put(i.vk, Evidence.Expected(j.vk, reason));

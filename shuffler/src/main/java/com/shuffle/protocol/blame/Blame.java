@@ -43,14 +43,16 @@ public class Blame implements Serializable {
         }
 
         switch (reason) {
-            case InsufficientFunds:
+            case InsufficientFunds: {
+                if (accused == null) throw new IllegalArgumentException();
+                break;
+            }
             case DoubleSpend: {
                 if (accused == null || t == null) {
                     throw new IllegalArgumentException();
                 }
                 break;
             }
-            case NoFundsAtAll:
             case MissingOutput:
             case ShuffleFailure: {
                 if (accused == null) {
@@ -122,13 +124,8 @@ public class Blame implements Serializable {
     }
 
     // Sent when a player has insufficient funds in his address.
-    public static Blame InsufficientFunds(VerificationKey accused, Transaction t) {
-        return new Blame(Reason.InsufficientFunds, accused, t, null, null, null);
-    }
-
-    // Sent when a player has no funds in the address he provided.
-    public static Blame NoFundsAtAll(VerificationKey accused) {
-        return new Blame(Reason.NoFundsAtAll, accused, null, null, null, null);
+    public static Blame InsufficientFunds(VerificationKey accused) {
+        return new Blame(Reason.InsufficientFunds, accused, null, null, null, null);
     }
 
     // Sent when a player spends his coins while the protocol is in motion.

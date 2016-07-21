@@ -272,14 +272,8 @@ public abstract class Bitcoin implements Coin {
         return sum;
     }
 
-    // TODO
     @Override
-    public com.shuffle.bitcoin.Transaction getInsufficientFunds(Address addr, long amount) {
-        return null;
-    }
-
-    @Override
-    public boolean booleanInsufficientFunds(Address addr, long amount) {
+    public boolean insufficientFunds(Address addr, long amount) {
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = null;
@@ -320,7 +314,12 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public com.shuffle.bitcoin.Transaction getConflictingTransaction(Bitcoin.Transaction transaction, Address addr, long amount) {
+    public com.shuffle.bitcoin.Transaction getConflictingTransaction(
+            com.shuffle.bitcoin.Transaction t, Address addr, long amount) {
+
+        if (!(t instanceof Transaction)) throw new IllegalArgumentException();
+        Transaction transaction = (Transaction)t;
+
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = null;
@@ -354,12 +353,6 @@ public abstract class Bitcoin implements Coin {
             }
         }
 
-        return null;
-    }
-
-    // TODO
-    @Override
-    public com.shuffle.bitcoin.Transaction getSpendingTransaction(Address addr, long amount) {
         return null;
     }
 

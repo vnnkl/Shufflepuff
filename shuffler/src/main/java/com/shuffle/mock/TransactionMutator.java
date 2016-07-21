@@ -48,12 +48,12 @@ public class TransactionMutator implements Coin {
     }
 
     @Override
-    public Transaction getConflictingTransaction(Address addr, long amount) {
-        return coin.getConflictingTransaction(addr, amount);
+    public boolean insufficientFunds(Address addr, long amount) {
+        return coin.insufficientFunds(addr, amount);
     }
 
     @Override
-    public Transaction getSpendingTransaction(Address addr, long amount) {
-        return coin.getSpendingTransaction(addr, amount);
+    public Transaction getConflictingTransaction(Transaction t, Address addr, long amount) {
+        return coin.getConflictingTransaction(t, addr, amount);
     }
 }
