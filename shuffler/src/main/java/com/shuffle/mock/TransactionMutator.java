@@ -35,7 +35,7 @@ public class TransactionMutator implements Coin {
             List<VerificationKey> from,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses
-    ) {
+    ) throws CoinNetworkException {
         MockCoin.MockTransaction tr = (MockCoin.MockTransaction) coin.shuffleTransaction(
                         amount, from, to, changeAddresses);
 
@@ -48,8 +48,8 @@ public class TransactionMutator implements Coin {
     }
 
     @Override
-    public boolean insufficientFunds(Address addr, long amount) {
-        return coin.insufficientFunds(addr, amount);
+    public boolean sufficientFunds(Address addr, long amount) {
+        return coin.sufficientFunds(addr, amount);
     }
 
     @Override

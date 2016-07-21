@@ -226,6 +226,7 @@ public class CoinShuffle {
             Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
+            if (t == null) throw new RuntimeException("WTF it's null???");
 
             mailbox.broadcast(messages.make().attach(sk.sign(t.serialize())), phase.get());
 
@@ -443,12 +444,14 @@ public class CoinShuffle {
 
         // Check for players with insufficient funds.
         private void blameInsufficientFunds()
-                throws CoinNetworkException, TimeoutException, Matrix, IOException, InterruptedException, FormatException {
+                throws CoinNetworkException, TimeoutException, Matrix,
+                IOException, InterruptedException, FormatException {
+
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
             for (VerificationKey player : players.values()) {
-                if (coin.insufficientFunds(player.address(), amount)) {
+                if (!coin.sufficientFunds(player.address(), amount)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }

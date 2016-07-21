@@ -283,7 +283,7 @@ public class InitialState {
         public Reason maliciousBehavior() {
             // Does the player have enough funds?
             if (initialAmount == 0) {
-                return Reason.InvalidSignature;
+                return Reason.InsufficientFunds;
             }
 
             if (initialAmount < amount || initialAmount - spend < amount) {

@@ -22,6 +22,11 @@ public class CoinNetworkException extends Exception {
         this.t = t;
     }
 
+    public CoinNetworkException(String message) {
+        super(message);
+        t = null;
+    }
+
     @Override
     public String getMessage() {
         return "CoinShuffle Coin Network Exception";

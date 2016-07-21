@@ -273,7 +273,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public boolean insufficientFunds(Address addr, long amount) {
+    public boolean sufficientFunds(Address addr, long amount) {
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = null;
