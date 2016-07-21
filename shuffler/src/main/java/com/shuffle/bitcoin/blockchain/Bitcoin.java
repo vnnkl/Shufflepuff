@@ -291,35 +291,32 @@ public abstract class Bitcoin implements Coin {
             return false;
         }
 
-        switch (transactions.size()) {
-            case 0:
-                return true;
-            case 1:
-                Bitcoin.Transaction tx = transactions.get(0);
-                if (!tx.confirmed) {
-                    return false;
-                }
-                long txAmount = 0;
-                if (tx.bitcoinj == null) {
-                    try {
-                        tx.bitcoinj = getTransaction(tx.hash);
-                    } catch (IOException e) {
-                        return false;
-                    }
-                }
-                for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
-                    String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
-                    if (address.equals(addressP2pkh)) {
-                        txAmount += output.getValue().value;
-                    }
-                }
-                if (txAmount > amount) {
-                    return true;
-                } else {
-                    return false;
-                }
-            default:
+        if (transactions.size() == 1) {
+            Bitcoin.Transaction tx = transactions.get(0);
+            if (!tx.confirmed) {
                 return false;
+            }
+            long txAmount = 0;
+            if (tx.bitcoinj == null) {
+                try {
+                    tx.bitcoinj = getTransaction(tx.hash);
+                } catch (IOException e) {
+                    return false;
+                }
+            }
+            for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
+                String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
+                if (address.equals(addressP2pkh)) {
+                    txAmount += output.getValue().value;
+                }
+            }
+            if (txAmount > amount) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
         }
     }
 
