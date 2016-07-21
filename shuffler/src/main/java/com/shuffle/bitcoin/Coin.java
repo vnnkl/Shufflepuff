@@ -12,6 +12,7 @@ package com.shuffle.bitcoin;
  import com.shuffle.bitcoin.CoinNetworkException;
  import com.shuffle.bitcoin.Transaction;
  import com.shuffle.bitcoin.VerificationKey;
+ import com.shuffle.bitcoin.blockchain.Bitcoin;
 
  import java.util.List;
  import java.util.Map;
@@ -38,7 +39,15 @@ public interface Coin {
     // Returns either a transaction that sent from the given address that caused it to have .
     // insufficient funds or a transaction that sent to a given address that caused it to have
     // insufficient funds.
-    Transaction getConflictingTransaction(Address addr, long amount);
+    Transaction getInsufficientFunds(Address addr, long amount);
+
+    // Returns true if the address follows the correct format for CoinShuffle.
+    // Returns false otherwise.
+    boolean booleanInsufficientFunds(Address addr, long amount);
+
+    // If there is a conflicting transaction in the mempool or blockchain, this function
+    // returns that transaction.
+    Transaction getConflictingTransaction(Bitcoin.Transaction transaction, Address addr, long amount);
 
     // Whether the given transaction spends the funds in the given address.
     Transaction getSpendingTransaction(Address addr, long amount);

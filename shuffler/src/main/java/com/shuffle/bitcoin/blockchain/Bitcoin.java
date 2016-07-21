@@ -16,6 +16,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.TransactionInput;
@@ -33,6 +34,7 @@ public abstract class Bitcoin implements Coin {
     final NetworkParameters netParams;
     final PeerGroup peerGroup;
     final int minPeers;
+    final Context context;
 
     /**
      *
@@ -49,12 +51,14 @@ public abstract class Bitcoin implements Coin {
         peerGroup.setMinBroadcastConnections(minPeers);
         peerGroup.addPeerDiscovery(new DnsDiscovery(netParams));
         peerGroup.startAsync();
+        this.context = Context.getOrCreate(this.netParams);
     }
 
     public class Transaction implements com.shuffle.bitcoin.Transaction {
         final String hash;
         private org.bitcoinj.core.Transaction bitcoinj;
         final boolean canSend;
+        boolean confirmed;
 
         public Transaction(String hash, boolean canSend) {
             this.hash = hash;
@@ -65,6 +69,19 @@ public abstract class Bitcoin implements Coin {
             this.hash = hash;
             this.bitcoinj = bitcoinj;
             this.canSend = canSend;
+        }
+
+        public Transaction(String hash, boolean canSend, boolean confirmed) {
+            this.hash = hash;
+            this.canSend = canSend;
+            this.confirmed = confirmed;
+        }
+
+        public Transaction(String hash, org.bitcoinj.core.Transaction bitcoinj, boolean canSend, boolean confirmed) {
+            this.hash = hash;
+            this.bitcoinj = bitcoinj;
+            this.canSend = canSend;
+            this.confirmed = confirmed;
         }
 
         // Get the underlying bitcoinj representation of this transaction.
@@ -107,8 +124,8 @@ public abstract class Bitcoin implements Coin {
     }
 
     public com.shuffle.bitcoin.Transaction fromBytes(byte[] bytes) {
-        // TODO
-        throw new IllegalArgumentException();
+        org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(this.netParams, bytes);
+        return new Transaction(tx.getHashAsString(), tx, false);
     }
 
     public NetworkParameters getNetParams(){
@@ -257,7 +274,86 @@ public abstract class Bitcoin implements Coin {
 
     // TODO
     @Override
-    public com.shuffle.bitcoin.Transaction getConflictingTransaction(Address addr, long amount) {
+    public com.shuffle.bitcoin.Transaction getInsufficientFunds(Address addr, long amount) {
+        return null;
+    }
+
+    @Override
+    public boolean booleanInsufficientFunds(Address addr, long amount) {
+        String address = addr.toString();
+
+        List<Bitcoin.Transaction> transactions = null;
+        try {
+            transactions = getAddressTransactions(addr.toString());
+        } catch (IOException e) {
+            // Can we return false here?
+            return false;
+        }
+
+        if (transactions.size() == 1) {
+            Bitcoin.Transaction tx = transactions.get(0);
+            if (!tx.confirmed) {
+                return false;
+            }
+            long txAmount = 0;
+            if (tx.bitcoinj == null) {
+                try {
+                    tx.bitcoinj = getTransaction(tx.hash);
+                } catch (IOException e) {
+                    return false;
+                }
+            }
+            for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
+                String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
+                if (address.equals(addressP2pkh)) {
+                    txAmount += output.getValue().value;
+                }
+            }
+            if (txAmount > amount) {
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public com.shuffle.bitcoin.Transaction getConflictingTransaction(Bitcoin.Transaction transaction, Address addr, long amount) {
+        String address = addr.toString();
+
+        List<Bitcoin.Transaction> transactions = null;
+        try {
+            transactions = getAddressTransactions(address);
+        } catch (IOException e) {
+            // Can we return null here?
+            return null;
+        }
+
+        // Ensures that all transactions have the bitcoinj field set
+        for (Bitcoin.Transaction tx : transactions) {
+            if (tx.bitcoinj == null) {
+                try {
+                    tx.bitcoinj = getTransaction(tx.hash);
+                } catch (IOException e) {
+                    // We should not have an IOException
+                    return null;
+                }
+            }
+        }
+
+        for (Bitcoin.Transaction tx : transactions) {
+            for (TransactionInput input : tx.bitcoinj.getInputs()) {
+                // Can be multiple inputs for transaction parameter.
+                for (TransactionInput txInput : transaction.bitcoinj.getInputs()) {
+                    if (input.equals(txInput)) {
+                        return tx;
+                    }
+                }
+            }
+        }
+
         return null;
     }
 

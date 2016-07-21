@@ -8,8 +8,6 @@
 
 package com.shuffle.bitcoin.blockchain;
 
-import com.shuffle.mock.MockCoin;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -154,8 +152,15 @@ public class Btcd extends Bitcoin {
                 HexBinaryAdapter adapter = new HexBinaryAdapter();
                 byte[] bytearray = adapter.unmarshal(currentJson.get("hex").toString());
                 Context context = Context.getOrCreate(netParams);
+                int confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
+                boolean confirmed;
+                if (confirmations == 0) {
+                    confirmed = false;
+                } else {
+                    confirmed = true;
+                }
                 org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytearray);
-                Transaction tx = new Transaction(txid, bitTx, false);
+                Transaction tx = new Transaction(txid, bitTx, false, confirmed);
                 txList.add(tx);
             }
 

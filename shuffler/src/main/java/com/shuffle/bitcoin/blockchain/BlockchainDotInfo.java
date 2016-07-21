@@ -73,8 +73,15 @@ public final class BlockchainDotInfo extends Bitcoin {
         JSONObject root = new JSONObject(tokener);
         List<Transaction> txhashes = new LinkedList<>();
         for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
+            boolean confirmed;
+            String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
+            if (blockHeight == null) {
+                confirmed = false;
+            } else {
+                confirmed = true;
+            }
             txhashes.add(new Transaction(
-                    root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false));
+                    root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
         }
         if (txhashes.size() == 50) {
             return null;
