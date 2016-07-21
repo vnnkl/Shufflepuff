@@ -12,6 +12,7 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 /**
  * Created by conta on 10.03.16.
@@ -28,7 +29,7 @@ public class SigningKeyImpl implements SigningKey {
       vk = new VerificationKeyImpl(signingKey.getPubKey(), params);
    }
 
-   public SigningKeyImpl(String key, NetworkParameters params) throws FormatException {
+   public SigningKeyImpl(String key, NetworkParameters params) {
       this(ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8)), params);
    }
 
@@ -43,11 +44,11 @@ public class SigningKeyImpl implements SigningKey {
       return vk;
    }
 
-   @Override
-   public Bytestring sign(Bytestring string) {
-      ECKey.ECDSASignature ecdsaSignature = signingKey.sign(Sha256Hash.of(string.bytes));
-      return new Bytestring(ecdsaSignature.encodeToDER());
-   }
+    @Override
+    public Bytestring sign(Bytestring string) {
+        ECKey.ECDSASignature ecdsaSignature = signingKey.sign(Sha256Hash.of(string.bytes));
+        return new Bytestring(ecdsaSignature.encodeToDER());
+    }
 
 
     @Override
