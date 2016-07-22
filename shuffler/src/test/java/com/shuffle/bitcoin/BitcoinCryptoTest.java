@@ -7,7 +7,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -22,7 +21,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class BitcoinCryptoTest {
 
-   BitcoinCrypto bitcoinCrypto;
+   BitcoinCrypto bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
    SigningKey signingKey;
    DecryptionKey decryptionKey;
    NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
@@ -40,7 +39,7 @@ public class BitcoinCryptoTest {
    public void setUp() throws NoSuchAlgorithmException {
 
       // create testnet crypto class
-      bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
+      //bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
 
       //make signing key
       signingKey = bitcoinCrypto.makeSigningKey();
@@ -49,6 +48,7 @@ public class BitcoinCryptoTest {
 
       decryptionKey = bitcoinCrypto.makeDecryptionKey();
       System.out.println("\n Decryption: "+decryptionKey.toString()+ "\nEncryption: "+decryptionKey.EncryptionKey().toString());
+      System.out.println(bitcoinCrypto.getKeyChainMnemonic());
    }
 
    @Test
@@ -145,5 +145,13 @@ public class BitcoinCryptoTest {
       assert (signingKeyTest instanceof SigningKey);
       assert (signingKeyMain instanceof SigningKey);
 
+   }
+
+   @Test
+   public void testgetKeychainMnemonic() throws Exception {
+      System.out.println(bitcoinCrypto.getKeyChainMnemonic().toString().replaceAll(",",""));
+      for (int i = 0; i<5;i++){
+      System.out.println(bitcoinCrypto.makeSigningKey().VerificationKey().address().toString());
+      }
    }
 }
