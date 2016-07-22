@@ -21,7 +21,6 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.util.Deque;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Created by conta on 31.03.16.
@@ -98,9 +97,10 @@ public class AddressImplTest {
                // It should be impossible to construct an address from this.
             }
          }
-
-         for (DecryptionKey dk : decryptionKeys) {
-            encrypted = dk.decrypt(encrypted);
+         int h = decryptionKeys.size();
+         for (int g = 0 ; g<h; g++) {
+            encrypted = decryptionKeys.getLast().decrypt(encrypted);
+            decryptionKeys.removeLast();
          }
 
          Assert.assertEquals(addressi, new AddressImpl(encrypted));
