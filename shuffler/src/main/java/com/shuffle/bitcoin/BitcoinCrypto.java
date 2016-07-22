@@ -2,9 +2,11 @@ package com.shuffle.bitcoin;
 
 import com.shuffle.bitcoin.impl.DecryptionKeyImpl;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
+import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Base58;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.wallet.KeyChain;
@@ -99,5 +101,31 @@ public class BitcoinCrypto implements Crypto {
     @Override
     public int getRandom(int n) {
          return sr.nextInt(n + 1);
+    }
+
+    public static Bytestring hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                    + Character.digit(s.charAt(i+1), 16));
+        }
+        return new Bytestring(data);
+    }
+
+    public static Bytestring WiFtoBytestring(String s) throws AddressFormatException {
+        Bytestring stripped = new Bytestring(Base58.decodeChecked(s)).drop(-4);
+
+        if (stripped.bytes[0] != -1 && stripped.bytes[0] != -17) {
+            throw new IllegalArgumentException();
+        }
+
+        stripped = stripped.drop(1);
+
+        if (stripped.bytes[stripped.bytes.length - 1] == 1) {
+            stripped = stripped.drop(-1);
+        }
+
+        return stripped;
     }
 }

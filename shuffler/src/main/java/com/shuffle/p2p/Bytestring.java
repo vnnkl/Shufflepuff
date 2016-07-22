@@ -90,6 +90,35 @@ public class Bytestring implements Serializable {
         return new Bytestring(newBytes);
     }
 
+    public Bytestring drop(int a) {
+        if (a < 0) {
+            return take(0, bytes.length - a);
+        } else {
+            return take(a, bytes.length);
+        }
+    }
+
+    public Bytestring take(int a, int b) {
+        int from, to;
+        if (a < 0) {
+            from = bytes.length - a;
+        } else {
+            from = a;
+        }
+
+        if (b < 0) {
+            to = bytes.length - b;
+        } else {
+            to = b;
+        }
+
+        if (to <= from || to > bytes.length || from > bytes.length) {
+            throw new IllegalArgumentException();
+        }
+
+        return new Bytestring(Arrays.copyOfRange(bytes, from, to));
+    }
+
     @Override
     public boolean equals(Object o) {
         return o instanceof Bytestring && Arrays.equals(bytes, ((Bytestring) o).bytes);

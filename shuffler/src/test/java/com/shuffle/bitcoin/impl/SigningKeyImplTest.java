@@ -5,6 +5,7 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
@@ -35,12 +36,12 @@ public class SigningKeyImplTest {
    public void setUp() throws NoSuchAlgorithmException {
 
       this.ecKey = new ECKey();
-      bitcoinCrypto = new BitcoinCrypto(TestNet3Params.get());
-      this.signingKey = new SigningKeyImpl(ecKey, bitcoinCrypto.getParams());
+      bitcoinCrypto = new BitcoinCrypto(testnet);
+      this.signingKey = new SigningKeyImpl(ecKey, testnet);
    }
 
     @Test
-    public void testToString() {
+    public void testToString() throws AddressFormatException {
         String ks = ecKey.getPrivateKeyAsWiF(testnet);
         assertEquals(ks, signingKey.toString());
 
@@ -54,7 +55,7 @@ public class SigningKeyImplTest {
    @Test
    public void testVerificationKey() {
 
-      verificationKey = new VerificationKeyImpl(this.ecKey.getPubKey(), bitcoinCrypto.getParams());
+      verificationKey = new VerificationKeyImpl(this.ecKey.getPubKey(), testnet);
       assertEquals(verificationKey.toString(), signingKey.VerificationKey().toString());
       System.out.println("Address:    "+signingKey.VerificationKey().address().toString());
       System.out.println("SigningKey: "+signingKey.toString());
@@ -90,7 +91,7 @@ public class SigningKeyImplTest {
 
 
     @Test
-    public void testSigning() {
+    public void testSigning() throws AddressFormatException {
         Bytestring b = new Bytestring(new byte[]{
                 10, 38, 67, 111, 105, 110, 83, 104, 117, 102, 102, 108, 101, 32, 83, 104,
                 117, 102, 102, 108, 101, 112, 117, 102, 102, 32, 116, 101, 115, 116, 32,

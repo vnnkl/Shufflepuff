@@ -38,6 +38,7 @@ import com.shuffle.p2p.Multiplexer;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
@@ -197,7 +198,7 @@ public class Shuffle {
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException {
+            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException {
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
@@ -557,7 +558,7 @@ public class Shuffle {
             long port,
             String anon,
             String change,
-            Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException {
+            Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException, AddressFormatException {
 
         SigningKey sk;
         Address anonAddress;
@@ -700,6 +701,9 @@ public class Shuffle {
         Shuffle shuffle;
         try {
             shuffle = new Shuffle(options, System.out);
+        } catch (AddressFormatException a) {
+            System.out.println("Invalid private key: " + a.getMessage());
+            return;
         } catch (IllegalArgumentException
                 //| ClassCastException
                 | ParseException

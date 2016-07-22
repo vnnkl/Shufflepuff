@@ -7,6 +7,7 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.Address;
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
@@ -29,14 +30,14 @@ public class SigningKeyImpl implements SigningKey {
       vk = new VerificationKeyImpl(signingKey.getPubKey(), params);
    }
 
-   public SigningKeyImpl(String key, NetworkParameters params) {
-      this(ECKey.fromPrivate(key.getBytes(StandardCharsets.UTF_8)), params);
+   public SigningKeyImpl(String wif, NetworkParameters params) throws AddressFormatException {
+      this(ECKey.fromPrivate(BitcoinCrypto.WiFtoBytestring(wif).bytes), params);
    }
 
 
    // returns Private Key in WIF Compressed 52 characters base58
    public String toString() {
-      return this.signingKey.getPrivateKeyAsWiF(params);
+       return this.signingKey.getPrivateKeyAsWiF(params);
    }
 
    @Override
