@@ -1,17 +1,21 @@
 package com.shuffle.bitcoin;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
+
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,11 +48,8 @@ public class BitcoinCryptoTest {
 
       //make signing key
       signingKey = bitcoinCrypto.makeSigningKey();
-      System.out.println("\n SigningKey: "+signingKey.toString()+ " Verification: "+signingKey.VerificationKey().toString()
-      +" Address: "+signingKey.VerificationKey().address().toString());
 
       decryptionKey = bitcoinCrypto.makeDecryptionKey();
-      System.out.println("\n Decryption: "+decryptionKey.toString()+ "\nEncryption: "+decryptionKey.EncryptionKey().toString());
    }
 
    @Test
@@ -146,4 +147,15 @@ public class BitcoinCryptoTest {
       assert (signingKeyMain instanceof SigningKey);
 
    }
+
+    /*@Test
+    public void testWif() throws AddressFormatException {
+        String key = "cRT6Vk7qHrJicYtL1cdTkR71A8YDnftjLdhV4r9tAgYqeG7ZPhYk";
+        byte[] expected = new byte[]{115, 111, -51, -41, -46, 15, -68, 58, -51,
+                103, -119, 46, 77, -66, 45, 40, 11, -79, -49, -26, -99, 73,
+                24, 40, -73, -6, 6, 115, 124, -70, 67, 110, 1};
+        byte[] decoded = BitcoinCrypto.ImportWif(key).bytes;
+        Assert.assertTrue(Arrays.equals(expected, decoded));
+        System.out.println(decoded);
+    }*/
 }

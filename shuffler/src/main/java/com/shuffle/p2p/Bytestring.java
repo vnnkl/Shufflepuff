@@ -78,7 +78,7 @@ public class Bytestring implements Serializable {
 
     public Bytestring xor(Bytestring b) {
         if (bytes.length != b.bytes.length) {
-            throw new IllegalArgumentException("different length not allowed");
+            throw new IllegalArgumentException("different lengths not allowed");
         }
 
         byte[] newBytes = new byte[bytes.length];
@@ -92,7 +92,7 @@ public class Bytestring implements Serializable {
 
     public Bytestring drop(int a) {
         if (a < 0) {
-            return take(0, bytes.length - a);
+            return take(0, bytes.length + a);
         } else {
             return take(a, bytes.length);
         }

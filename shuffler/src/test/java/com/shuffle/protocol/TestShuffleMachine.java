@@ -8,7 +8,7 @@
 
 package com.shuffle.protocol;
 
-import com.shuffle.bitcoin.BitcoinCrypto;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.impl.CryptoProtobuf;

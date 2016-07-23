@@ -1,6 +1,5 @@
 package com.shuffle.bitcoin.impl;
 
-import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
@@ -9,8 +8,6 @@ import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.TestNet3Params;
 import org.junit.Before;
 import org.junit.Test;
 import org.spongycastle.util.encoders.Hex;
@@ -49,7 +46,7 @@ public class SigningKeyImplTest {
                 new VerificationKeyImpl(signingKey.VerificationKey().toString(), testnet));
 
         assertEquals(signingKey,
-                new SigningKeyImpl(signingKey.toString(), testnet));
+                new SigningKeyImpl(signingKey.toString()));
     }
 
    @Test
@@ -124,7 +121,7 @@ public class SigningKeyImplTest {
                 57, 97, 52, 99, 49, 52, 102, 101, 51, 49, 55, 102, 99, 101, 50, 50, 56,
                 53, 100, 101, 98, 53, 49, 98, 53, 52, 57, 52, 50, 53, 98, 98, 97, 49, 97, 53, 50});
         SigningKey key = new SigningKeyImpl(
-                "cRT6Vk7qHrJicYtL1cdTkR71A8YDnftjLdhV4r9tAgYqeG7ZPhYk", testnet);
+                "cRT6Vk7qHrJicYtL1cdTkR71A8YDnftjLdhV4r9tAgYqeG7ZPhYk");
 
         key.sign(b);
     }

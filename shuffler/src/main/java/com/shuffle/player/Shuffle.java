@@ -2,7 +2,7 @@ package com.shuffle.player;
 
 import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.BitcoinCrypto;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
@@ -14,7 +14,6 @@ import com.shuffle.bitcoin.impl.CryptoProtobuf;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.bitcoin.impl.VerificationKeyImpl;
 import com.shuffle.chan.packet.JavaMarshaller;
-import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;

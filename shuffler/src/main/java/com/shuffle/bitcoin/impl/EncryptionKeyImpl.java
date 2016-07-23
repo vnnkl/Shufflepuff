@@ -2,7 +2,6 @@ package com.shuffle.bitcoin.impl;
 
 import com.google.inject.Guice;
 import com.shuffle.JvmModule;
-import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
