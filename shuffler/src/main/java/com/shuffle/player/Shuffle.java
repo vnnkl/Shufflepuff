@@ -265,6 +265,9 @@ public class Shuffle {
             }
 
             case "test" : {
+                if (query.equals("blockchain.info")) {
+                    throw new IllegalArgumentException("Blockchain.info only works for mainnet.");
+                }
                 netParams = TestNet3Params.get();
                 break;
             }
