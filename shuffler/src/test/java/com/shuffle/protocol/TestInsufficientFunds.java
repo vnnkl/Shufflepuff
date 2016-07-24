@@ -11,6 +11,7 @@ package com.shuffle.protocol;
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for players with insufficient funds.
@@ -23,7 +24,9 @@ public class TestInsufficientFunds extends TestShuffleMachine{
             int numPlayers,
             int[] deadbeats,
             int[] poor,
-            int[] spenders) throws NoSuchAlgorithmException {
+            int[] spenders)
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+
         String description = "case " + caseNo + "; Insufficient funds test case.";
         check(new RealTestCase(description).insufficientFundsTestCase(
                 numPlayers, deadbeats, poor, spenders
@@ -32,7 +35,9 @@ public class TestInsufficientFunds extends TestShuffleMachine{
 
     @Test
     // Tests for players who come in without enough cash.
-    public void testInsufficientFunds() throws NoSuchAlgorithmException {
+    public void testInsufficientFunds()
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+
         // Tests for players who initially have insufficient funds.
         InsufficientFunds(2, new int[]{1}, new int[]{}, new int[]{});
         InsufficientFunds(2, new int[]{}, new int[]{1}, new int[]{});

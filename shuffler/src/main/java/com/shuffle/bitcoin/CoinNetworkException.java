@@ -13,22 +13,21 @@ package com.shuffle.bitcoin;
  */
 public class CoinNetworkException extends Exception {
     public final Transaction t;
-
-    public CoinNetworkException() {
-        t = null;
-    }
+    public final String message;
 
     public CoinNetworkException(Transaction t) {
         this.t = t;
+        message = null;
     }
 
     public CoinNetworkException(String message) {
-        super(message);
+        this.message = message;
         t = null;
     }
 
     @Override
     public String getMessage() {
-        return "CoinShuffle Coin Network Exception";
+        if (message == null) return "CoinShuffle Coin Network Exception";
+        return message;
     }
 }

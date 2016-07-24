@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 
 public abstract class Bitcoin implements Coin {
 
@@ -102,18 +103,15 @@ public abstract class Bitcoin implements Coin {
          */
 
         @Override
-        public boolean send() throws CoinNetworkException {
+        public boolean send() throws ExecutionException, InterruptedException {
             if (!this.canSend) {
                 return false;
             }
 
             peerGroup.start(); //calls a blocking start while peerGroup discovers peers
-            try {
-                //checks to see if transaction was broadcast
-                peerGroup.broadcastTransaction(this.bitcoinj).future().get();
-            } catch (Exception e) {
-                throw new CoinNetworkException();
-            }
+
+            //checks to see if transaction was broadcast
+            peerGroup.broadcastTransaction(this.bitcoinj).future().get();
             return true;
         }
 
@@ -187,7 +185,7 @@ public abstract class Bitcoin implements Coin {
                 }
 
             } catch (IOException e) {
-                throw new CoinNetworkException();
+                throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
             }
         }
 
@@ -197,7 +195,7 @@ public abstract class Bitcoin implements Coin {
                 List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
                 if (transactions.size() > 0) return null;
             } catch (IOException e) {
-                throw new CoinNetworkException();
+                throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
             }
             try {
                 tx.addOutput(org.bitcoinj.core.Coin.SATOSHI.multiply(amount),
@@ -222,7 +220,7 @@ public abstract class Bitcoin implements Coin {
         try {
             return getAddressBalance(addr.toString());
         } catch (IOException e) {
-            throw new CoinNetworkException();
+            throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
         }
     }
 

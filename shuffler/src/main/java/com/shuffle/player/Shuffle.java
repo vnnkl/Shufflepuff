@@ -2,6 +2,7 @@ package com.shuffle.player;
 
 import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
@@ -641,7 +642,7 @@ public class Shuffle {
     }
 
     public Collection<Player.Report> cycle()
-            throws IOException, InterruptedException, ExecutionException {
+            throws IOException, InterruptedException, ExecutionException, CoinNetworkException {
 
         List<Player.Running> running = new LinkedList<>();
 
@@ -726,8 +727,11 @@ public class Shuffle {
         Collection<Player.Report> reports;
         try {
             reports = shuffle.cycle();
-        } catch (InterruptedException | ExecutionException | NullPointerException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
+        } catch (CoinNetworkException | NullPointerException e) {
+            System.out.println(e.getMessage());
+            return;
         } finally {
             shuffle.close();
         }

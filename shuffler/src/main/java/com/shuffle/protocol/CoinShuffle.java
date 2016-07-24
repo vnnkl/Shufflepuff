@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -100,7 +101,7 @@ public class CoinShuffle {
 
         Transaction protocolDefinition(
         ) throws TimeoutException, Matrix, InterruptedException,
-                FormatException, IOException, CoinNetworkException {
+                FormatException, IOException, CoinNetworkException, ExecutionException {
 
             if (amount <= 0) {
                 throw new IllegalArgumentException();
@@ -1105,7 +1106,7 @@ public class CoinShuffle {
             // query the phase as it runs.
             Send<Phase> chan
     ) throws TimeoutException, Matrix, InterruptedException, InvalidParticipantSetException,
-            FormatException, IOException, CoinNetworkException {
+            FormatException, IOException, CoinNetworkException, ExecutionException {
 
         if (amount <= 0) {
             throw new IllegalArgumentException();

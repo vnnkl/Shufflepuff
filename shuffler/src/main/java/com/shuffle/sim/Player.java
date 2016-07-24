@@ -60,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
@@ -296,7 +297,8 @@ class Player<Address> implements Runnable {
                 | TimeoutException // Indicates a lost
                 | FormatException // TODO also all improperly formatted messages are ignored.
                 | InvalidParticipantSetException
-                | NoSuchAlgorithmException e) {
+                | NoSuchAlgorithmException
+                | ExecutionException e) {
             // TODO handle these problems appropriately.
             return null;
         } catch (Matrix matrix) {

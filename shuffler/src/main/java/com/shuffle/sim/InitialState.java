@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 /**
  * A representation of an initial state for a protocol. Can specify various kinds of
@@ -188,7 +189,7 @@ public class InitialState {
             return InitialState.this.crypto;
         }
 
-        public MockCoin coin() throws CoinNetworkException {
+        public MockCoin coin() throws InterruptedException, ExecutionException, CoinNetworkException {
             if (networkPoints == null) {
                 networkPoints = new HashMap<>();
             }
@@ -235,7 +236,7 @@ public class InitialState {
         // Turn the initial state into an Adversary object that can be run in the simulator.
         public Adversary adversary(
                 MessageFactory messages
-        ) throws CoinNetworkException {
+        ) throws InterruptedException, ExecutionException, CoinNetworkException {
 
             if (sk == null) {
                 return null;
@@ -377,7 +378,8 @@ public class InitialState {
     }
 
     public Map<SigningKey, Adversary> getPlayers(
-            Initializer<Packet<VerificationKey, P>> initializer) {
+            Initializer<Packet<VerificationKey, P>> initializer)
+            throws ExecutionException, InterruptedException {
 
         Map<SigningKey, Adversary> p = new HashMap<>();
         Map<SigningKey, Initializer.Connections<Packet<VerificationKey, P>>> connections = new HashMap<>();

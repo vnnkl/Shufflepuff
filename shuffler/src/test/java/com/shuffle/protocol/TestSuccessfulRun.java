@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for a successful run of the protocol.
@@ -39,14 +40,17 @@ import java.util.Map;
 public class TestSuccessfulRun extends TestShuffleMachine {
 
     // Create a test case representing a successful run.
-    private void SuccessfulRun(int numPlayer) throws NoSuchAlgorithmException {
+    private void SuccessfulRun(int numPlayer)
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
         check(new RealTestCase(description).successfulTestCase(numPlayer));
     }
 
     @Test
     // Tests for successful runs of the protocol.
-    public void testSuccess() throws NoSuchAlgorithmException {
+    public void testSuccess()
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
 
         // Tests for successful runs.
         int minPlayers = 2;
@@ -93,7 +97,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
     @Test
     // Test that the resulting transaction has the correct outputs.
-    public void testOutputs() {
+    public void testOutputs() throws ExecutionException, InterruptedException {
         ChangeTestCase[] tests = new ChangeTestCase[]{
                 new ChangeTestCase(37,
                         new ChangeTestInput(45, true), new ChangeTestInput(78, true)),

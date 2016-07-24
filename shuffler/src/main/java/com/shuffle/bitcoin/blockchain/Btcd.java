@@ -63,7 +63,7 @@ public class Btcd extends Bitcoin {
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
      */
-    public org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
 
         org.bitcoinj.core.Transaction tx = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawtransaction\", \"params\":[\"" + transactionHash + "\"]}";

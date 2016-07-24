@@ -13,6 +13,7 @@ import com.shuffle.sim.InitialState;
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * During the announcement phase, a player could send different encryption keys to other players.
@@ -26,7 +27,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
     private void EquivocateAnnouncement(
             int numPlayers,
             InitialState.Equivocation[] equivocators
-    ) throws NoSuchAlgorithmException {
+    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
         String description = "case " + caseNo + "; announcement equivocation test case.";
         check(new RealTestCase(description).equivocateAnnouncementTestCase(
                 numPlayers, equivocators
@@ -34,15 +35,17 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
     }
 
     @Test
-    public void testEquivocationAnnounce() throws NoSuchAlgorithmException {
+    public void testEquivocationAnnounce()
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+
         // A player sends different encryption keys to different players.
         EquivocateAnnouncement(3,
                 new InitialState.Equivocation[]{
                         new InitialState.Equivocation(2, new int[]{3})});
-        /*EquivocateAnnouncement(5,
+        EquivocateAnnouncement(5,
                 new InitialState.Equivocation[]{
                         new InitialState.Equivocation(2, new int[]{4, 5})});
-        /*EquivocateAnnouncement(10,
+        EquivocateAnnouncement(10,
                 new InitialState.Equivocation[]{
                         new InitialState.Equivocation(2, new int[]{4, 10}),
                         new InitialState.Equivocation(5, new int[]{7, 8})});
@@ -50,6 +53,6 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
                 new InitialState.Equivocation[]{
                         new InitialState.Equivocation(2, new int[]{3}),
                         new InitialState.Equivocation(4, new int[]{5, 6}),
-                        new InitialState.Equivocation(8, new int[]{9})});*/
+                        new InitialState.Equivocation(8, new int[]{9})});
     }
 }

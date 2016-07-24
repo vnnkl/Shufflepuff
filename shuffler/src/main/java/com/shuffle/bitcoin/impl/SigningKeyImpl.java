@@ -4,12 +4,13 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
-import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Base58;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
+
+import javax.annotation.Nonnull;
 
 /**
  * Created by conta on 10.03.16.
@@ -18,15 +19,16 @@ public class SigningKeyImpl implements SigningKey {
 
     final ECKey signingKey;
     final NetworkParameters params;
-    private final VerificationKey vk;
+    private final VerificationKeyImpl vk;
 
-    public SigningKeyImpl(org.bitcoinj.core.ECKey ecKey, NetworkParameters params) {
+    public SigningKeyImpl(@Nonnull org.bitcoinj.core.ECKey ecKey,
+                          @Nonnull NetworkParameters params) {
         signingKey = ecKey;
         this.params = params;
         vk = new VerificationKeyImpl(signingKey.getPubKey(), params);
     }
 
-    public SigningKeyImpl(String s) throws AddressFormatException {
+    public SigningKeyImpl(@Nonnull String s) throws AddressFormatException {
         Bytestring stripped = new Bytestring(Base58.decodeChecked(s));
 
         boolean compressed;
@@ -92,21 +94,18 @@ public class SigningKeyImpl implements SigningKey {
 
 
     @Override
-    public int compareTo(Object o) {
+    public int compareTo(@Nonnull Object o) {
         if (!(o instanceof SigningKeyImpl)) {
             throw new IllegalArgumentException("unable to compare with other SingingKey");
         }
         //get netParams to create correct address and check by address.
-        Address a = ((SigningKeyImpl) o).signingKey.toAddress(params);
-        return a.compareTo(a);
+        return vk.address.compareTo(((SigningKeyImpl) o).vk.address);
     }
 
    @Override
    public boolean equals(Object o) {
-       if (this == o) return true;
-       if (o == null || getClass() != o.getClass()) return false;
+       return this == o || !(o == null || getClass() != o.getClass()) && toString().equals(o.toString());
 
-       return toString().equals(o.toString());
    }
 
    @Override

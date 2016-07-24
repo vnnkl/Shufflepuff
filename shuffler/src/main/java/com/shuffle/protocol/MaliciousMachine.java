@@ -36,6 +36,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * An extension of CoinShuffle that includes a lot of malicious behavior for testing purposes.
@@ -371,7 +372,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 try {
                     t.send();
                     spent = true;
-                } catch (CoinNetworkException e) {
+                } catch (CoinNetworkException | ExecutionException e) {
                     // TODO
                 }
             }
@@ -407,7 +408,7 @@ public final class MaliciousMachine extends CoinShuffle {
     ) throws TimeoutException,
             InvalidParticipantSetException,
             InterruptedException, FormatException,
-            IOException, CoinNetworkException, Matrix {
+            IOException, CoinNetworkException, Matrix, ExecutionException {
 
         if (amount <= 0) {
             throw new IllegalArgumentException();
