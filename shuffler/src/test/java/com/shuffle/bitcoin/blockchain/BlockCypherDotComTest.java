@@ -1,11 +1,8 @@
 package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.NetworkParameters;
-<<<<<<< HEAD
 import org.bitcoinj.core.Transaction;
-=======
 import org.junit.Assert;
->>>>>>> 480ef20c728ebb15bdd59fbdeed45df21ab24085
 import org.junit.Test;
 
 import java.util.List;
