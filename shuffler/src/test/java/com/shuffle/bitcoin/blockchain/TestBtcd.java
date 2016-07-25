@@ -6,7 +6,7 @@
  *
  */
 
-package com.shuffle.bitcoin;
+package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Transaction;
@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +34,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 public class TestBtcd {
 
     NetworkParameters netParams = MainNetParams.get();
-    Btcd testCase = new Btcd(netParams, 2, "admin", "pass");
+    Btcd testCase;
 
     String txid = "7301b595279ece985f0c415e420e425451fcf7f684fcce087ba14d10ffec1121";
     String hexTx = "01000000014dff4050dcee16672e48d755c6dd25d324492b5ea306f85a3ab23b4df26e16e9000000008c493046022100cb6dc911ef0bae0ab0e6265a45f25e081fc7ea4975517c9f848f82bc2b80a909022100e30fb6bb4fb64f414c351ed3abaed7491b8f0b1b9bcd75286036df8bfabc3ea5014104b70574006425b61867d2cbb8de7c26095fbc00ba4041b061cf75b85699cb2b449c6758741f640adffa356406632610efb267cb1efa0442c207059dd7fd652eeaffffffff020049d971020000001976a91461cf5af7bb84348df3fd695672e53c7d5b3f3db988ac30601c0c060000001976a914fd4ed114ef85d350d6d40ed3f6dc23743f8f99c488ac00000000";
@@ -49,6 +50,10 @@ public class TestBtcd {
 
     String testAddress = "18heVg1RMgPbrciP2iW42nfsTtyPrMhpkd";
     List<Transaction> txList = new LinkedList<>(Arrays.asList(tx,tx2));
+
+    public TestBtcd() throws MalformedURLException {
+        testCase = new Btcd(netParams, 2, "admin", "pass");
+    }
 
 
     @Test

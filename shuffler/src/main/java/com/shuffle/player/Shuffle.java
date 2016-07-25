@@ -3,6 +3,7 @@ package com.shuffle.player;
 import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
@@ -51,6 +52,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
@@ -198,7 +200,7 @@ public class Shuffle {
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException {
+            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException {
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
@@ -266,9 +268,6 @@ public class Shuffle {
             }
 
             case "test" : {
-                if (query.equals("blockchain.info")) {
-                    throw new IllegalArgumentException("Blockchain.info only works for mainnet.");
-                }
                 netParams = TestNet3Params.get();
                 break;
             }
@@ -299,12 +298,13 @@ public class Shuffle {
 
                 coin = new Btcd(netParams, minBitcoinNetworkPeersInt, rpcuser, rpcpass);
                 break;
-            }
-            case "blockchain.info" : {
+            } case "blockchain.info" : {
 
-                if (!options.has("blockchain")) {
-                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (options.has("minBitcoinNetworkPeers")) {
+                if (netParams.equals(TestNet3Params.get())) {
+                    throw new IllegalArgumentException("Blockchain.info does not support testnet.");
+                }
+
+                if (options.has("minBitcoinNetworkPeers")) {
                     throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
@@ -318,8 +318,25 @@ public class Shuffle {
 
                 coin = new BlockchainDotInfo(netParams, minBitcoinNetworkPeersInt);
                 break;
-            }
-            case "mock" : {
+            } case "blockcypher.com" : {
+
+                if (!options.has("blockchain")) {
+                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
+                } else if (options.has("minBitcoinNetworkPeers")) {
+                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
+                } else if (options.has("rpcuser")) {
+                    throw new IllegalArgumentException("Blockcypher.com does not use a rpcuser parameter");
+                } else if (options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Blockcypher.com does not use a rpcpass parameter");
+                }
+
+                Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
+
+                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
+
+                coin = new BlockCypherDotCom(netParams, minBitcoinNetworkPeersInt);
+                break;
+            } case "mock" : {
                 if (TEST_MODE) {
                     try {
                         coin = MockCoin.fromJSON(new StringReader((String)options.valueOf("coin")));
@@ -330,8 +347,7 @@ public class Shuffle {
                     break;
                 }
                 // fallthrough.
-            }
-            default : {
+            } default : {
                 throw new IllegalArgumentException(
                         "Invalid option for 'blockchain' supplied. Available options are 'btcd' " +
                                 "and 'blockchain.info'. 'btcd' allows for looking up options on " +
