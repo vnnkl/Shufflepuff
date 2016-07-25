@@ -28,7 +28,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  *
  */
 
-public final class BlockCypher extends Bitcoin {
+public final class BlockCypherDotCom extends Bitcoin {
 
     String userAgent = "Chrome/5.0";
 
@@ -39,7 +39,7 @@ public final class BlockCypher extends Bitcoin {
      *
      */
 
-    public BlockCypher(NetworkParameters netParams, int minPeers) {
+    public BlockCypherDotCom(NetworkParameters netParams, int minPeers) {
         super(netParams, minPeers);
         if (!netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
             throw new IllegalArgumentException();
@@ -147,7 +147,7 @@ public final class BlockCypher extends Bitcoin {
         JSONObject root = new JSONObject(tokener);
         HexBinaryAdapter adapter = new HexBinaryAdapter();
         byte[] bytearray = adapter.unmarshal(root.get("hex").toString());
-        org.bitcoinj.core.Transaction transaction = new org.bitcoinj.core.Transaction(netParams,bytearray)
+        org.bitcoinj.core.Transaction transaction = new org.bitcoinj.core.Transaction(netParams,bytearray);
         return transaction;
     }
 
