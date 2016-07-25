@@ -1,7 +1,6 @@
 package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.BitcoinCrypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
 import com.shuffle.bitcoin.Transaction;

@@ -250,7 +250,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         // Does the transaction spend from valid outputs?
         for (Output input : mt.inputs)
             if (!blockchain.get(input.address).equals(input))
-                throw new CoinNetworkException();
+                throw new CoinNetworkException("Tx fails to spend from valid outputs.");
 
         for (Output input : mt.inputs) {
             Transaction nt = spend.get(input);
@@ -281,8 +281,8 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
-    public boolean insufficientFunds(Address addr, long amount) {
-        return false;
+    public boolean sufficientFunds(Address addr, long amount) {
+        return valueHeld(addr) >= amount;
     }
 
     @Override
@@ -291,7 +291,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
             final long amount,
             List<VerificationKey> from,
             Queue<Address> to,
-            Map<VerificationKey, Address> changeAddresses) {
+            Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException {
 
         if (amount == 0) throw new IllegalArgumentException();
 
@@ -306,7 +306,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
             Output input = blockchain.get(address);
 
-            if (input == null) return null;
+            if (input == null) throw new CoinNetworkException("Cannot spend from address " + address);
 
             inputs.add(input);
 

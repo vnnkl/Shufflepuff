@@ -11,6 +11,7 @@ package com.shuffle.protocol;
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -31,7 +32,7 @@ public class TestShuffleMischief extends TestShuffleMachine {
             int[][] drop,
             int[][] replaceNew,
             int[][] replaceDuplicate
-    ) throws NoSuchAlgorithmException {
+    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
         String description = "case " + caseNo + "; shuffle phase mischief test case.";
         check(new RealTestCase(description).dropAddressTestCase(
                 numPlayers, drop, replaceNew, replaceDuplicate
@@ -39,17 +40,17 @@ public class TestShuffleMischief extends TestShuffleMachine {
     }
 
     @Test
-    public void testDropAddress() throws NoSuchAlgorithmException {
-        //DropAddress(2, new int[][]{new int[]{1, 1}}, null, null);
+    public void testDropAddress() throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+        DropAddress(2, new int[][]{new int[]{1, 1}}, null, null);
         DropAddress(2, new int[][]{new int[]{2, 1}}, null, null);
-        /*DropAddress(2, new int[][]{new int[]{2, 2}}, null, null);
+        DropAddress(2, new int[][]{new int[]{2, 2}}, null, null);
         DropAddress(3, new int[][]{new int[]{2, 1}}, null, null);
-        DropAddress(3, new int[][]{new int[]{3, 2}}, null, null);*/
-        /*DropAddress(3, new int[][]{new int[]{3, 3}}, null, null);
+        DropAddress(3, new int[][]{new int[]{3, 2}}, null, null);
+        DropAddress(3, new int[][]{new int[]{3, 3}}, null, null);
         DropAddress(3, new int[][]{new int[]{3, 1}}, null, null);
         DropAddress(4, new int[][]{new int[]{3, 2}}, null, null);
         DropAddress(4, new int[][]{new int[]{4, 1}}, null, null);
-        DropAddress(4, new int[][]{new int[]{4, 2}}, null, null);*/
+        DropAddress(4, new int[][]{new int[]{4, 2}}, null, null);
     }
 
     /*@Test

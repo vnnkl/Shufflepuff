@@ -2,7 +2,9 @@ package com.shuffle.player;
 
 import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.BitcoinCrypto;
+import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
@@ -14,7 +16,6 @@ import com.shuffle.bitcoin.impl.CryptoProtobuf;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.bitcoin.impl.VerificationKeyImpl;
 import com.shuffle.chan.packet.JavaMarshaller;
-import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
@@ -38,6 +39,7 @@ import com.shuffle.p2p.Multiplexer;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
@@ -50,6 +52,7 @@ import java.io.PrintStream;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
@@ -197,7 +200,7 @@ public class Shuffle {
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException {
+            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException {
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
@@ -295,12 +298,13 @@ public class Shuffle {
 
                 coin = new Btcd(netParams, minBitcoinNetworkPeersInt, rpcuser, rpcpass);
                 break;
-            }
-            case "blockchain.info" : {
+            } case "blockchain.info" : {
 
-                if (!options.has("blockchain")) {
-                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (options.has("minBitcoinNetworkPeers")) {
+                if (netParams.equals(TestNet3Params.get())) {
+                    throw new IllegalArgumentException("Blockchain.info does not support testnet.");
+                }
+
+                if (options.has("minBitcoinNetworkPeers")) {
                     throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
@@ -314,8 +318,25 @@ public class Shuffle {
 
                 coin = new BlockchainDotInfo(netParams, minBitcoinNetworkPeersInt);
                 break;
-            }
-            case "mock" : {
+            } case "blockcypher.com" : {
+
+                if (!options.has("blockchain")) {
+                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
+                } else if (options.has("minBitcoinNetworkPeers")) {
+                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
+                } else if (options.has("rpcuser")) {
+                    throw new IllegalArgumentException("Blockcypher.com does not use a rpcuser parameter");
+                } else if (options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Blockcypher.com does not use a rpcpass parameter");
+                }
+
+                Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
+
+                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
+
+                coin = new BlockCypherDotCom(netParams, minBitcoinNetworkPeersInt);
+                break;
+            } case "mock" : {
                 if (TEST_MODE) {
                     try {
                         coin = MockCoin.fromJSON(new StringReader((String)options.valueOf("coin")));
@@ -326,8 +347,7 @@ public class Shuffle {
                     break;
                 }
                 // fallthrough.
-            }
-            default : {
+            } default : {
                 throw new IllegalArgumentException(
                         "Invalid option for 'blockchain' supplied. Available options are 'btcd' " +
                                 "and 'blockchain.info'. 'btcd' allows for looking up options on " +
@@ -557,7 +577,7 @@ public class Shuffle {
             long port,
             String anon,
             String change,
-            Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException {
+            Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException, AddressFormatException {
 
         SigningKey sk;
         Address anonAddress;
@@ -638,7 +658,7 @@ public class Shuffle {
     }
 
     public Collection<Player.Report> cycle()
-            throws IOException, InterruptedException, ExecutionException {
+            throws IOException, InterruptedException, ExecutionException, CoinNetworkException {
 
         List<Player.Running> running = new LinkedList<>();
 
@@ -700,6 +720,9 @@ public class Shuffle {
         Shuffle shuffle;
         try {
             shuffle = new Shuffle(options, System.out);
+        } catch (AddressFormatException a) {
+            System.out.println("Invalid private key: " + a.getMessage());
+            return;
         } catch (IllegalArgumentException
                 //| ClassCastException
                 | ParseException
@@ -720,8 +743,11 @@ public class Shuffle {
         Collection<Player.Report> reports;
         try {
             reports = shuffle.cycle();
-        } catch (InterruptedException | ExecutionException | NullPointerException e) {
+        } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
+        } catch (CoinNetworkException | NullPointerException e) {
+            System.out.println(e.getMessage());
+            return;
         } finally {
             shuffle.close();
         }

@@ -159,7 +159,8 @@ class Player {
             } catch (CoinNetworkException
                     | InvalidParticipantSetException
                     | FormatException
-                    | NoSuchAlgorithmException e) {
+                    | NoSuchAlgorithmException
+                    | ExecutionException e) {
                 stream.println(e.getMessage());
                 throw new RuntimeException(e);
             } finally {
@@ -168,8 +169,15 @@ class Player {
 
         }
 
-        public synchronized Report play() throws IOException, InterruptedException {
+        public synchronized Report play() throws IOException, InterruptedException, CoinNetworkException {
             if (report != null) return report;
+
+            // Check whether I have sufficient funds to engage in this join.
+            Address addr = sk.VerificationKey().address();
+            long funds = coin.valueHeld(addr);
+            if (funds < amount) {
+                throw new CoinNetworkException("Insufficient funds! Address " + addr + " holds only " + funds);
+            }
 
             final Chan<Phase> ch = new BasicChan<>(2);
             final Chan<Report> r = new BasicChan<>(2);
@@ -181,7 +189,8 @@ class Player {
                 public void run() {
                     try {
                         r.send(playInner(ch));
-                    } catch (InterruptedException | IOException | NullPointerException e) {
+                    } catch (InterruptedException
+                            | IOException | NullPointerException e) {
                         throw new RuntimeException(e);
                     } finally {
                         ch.close();
@@ -211,8 +220,11 @@ class Player {
                 public void run() {
                     try {
                         cr.send(play());
-                    } catch (InterruptedException | IOException | NullPointerException e) {
+                    } catch (InterruptedException
+                            | IOException | NullPointerException e) {
                         throw new RuntimeException(e);
+                    } catch (CoinNetworkException e) {
+                        System.out.println(e.getMessage());
                     } finally {
                         cr.close();
                     }

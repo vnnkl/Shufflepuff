@@ -44,6 +44,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -100,7 +101,7 @@ public class CoinShuffle {
 
         Transaction protocolDefinition(
         ) throws TimeoutException, Matrix, InterruptedException,
-                FormatException, IOException, CoinNetworkException {
+                FormatException, IOException, CoinNetworkException, ExecutionException {
 
             if (amount <= 0) {
                 throw new IllegalArgumentException();
@@ -226,6 +227,7 @@ public class CoinShuffle {
             Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
+            if (t == null) throw new RuntimeException("WTF it's null???");
 
             mailbox.broadcast(messages.make().attach(sk.sign(t.serialize())), phase.get());
 
@@ -443,12 +445,14 @@ public class CoinShuffle {
 
         // Check for players with insufficient funds.
         private void blameInsufficientFunds()
-                throws CoinNetworkException, TimeoutException, Matrix, IOException, InterruptedException, FormatException {
+                throws CoinNetworkException, TimeoutException, Matrix,
+                IOException, InterruptedException, FormatException {
+
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
             for (VerificationKey player : players.values()) {
-                if (coin.insufficientFunds(player.address(), amount)) {
+                if (!coin.sufficientFunds(player.address(), amount)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }
@@ -1102,7 +1106,7 @@ public class CoinShuffle {
             // query the phase as it runs.
             Send<Phase> chan
     ) throws TimeoutException, Matrix, InterruptedException, InvalidParticipantSetException,
-            FormatException, IOException, CoinNetworkException {
+            FormatException, IOException, CoinNetworkException, ExecutionException {
 
         if (amount <= 0) {
             throw new IllegalArgumentException();

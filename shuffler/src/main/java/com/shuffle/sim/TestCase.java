@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * TestCase attempts to provide a unified way of constructing test cases for different
@@ -49,7 +50,8 @@ public abstract class TestCase {
 
     // Returns a map containing the set of results which did not match expectations. An empty map
     // represents a successful test.
-    public static Map<SigningKey, Mismatch> test(InitialState init) {
+    public static Map<SigningKey, Mismatch> test(InitialState init)
+            throws ExecutionException, InterruptedException {
 
         // Run the simulation.
         Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init);

@@ -42,6 +42,9 @@ public final class BlockchainDotInfo extends Bitcoin {
 
     public BlockchainDotInfo(NetworkParameters netParams, int minPeers) {
         super(netParams, minPeers);
+        if (!netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+            throw new IllegalArgumentException();
+        }
     }
 
     /**

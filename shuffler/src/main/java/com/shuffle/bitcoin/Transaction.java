@@ -11,6 +11,7 @@ package com.shuffle.bitcoin;
 import com.shuffle.p2p.Bytestring;
 
 import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
 
 /**
  * A representation of a Bitcoin or other cryptocurrency transaction.
@@ -19,7 +20,7 @@ import java.io.Serializable;
  */
 public interface Transaction extends Serializable {
     // Send the transaction into the network.
-    boolean send() throws CoinNetworkException;
+    boolean send() throws CoinNetworkException, ExecutionException, InterruptedException;
 
     Bytestring serialize();
 }

@@ -11,6 +11,7 @@ package com.shuffle.protocol;
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * It is possible for the last player to equivocate during the broadcast phase by sending a
@@ -22,15 +23,16 @@ import java.security.NoSuchAlgorithmException;
 public class TestEquivocateBroadcast extends TestShuffleMachine {
 
     // Run a test case for equivocation during phase 3.
-    private void EquivocateOutput(int numPlayers, int[] equivocation) throws NoSuchAlgorithmException {
+    private void EquivocateOutput(int numPlayers, int[] equivocation)
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
         String description = "case " + caseNo + "; broadcast equivocation test case.";
         check(new RealTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
     }
 
     @Test
     // Tests for malicious players who send different output vectors to different players.
-    public void testEquivocationBroadcast() throws NoSuchAlgorithmException {
-        int caseNo = 0;
+    public void testEquivocationBroadcast()
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
 
         // A player sends different output vectors to different players.
         EquivocateOutput(3, new int[]{1});

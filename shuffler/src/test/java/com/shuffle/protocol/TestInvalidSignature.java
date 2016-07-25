@@ -11,6 +11,7 @@ package com.shuffle.protocol;
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * It is possible for a player to generate a different signature than everyone else. The players
@@ -22,14 +23,16 @@ import java.security.NoSuchAlgorithmException;
 public class TestInvalidSignature extends TestShuffleMachine{
 
     private void InvalidTransactionSignature(int numPlayers, int[] mutants)
-            throws NoSuchAlgorithmException {
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
 
         String description = "case " + caseNo + "; invalid transaction signature test case.";
         check(new RealTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
     }
 
     @Test
-    public void testInvalidSignature() throws NoSuchAlgorithmException {
+    public void testInvalidSignature()
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+
         // Player generates a different transaction signature to everyone else.
         InvalidTransactionSignature(2, new int[]{2});
         InvalidTransactionSignature(5, new int[]{2});

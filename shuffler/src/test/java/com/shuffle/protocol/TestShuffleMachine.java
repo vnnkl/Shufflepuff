@@ -8,7 +8,7 @@
 
 package com.shuffle.protocol;
 
-import com.shuffle.bitcoin.BitcoinCrypto;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.impl.CryptoProtobuf;
@@ -32,6 +32,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Integration tests for the protocol.
@@ -131,7 +132,7 @@ public class TestShuffleMachine {
         }
     }
 
-    void check(InitialState init) {
+    void check(InitialState init) throws ExecutionException, InterruptedException {
         int fail = 0;
         int success = 0;
         caseNo++;

@@ -38,7 +38,7 @@ public interface Coin {
 
     // Returns true if the address follows the correct format for CoinShuffle.
     // Returns false otherwise.
-    boolean insufficientFunds(Address addr, long amount);
+    boolean sufficientFunds(Address addr, long amount);
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.

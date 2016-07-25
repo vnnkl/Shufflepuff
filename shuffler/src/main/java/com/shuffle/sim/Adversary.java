@@ -97,7 +97,8 @@ public class Adversary {
 
                     } catch (Matrix m) {
                         q.send(new Either<Transaction, Matrix>(null, m));
-                    } catch (TimeoutException
+                    } catch (ExecutionException
+                            |TimeoutException
                             | FormatException
                             | CoinNetworkException
                             | InvalidParticipantSetException e) {
