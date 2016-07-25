@@ -10,15 +10,11 @@ package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
@@ -90,24 +86,47 @@ public final class BlockCypher extends Bitcoin {
      *
      */
     public List<Transaction> getAddressTransactions(String address) throws IOException {
-
-        String url = "https://blockchain.info/rawaddr/" + address;
-        URL obj = new URL(url);
-        JSONTokener tokener = new JSONTokener(obj.openStream());
-        JSONObject root = new JSONObject(tokener);
-        List<Transaction> txhashes = new LinkedList<>();
-        for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
-            boolean confirmed;
-            String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
-            confirmed = blockHeight != null;
-            txhashes.add(new Transaction(
-                    root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
+        try {
+            if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
+                String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
+                URL obj = new URL(url);
+                JSONTokener tokener = new JSONTokener(obj.openStream());
+                JSONObject root = new JSONObject(tokener);
+                List<Transaction> txhashes = new LinkedList<>();
+                for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
+                    boolean confirmed;
+                    String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
+                    confirmed = blockHeight != null;
+                    txhashes.add(new Transaction(
+                          root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
+                }
+                if (txhashes.size() == 50) {
+                    return null;
+                }
+                return txhashes;
+            }
+            else {
+                String url = "https://api.blockcypher.com/v1/btc/main/addrs/" + address;
+                URL obj = new URL(url);
+                JSONTokener tokener = new JSONTokener(obj.openStream());
+                JSONObject root = new JSONObject(tokener);
+                List<Transaction> txhashes = new LinkedList<>();
+                for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
+                    boolean confirmed;
+                    String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
+                    confirmed = blockHeight != null;
+                    txhashes.add(new Transaction(
+                          root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
+                }
+                if (txhashes.size() == 50) {
+                    return null;
+                }
+                return txhashes;
+            }
+        } catch (AddressFormatException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
-        if (txhashes.size() == 50) {
-            return null;
-        }
-        return txhashes;
-
     }
 
     /**
@@ -117,24 +136,19 @@ public final class BlockCypher extends Bitcoin {
      *
      */
     public org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
-
-        String url = "https://blockchain.info/tr/rawtx/" + transactionHash + "?format=hex";
-        URL obj = new URL(url);
-        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-        con.setRequestMethod("GET");
-        con.setRequestProperty("User-Agent", userAgent);
-        BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
-        String inputLine;
-        StringBuilder response = new StringBuilder();
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
+        String url;
+        if (netParams==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)){
+            url = "https://api.blockcypher.com/v1/btc/test3/txs/"+transactionHash+"?includeHex=true";
+        }else {
+            url = "https://api.blockcypher.com/v1/btc/main/txs/"+transactionHash+"?includeHex=true";
         }
+        URL obj = new URL(url);
+        JSONTokener tokener = new JSONTokener(obj.openStream());
+        JSONObject root = new JSONObject(tokener);
         HexBinaryAdapter adapter = new HexBinaryAdapter();
-        byte[] bytearray = adapter.unmarshal(response.toString());
-        // bitcoinj needs this Context variable
-        Context context = Context.getOrCreate(netParams);
-        return new org.bitcoinj.core.Transaction(netParams, bytearray);
-
+        byte[] bytearray = adapter.unmarshal(root.get("hex").toString());
+        org.bitcoinj.core.Transaction transaction = new org.bitcoinj.core.Transaction(netParams,bytearray)
+        return transaction;
     }
 
 }
