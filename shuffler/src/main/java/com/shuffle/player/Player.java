@@ -143,7 +143,7 @@ class Player {
             final Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector
                     = connect.connect(connectTo, 3);
 
-            if (collector == null) throw new NullPointerException();
+            if (collector == null) return Report.invalidInitialState("Could not connect to peers.");
 
             // Run the protocol.
             try {
