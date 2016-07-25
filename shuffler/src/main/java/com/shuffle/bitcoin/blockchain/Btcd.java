@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
@@ -51,13 +52,24 @@ import org.json.JSONObject;
  */
 public class Btcd extends Bitcoin {
 
-    String rpcuser;
-    String rpcpass;
+    private final String rpcuser;
+    private final String rpcpass;
+    private final URL url;
 
-    public Btcd(NetworkParameters netParams, int minPeers, String rpcuser, String rpcpass) {
+    public Btcd(NetworkParameters netParams, int minPeers, String rpcuser, String rpcpass)
+            throws MalformedURLException {
+        
         super(netParams, minPeers);
         this.rpcuser = rpcuser;
         this.rpcpass = rpcpass;
+
+        if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+            url = new URL("http://127.0.0.1:8334");
+        } else if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+            url = new URL("http://127.0.0.1:18334");
+        } else {
+            throw new IllegalArgumentException("Invalid network parameters passed to btcd. ");
+        }
     }
 
     /**
@@ -67,7 +79,7 @@ public class Btcd extends Bitcoin {
 
         org.bitcoinj.core.Transaction tx = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawtransaction\", \"params\":[\"" + transactionHash + "\"]}";
-        URL url = new URL("http://127.0.0.1:8334");
+
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
@@ -117,7 +129,7 @@ public class Btcd extends Bitcoin {
 
         List<Transaction> txList = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
-        URL url = new URL("http://127.0.0.1:8334");
+
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
