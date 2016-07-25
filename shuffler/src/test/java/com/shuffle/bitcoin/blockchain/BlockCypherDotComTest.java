@@ -1,7 +1,11 @@
 package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.NetworkParameters;
+<<<<<<< HEAD
 import org.bitcoinj.core.Transaction;
+=======
+import org.junit.Assert;
+>>>>>>> 480ef20c728ebb15bdd59fbdeed45df21ab24085
 import org.junit.Test;
 
 import java.util.List;
@@ -21,6 +25,10 @@ public class BlockCypherDotComTest {
       // 1BitcoinEaterAddressDontSendf59kuE should always have a positive balance
       long balanceMain = blockCypherMain.getAddressBalance("1BitcoinEaterAddressDontSendf59kuE");
       System.out.println("balance Main: "+balanceMain);
+      BlockCypherDotCom blockCypher = new BlockCypherDotCom(NetworkParameters.fromID(NetworkParameters.ID_TESTNET),3);
+      long balance = blockCypher.getAddressBalance("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
+      Assert.assertEquals(500000, balance);
+      System.out.println("balance : "+balance);
    }
 
    @Test

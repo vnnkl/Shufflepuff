@@ -30,8 +30,6 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 public final class BlockCypherDotCom extends Bitcoin {
 
-    String userAgent = "Chrome/5.0";
-
     /**
      * The constructor takes in a NetworkParameters variable that determines whether we are
      * connecting to the Production Net or the Test Net.  It also takes in an int which
@@ -41,9 +39,6 @@ public final class BlockCypherDotCom extends Bitcoin {
 
     public BlockCypherDotCom(NetworkParameters netParams, int minPeers) {
         super(netParams, minPeers);
-        if (!netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
-            throw new IllegalArgumentException();
-        }
     }
 
     /**
