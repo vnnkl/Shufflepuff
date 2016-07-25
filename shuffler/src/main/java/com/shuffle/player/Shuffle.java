@@ -304,7 +304,7 @@ public class Shuffle {
                     throw new IllegalArgumentException("Blockchain.info does not support testnet.");
                 }
 
-                if (options.has("minBitcoinNetworkPeers")) {
+                if (!options.has("minBitcoinNetworkPeers")) {
                     throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
@@ -322,7 +322,7 @@ public class Shuffle {
 
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (options.has("minBitcoinNetworkPeers")) {
+                } else if (!options.has("minBitcoinNetworkPeers")) {
                     throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockcypher.com does not use a rpcuser parameter");
@@ -658,7 +658,7 @@ public class Shuffle {
     }
 
     public Collection<Player.Report> cycle()
-            throws IOException, InterruptedException, ExecutionException, CoinNetworkException {
+            throws IOException, InterruptedException, ExecutionException, CoinNetworkException, ProtocolFailure {
 
         List<Player.Running> running = new LinkedList<>();
 
@@ -689,10 +689,14 @@ public class Shuffle {
 
         Map<VerificationKey, Player.Report> reportMap = future.get();
         if (reportMap == null) {
-            throw new NullPointerException();
+            throw new ProtocolFailure();
         }
 
         return reportMap.values();
+    }
+
+    public static class ProtocolFailure extends Exception {
+
     }
 
     public void close() {
@@ -730,23 +734,30 @@ public class Shuffle {
                 | UnknownHostException
                 | NoSuchAlgorithmException e) {
 
-            System.out.println(e.getMessage());
+            System.out.println("Unable to setup protocol: " + e.getMessage());
             return;
         }
 
         // Warn for blockchain.info or other blockchain service.
-        if (options.valueOf("query").equals("blockchain.info")) {
-            System.out.print("Warning: you have chosen to query address " +
-                    "balances over through a third party service.\n");
+        if (options.valueOf("query").equals("blockchain.info") ||
+                options.valueOf("query").equals("blockcypher.com")) {
+
+            System.out.println("Warning: you have chosen to query address " +
+                    "balances over through a third party service!");
         }
 
         Collection<Player.Report> reports;
         try {
             reports = shuffle.cycle();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (InterruptedException | ExecutionException | NullPointerException e) {
             throw new RuntimeException(e);
-        } catch (CoinNetworkException | NullPointerException e) {
-            System.out.println(e.getMessage());
+        } catch (CoinNetworkException e) {
+            System.out.println("Protocol failed: " + e.getMessage());
+            return;
+        } catch (ProtocolFailure e) {
+            System.out.println("Protocol failed as the result of a bug. Please alert Daniel Krawisz" +
+                    " at daniel.krawisz@thingobjectentity.net and include the logs that Shufflepuff" +
+                    " outputted. shutting down.");
             return;
         } finally {
             shuffle.close();
