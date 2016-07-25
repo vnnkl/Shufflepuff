@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class BitcoinCryptoTest {
 
-   BitcoinCrypto bitcoinCrypto;
+   BitcoinCrypto bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
    SigningKey signingKey;
    DecryptionKey decryptionKey;
    NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
@@ -44,12 +44,15 @@ public class BitcoinCryptoTest {
    public void setUp() throws NoSuchAlgorithmException {
 
       // create testnet crypto class
-      bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
+      //bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
 
       //make signing key
       signingKey = bitcoinCrypto.makeSigningKey();
 
       decryptionKey = bitcoinCrypto.makeDecryptionKey();
+      System.out.println("\n Decryption: "+decryptionKey.toString()+ "\nEncryption: "+decryptionKey.EncryptionKey().toString());
+      System.out.println(bitcoinCrypto.getKeyChainMnemonic());
+
    }
 
    @Test
@@ -147,7 +150,6 @@ public class BitcoinCryptoTest {
       assert (signingKeyMain instanceof SigningKey);
 
    }
-
     /*@Test
     public void testWif() throws AddressFormatException {
         String key = "cRT6Vk7qHrJicYtL1cdTkR71A8YDnftjLdhV4r9tAgYqeG7ZPhYk";
@@ -158,4 +160,12 @@ public class BitcoinCryptoTest {
         Assert.assertTrue(Arrays.equals(expected, decoded));
         System.out.println(decoded);
     }*/
+
+   @Test
+   public void testgetKeychainMnemonic() throws Exception {
+      System.out.println(bitcoinCrypto.getKeyChainMnemonic().toString().replaceAll(",",""));
+      for (int i = 0; i<5;i++){
+      System.out.println(bitcoinCrypto.makeSigningKey().VerificationKey().address().toString());
+      }
+   }
 }
