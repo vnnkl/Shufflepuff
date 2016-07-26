@@ -28,7 +28,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
-
+import java.util.List;
 
 
 public class BitcoinCrypto implements Crypto {
@@ -95,7 +95,11 @@ public class BitcoinCrypto implements Crypto {
 
     }
 
-    @Override
+   public List<String> getKeyChainMnemonic() {
+      return keyChainGroup.getActiveKeyChain().getSeed().getMnemonicCode();
+   }
+
+   @Override
     public SigningKey makeSigningKey() {
        ECKey newSignKey = keyChainGroup.freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS);
        return new SigningKeyImpl(newSignKey, this.getParams());
