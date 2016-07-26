@@ -143,7 +143,7 @@ class Player {
             final Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector
                     = connect.connect(connectTo, 3);
 
-            if (collector == null) throw new NullPointerException();
+            if (collector == null) return Report.invalidInitialState("Could not connect to peers.");
 
             // Run the protocol.
             try {
@@ -161,10 +161,8 @@ class Player {
                     | FormatException
                     | NoSuchAlgorithmException
                     | ExecutionException e) {
-                stream.println(e.getMessage());
+                stream.println("  Player " + sk.VerificationKey() + " reports error " +  e.getMessage());
                 throw new RuntimeException(e);
-            } finally {
-                connect.close();
             }
 
         }
@@ -176,7 +174,8 @@ class Player {
             Address addr = sk.VerificationKey().address();
             long funds = coin.valueHeld(addr);
             if (funds < amount) {
-                throw new CoinNetworkException("Insufficient funds! Address " + addr + " holds only " + funds);
+                connect.close();
+                return Report.invalidInitialState("Insufficient funds! Address " + addr + " holds only " + funds +"; need at least " + amount);
             }
 
             final Chan<Phase> ch = new BasicChan<>(2);
@@ -195,6 +194,8 @@ class Player {
                     } finally {
                         ch.close();
                         r.close();
+                        connect.close();
+                        stream.println("  Player " + sk.VerificationKey() + " ends protocol. ");
                     }
                 }
             }).start();
@@ -224,9 +225,10 @@ class Player {
                             | IOException | NullPointerException e) {
                         throw new RuntimeException(e);
                     } catch (CoinNetworkException e) {
-                        System.out.println(e.getMessage());
+                        stream.println("  Player " + sk.VerificationKey() + " reports error " + e.getMessage());
                     } finally {
                         cr.close();
+                        stream.println("  Player " + sk.VerificationKey() + " shuts down.");
                     }
                 }
             }).start();
@@ -281,23 +283,34 @@ class Player {
         public final Transaction t;
         public final TimeoutException timeout;
         public final Matrix blame;
+        public final String otherError;
 
         private Report(Transaction t) {
             this.t = t;
             this.timeout = null;
             this.blame = null;
+            otherError = null;
         }
 
         private Report(TimeoutException timeout) {
             this.t = null;
             this.timeout = timeout;
             this.blame = null;
+            otherError = null;
         }
 
         private Report(Matrix blame) {
             this.blame = blame;
             timeout = null;
             t = null;
+            otherError = null;
+        }
+
+        private Report(String other) {
+            otherError = other;
+            timeout = null;
+            t = null;
+            blame = null;
         }
 
         @Override
@@ -310,6 +323,9 @@ class Player {
             }
             if (timeout != null) {
                 return "Unsuccessful round; timeout error " + timeout;
+            }
+            if (otherError != null) {
+                return "Could not begin: " + otherError;
             }
             throw new NullPointerException();
         }
@@ -421,7 +437,12 @@ class Player {
         }
 
         public static Report timeout(TimeoutException e) {
-         return new Report(e);
-      }
+            return new Report(e);
+        }
+
+        // Used when the protocol cannot even begin.
+        public static Report invalidInitialState(String error) {
+            return new Report(error);
+        }
     }
 }

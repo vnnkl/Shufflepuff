@@ -68,6 +68,7 @@ public class SigningKeyImpl implements SigningKey {
         signingKey = ECKey.fromPrivate(stripped.bytes, compressed);
         vk = new VerificationKeyImpl(signingKey.getPubKey(), params);
     }
+
     public SigningKeyImpl(String s, NetworkParameters params) throws AddressFormatException {
         this(s);
         if (!this.params.equals(params)) {
