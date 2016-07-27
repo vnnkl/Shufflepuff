@@ -39,7 +39,7 @@ public final class BlockCypherDotCom extends Bitcoin {
      *
      */
 
-    RateLimiter rateLimiter = RateLimiter.create(3.0);
+    final RateLimiter rateLimiter = RateLimiter.create(3.0);
 
     public BlockCypherDotCom(NetworkParameters netParams, int minPeers) {
         super(netParams, minPeers);
@@ -51,9 +51,10 @@ public final class BlockCypherDotCom extends Bitcoin {
      * API. The amount returned is of type long and represents the number of satoshis.
      */
     public long getAddressBalance(String address) throws IOException {
-        try {
-           System.out.println(rateLimiter.acquire(1));
+       rateLimiter.acquire();
+       try {
             if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
+               rateLimiter.acquire();
                 String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
                 URL obj = new URL(url);
                JSONTokener tokener;
@@ -63,6 +64,7 @@ public final class BlockCypherDotCom extends Bitcoin {
             }
             //if not testnet likely mainnet
             else{
+               rateLimiter.acquire();
                 String url = "https://api.blockcypher.com/v1/btc/main/addrs/" + address;
                 URL obj = new URL(url);
                 JSONTokener tokener = new JSONTokener(obj.openStream());
