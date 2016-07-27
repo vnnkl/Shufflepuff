@@ -16,6 +16,8 @@ package com.shuffle.bitcoin;
 
  import org.bitcoinj.core.AddressFormatException;
 
+ import java.io.IOException;
+ import java.net.MalformedURLException;
  import java.util.List;
  import java.util.Map;
  import java.util.Queue;
@@ -40,7 +42,7 @@ public interface Coin {
 
     // Returns true if the address follows the correct format for CoinShuffle.
     // Returns false otherwise.
-    boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException;
+    boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException;
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.

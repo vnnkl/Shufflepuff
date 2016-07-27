@@ -8,6 +8,8 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.shuffle.bitcoin.CoinNetworkException;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,6 +23,7 @@ import java.util.List;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 
@@ -125,7 +128,7 @@ public class Btcd extends Bitcoin {
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
      */
-    public List<Transaction> getAddressTransactions(String address) throws IOException {
+    public List<Transaction> getAddressTransactionsAbstract(String address) throws IOException {
 
         List<Transaction> txList = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
@@ -183,6 +186,11 @@ public class Btcd extends Bitcoin {
 
         return txList;
 
+    }
+
+    @Override
+    protected List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
+        return getAddressTransactionsAbstract(address);
     }
 
 }

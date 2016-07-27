@@ -25,12 +25,15 @@ import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 
 public abstract class Bitcoin implements Coin {
+    static long cach_expire = 10000; // Ten seconds.
 
     final NetworkParameters netParams;
     final PeerGroup peerGroup;
@@ -125,6 +128,20 @@ public abstract class Bitcoin implements Coin {
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(this.netParams, bytes);
         return new Transaction(tx.getHashAsString(), tx, false);
     }
+
+    protected class Cached {
+        public final String address;
+        public final List<Bitcoin.Transaction> txList;
+        public final long last;
+
+        private Cached(String address, List<Bitcoin.Transaction> txList, long last) {
+            this.address = address;
+            this.txList = txList;
+            this.last = last;
+        }
+    }
+
+    protected Map<String, Cached> cache = new HashMap<>();
 
     public NetworkParameters getNetParams(){
         return netParams;
@@ -271,7 +288,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException {
+    public boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = null;
@@ -350,7 +367,27 @@ public abstract class Bitcoin implements Coin {
         return null;
     }
 
-    abstract List<Bitcoin.Transaction> getAddressTransactions(String address)
+    // Since we rely on 3rd party services to query the blockchain, by
+    // default we cache the result.
+    protected List<Bitcoin.Transaction> getAddressTransactions(String address)
+            throws IOException, CoinNetworkException, AddressFormatException {
+
+        long now = System.currentTimeMillis();
+        Cached cached = cache.get(address);
+        if (cached != null) {
+            if (now - cached.last < cach_expire) {
+                return cached.txList;
+            }
+        }
+
+        List<Bitcoin.Transaction> txList = getAddressTransactionsAbstract(address);
+
+        cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
+
+        return txList;
+    }
+
+    abstract List<Bitcoin.Transaction> getAddressTransactionsAbstract(String address)
             throws IOException, CoinNetworkException, AddressFormatException;
 
     abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)
