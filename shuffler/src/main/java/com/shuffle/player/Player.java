@@ -129,7 +129,7 @@ class Player {
             this.connect = connect;
         }
 
-        private Report playInner(Chan<Phase> ch) throws InterruptedException, IOException {
+        private Report playInner(Chan<Phase> ch) throws InterruptedException {
 
             // Remove me.
             SortedSet<VerificationKey> connectTo = new TreeSet<>();
@@ -137,16 +137,17 @@ class Player {
             connectTo.remove(sk.VerificationKey());
 
             long wait = time - System.currentTimeMillis();
-            Thread.sleep(wait);
-
-            // Begin connecting to all peers.
-            final Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector
-                    = connect.connect(connectTo, 3);
-
-            if (collector == null) return Report.invalidInitialState("Could not connect to peers.");
 
             // Run the protocol.
             try {
+                Thread.sleep(wait);
+
+                // Begin connecting to all peers.
+                final Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector
+                        = connect.connect(connectTo, 3);
+
+                if (collector == null) return Report.invalidInitialState("Could not connect to peers.");
+
                 // If the protocol returns correctly without throwing a Matrix, then
                 // it has been successful.
                 Messages messages = new Messages(session, sk, collector.connected, collector.inbox, m);
@@ -157,13 +158,15 @@ class Player {
             } catch (TimeoutException e) {
                 return Report.timeout(e);
             } catch (CoinNetworkException
+                    | IOException
                     | InvalidParticipantSetException
                     | FormatException
                     | NoSuchAlgorithmException
                     | AddressFormatException
                     | ExecutionException e) {
+
                 stream.println("  Player " + sk.VerificationKey() + " reports error " +  e.getMessage());
-                throw new RuntimeException(e);
+                return Report.error(e.getMessage());
             }
 
         }
@@ -190,8 +193,7 @@ class Player {
                 public void run() {
                     try {
                         r.send(playInner(ch));
-                    } catch (InterruptedException
-                            | IOException | NullPointerException e) {
+                    } catch (InterruptedException | NullPointerException | IOException e) {
                         throw new RuntimeException(e);
                     } finally {
                         ch.close();
@@ -208,9 +210,7 @@ class Player {
                 stream.println("  Player " + sk.VerificationKey() + " reaches phase " + phase);
             }
 
-            report = r.receive();
-            if (report == null) throw new NullPointerException();
-            return report;
+            return r.receive();
         }
 
         public synchronized Future<Summable.SummableElement<Map<VerificationKey, Report>>> playConcurrent()
@@ -223,11 +223,10 @@ class Player {
                 public void run() {
                     try {
                         cr.send(play());
-                    } catch (InterruptedException
-                            | IOException | NullPointerException e) {
+                    } catch (InterruptedException | NullPointerException e) {
                         throw new RuntimeException(e);
-                    } catch (CoinNetworkException | AddressFormatException e) {
-                        stream.println("  Player " + sk.VerificationKey() + " reports error " + e.getMessage());
+                    } catch (CoinNetworkException | AddressFormatException | IOException e) {
+                        stream.println("  Player " + sk.VerificationKey() + " could not begin protocol due to error " + e.getMessage());
                     } finally {
                         cr.close();
                         stream.println("  Player " + sk.VerificationKey() + " shuts down.");
@@ -327,7 +326,7 @@ class Player {
                 return "Unsuccessful round; timeout error " + timeout;
             }
             if (otherError != null) {
-                return "Could not begin: " + otherError;
+                return otherError;
             }
             throw new NullPointerException();
         }
@@ -444,6 +443,11 @@ class Player {
 
         // Used when the protocol cannot even begin.
         public static Report invalidInitialState(String error) {
+            return new Report(error);
+        }
+
+        // Used when the protocol cannot even begin.
+        public static Report error(String error) {
             return new Report(error);
         }
     }

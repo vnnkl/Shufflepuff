@@ -25,7 +25,6 @@ import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,6 +120,11 @@ public abstract class Bitcoin implements Coin {
         @Override
         public Bytestring serialize() {
             return new Bytestring(bitcoinj.bitcoinSerialize());
+        }
+
+        @Override
+        public String toString() {
+            return hash;
         }
     }
 
@@ -291,13 +295,7 @@ public abstract class Bitcoin implements Coin {
     public boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
         String address = addr.toString();
 
-        List<Bitcoin.Transaction> transactions = null;
-        try {
-            transactions = getAddressTransactions(addr.toString());
-        } catch (IOException e) {
-            // Can we return false here?
-            return false;
-        }
+        List<Bitcoin.Transaction> transactions = getAddressTransactions(addr.toString());
 
         if (transactions.size() == 1) {
             Bitcoin.Transaction tx = transactions.get(0);
@@ -380,14 +378,14 @@ public abstract class Bitcoin implements Coin {
             }
         }
 
-        List<Bitcoin.Transaction> txList = getAddressTransactionsAbstract(address);
+        List<Bitcoin.Transaction> txList = getAddressTransactionsInner(address);
 
         cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
 
         return txList;
     }
 
-    abstract List<Bitcoin.Transaction> getAddressTransactionsAbstract(String address)
+    abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(String address)
             throws IOException, CoinNetworkException, AddressFormatException;
 
     abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)

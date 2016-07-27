@@ -128,7 +128,7 @@ public class Btcd extends Bitcoin {
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
      */
-    public List<Transaction> getAddressTransactionsAbstract(String address) throws IOException {
+    public List<Transaction> getAddressTransactionsInner(String address) throws IOException {
 
         List<Transaction> txList = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
@@ -190,7 +190,7 @@ public class Btcd extends Bitcoin {
 
     @Override
     protected List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
-        return getAddressTransactionsAbstract(address);
+        return getAddressTransactionsInner(address);
     }
 
 }
