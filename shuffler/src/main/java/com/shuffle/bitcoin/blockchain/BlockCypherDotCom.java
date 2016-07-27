@@ -8,6 +8,8 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.google.common.util.concurrent.RateLimiter;
+
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
@@ -37,6 +39,8 @@ public final class BlockCypherDotCom extends Bitcoin {
      *
      */
 
+    RateLimiter rateLimiter = RateLimiter.create(3.0);
+
     public BlockCypherDotCom(NetworkParameters netParams, int minPeers) {
         super(netParams, minPeers);
     }
@@ -48,11 +52,13 @@ public final class BlockCypherDotCom extends Bitcoin {
      */
     public long getAddressBalance(String address) throws IOException {
         try {
+           System.out.println(rateLimiter.acquire(1));
             if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
                 String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
                 URL obj = new URL(url);
-                JSONTokener tokener = new JSONTokener(obj.openStream());
-                JSONObject root = new JSONObject(tokener);
+               JSONTokener tokener;
+               tokener = new JSONTokener(obj.openStream());
+               JSONObject root = new JSONObject(tokener);
                 return Long.valueOf(root.get("final_balance").toString());
             }
             //if not testnet likely mainnet
@@ -83,17 +89,18 @@ public final class BlockCypherDotCom extends Bitcoin {
     public List<Transaction> getAddressTransactions(String address) throws IOException {
         try {
             if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
+               rateLimiter.acquire();
                 String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
                 URL obj = new URL(url);
                 JSONTokener tokener = new JSONTokener(obj.openStream());
                 JSONObject root = new JSONObject(tokener);
                 List<Transaction> txhashes = new LinkedList<>();
-                for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
+                for (int i = 0; i < root.getJSONArray("txrefs").length(); i++) {
                     boolean confirmed;
-                    String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
+                    String blockHeight = root.getJSONArray("txrefs").getJSONObject(i).get("block_height").toString();
                     confirmed = blockHeight != null;
                     txhashes.add(new Transaction(
-                          root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
+                          root.getJSONArray("txrefs").getJSONObject(i).get("tx_hash").toString(), false, confirmed));
                 }
                 if (txhashes.size() == 50) {
                     return null;
@@ -101,6 +108,7 @@ public final class BlockCypherDotCom extends Bitcoin {
                 return txhashes;
             }
             else {
+               rateLimiter.acquire();
                 String url = "https://api.blockcypher.com/v1/btc/main/addrs/" + address;
                 URL obj = new URL(url);
                 JSONTokener tokener = new JSONTokener(obj.openStream());
@@ -137,6 +145,7 @@ public final class BlockCypherDotCom extends Bitcoin {
         }else {
             url = "https://api.blockcypher.com/v1/btc/main/txs/"+transactionHash+"?includeHex=true";
         }
+       rateLimiter.acquire();
         URL obj = new URL(url);
         JSONTokener tokener = new JSONTokener(obj.openStream());
         JSONObject root = new JSONObject(tokener);
