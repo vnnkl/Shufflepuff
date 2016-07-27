@@ -51,7 +51,7 @@ public final class BlockCypherDotCom extends Bitcoin {
      * Given a wallet address, this function looks up the address' balance using Blockchain.info's
      * API. The amount returned is of type long and represents the number of satoshis.
      */
-    public long getAddressBalance(String address) throws IOException {
+    public synchronized long getAddressBalance(String address) throws IOException {
         try {
             if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
                 String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
@@ -117,7 +117,7 @@ public final class BlockCypherDotCom extends Bitcoin {
      * After some formatting, it returns a bitcoinj Transaction object using this transaction hash.
      *
      */
-    public org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    public synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
         String url;
         if (netParams==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)){
             url = "https://api.blockcypher.com/v1/btc/test3/txs/"+transactionHash+"?includeHex=true";

@@ -252,7 +252,7 @@ public abstract class Bitcoin implements Coin {
      *
      */
 
-    protected long getAddressBalance(String address) throws IOException, CoinNetworkException, AddressFormatException {
+    protected synchronized long getAddressBalance(String address) throws IOException, CoinNetworkException, AddressFormatException {
 
         List<Bitcoin.Transaction> txList = getAddressTransactions(address);
 
@@ -323,7 +323,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public com.shuffle.bitcoin.Transaction getConflictingTransaction(
+    public synchronized com.shuffle.bitcoin.Transaction getConflictingTransaction(
             com.shuffle.bitcoin.Transaction t, Address addr, long amount) throws CoinNetworkException, AddressFormatException {
 
         if (!(t instanceof Transaction)) throw new IllegalArgumentException();
@@ -367,7 +367,7 @@ public abstract class Bitcoin implements Coin {
 
     // Since we rely on 3rd party services to query the blockchain, by
     // default we cache the result.
-    protected List<Bitcoin.Transaction> getAddressTransactions(String address)
+    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(String address)
             throws IOException, CoinNetworkException, AddressFormatException {
 
         long now = System.currentTimeMillis();
@@ -385,9 +385,11 @@ public abstract class Bitcoin implements Coin {
         return txList;
     }
 
+    // Should NOT be synchronized.
     abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(String address)
             throws IOException, CoinNetworkException, AddressFormatException;
 
+    // Should be synchronized.
     abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)
             throws IOException;
 }

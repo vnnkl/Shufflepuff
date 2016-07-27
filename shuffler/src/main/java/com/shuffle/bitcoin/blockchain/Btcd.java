@@ -78,7 +78,7 @@ public class Btcd extends Bitcoin {
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
      */
-    org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
 
         org.bitcoinj.core.Transaction tx = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawtransaction\", \"params\":[\"" + transactionHash + "\"]}";
@@ -128,7 +128,7 @@ public class Btcd extends Bitcoin {
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
      */
-    public List<Transaction> getAddressTransactionsInner(String address) throws IOException {
+    public synchronized List<Transaction> getAddressTransactionsInner(String address) throws IOException {
 
         List<Transaction> txList = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
@@ -189,7 +189,7 @@ public class Btcd extends Bitcoin {
     }
 
     @Override
-    protected List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
+    protected synchronized List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
         return getAddressTransactionsInner(address);
     }
 
