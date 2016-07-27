@@ -26,6 +26,8 @@ import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Packet;
 import com.shuffle.protocol.message.Phase;
 
+import org.bitcoinj.core.AddressFormatException;
+
 import java.io.IOException;
 import java.util.Deque;
 import java.util.HashMap;
@@ -494,6 +496,10 @@ public final class MaliciousMachine extends CoinShuffle {
             // If we are a double spender, we can try to spend our own transaction and get
             // an exception as a result, which we catch here.
             return e.t;
+        } catch (AddressFormatException e) {
+            // This shouldn't happen.
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

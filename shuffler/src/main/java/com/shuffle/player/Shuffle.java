@@ -658,7 +658,8 @@ public class Shuffle {
     }
 
     public Collection<Player.Report> cycle()
-            throws IOException, InterruptedException, ExecutionException, CoinNetworkException, ProtocolFailure {
+            throws IOException, InterruptedException, ExecutionException,
+            CoinNetworkException, AddressFormatException, ProtocolFailure {
 
         List<Player.Running> running = new LinkedList<>();
 
@@ -751,7 +752,7 @@ public class Shuffle {
             reports = shuffle.cycle();
         } catch (InterruptedException | ExecutionException | NullPointerException e) {
             throw new RuntimeException(e);
-        } catch (CoinNetworkException e) {
+        } catch (CoinNetworkException | AddressFormatException e) {
             System.out.println("Protocol failed: " + e.getMessage());
             return;
         } catch (ProtocolFailure e) {

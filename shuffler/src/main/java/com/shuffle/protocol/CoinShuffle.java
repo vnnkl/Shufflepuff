@@ -31,6 +31,7 @@ import com.shuffle.protocol.message.Phase;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.bitcoinj.core.AddressFormatException;
 
 import java.io.IOException;
 import java.util.Deque;
@@ -101,7 +102,7 @@ public class CoinShuffle {
 
         Transaction protocolDefinition(
         ) throws TimeoutException, Matrix, InterruptedException,
-                FormatException, IOException, CoinNetworkException, ExecutionException {
+                FormatException, IOException, CoinNetworkException, ExecutionException, AddressFormatException {
 
             if (amount <= 0) {
                 throw new IllegalArgumentException();
@@ -446,7 +447,7 @@ public class CoinShuffle {
         // Check for players with insufficient funds.
         private void blameInsufficientFunds()
                 throws CoinNetworkException, TimeoutException, Matrix,
-                IOException, InterruptedException, FormatException {
+                IOException, InterruptedException, FormatException, AddressFormatException {
 
             List<VerificationKey> offenders = new LinkedList<>();
 
@@ -494,7 +495,7 @@ public class CoinShuffle {
         }
 
         void checkDoubleSpending(Transaction t) throws InterruptedException, IOException,
-                FormatException, TimeoutException, Matrix {
+                FormatException, TimeoutException, Matrix, CoinNetworkException, AddressFormatException {
 
             // Check for double spending.
             Message doubleSpend = messages.make();
@@ -1106,7 +1107,7 @@ public class CoinShuffle {
             // query the phase as it runs.
             Send<Phase> chan
     ) throws TimeoutException, Matrix, InterruptedException, InvalidParticipantSetException,
-            FormatException, IOException, CoinNetworkException, ExecutionException {
+            FormatException, IOException, CoinNetworkException, ExecutionException, AddressFormatException {
 
         if (amount <= 0) {
             throw new IllegalArgumentException();

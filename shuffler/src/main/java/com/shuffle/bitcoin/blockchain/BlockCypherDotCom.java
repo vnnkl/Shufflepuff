@@ -8,6 +8,8 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.shuffle.bitcoin.CoinNetworkException;
+
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
@@ -80,47 +82,45 @@ public final class BlockCypherDotCom extends Bitcoin {
      * array.
      *
      */
-    public List<Transaction> getAddressTransactions(String address) throws IOException {
-        try {
-            if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
-                String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
-                URL obj = new URL(url);
-                JSONTokener tokener = new JSONTokener(obj.openStream());
-                JSONObject root = new JSONObject(tokener);
-                List<Transaction> txhashes = new LinkedList<>();
-                for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
-                    boolean confirmed;
-                    String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
-                    confirmed = blockHeight != null;
-                    txhashes.add(new Transaction(
-                          root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
-                }
-                if (txhashes.size() == 50) {
-                    return null;
-                }
-                return txhashes;
+    public List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
+        if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
+            String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address + "/full";
+            URL obj = new URL(url);
+            JSONTokener tokener = new JSONTokener(obj.openStream());
+            JSONObject root = new JSONObject(tokener);
+            List<Transaction> txhashes = new LinkedList<>();
+            for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
+                boolean confirmed;
+                String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
+                confirmed = blockHeight != null;
+                txhashes.add(new Transaction(
+                        root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
             }
-            else {
-                String url = "https://api.blockcypher.com/v1/btc/main/addrs/" + address;
-                URL obj = new URL(url);
-                JSONTokener tokener = new JSONTokener(obj.openStream());
-                JSONObject root = new JSONObject(tokener);
-                List<Transaction> txhashes = new LinkedList<>();
-                for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
-                    boolean confirmed;
-                    String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
-                    confirmed = blockHeight != null;
-                    txhashes.add(new Transaction(
-                          root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
-                }
-                if (txhashes.size() == 50) {
-                    return null;
-                }
-                return txhashes;
+            if (txhashes.size() == 50) {
+                return null;
             }
-        } catch (AddressFormatException e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            return txhashes;
+        } else {
+            String url = "https://api.blockcypher.com/v1/btc/main/addrs/" + address + "/full";
+            URL obj = new URL(url);
+            JSONTokener tokener = new JSONTokener(obj.openStream());
+            JSONObject root = new JSONObject(tokener);
+            List<Transaction> txhashes = new LinkedList<>();
+            if (!root.has("txs")) {
+                throw new CoinNetworkException("Failed to retrieve list of transactions.");
+            }
+
+            for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
+                boolean confirmed;
+                String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
+                confirmed = blockHeight != null;
+                txhashes.add(new Transaction(
+                        root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
+            }
+            if (txhashes.size() == 50) {
+                return null;
+            }
+            return txhashes;
         }
     }
 

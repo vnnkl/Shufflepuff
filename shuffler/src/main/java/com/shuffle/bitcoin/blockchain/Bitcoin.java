@@ -156,7 +156,7 @@ public abstract class Bitcoin implements Coin {
                                                   List<VerificationKey> from,
                                                   Queue<Address> to,
                                                   Map<VerificationKey, Address> changeAddresses)
-            throws CoinNetworkException {
+            throws CoinNetworkException, AddressFormatException {
 
 
         // this section adds inputs to the transaction and adds outputs to the change addresses.
@@ -216,7 +216,7 @@ public abstract class Bitcoin implements Coin {
      */
 
     @Override
-    public long valueHeld(Address addr) throws CoinNetworkException {
+    public long valueHeld(Address addr) throws CoinNetworkException, AddressFormatException {
         try {
             return getAddressBalance(addr.toString());
         } catch (IOException e) {
@@ -231,7 +231,7 @@ public abstract class Bitcoin implements Coin {
      *
      */
 
-    protected long getAddressBalance(String address) throws IOException {
+    protected long getAddressBalance(String address) throws IOException, CoinNetworkException, AddressFormatException {
 
         List<Bitcoin.Transaction> txList = getAddressTransactions(address);
 
@@ -271,7 +271,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public boolean sufficientFunds(Address addr, long amount) {
+    public boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException {
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = null;
@@ -301,11 +301,7 @@ public abstract class Bitcoin implements Coin {
                     txAmount += output.getValue().value;
                 }
             }
-            if (txAmount > amount) {
-                return true;
-            } else {
-                return false;
-            }
+            return txAmount > amount;
         } else {
             return false;
         }
@@ -313,7 +309,7 @@ public abstract class Bitcoin implements Coin {
 
     @Override
     public com.shuffle.bitcoin.Transaction getConflictingTransaction(
-            com.shuffle.bitcoin.Transaction t, Address addr, long amount) {
+            com.shuffle.bitcoin.Transaction t, Address addr, long amount) throws CoinNetworkException, AddressFormatException {
 
         if (!(t instanceof Transaction)) throw new IllegalArgumentException();
         Transaction transaction = (Transaction)t;
@@ -355,7 +351,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     abstract List<Bitcoin.Transaction> getAddressTransactions(String address)
-            throws IOException;
+            throws IOException, CoinNetworkException, AddressFormatException;
 
     abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)
             throws IOException;

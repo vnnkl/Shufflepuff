@@ -17,7 +17,6 @@ import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
-import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.monad.Summable;
@@ -36,6 +35,7 @@ import com.shuffle.protocol.message.Phase;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bitcoinj.core.AddressFormatException;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -160,6 +160,7 @@ class Player {
                     | InvalidParticipantSetException
                     | FormatException
                     | NoSuchAlgorithmException
+                    | AddressFormatException
                     | ExecutionException e) {
                 stream.println("  Player " + sk.VerificationKey() + " reports error " +  e.getMessage());
                 throw new RuntimeException(e);
@@ -167,7 +168,8 @@ class Player {
 
         }
 
-        public synchronized Report play() throws IOException, InterruptedException, CoinNetworkException {
+        public synchronized Report play()
+                throws IOException, InterruptedException, CoinNetworkException, AddressFormatException {
             if (report != null) return report;
 
             // Check whether I have sufficient funds to engage in this join.
@@ -224,7 +226,7 @@ class Player {
                     } catch (InterruptedException
                             | IOException | NullPointerException e) {
                         throw new RuntimeException(e);
-                    } catch (CoinNetworkException e) {
+                    } catch (CoinNetworkException | AddressFormatException e) {
                         stream.println("  Player " + sk.VerificationKey() + " reports error " + e.getMessage());
                     } finally {
                         cr.close();
