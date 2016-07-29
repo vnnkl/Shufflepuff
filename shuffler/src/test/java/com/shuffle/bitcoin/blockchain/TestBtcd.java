@@ -12,6 +12,7 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.params.MainNetParams;
 
+import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
 import com.shuffle.bitcoin.blockchain.Btcd;
 
@@ -61,7 +62,7 @@ public class TestBtcd {
         Assert.assertEquals(testCase.getTransaction(txid), tx);
     }
 
-    public void testGetWalletTransactions() throws IOException, BlockStoreException {
+    public void testGetWalletTransactions() throws IOException, BlockStoreException, AddressFormatException, CoinNetworkException {
 
         /**
          * there are only two transactions for testAddress.
