@@ -14,8 +14,6 @@ import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
-import com.sun.istack.internal.NotNull;
-import com.sun.istack.internal.Nullable;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
