@@ -177,8 +177,10 @@ class Player {
 
             // Check whether I have sufficient funds to engage in this join.
             Address addr = sk.VerificationKey().address();
+            // funds will be 0 because valueHeld is messed up
             long funds = coin.valueHeld(addr);
-            if (funds < amount) {
+            // if (funds < amount) {
+            if (!coin.sufficientFunds(addr, amount)) {
                 connect.close();
                 return Report.invalidInitialState("Insufficient funds! Address " + addr + " holds only " + funds +"; need at least " + amount);
             }
