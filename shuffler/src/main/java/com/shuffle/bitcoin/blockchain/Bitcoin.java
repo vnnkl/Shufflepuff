@@ -267,7 +267,7 @@ public abstract class Bitcoin implements Coin {
             for (Bitcoin.Transaction checkTx : txList) {
                 org.bitcoinj.core.Transaction tempTx = checkTx.bitcoinj;
                 for (TransactionInput input : tempTx.getInputs()) {
-                    if (input.getParentTransaction().getHashAsString().equals(txhash)) {
+                    if (input.getOutpoint().getHash().toString().equals(txhash)) {
                         usedInput = true;
                         break outerloop;
                     }
