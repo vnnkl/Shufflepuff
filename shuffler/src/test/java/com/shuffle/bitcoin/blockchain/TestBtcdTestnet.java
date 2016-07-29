@@ -1,5 +1,8 @@
 package com.shuffle.bitcoin.blockchain;
 
+import com.shuffle.bitcoin.CoinNetworkException;
+
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
@@ -49,7 +52,7 @@ public class TestBtcdTestnet {
         Assert.assertEquals(testCase.getTransaction(txid), tx);
     }
 
-    public void testGetWalletTransactions() throws IOException, BlockStoreException {
+    public void testGetWalletTransactions() throws IOException, BlockStoreException, AddressFormatException, CoinNetworkException {
         List<Bitcoin.Transaction> listOfTx = testCase.getAddressTransactions(testAddress);
         Transaction testTx = listOfTx.get(0).bitcoinj();
         Transaction testTx2 = listOfTx.get(1).bitcoinj();

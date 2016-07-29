@@ -14,6 +14,8 @@ import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
+import com.sun.istack.internal.NotNull;
+import com.sun.istack.internal.Nullable;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
@@ -295,7 +297,7 @@ public abstract class Bitcoin implements Coin {
     public boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
         String address = addr.toString();
 
-        List<Bitcoin.Transaction> transactions = getAddressTransactions(addr.toString());
+        List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
 
         if (transactions.size() == 1) {
             Bitcoin.Transaction tx = transactions.get(0);
@@ -303,6 +305,7 @@ public abstract class Bitcoin implements Coin {
                 return false;
             }
             long txAmount = 0;
+
             if (tx.bitcoinj == null) {
                 try {
                     tx.bitcoinj = getTransaction(tx.hash);
@@ -310,13 +313,19 @@ public abstract class Bitcoin implements Coin {
                     return false;
                 }
             }
+
             for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
+
+                /**
+                 * Every address in the outputs should be of type pay to public key hash, not pay to script hash
+                 */
+
                 String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
                 if (address.equals(addressP2pkh)) {
                     txAmount += output.getValue().value;
                 }
             }
-            return txAmount > amount;
+            return txAmount >= amount;
         } else {
             return false;
         }
