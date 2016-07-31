@@ -87,7 +87,7 @@ public class TestShuffleMachine {
         }
 
         @Override
-        protected Crypto crypto() throws NoSuchAlgorithmException {
+        protected Crypto crypto() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
             return new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
         }
 

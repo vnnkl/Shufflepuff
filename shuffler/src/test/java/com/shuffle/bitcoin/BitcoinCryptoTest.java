@@ -26,7 +26,6 @@ import static org.junit.Assert.assertTrue;
  */
 public class BitcoinCryptoTest {
 
-   BitcoinCrypto bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
    SigningKey signingKey;
    DecryptionKey decryptionKey;
    NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
@@ -34,7 +33,7 @@ public class BitcoinCryptoTest {
    BitcoinCrypto bitcoinCryptoNoP;
    BitcoinCrypto bitcoinCryptoMain;
 
-   public BitcoinCryptoTest() throws NoSuchAlgorithmException {
+   public BitcoinCryptoTest() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
       bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
       bitcoinCryptoMain = new BitcoinCrypto(mainnet);
    }
@@ -47,18 +46,18 @@ public class BitcoinCryptoTest {
       //bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
 
       //make signing key
-      signingKey = bitcoinCrypto.makeSigningKey();
+      signingKey = bitcoinCryptoNoP.makeSigningKey();
 
-      decryptionKey = bitcoinCrypto.makeDecryptionKey();
+      decryptionKey = bitcoinCryptoNoP.makeDecryptionKey();
       System.out.println("\n Decryption: "+decryptionKey.toString()+ "\nEncryption: "+decryptionKey.EncryptionKey().toString());
-      System.out.println(bitcoinCrypto.getKeyChainMnemonic());
+      System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
    }
 
    @Test
    public void testGetParams() throws Exception {
       assertEquals("Test that default params are testnet",NetworkParameters.fromID(NetworkParameters.ID_TESTNET),bitcoinCryptoNoP.getParams());
       assertEquals("Test for mainnet params that got parsed to constructor ",NetworkParameters.fromID(NetworkParameters.ID_MAINNET),bitcoinCryptoMain.getParams());
-      assertEquals(NetworkParameters.ID_TESTNET,bitcoinCrypto.getParams().getId());
+      assertEquals(NetworkParameters.ID_TESTNET,bitcoinCryptoNoP.getParams().getId());
    }
 
 
@@ -152,9 +151,9 @@ public class BitcoinCryptoTest {
 
    @Test
    public void testgetKeychainMnemonic() throws Exception {
-      System.out.println(bitcoinCrypto.getKeyChainMnemonic().toString().replaceAll(",",""));
+      System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic().toString().replaceAll(",",""));
       for (int i = 0; i<5;i++){
-      System.out.println(bitcoinCrypto.makeSigningKey().VerificationKey().address().toString());
+      System.out.println(bitcoinCryptoNoP.makeSigningKey().VerificationKey().address().toString());
       }
    }
     /*@Test

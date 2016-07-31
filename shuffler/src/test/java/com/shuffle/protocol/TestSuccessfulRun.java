@@ -12,6 +12,7 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
@@ -41,7 +42,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
     // Create a test case representing a successful run.
     private void SuccessfulRun(int numPlayer)
-            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
 
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
         check(new RealTestCase(description).successfulTestCase(numPlayer));
@@ -50,7 +52,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     @Test
     // Tests for successful runs of the protocol.
     public void testSuccess()
-            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
 
         // Tests for successful runs.
         int minPlayers = 2;

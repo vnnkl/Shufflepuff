@@ -71,7 +71,9 @@ public class AddressImplTest {
    }
 
    @Test
-   public void multipleAddressEncryption() throws FormatException, NoSuchAlgorithmException {
+   public void multipleAddressEncryption()
+           throws FormatException, NoSuchAlgorithmException, BitcoinCrypto.Exception {
+
       BitcoinCrypto bc = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
 
       // Try a sequence of 0 to 9 successive encryptions.

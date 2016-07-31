@@ -8,6 +8,8 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
+
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
@@ -32,7 +34,7 @@ public class TestShuffleMischief extends TestShuffleMachine {
             int[][] drop,
             int[][] replaceNew,
             int[][] replaceDuplicate
-    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
         String description = "case " + caseNo + "; shuffle phase mischief test case.";
         check(new RealTestCase(description).dropAddressTestCase(
                 numPlayers, drop, replaceNew, replaceDuplicate
@@ -40,7 +42,8 @@ public class TestShuffleMischief extends TestShuffleMachine {
     }
 
     @Test
-    public void testDropAddress() throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+    public void testDropAddress() throws NoSuchAlgorithmException,
+            ExecutionException, InterruptedException, BitcoinCrypto.Exception {
         DropAddress(2, new int[][]{new int[]{1, 1}}, null, null);
         DropAddress(2, new int[][]{new int[]{2, 1}}, null, null);
         DropAddress(2, new int[][]{new int[]{2, 2}}, null, null);

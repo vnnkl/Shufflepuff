@@ -8,6 +8,8 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
+
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
@@ -25,7 +27,8 @@ public class TestInsufficientFunds extends TestShuffleMachine{
             int[] deadbeats,
             int[] poor,
             int[] spenders)
-            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
 
         String description = "case " + caseNo + "; Insufficient funds test case.";
         check(new RealTestCase(description).insufficientFundsTestCase(
@@ -36,7 +39,8 @@ public class TestInsufficientFunds extends TestShuffleMachine{
     @Test
     // Tests for players who come in without enough cash.
     public void testInsufficientFunds()
-            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+            throws NoSuchAlgorithmException,
+            ExecutionException, InterruptedException, BitcoinCrypto.Exception {
 
         // Tests for players who initially have insufficient funds.
         InsufficientFunds(2, new int[]{1}, new int[]{}, new int[]{});

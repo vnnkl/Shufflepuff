@@ -50,6 +50,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import javax.annotation.Nonnull;
+
 /**
  *
  *
@@ -129,7 +131,7 @@ class Player {
             this.connect = connect;
         }
 
-        private Report playInner(Chan<Phase> ch) throws InterruptedException {
+        private @Nonnull Report playInner(Chan<Phase> ch) throws InterruptedException {
 
             // Remove me.
             SortedSet<VerificationKey> connectTo = new TreeSet<>();
@@ -224,7 +226,10 @@ class Player {
                 @Override
                 public void run() {
                     try {
-                        cr.send(play());
+                        Report r = play();
+                        if (r != null) {
+                            cr.send(r);
+                        }
                     } catch (InterruptedException | NullPointerException e) {
                         throw new RuntimeException(e);
                     } catch (CoinNetworkException | AddressFormatException | IOException e) {

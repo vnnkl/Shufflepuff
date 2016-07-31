@@ -21,11 +21,14 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.crypto.Cipher;
 
 
 public class BitcoinCrypto implements Crypto {
@@ -36,14 +39,35 @@ public class BitcoinCrypto implements Crypto {
     KeyChainGroup keyChainGroup;
     private final KeyPairGenerator keyPG;
 
+    public static class Exception extends java.lang.Exception {
+        public Exception(String message) {
+            super(message);
+        }
+    }
 
-    public BitcoinCrypto(NetworkParameters networkParameters) throws NoSuchAlgorithmException {
+    private static void crashIfJCEMissing() throws NoSuchAlgorithmException, Exception {
+        int size = Cipher.getMaxAllowedKeyLength("AES");
+        Integer expected = Integer.MAX_VALUE;
+        if (size < expected) {
+            String msg = "Max key size is " + size + ", but expected " + expected +
+                    ". Unfortunately, you have a security policy that limits your encryption " +
+                    "strength. Please either use OpenJDK or allow yourself to use strong crypto\n" +
+                    "by installing the according JCE files:\n" +
+                    "http://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters";
+            throw new Exception(msg);
+        }
+    }
+
+    public BitcoinCrypto(NetworkParameters networkParameters) throws NoSuchAlgorithmException, Exception {
         this.params = networkParameters;
         this.keyChainGroup = new KeyChainGroup(networkParameters);
 
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        crashIfJCEMissing();
+
         //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
         this.sr = SecureRandom.getInstance("SHA1PRNG");
-        this.keyPG = KeyPairGenerator.getInstance("ECIES",new BouncyCastleProvider());
+        this.keyPG = KeyPairGenerator.getInstance("ECIES");
     }
 
     public NetworkParameters getParams() {

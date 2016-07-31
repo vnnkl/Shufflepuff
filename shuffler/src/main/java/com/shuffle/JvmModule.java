@@ -24,8 +24,9 @@ public class JvmModule extends AbstractModule {
         } catch (Exception e) {
             System.out.println("Crypto limited by policy?");
         }
-        if (size < Integer.MAX_VALUE) {
-            String msg = "Please either use OpenJDK or allow yourself to use strong crypto\n" +
+        Integer expected = Integer.MAX_VALUE;
+        if (size < expected) {
+            String msg = "Max key size is " + size + ", but expected " + expected + ". Please either use OpenJDK or allow yourself to use strong crypto\n" +
                     "by installing the according JCE files:\n" +
                     "http://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters";
             throw new RuntimeException(msg);

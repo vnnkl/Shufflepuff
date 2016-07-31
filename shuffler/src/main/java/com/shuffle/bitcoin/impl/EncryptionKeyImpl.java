@@ -32,6 +32,7 @@ public class EncryptionKeyImpl implements EncryptionKey {
     // takes a key in hex as string
     public EncryptionKeyImpl(String hexString)
             throws InvalidKeySpecException, NoSuchAlgorithmException {
+
         try {
             // get base64 of passed hexstring and use BitcoinCrypto to load publickey
             this.publicKey = BitcoinCrypto.loadPublicKey(org.bouncycastle.util.encoders.Base64.toBase64String(org.spongycastle.util.encoders.Hex.decode(hexString)));
@@ -53,7 +54,6 @@ public class EncryptionKeyImpl implements EncryptionKey {
     public String encrypt(String input) {
 
         // encrypts the address passed for this encryption key
-        Guice.createInjector(new JvmModule()).injectMembers(this);
 
         //get cipher cipher for ECIES encryption
         Cipher cipher = null;

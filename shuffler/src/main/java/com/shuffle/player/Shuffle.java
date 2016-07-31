@@ -200,7 +200,7 @@ public class Shuffle {
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException {
+            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception {
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
@@ -727,6 +727,9 @@ public class Shuffle {
             shuffle = new Shuffle(options, System.out);
         } catch (AddressFormatException a) {
             System.out.println("Invalid private key: " + a.getMessage());
+            return;
+        } catch (BitcoinCrypto.Exception e) {
+            System.out.print(e.getMessage());
             return;
         } catch (IllegalArgumentException
                 //| ClassCastException

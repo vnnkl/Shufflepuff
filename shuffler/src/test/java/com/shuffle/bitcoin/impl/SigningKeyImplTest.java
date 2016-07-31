@@ -30,7 +30,7 @@ public class SigningKeyImplTest {
     NetworkParameters testnet = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
 
    @Before
-   public void setUp() throws NoSuchAlgorithmException {
+   public void setUp() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
 
       this.ecKey = new ECKey();
       bitcoinCrypto = new BitcoinCrypto(testnet);

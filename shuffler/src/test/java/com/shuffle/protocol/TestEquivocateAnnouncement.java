@@ -8,6 +8,7 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.sim.InitialState;
 
 import org.junit.Test;
@@ -27,7 +28,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
     private void EquivocateAnnouncement(
             int numPlayers,
             InitialState.Equivocation[] equivocators
-    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
         String description = "case " + caseNo + "; announcement equivocation test case.";
         check(new RealTestCase(description).equivocateAnnouncementTestCase(
                 numPlayers, equivocators
@@ -36,7 +37,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
 
     @Test
     public void testEquivocationAnnounce()
-            throws NoSuchAlgorithmException, ExecutionException, InterruptedException {
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
 
         // A player sends different encryption keys to different players.
         EquivocateAnnouncement(3,
