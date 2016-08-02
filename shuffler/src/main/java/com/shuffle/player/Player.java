@@ -174,47 +174,55 @@ class Player {
         }
 
         public synchronized Report play()
-                throws IOException, InterruptedException, CoinNetworkException, AddressFormatException {
+                throws IOException, InterruptedException, AddressFormatException {
             if (report != null) return report;
 
-            // Check whether I have sufficient funds to engage in this join.
-            Address addr = sk.VerificationKey().address();
-            // funds will be 0 because valueHeld is messed up
-            long funds = coin.valueHeld(addr);
-            // if (funds < amount) {
-            if (!coin.sufficientFunds(addr, amount)) {
-                connect.close();
-                return Report.invalidInitialState("Insufficient funds! Address " + addr + " holds only " + funds +"; need at least " + amount);
-            }
+            // The whole thing is in a try block to ensure that connect is shut down.
+            try {
 
-            final Chan<Phase> ch = new BasicChan<>(2);
-            final Chan<Report> r = new BasicChan<>(2);
-
-            stream.println("  Player " + sk.VerificationKey() + " begins " + session);
-
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        r.send(playInner(ch));
-                    } catch (InterruptedException | NullPointerException | IOException e) {
-                        throw new RuntimeException(e);
-                    } finally {
-                        ch.close();
-                        r.close();
-                        connect.close();
-                        stream.println("  Player " + sk.VerificationKey() + " ends protocol. ");
-                    }
+                // Check whether I have sufficient funds to engage in this join.
+                Address addr = sk.VerificationKey().address();
+                // funds will be 0 because valueHeld is messed up
+                long funds = coin.valueHeld(addr);
+                // if (funds < amount) {
+                if (!coin.sufficientFunds(addr, amount)) {
+                    connect.close();
+                    return Report.invalidInitialState("Insufficient funds! Address " + addr + " holds only " + funds + "; need at least " + amount);
                 }
-            }).start();
 
-            while(true) {
-                Phase phase = ch.receive();
-                if (phase == null) break;
-                stream.println("  Player " + sk.VerificationKey() + " reaches phase " + phase);
+                final Chan<Phase> ch = new BasicChan<>(2);
+                final Chan<Report> r = new BasicChan<>(2);
+
+                stream.println("  Player " + sk.VerificationKey() + " begins " + session);
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            r.send(playInner(ch));
+                        } catch (InterruptedException | NullPointerException | IOException e) {
+                            throw new RuntimeException(e);
+                        } finally {
+                            ch.close();
+                            r.close();
+                            stream.println("  Player " + sk.VerificationKey() + " ends protocol. ");
+                        }
+                    }
+                }).start();
+
+                while (true) {
+                    Phase phase = ch.receive();
+                    if (phase == null) break;
+                    stream.println("  Player " + sk.VerificationKey() + " reaches phase " + phase);
+                }
+
+                return r.receive();
+            } catch (CoinNetworkException e) {
+                return Report.error(e.getMessage());
+            } finally {
+                connect.close();
+                stream.println("  Player " + sk.VerificationKey() + " shuts down.");
             }
-
-            return r.receive();
         }
 
         public synchronized Future<Summable.SummableElement<Map<VerificationKey, Report>>> playConcurrent()
@@ -232,11 +240,10 @@ class Player {
                         }
                     } catch (InterruptedException | NullPointerException e) {
                         throw new RuntimeException(e);
-                    } catch (CoinNetworkException | AddressFormatException | IOException e) {
+                    } catch (AddressFormatException | IOException e) {
                         stream.println("  Player " + sk.VerificationKey() + " could not begin protocol due to error " + e.getMessage());
                     } finally {
                         cr.close();
-                        stream.println("  Player " + sk.VerificationKey() + " shuts down.");
                     }
                 }
             }).start();
