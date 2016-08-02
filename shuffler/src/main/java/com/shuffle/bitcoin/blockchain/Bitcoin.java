@@ -50,10 +50,14 @@ public abstract class Bitcoin implements Coin {
     public Bitcoin(NetworkParameters netParams, int minPeers) {
         this.netParams = netParams;
         this.minPeers = minPeers;
-        peerGroup = new PeerGroup(netParams);
-        peerGroup.setMinBroadcastConnections(minPeers);
-        peerGroup.addPeerDiscovery(new DnsDiscovery(netParams));
-        peerGroup.startAsync();
+        if (minPeers == 0) {
+            peerGroup = null;
+        } else {
+            peerGroup = new PeerGroup(netParams);
+            peerGroup.setMinBroadcastConnections(minPeers);
+            peerGroup.addPeerDiscovery(new DnsDiscovery(netParams));
+            peerGroup.start();
+        }
         this.context = Context.getOrCreate(this.netParams);
     }
 
@@ -62,6 +66,7 @@ public abstract class Bitcoin implements Coin {
         private org.bitcoinj.core.Transaction bitcoinj;
         final boolean canSend;
         boolean confirmed;
+        boolean sent = false;
 
         public Transaction(String hash, boolean canSend) {
             this.hash = hash;
@@ -105,16 +110,8 @@ public abstract class Bitcoin implements Coin {
          */
 
         @Override
-        public boolean send() throws ExecutionException, InterruptedException {
-            if (!this.canSend) {
-                return false;
-            }
-
-            peerGroup.start(); //calls a blocking start while peerGroup discovers peers
-
-            //checks to see if transaction was broadcast
-            peerGroup.broadcastTransaction(this.bitcoinj).future().get();
-            return true;
+        public synchronized boolean send() throws ExecutionException, InterruptedException {
+            return Bitcoin.this.send(this);
         }
 
         @Override
@@ -292,7 +289,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
+    public final boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
@@ -390,6 +387,20 @@ public abstract class Bitcoin implements Coin {
         cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
 
         return txList;
+    }
+
+    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException {
+        if (!t.canSend || t.sent) {
+            return false;
+        }
+
+        //checks to see if transaction was broadcast
+        if (peerGroup == null) {
+            return false;
+        }
+        peerGroup.broadcastTransaction(t.bitcoinj).future().get();
+        t.sent = true;
+        return true;
     }
 
     // Should NOT be synchronized.

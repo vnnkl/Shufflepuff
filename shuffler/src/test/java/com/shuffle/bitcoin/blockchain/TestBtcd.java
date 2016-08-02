@@ -53,7 +53,7 @@ public class TestBtcd {
     List<Transaction> txList = new LinkedList<>(Arrays.asList(tx,tx2));
 
     public TestBtcd() throws MalformedURLException {
-        testCase = new Btcd(netParams, 2, "admin", "pass");
+        testCase = new Btcd(netParams, "admin", "pass");
     }
 
 

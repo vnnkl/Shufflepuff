@@ -59,10 +59,10 @@ public class Btcd extends Bitcoin {
     private final String rpcpass;
     private final URL url;
 
-    public Btcd(NetworkParameters netParams, int minPeers, String rpcuser, String rpcpass)
+    public Btcd(NetworkParameters netParams, String rpcuser, String rpcpass)
             throws MalformedURLException {
 
-        super(netParams, minPeers);
+        super(netParams, 0);
         this.rpcuser = rpcuser;
         this.rpcpass = rpcpass;
 
