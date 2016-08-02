@@ -159,8 +159,13 @@ public class Btcd extends Bitcoin {
             rd.close();
 
             JSONObject json = new JSONObject(response.toString());
-            JSONArray jsonarray = json.getJSONArray("result");
+            JSONArray jsonarray = null;
             txList = new LinkedList<>();
+            if (json.isNull("result")) {
+                return txList;
+            } else {
+                jsonarray = json.getJSONArray("result");
+            }
             for (int i = 0; i < jsonarray.length(); i++) {
                 JSONObject currentJson = jsonarray.getJSONObject(i);
                 String txid = currentJson.get("txid").toString();

@@ -29,6 +29,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
 
 
 public class BitcoinCrypto implements Crypto {
@@ -62,7 +63,8 @@ public class BitcoinCrypto implements Crypto {
         this.params = networkParameters;
         this.keyChainGroup = new KeyChainGroup(networkParameters);
 
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+
+        System.out.println("security provider: " + Security.insertProviderAt(new BouncyCastleProvider(), 1));
         crashIfJCEMissing();
 
         //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
