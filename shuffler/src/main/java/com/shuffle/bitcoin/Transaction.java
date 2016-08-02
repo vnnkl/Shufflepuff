@@ -20,7 +20,7 @@ import java.util.concurrent.ExecutionException;
  */
 public interface Transaction extends Serializable {
     // Send the transaction into the network.
-    boolean send() throws CoinNetworkException, ExecutionException, InterruptedException;
+    void send() throws CoinNetworkException, ExecutionException, InterruptedException;
 
     Bytestring serialize();
 }

@@ -152,10 +152,9 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         }
 
         @Override
-        public boolean send() throws CoinNetworkException {
-            if (coin == null) return false;
+        public void send() throws CoinNetworkException {
+            if (coin == null) throw new CoinNetworkException("Could not send.");
             coin.send(this);
-            return true;
         }
 
         @Override

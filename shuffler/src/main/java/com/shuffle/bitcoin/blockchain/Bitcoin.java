@@ -110,8 +110,12 @@ public abstract class Bitcoin implements Coin {
          */
 
         @Override
-        public synchronized boolean send() throws ExecutionException, InterruptedException {
-            return Bitcoin.this.send(this);
+        public synchronized void send()
+                throws ExecutionException, InterruptedException, CoinNetworkException {
+
+            if (!Bitcoin.this.send(this)) {
+                throw new CoinNetworkException("Could not send transaction.");
+            }
         }
 
         @Override
