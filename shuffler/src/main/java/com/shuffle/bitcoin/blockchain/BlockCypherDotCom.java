@@ -126,6 +126,7 @@ public final class BlockCypherDotCom extends Bitcoin {
      *
      */
     public synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+        rateLimiter.acquire();
         String url;
         if (netParams==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)){
             url = "https://api.blockcypher.com/v1/btc/test3/txs/"+transactionHash+"?includeHex=true";
