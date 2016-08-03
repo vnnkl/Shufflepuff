@@ -3,17 +3,12 @@ package com.shuffle.bitcoin.impl;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.SigningKey;
-import com.shuffle.bitcoin.impl.DecryptionKeyImpl;
-import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Base58;
 import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
@@ -68,14 +63,15 @@ public class BitcoinCrypto implements Crypto {
     public BitcoinCrypto(NetworkParameters networkParameters) throws NoSuchAlgorithmException, Exception {
         this.params = networkParameters;
         this.keyChainGroup = new KeyChainGroup(networkParameters);
-
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
+        crashIfJCEMissing();
       //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
       this.sr = SecureRandom.getInstance("SHA1PRNG");
       this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
       this.wallet = new Wallet(params, keyChainGroup);
    }
 
-   public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException {
+    public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException, Exception {
       this(networkParameters);
       this.keyChainGroup = keyChainGroup;
       this.wallet = new Wallet(networkParameters, keyChainGroup);

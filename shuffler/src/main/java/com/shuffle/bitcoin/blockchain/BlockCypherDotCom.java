@@ -9,23 +9,18 @@
 package com.shuffle.bitcoin.blockchain;
 
 import com.google.common.util.concurrent.RateLimiter;
-
 import com.shuffle.bitcoin.CoinNetworkException;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
-import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -107,6 +102,7 @@ public final class BlockCypherDotCom extends Bitcoin {
         }
 
         URL obj = new URL(url);
+        rateLimiter.acquire();
         JSONTokener tokener = new JSONTokener(obj.openStream());
         JSONObject root = new JSONObject(tokener);
         List<Transaction> txhashes = new LinkedList<>();
@@ -137,6 +133,7 @@ public final class BlockCypherDotCom extends Bitcoin {
             url = "https://api.blockcypher.com/v1/btc/main/txs/"+transactionHash+"?includeHex=true";
         }
         URL obj = new URL(url);
+        rateLimiter.acquire();
         JSONTokener tokener = new JSONTokener(obj.openStream());
         JSONObject root = new JSONObject(tokener);
         HexBinaryAdapter adapter = new HexBinaryAdapter();
