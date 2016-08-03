@@ -20,7 +20,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.bitcoinj.core.AddressFormatException;
@@ -29,6 +31,7 @@ import org.bitcoinj.core.NetworkParameters;
 
 import org.apache.commons.codec.binary.Base64;
 
+import org.bitcoinj.store.BlockStoreException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -191,6 +194,88 @@ public class Btcd extends Bitcoin {
 
         return txList;
 
+    }
+
+    @Override
+    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException {
+        if (!t.canSend || t.sent) {
+            return false;
+        }
+
+        String hexTx = null;
+        try {
+            hexTx = DatatypeConverter.printHexBinary(t.bitcoinj().bitcoinSerialize());
+        } catch (BlockStoreException e) {
+            return false;
+        } catch (IOException er) {
+            return false;
+        }
+        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"sendrawtransaction\", \"params\":[\"" + hexTx + "\"]}";
+
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+        } catch (IOException e) {
+            return false;
+        }
+        connection.setDoOutput(true);
+        try {
+            connection.setRequestMethod("POST");
+        } catch (java.net.ProtocolException e) {
+            return false;
+        }
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        Base64 b = new Base64();
+        String authString = rpcuser + ":" + rpcpass;
+        String encoding = b.encodeAsString(authString.getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + encoding);
+        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
+        connection.setDoInput(true);
+        OutputStream out;
+        try {
+            out = connection.getOutputStream();
+        } catch (IOException e) {
+            return false;
+        }
+        try {
+            out.write(requestBody.getBytes());
+        } catch (IOException e) {
+            return false;
+        }
+
+        try {
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return false;
+        } catch (IOException e) {
+            return false;
+        }
+
+        InputStream is;
+        try {
+            is = connection.getInputStream();
+        } catch (IOException e) {
+            return false;
+        }
+        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+        String line;
+        StringBuffer response = new StringBuffer();
+        while (true) {
+            try {
+                if ((line = rd.readLine()) == null) break;
+            } catch (IOException e) {
+                return false;
+            }
+            response.append(line);
+            response.append('\r');
+        }
+        try {
+            rd.close();
+        } catch (IOException e) {
+            return false;
+        }
+
+        //JSONObject json = new JSONObject(response.toString());
+        return true;
     }
 
     @Override
