@@ -8,11 +8,14 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.google.common.util.concurrent.RateLimiter;
+
 import com.shuffle.bitcoin.CoinNetworkException;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bouncycastle.util.encoders.Hex;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -29,45 +32,54 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
  *
- * Created by Eugene Siegel on 3/4/16.
+ * Created by Constantin Vennekel on 25/7/16.
  *
  */
 
 public final class BlockCypherDotCom extends Bitcoin {
 
-    /**
-     * The constructor takes in a NetworkParameters variable that determines whether we are
-     * connecting to the Production Net or the Test Net.  It also takes in an int which
-     * determines the minimum number of peers to connect to before broadcasting a transaction.
-     *
-     */
+   /**
+    * The constructor takes in a NetworkParameters variable that determines whether we are
+    * connecting to the Production Net or the Test Net.  It also takes in an int which
+    * determines the minimum number of peers to connect to before broadcasting a transaction.
+    *
+    * blockcyper api is limited to 2qps and 200 qph(!)
+    */
 
-    public BlockCypherDotCom(NetworkParameters netParams, int minPeers) {
-        super(netParams, minPeers);
-    }
+   final RateLimiter rateLimiter = RateLimiter.create(3.0);
 
-    /**
-     *
-     * Given a wallet address, this function looks up the address' balance using Blockchain.info's
-     * API. The amount returned is of type long and represents the number of satoshis.
-     */
-    public synchronized long getAddressBalance(String address) throws IOException {
-        try {
-            if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
-                String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
-                URL obj = new URL(url);
-                JSONTokener tokener = new JSONTokener(obj.openStream());
-                JSONObject root = new JSONObject(tokener);
-                return Long.valueOf(root.get("final_balance").toString());
-            }
-            //if not testnet likely mainnet
-            else{
-                String url = "https://api.blockcypher.com/v1/btc/main/addrs/" + address;
-                URL obj = new URL(url);
-                JSONTokener tokener = new JSONTokener(obj.openStream());
-                JSONObject root = new JSONObject(tokener);
-                return Long.valueOf(root.get("final_balance").toString());
-            }
+   public BlockCypherDotCom(NetworkParameters netParams, int minPeers) {
+      super(netParams, minPeers);
+   }
+
+
+   /**
+    *
+    * Given a wallet address, this function looks up the address' balance using Blockchain.info's
+    * API. The amount returned is of type long and represents the number of satoshis.
+    */
+   public long getAddressBalance(String address) throws IOException {
+      rateLimiter.acquire();
+      try {
+         if (Address.getParametersFromAddress(address) == NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
+            rateLimiter.acquire();
+            String url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address;
+            URL obj = new URL(url);
+            JSONTokener tokener;
+            rateLimiter.acquire();
+            tokener = new JSONTokener(obj.openStream());
+            JSONObject root = new JSONObject(tokener);
+            return Long.valueOf(root.get("final_balance").toString());
+         }
+         //if not testnet likely mainnet
+         else {
+            rateLimiter.acquire();
+            String url = "https://api.blockcypher.com/v1/btc/main/addrs/" + address;
+            URL obj = new URL(url);
+            JSONTokener tokener = new JSONTokener(obj.openStream());
+            JSONObject root = new JSONObject(tokener);
+            return Long.valueOf(root.get("final_balance").toString());
+         }
 
 
         } catch (AddressFormatException e) {
@@ -132,5 +144,35 @@ public final class BlockCypherDotCom extends Bitcoin {
         org.bitcoinj.core.Transaction transaction = new org.bitcoinj.core.Transaction(netParams,bytearray);
         return transaction;
     }
+
+   public List<Address> getTransactionAssociates(String transactionHash) throws IOException {
+      rateLimiter.acquire();
+      String url;
+      if (netParams == NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
+         url = "https://api.blockcypher.com/v1/btc/test3/txs/" + transactionHash;
+      } else {
+         url = "https://api.blockcypher.com/v1/btc/main/txs/" + transactionHash;
+      }
+      URL obj = new URL(url);
+      rateLimiter.acquire();
+      JSONTokener tokener = new JSONTokener(obj.openStream());
+      JSONObject root = new JSONObject(tokener);
+      List<Address> addresses = new LinkedList<>();
+      for (int i = 0; i < root.getJSONArray("addresses").length(); i++) {
+         String address = root.getJSONArray("addresses").get(i).toString();
+         try {
+            addresses.add(new Address(netParams, address));
+         } catch (AddressFormatException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+         }
+
+      }
+      if (addresses.size() == 50) {
+         return null;
+      }
+      return addresses;
+
+   }
 
 }

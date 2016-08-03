@@ -3,12 +3,18 @@ package com.shuffle.bitcoin.impl;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.SigningKey;
+import com.shuffle.bitcoin.impl.DecryptionKeyImpl;
+import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Base58;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.Wallet;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -38,6 +44,7 @@ public class BitcoinCrypto implements Crypto {
     NetworkParameters params;
     KeyChainGroup keyChainGroup;
     private final KeyPairGenerator keyPG;
+    Wallet wallet;
 
     public static class Exception extends java.lang.Exception {
         public Exception(String message) {
@@ -62,14 +69,17 @@ public class BitcoinCrypto implements Crypto {
         this.params = networkParameters;
         this.keyChainGroup = new KeyChainGroup(networkParameters);
 
+      //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
+      this.sr = SecureRandom.getInstance("SHA1PRNG");
+      this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
+      this.wallet = new Wallet(params, keyChainGroup);
+   }
 
-        Security.insertProviderAt(new BouncyCastleProvider(), 1);
-        crashIfJCEMissing();
-
-        //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
-        this.sr = SecureRandom.getInstance("SHA1PRNG");
-        this.keyPG = KeyPairGenerator.getInstance("ECIES");
-    }
+   public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException {
+      this(networkParameters);
+      this.keyChainGroup = keyChainGroup;
+      this.wallet = new Wallet(networkParameters, keyChainGroup);
+   }
 
     public NetworkParameters getParams() {
       return params;
