@@ -7,8 +7,11 @@ import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
@@ -28,6 +31,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import javax.crypto.Cipher;
 
@@ -80,6 +84,26 @@ public class BitcoinCrypto implements Crypto {
     public NetworkParameters getParams() {
       return params;
    }
+
+    public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
+        Address addressj;
+        try {
+            addressj = new Address(params, destinationAddress);
+        } catch (AddressFormatException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+        Coin amount = Coin.valueOf(amountSatoshis);
+        Wallet.SendRequest sendRequest = Wallet.SendRequest.to(addressj, amount);
+        Wallet.SendResult sendResult = wallet.sendCoins(sendRequest);
+        try {
+            return sendResult.broadcastComplete.get();
+        } catch (InterruptedException | ExecutionException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
 
     public static boolean isValidAddress(String address, NetworkParameters params) {
         try {
