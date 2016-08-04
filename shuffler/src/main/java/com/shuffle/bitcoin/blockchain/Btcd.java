@@ -268,6 +268,7 @@ public class Btcd extends Bitcoin {
             response.append(line);
             response.append('\r');
         }
+
         try {
             rd.close();
         } catch (IOException e) {

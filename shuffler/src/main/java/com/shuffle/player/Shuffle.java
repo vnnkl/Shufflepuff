@@ -283,7 +283,7 @@ public class Shuffle {
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
                 } else if (options.has("minBitcoinNetworkPeers")) {
-                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
+                    throw new IllegalArgumentException("minBitcoinNetworkPeers not required for btcd.");
                 } else if (!options.has("rpcuser")) {
                     throw new IllegalArgumentException("Need to set rpcuser parameter (rpc server login)");
                 } else if (!options.has("rpcpass")) {
