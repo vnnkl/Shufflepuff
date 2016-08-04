@@ -197,7 +197,7 @@ public class Btcd extends Bitcoin {
     }
 
     @Override
-    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException {
+    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException, CoinNetworkException {
         if (!t.canSend || t.sent) {
             return false;
         }
@@ -275,7 +275,13 @@ public class Btcd extends Bitcoin {
             return false;
         }
 
-        //JSONObject json = new JSONObject(response.toString());
+        JSONObject json = new JSONObject(response.toString());
+        if (json.isNull("result")) {
+            JSONObject errorObj = json.getJSONObject("error");
+            String errorMsg = errorObj.getString("message");
+            throw new CoinNetworkException(errorMsg);
+        }
+
         return true;
     }
 

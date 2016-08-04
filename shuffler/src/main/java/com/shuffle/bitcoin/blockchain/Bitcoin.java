@@ -175,6 +175,7 @@ public abstract class Bitcoin implements Coin {
 
     @Override
     public Bitcoin.Transaction shuffleTransaction(long amount,
+
                                                   List<VerificationKey> from,
                                                   Queue<Address> to,
                                                   Map<VerificationKey, Address> changeAddresses)
@@ -393,7 +394,7 @@ public abstract class Bitcoin implements Coin {
         return txList;
     }
 
-    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException {
+    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException, CoinNetworkException {
         if (!t.canSend || t.sent) {
             return false;
         }
