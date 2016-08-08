@@ -2,11 +2,11 @@ package com.shuffle.bitcoin;
 
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
-import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Wallet;
+import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -15,7 +15,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -31,11 +30,12 @@ public class BitcoinCryptoTest {
    NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
    NetworkParameters mainnet = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
    BitcoinCrypto bitcoinCryptoNoP;
-   BitcoinCrypto bitcoinCryptoMain;
+
+
 
    public BitcoinCryptoTest() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
       bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
-      bitcoinCryptoMain = new BitcoinCrypto(mainnet);
+      // bitcoinCryptoMain = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
    }
 
 
@@ -56,7 +56,7 @@ public class BitcoinCryptoTest {
    @Test
    public void testGetParams() throws Exception {
       assertEquals("Test that default params are testnet",NetworkParameters.fromID(NetworkParameters.ID_TESTNET),bitcoinCryptoNoP.getParams());
-      assertEquals("Test for mainnet params that got parsed to constructor ",NetworkParameters.fromID(NetworkParameters.ID_MAINNET),bitcoinCryptoMain.getParams());
+      // assertEquals("Test for mainnet params that got parsed to constructor ",NetworkParameters.fromID(NetworkParameters.ID_MAINNET),bitcoinCryptoMain.getParams());
       assertEquals(NetworkParameters.ID_TESTNET,bitcoinCryptoNoP.getParams().getId());
    }
 
@@ -120,11 +120,11 @@ public class BitcoinCryptoTest {
       assertTrue(bitcoinCryptoNoP.getRandom(25)<26);
       assertTrue(bitcoinCryptoNoP.getRandom(35)<36);
       // same with main
-      assertTrue(bitcoinCryptoMain.getRandom(5)<6);
+     /** assertTrue(bitcoinCryptoMain.getRandom(5)<6);
       assertTrue(bitcoinCryptoMain.getRandom(15)<16);
       assertTrue(bitcoinCryptoMain.getRandom(25)<26);
       assertTrue(bitcoinCryptoMain.getRandom(35)<36);
-      assertTrue(bitcoinCryptoMain.getRandom(0)<1);
+      assertTrue(bitcoinCryptoMain.getRandom(0)<1); **/
    }
 
    @Test(expected=IllegalArgumentException.class)
@@ -137,15 +137,15 @@ public class BitcoinCryptoTest {
 
       // something to compare to
       KeyChainGroup keyChainTestGroup = new KeyChainGroup(bitcoinCryptoNoP.getParams());
-      KeyChainGroup keyChainMainGroup = new KeyChainGroup(bitcoinCryptoMain.getParams());
+     // KeyChainGroup keyChainMainGroup = new KeyChainGroup(bitcoinCryptoMain.getParams());
 
       // get one key to compare for each
       SigningKey signingKeyTest = bitcoinCryptoNoP.makeSigningKey();
-      SigningKey signingKeyMain = bitcoinCryptoMain.makeSigningKey();
+     // SigningKey signingKeyMain = bitcoinCryptoMain.makeSigningKey();
 
       // compare
       assert (signingKeyTest instanceof SigningKey);
-      assert (signingKeyMain instanceof SigningKey);
+      // assert (signingKeyMain instanceof SigningKey);
 
    }
 
@@ -155,6 +155,35 @@ public class BitcoinCryptoTest {
       for (int i = 0; i<5;i++){
       System.out.println(bitcoinCryptoNoP.makeSigningKey().VerificationKey().address().toString());
       }
+   }
+
+   @Test
+   public void testSend() throws Exception {
+
+      KeyChainGroup momChain = new KeyChainGroup(bitcoinCryptoNoP.getParams(),new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom",null,"",0));
+      BitcoinCrypto bitcoinCrypto = new BitcoinCrypto(bitcoinCryptoNoP.getParams(),momChain);
+         // no funds? that gets you an exception!
+      Wallet wallet = new Wallet(bitcoinCrypto.getParams(),momChain);
+      wallet.allowSpendingUnconfirmedTransactions();
+
+      System.out.println(wallet.currentReceiveAddress().toString()+wallet.getIssuedReceiveAddresses().toString()+wallet.getKeyChainSeed().getMnemonicCode().toString()+" "+wallet.getIssuedReceiveAddresses()+" "+wallet.getBalance().toPlainString()+bitcoinCrypto.getKeyChainMnemonic());
+      org.bitcoinj.core.Transaction sentTransaction = bitcoinCrypto.send("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc",10000);
+      System.out.println(sentTransaction.getHashAsString());
+   }
+
+   @Test
+   public void testGetKeyChainMnemonic() throws Exception {
+         System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic().toString());
+   }
+
+   @Test
+   public void testHexStringToByteArray() throws Exception {
+
+   }
+
+   @Test
+   public void testGetRecommendedFee() throws Exception {
+      System.out.println(bitcoinCryptoNoP.getRecommendedFee().toString());
    }
     /*@Test
     public void testWif() throws AddressFormatException {

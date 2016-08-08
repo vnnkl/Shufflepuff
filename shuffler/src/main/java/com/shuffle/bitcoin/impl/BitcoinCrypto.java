@@ -7,17 +7,27 @@ import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.BlockChain;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
+import org.bitcoinj.store.BlockStore;
+import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.store.MemoryBlockStore;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
+import org.json.JSONObject;
+import org.json.JSONTokener;
 
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPairGenerator;
@@ -44,6 +54,9 @@ public class BitcoinCrypto implements Crypto {
     KeyChainGroup keyChainGroup;
     private final KeyPairGenerator keyPG;
     Wallet wallet;
+    Coin bestFee = getRecommendedFee();
+    PeerGroup peerGroup;
+   BlockChain blockChain;
 
     public static class Exception extends java.lang.Exception {
         public Exception(String message) {
@@ -65,7 +78,7 @@ public class BitcoinCrypto implements Crypto {
     }
 
     public BitcoinCrypto(NetworkParameters networkParameters) throws NoSuchAlgorithmException, Exception {
-        this.params = networkParameters;
+        this.params = NetworkParameters.fromID(networkParameters.getId());
         this.keyChainGroup = new KeyChainGroup(networkParameters);
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
         crashIfJCEMissing();
@@ -73,7 +86,8 @@ public class BitcoinCrypto implements Crypto {
       this.sr = SecureRandom.getInstance("SHA1PRNG");
       this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
       this.wallet = new Wallet(params, keyChainGroup);
-   }
+
+    }
 
     public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException, Exception {
       this(networkParameters);
@@ -85,6 +99,8 @@ public class BitcoinCrypto implements Crypto {
       return params;
    }
 
+
+
     public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
         Address addressj;
         try {
@@ -94,8 +110,22 @@ public class BitcoinCrypto implements Crypto {
             throw new RuntimeException(e);
         }
         Coin amount = Coin.valueOf(amountSatoshis);
-        Wallet.SendRequest sendRequest = Wallet.SendRequest.to(addressj, amount);
-        Wallet.SendResult sendResult = wallet.sendCoins(sendRequest);
+      // walletappkit?
+       BlockStore blockStore = new MemoryBlockStore(params);
+       try {
+          blockChain = new BlockChain(params,wallet,blockStore);
+          peerGroup = new PeerGroup(params,blockChain);
+       } catch (BlockStoreException e) {
+          e.printStackTrace();
+       }
+       peerGroup.addWallet(wallet);
+       peerGroup.start();
+
+       Transaction transaction = wallet.createSend(addressj,amount);
+        Wallet.SendRequest sendRequest = Wallet.SendRequest.forTx(transaction);
+        sendRequest.feePerKb = bestFee;
+
+        Wallet.SendResult sendResult = wallet.sendCoins(peerGroup,sendRequest);
         try {
             return sendResult.broadcastComplete.get();
         } catch (InterruptedException | ExecutionException e) {
@@ -103,6 +133,25 @@ public class BitcoinCrypto implements Crypto {
             throw new RuntimeException(e);
         }
     }
+
+   public Coin getRecommendedFee(){
+      String url = "https://bitcoinfees.21.co/api/v1/fees/recommended";
+      URL obj;
+      try {
+         obj = new URL(url);
+         JSONTokener tokener;
+         HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+         con.setRequestMethod("GET");
+         //set user header to prevent 403
+         con.setRequestProperty("User-Agent", "Chrome/5.0");
+         tokener = new JSONTokener(con.getInputStream());
+         JSONObject root = new JSONObject(tokener);
+         return Coin.valueOf(Long.valueOf(root.get("fastestFee").toString()));
+      } catch (IOException e) {
+         e.printStackTrace();
+         throw new RuntimeException(e);
+      }
+   }
 
 
     public static boolean isValidAddress(String address, NetworkParameters params) {
