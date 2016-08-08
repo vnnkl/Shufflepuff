@@ -15,9 +15,12 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
+import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.MemoryBlockStore;
+import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -25,6 +28,7 @@ import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -57,6 +61,8 @@ public class BitcoinCrypto implements Crypto {
     Coin bestFee = getRecommendedFee();
     PeerGroup peerGroup;
    BlockChain blockChain;
+   WalletAppKit kit;
+   String fileprefix = "shufflepuff";
 
     public static class Exception extends java.lang.Exception {
         public Exception(String message) {
@@ -86,13 +92,22 @@ public class BitcoinCrypto implements Crypto {
       this.sr = SecureRandom.getInstance("SHA1PRNG");
       this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
       this.wallet = new Wallet(params, keyChainGroup);
-
+       if (kit == null) {
+          initKit();
+       }
     }
 
     public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException, Exception {
       this(networkParameters);
       this.keyChainGroup = keyChainGroup;
+       this.kit = kit.restoreWalletFromSeed(keyChainGroup.getActiveKeyChain().getSeed());
       this.wallet = new Wallet(networkParameters, keyChainGroup);
+   }
+
+   public BitcoinCrypto(NetworkParameters networkParameters, DeterministicSeed seed) throws Exception, NoSuchAlgorithmException {
+      this(networkParameters);
+      this.kit = kit.restoreWalletFromSeed(seed);
+      this.wallet = kit.wallet();
    }
 
     public NetworkParameters getParams() {
@@ -125,7 +140,7 @@ public class BitcoinCrypto implements Crypto {
         Wallet.SendRequest sendRequest = Wallet.SendRequest.forTx(transaction);
         sendRequest.feePerKb = bestFee;
 
-        Wallet.SendResult sendResult = wallet.sendCoins(peerGroup,sendRequest);
+       Wallet.SendResult sendResult = kit.wallet().sendCoins(peerGroup, sendRequest);
         try {
             return sendResult.broadcastComplete.get();
         } catch (InterruptedException | ExecutionException e) {
@@ -133,6 +148,21 @@ public class BitcoinCrypto implements Crypto {
             throw new RuntimeException(e);
         }
     }
+
+   public void initKit() {
+      //initialize files and stuff here, add our address to the watched ones
+      kit = new WalletAppKit(params, new File("./shufflePuff"), fileprefix);
+      kit.setAutoSave(true);
+      kit.connectToLocalHost();
+      kit.useTor();
+      kit.startAsync();
+      kit.awaitRunning();
+      kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
+   }
+
+   public WalletAppKit getKit() {
+      return kit;
+   }
 
    public Coin getRecommendedFee(){
       String url = "https://bitcoinfees.21.co/api/v1/fees/recommended";

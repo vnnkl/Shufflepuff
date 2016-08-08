@@ -2,8 +2,11 @@ package com.shuffle.bitcoin;
 
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Wallet;
+import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -73,6 +76,11 @@ public class BitcoinCryptoTest {
       assertFalse(BitcoinCrypto.isValidAddress(privMain, testnet3));
       assertFalse(BitcoinCrypto.isValidAddress(privTest, mainnet));
 
+   }
+
+   @Test
+   public void testinitKit() throws Exception {
+      bitcoinCryptoNoP.initKit();
    }
 
    @Test
@@ -159,7 +167,7 @@ public class BitcoinCryptoTest {
 
    @Test
    public void testSend() throws Exception {
-
+      WalletAppKit nomKit = bitcoinCryptoNoP.getKit().restoreWalletFromSeed(new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom", null, "", 0));
       KeyChainGroup momChain = new KeyChainGroup(bitcoinCryptoNoP.getParams(),new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom",null,"",0));
       BitcoinCrypto bitcoinCrypto = new BitcoinCrypto(bitcoinCryptoNoP.getParams(),momChain);
          // no funds? that gets you an exception!
@@ -168,6 +176,10 @@ public class BitcoinCryptoTest {
 
       System.out.println(wallet.currentReceiveAddress().toString()+wallet.getIssuedReceiveAddresses().toString()+wallet.getKeyChainSeed().getMnemonicCode().toString()+" "+wallet.getIssuedReceiveAddresses()+" "+wallet.getBalance().toPlainString()+bitcoinCrypto.getKeyChainMnemonic());
       org.bitcoinj.core.Transaction sentTransaction = bitcoinCrypto.send("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc",10000);
+
+      Wallet.SendResult sendResult = nomKit.wallet().sendCoins(null, new Address(bitcoinCrypto.getParams(), "n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc"), Coin.valueOf(10000));
+      System.out.println("Transaction sent with txID: " + sendResult.broadcastComplete.get());
+
       System.out.println(sentTransaction.getHashAsString());
    }
 
@@ -185,6 +197,7 @@ public class BitcoinCryptoTest {
    public void testGetRecommendedFee() throws Exception {
       System.out.println(bitcoinCryptoNoP.getRecommendedFee().toString());
    }
+
     /*@Test
     public void testWif() throws AddressFormatException {
         String key = "cRT6Vk7qHrJicYtL1cdTkR71A8YDnftjLdhV4r9tAgYqeG7ZPhYk";
