@@ -7,9 +7,11 @@ import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.store.UnreadableWalletException;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,6 +39,7 @@ public class BitcoinCryptoTest {
 
 
    public BitcoinCryptoTest() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
+
       bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
       // bitcoinCryptoMain = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
    }
@@ -55,6 +58,15 @@ public class BitcoinCryptoTest {
       System.out.println("\n Decryption: "+decryptionKey.toString()+ "\nEncryption: "+decryptionKey.EncryptionKey().toString());
       System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
    }
+
+   @After
+   public void tearDown() throws Exception {
+      bitcoinCryptoNoP.getKit().wallet().shutdownAutosaveAndWait();
+      bitcoinCryptoNoP.getKit().peerGroup().stopAsync();
+   }
+
+   @After
+
 
    @Test
    public void testGetParams() throws Exception {
@@ -80,7 +92,6 @@ public class BitcoinCryptoTest {
 
    @Test
    public void testinitKit() throws Exception {
-      bitcoinCryptoNoP.initKit();
    }
 
    @Test

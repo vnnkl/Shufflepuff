@@ -91,22 +91,21 @@ public class BitcoinCrypto implements Crypto {
       //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
       this.sr = SecureRandom.getInstance("SHA1PRNG");
       this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
-      this.wallet = new Wallet(params, keyChainGroup);
-       if (kit == null) {
-          initKit();
-       }
+       this.kit = getKit();
+      this.wallet = getKit().wallet();
+
     }
 
     public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException, Exception {
       this(networkParameters);
       this.keyChainGroup = keyChainGroup;
-       this.kit = kit.restoreWalletFromSeed(keyChainGroup.getActiveKeyChain().getSeed());
-      this.wallet = new Wallet(networkParameters, keyChainGroup);
+      this.kit = getKit().restoreWalletFromSeed(keyChainGroup.getActiveKeyChain().getSeed());
+      this.wallet = kit.wallet();
    }
 
    public BitcoinCrypto(NetworkParameters networkParameters, DeterministicSeed seed) throws Exception, NoSuchAlgorithmException {
       this(networkParameters);
-      this.kit = kit.restoreWalletFromSeed(seed);
+      this.kit = this.getKit().restoreWalletFromSeed(seed);
       this.wallet = kit.wallet();
    }
 
@@ -126,15 +125,6 @@ public class BitcoinCrypto implements Crypto {
         }
         Coin amount = Coin.valueOf(amountSatoshis);
       // walletappkit?
-       BlockStore blockStore = new MemoryBlockStore(params);
-       try {
-          blockChain = new BlockChain(params,wallet,blockStore);
-          peerGroup = new PeerGroup(params,blockChain);
-       } catch (BlockStoreException e) {
-          e.printStackTrace();
-       }
-       peerGroup.addWallet(wallet);
-       peerGroup.start();
 
        Transaction transaction = wallet.createSend(addressj,amount);
         Wallet.SendRequest sendRequest = Wallet.SendRequest.forTx(transaction);
@@ -149,7 +139,7 @@ public class BitcoinCrypto implements Crypto {
         }
     }
 
-   public void initKit() {
+   private WalletAppKit initKit() {
       //initialize files and stuff here, add our address to the watched ones
       kit = new WalletAppKit(params, new File("./shufflePuff"), fileprefix);
       kit.setAutoSave(true);
@@ -158,9 +148,13 @@ public class BitcoinCrypto implements Crypto {
       kit.startAsync();
       kit.awaitRunning();
       kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
+      return kit;
    }
 
    public WalletAppKit getKit() {
+      if (kit == null) {
+         initKit();
+      }
       return kit;
    }
 
