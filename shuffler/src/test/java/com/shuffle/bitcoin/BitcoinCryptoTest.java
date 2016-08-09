@@ -7,7 +7,6 @@ import org.bitcoinj.core.Wallet;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.security.GeneralSecurityException;
@@ -25,39 +24,35 @@ import static org.junit.Assert.assertTrue;
  */
 public class BitcoinCryptoTest {
 
+
    SigningKey signingKey;
    DecryptionKey decryptionKey;
    NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
    NetworkParameters mainnet = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-   BitcoinCrypto bitcoinCryptoNoP;
+   BitcoinCrypto bitcoinCryptoNoP = getBitcoinCrypto();
 
 
+   public BitcoinCrypto getBitcoinCrypto() {
+      try {
+         return bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
+      } catch (NoSuchAlgorithmException e) {
+         e.printStackTrace();
+         throw new RuntimeException(e);
+      } catch (BitcoinCrypto.Exception e) {
+         e.printStackTrace();
+         throw new RuntimeException(e);
+      }
 
-   public BitcoinCryptoTest() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-      bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
-      // bitcoinCryptoMain = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
    }
 
 
-   @Before
-   public void setUp() throws NoSuchAlgorithmException {
-
-      // create testnet crypto class
-      //bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
-
-      //make signing key
-      signingKey = bitcoinCryptoNoP.makeSigningKey();
-
-      decryptionKey = bitcoinCryptoNoP.makeDecryptionKey();
-      System.out.println("\n Decryption: "+decryptionKey.toString()+ "\nEncryption: "+decryptionKey.EncryptionKey().toString());
-      System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
-   }
 
    @Test
    public void testGetParams() throws Exception {
       assertEquals("Test that default params are testnet",NetworkParameters.fromID(NetworkParameters.ID_TESTNET),bitcoinCryptoNoP.getParams());
       // assertEquals("Test for mainnet params that got parsed to constructor ",NetworkParameters.fromID(NetworkParameters.ID_MAINNET),bitcoinCryptoMain.getParams());
       assertEquals(NetworkParameters.ID_TESTNET,bitcoinCryptoNoP.getParams().getId());
+      System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
    }
 
 
@@ -72,13 +67,14 @@ public class BitcoinCryptoTest {
 
       assertFalse(BitcoinCrypto.isValidAddress(privMain, testnet3));
       assertFalse(BitcoinCrypto.isValidAddress(privTest, mainnet));
-
+      System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
    }
 
    @Test
    public void testLoadPrivateKey() throws Exception {
       String privK = "MIGNAgEAMBAGByqGSM49AgEGBSuBBAAKBHYwdAIBAQQgk4OP0krnEkP5IkAvzH3HEXalM2VVIb3EaDk8zDU1ypWgBwYFK4EEAAqhRANCAAScJ+9oHg9jufttpUDJeJuxD36qDcJzIn7X7/kjrhCjhRzArEe0dzTE/kTS02hGHsX9OtleBaxBjJxGCIAeKh0e";
       PrivateKey privateKey = BitcoinCrypto.loadPrivateKey(privK);
+      System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
    }
 
    @Test(expected=GeneralSecurityException.class)
@@ -146,7 +142,7 @@ public class BitcoinCryptoTest {
       // compare
       assert (signingKeyTest instanceof SigningKey);
       // assert (signingKeyMain instanceof SigningKey);
-
+      System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
    }
 
    @Test
