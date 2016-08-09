@@ -4,6 +4,8 @@ import org.bitcoinj.core.*;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.script.Script;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
@@ -12,7 +14,6 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  * Created by nsa on 8/7/16.
  */
 public class TransactionSignTest {
-
 
     @Test
     public void testSigning() throws AddressFormatException {
@@ -26,10 +27,20 @@ public class TransactionSignTest {
         System.out.println(testbx.getOutput(0));
         tx.addInput(testbx.getOutput(0));
 
-        String seckey = "3EC95EBFEDCF77373BABA0DE345A0962E51344CD2D0C8DBDF93AEFD0B66BE240";
-        byte[] privkey = seckey.getBytes();
-        ECKey ecPriv = ECKey.fromPrivate(privkey);
+        DumpedPrivateKey dumpKey = new DumpedPrivateKey(netParams, "cPgkVEoMUrGTdDNcBWNGfp5Ei8jsXmGAuB47W3tgwkfwdbcYrS3i");
         Sha256Hash hash = tx.hashForSignature(0, testbx.getOutput(0).getScriptPubKey().getProgram(), Transaction.SigHash.ALL, false);
-        ECKey.ECDSASignature ecSig = ecPriv.sign(hash);
+        ECKey.ECDSASignature dumpSig = dumpKey.getKey().sign(hash);
+        System.out.println(dumpSig.r);
+        System.out.println(dumpSig.s);
+        System.out.println(new String(dumpSig.encodeToDER()));
+        //Script inputScript = Script.createInputScript(dumpSig.encodeToDER());
+
+        String seckey = "3EC95EBFEDCF77373BABA0DE345A0962E51344CD2D0C8DBDF93AEFD0B66BE240";
+        byte[] privkey = Hex.decode(seckey);
+        ECKey ecPriv = ECKey.fromPrivate(privkey);
+        Sha256Hash hash2 = tx.hashForSignature(0, testbx.getOutput(0).getScriptPubKey().getProgram(), Transaction.SigHash.ALL, false);
+        ECKey.ECDSASignature ecSig = ecPriv.sign(hash2);
+        
     }
+
 }
