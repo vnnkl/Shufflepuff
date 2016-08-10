@@ -3,11 +3,14 @@ package com.shuffle.bitcoin;
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
@@ -40,7 +43,13 @@ public class TransactionSignTest {
         ECKey ecPriv = ECKey.fromPrivate(privkey);
         Sha256Hash hash2 = tx.hashForSignature(0, testbx.getOutput(0).getScriptPubKey().getProgram(), Transaction.SigHash.ALL, false);
         ECKey.ECDSASignature ecSig = ecPriv.sign(hash2);
-        
+        TransactionSignature txSig = new TransactionSignature(ecSig, Transaction.SigHash.ALL, false);
+        Script inputScript = ScriptBuilder.createInputScript(txSig);
+        tx.getInput(0).setScriptSig(inputScript);
+        String hexBin = DatatypeConverter.printHexBinary(tx.bitcoinSerialize());
+        System.out.println(hexBin);
+        tx.getInput(0).verify(testbx.getOutput(0));
+
     }
 
 }
