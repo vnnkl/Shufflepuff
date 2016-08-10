@@ -17,9 +17,7 @@ import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.discovery.DnsDiscovery;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
-import org.bitcoinj.store.MemoryBlockStore;
+import org.bitcoinj.store.UnreadableWalletException;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
@@ -47,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import javax.annotation.Nullable;
 import javax.crypto.Cipher;
 
 
@@ -104,8 +103,14 @@ public class BitcoinCrypto implements Crypto {
    }
 
    public BitcoinCrypto(NetworkParameters networkParameters, DeterministicSeed seed) throws Exception, NoSuchAlgorithmException {
-      this(networkParameters);
-      this.kit = this.getKit().restoreWalletFromSeed(seed);
+       this.params = NetworkParameters.fromID(networkParameters.getId());
+       this.keyChainGroup = new KeyChainGroup(networkParameters, seed);
+       Security.insertProviderAt(new BouncyCastleProvider(), 1);
+       crashIfJCEMissing();
+       //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
+       this.sr = SecureRandom.getInstance("SHA1PRNG");
+       this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
+       this.kit = initKit(seed);
       this.wallet = kit.wallet();
    }
 
@@ -113,6 +118,16 @@ public class BitcoinCrypto implements Crypto {
       return params;
    }
 
+    public void restoreFromSeed(String mnemonic) {
+        kit.stopAsync().awaitTerminated();
+        try {
+            this.kit = initKit(new DeterministicSeed(mnemonic, null, "", 0));
+        } catch (UnreadableWalletException e) {
+            e.printStackTrace();
+        }
+
+        kit.startAsync().awaitRunning();
+    }
 
 
     public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
@@ -126,11 +141,11 @@ public class BitcoinCrypto implements Crypto {
         Coin amount = Coin.valueOf(amountSatoshis);
       // walletappkit?
 
-       Transaction transaction = wallet.createSend(addressj,amount);
+        Transaction transaction = getKit().wallet().createSend(addressj, amount);
         Wallet.SendRequest sendRequest = Wallet.SendRequest.forTx(transaction);
-        sendRequest.feePerKb = bestFee;
+        sendRequest.feePerKb = getRecommendedFee();
 
-       Wallet.SendResult sendResult = kit.wallet().sendCoins(peerGroup, sendRequest);
+        Wallet.SendResult sendResult = getKit().wallet().sendCoins(kit.peerGroup(), sendRequest);
         try {
             return sendResult.broadcastComplete.get();
         } catch (InterruptedException | ExecutionException e) {
@@ -139,21 +154,27 @@ public class BitcoinCrypto implements Crypto {
         }
     }
 
-   private WalletAppKit initKit() {
+    private WalletAppKit initKit(@Nullable DeterministicSeed seed) {
       //initialize files and stuff here, add our address to the watched ones
-      kit = new WalletAppKit(params, new File("./shufflePuff"), fileprefix);
+        DeterministicSeed deterministicSeed = this.keyChainGroup.getActiveKeyChain().getSeed();
+        WalletAppKit kit = new WalletAppKit(params, new File("./shufflePuff"), fileprefix);
+        if (seed != null) {
+            kit.restoreWalletFromSeed(seed);
+        }
       kit.setAutoSave(true);
       kit.connectToLocalHost();
       kit.useTor();
       kit.startAsync();
-      kit.awaitRunning();
+        if (!kit.isRunning()) {
+            kit.awaitRunning();
+        }
       kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
       return kit;
    }
 
    public WalletAppKit getKit() {
       if (kit == null) {
-         initKit();
+          initKit(null);
       }
       return kit;
    }

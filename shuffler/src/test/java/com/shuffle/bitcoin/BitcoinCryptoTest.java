@@ -4,6 +4,7 @@ import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Coin;
+import org.bitcoinj.core.DumpedPrivateKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
@@ -11,7 +12,6 @@ import org.bitcoinj.store.UnreadableWalletException;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChainGroup;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -30,18 +30,27 @@ import static org.junit.Assert.assertTrue;
  */
 public class BitcoinCryptoTest {
 
+   private static SigningKey signingKey2;
+   private static DecryptionKey decryptionKey2;
    SigningKey signingKey;
    DecryptionKey decryptionKey;
-   NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
+   private static final NetworkParameters testnet3 = NetworkParameters.fromID(NetworkParameters.ID_TESTNET);
    NetworkParameters mainnet = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
-   BitcoinCrypto bitcoinCryptoNoP;
+   static BitcoinCrypto bitcoinCryptoNoP = getBitcoinCrypto();
 
 
-
-   public BitcoinCryptoTest() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-
-      bitcoinCryptoNoP = new BitcoinCrypto(testnet3);
-      // bitcoinCryptoMain = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_MAINNET));
+   private static final BitcoinCrypto getBitcoinCrypto() {
+      try {
+         try {
+            return bitcoinCryptoNoP = new BitcoinCrypto(testnet3, new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom", null, "", 0));
+         } catch (UnreadableWalletException e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+         }
+      } catch (NoSuchAlgorithmException | BitcoinCrypto.Exception e) {
+         e.printStackTrace();
+         throw new RuntimeException(e);
+      }
    }
 
 
@@ -52,20 +61,15 @@ public class BitcoinCryptoTest {
       //bitcoinCrypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
 
       //make signing key
-      signingKey = bitcoinCryptoNoP.makeSigningKey();
+      signingKey2 = bitcoinCryptoNoP.makeSigningKey();
 
-      decryptionKey = bitcoinCryptoNoP.makeDecryptionKey();
-      System.out.println("\n Decryption: "+decryptionKey.toString()+ "\nEncryption: "+decryptionKey.EncryptionKey().toString());
+      decryptionKey2 = bitcoinCryptoNoP.makeDecryptionKey();
+      System.out.println("\n Decryption: " + decryptionKey2.toString() + "\nEncryption: " + decryptionKey2.EncryptionKey().toString());
       System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
    }
 
-   @After
-   public void tearDown() throws Exception {
-      bitcoinCryptoNoP.getKit().wallet().shutdownAutosaveAndWait();
-      bitcoinCryptoNoP.getKit().peerGroup().stopAsync();
-   }
 
-   @After
+
 
 
    @Test
@@ -174,21 +178,31 @@ public class BitcoinCryptoTest {
       for (int i = 0; i<5;i++){
       System.out.println(bitcoinCryptoNoP.makeSigningKey().VerificationKey().address().toString());
       }
+      System.out.println(bitcoinCryptoNoP.getKit().wallet().currentReceiveAddress().toString());
    }
 
    @Test
    public void testSend() throws Exception {
-      WalletAppKit nomKit = bitcoinCryptoNoP.getKit().restoreWalletFromSeed(new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom", null, "", 0));
-      KeyChainGroup momChain = new KeyChainGroup(bitcoinCryptoNoP.getParams(),new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom",null,"",0));
-      BitcoinCrypto bitcoinCrypto = new BitcoinCrypto(bitcoinCryptoNoP.getParams(),momChain);
+
          // no funds? that gets you an exception!
-      Wallet wallet = new Wallet(bitcoinCrypto.getParams(),momChain);
-      wallet.allowSpendingUnconfirmedTransactions();
 
-      System.out.println(wallet.currentReceiveAddress().toString()+wallet.getIssuedReceiveAddresses().toString()+wallet.getKeyChainSeed().getMnemonicCode().toString()+" "+wallet.getIssuedReceiveAddresses()+" "+wallet.getBalance().toPlainString()+bitcoinCrypto.getKeyChainMnemonic());
-      org.bitcoinj.core.Transaction sentTransaction = bitcoinCrypto.send("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc",10000);
+      // bitcoinCryptoNoP.restoreFromSeed("mom mom mom mom mom mom mom mom mom mom mom mom");
 
-      Wallet.SendResult sendResult = nomKit.wallet().sendCoins(null, new Address(bitcoinCrypto.getParams(), "n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc"), Coin.valueOf(10000));
+
+      DumpedPrivateKey n20key = new DumpedPrivateKey(bitcoinCryptoNoP.getParams(), "cNd94mAuzSWEMU3frkTyFfHS4HnefVLmqiXo5UZs31qNjVdD6vnZ");
+      System.out.println(n20key.getKey().toAddress(bitcoinCryptoNoP.getParams()));
+      if (bitcoinCryptoNoP.getKit().wallet().importKey(n20key.getKey())) {
+         System.out.println(bitcoinCryptoNoP.getKit().wallet().getBalance());
+         if (bitcoinCryptoNoP.getKit().wallet().hasKey(n20key.getKey())) {
+            System.out.println("Testkey loaded " + n20key.getKey().toAddress(bitcoinCryptoNoP.getParams()));
+         }
+      }
+
+      WalletAppKit nomKit = bitcoinCryptoNoP.getKit();
+      System.out.println(bitcoinCryptoNoP.getKit().wallet().currentReceiveAddress().toString() + nomKit.wallet().getIssuedReceiveAddresses().toString() + nomKit.wallet().getActiveKeychain().getMnemonicCode().toString() + " " + bitcoinCryptoNoP.getKit().wallet().getIssuedReceiveAddresses() + " " + bitcoinCryptoNoP.getKit().wallet().getBalance().toPlainString() + bitcoinCryptoNoP.getKeyChainMnemonic());
+      org.bitcoinj.core.Transaction sentTransaction = bitcoinCryptoNoP.send("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc", 10000);
+
+      Wallet.SendResult sendResult = nomKit.wallet().sendCoins(null, new Address(bitcoinCryptoNoP.getParams(), "n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc"), Coin.valueOf(10000));
       System.out.println("Transaction sent with txID: " + sendResult.broadcastComplete.get());
 
       System.out.println(sentTransaction.getHashAsString());
