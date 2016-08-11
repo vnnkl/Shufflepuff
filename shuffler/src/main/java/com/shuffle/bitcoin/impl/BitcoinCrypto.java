@@ -7,12 +7,10 @@ import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.BlockChain;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
@@ -44,6 +42,8 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nullable;
 import javax.crypto.Cipher;
@@ -57,9 +57,6 @@ public class BitcoinCrypto implements Crypto {
     KeyChainGroup keyChainGroup;
     private final KeyPairGenerator keyPG;
     Wallet wallet;
-    Coin bestFee = getRecommendedFee();
-    PeerGroup peerGroup;
-   BlockChain blockChain;
    WalletAppKit kit;
    String fileprefix = "shufflepuff";
 
@@ -121,12 +118,13 @@ public class BitcoinCrypto implements Crypto {
     public void restoreFromSeed(String mnemonic) {
         kit.stopAsync().awaitTerminated();
         try {
-            this.kit = initKit(new DeterministicSeed(mnemonic, null, "", 0));
+           this.kit = initKit(new DeterministicSeed(mnemonic, null, "", 1230768000));
         } catch (UnreadableWalletException e) {
             e.printStackTrace();
         }
 
         kit.startAsync().awaitRunning();
+
     }
 
 
@@ -140,7 +138,6 @@ public class BitcoinCrypto implements Crypto {
         }
         Coin amount = Coin.valueOf(amountSatoshis);
       // walletappkit?
-
         Transaction transaction = getKit().wallet().createSend(addressj, amount);
         Wallet.SendRequest sendRequest = Wallet.SendRequest.forTx(transaction);
         sendRequest.feePerKb = getRecommendedFee();
@@ -157,18 +154,25 @@ public class BitcoinCrypto implements Crypto {
     private WalletAppKit initKit(@Nullable DeterministicSeed seed) {
       //initialize files and stuff here, add our address to the watched ones
         DeterministicSeed deterministicSeed = this.keyChainGroup.getActiveKeyChain().getSeed();
-        WalletAppKit kit = new WalletAppKit(params, new File("./shufflePuff"), fileprefix);
+       WalletAppKit kit = new WalletAppKit(params, new File("./spv"), fileprefix);
+
+       kit.setAutoSave(true);
+       // kit.useTor();
+
         if (seed != null) {
             kit.restoreWalletFromSeed(seed);
         }
-      kit.setAutoSave(true);
-      kit.connectToLocalHost();
-      kit.useTor();
-      kit.startAsync();
-        if (!kit.isRunning()) {
-            kit.awaitRunning();
+       kit.setDiscovery(null);
+       kit.startAsync();
+
+       while (!kit.isRunning()) {
+          System.out.println("Waiting for kit to start up...");
+          try {
+             kit.awaitRunning(3, TimeUnit.SECONDS);
+          } catch (TimeoutException ignored) {
+          }
         }
-      kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
+       kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
       return kit;
    }
 

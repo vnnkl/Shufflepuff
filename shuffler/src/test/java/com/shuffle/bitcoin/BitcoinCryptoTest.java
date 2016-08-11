@@ -42,7 +42,7 @@ public class BitcoinCryptoTest {
    private static final BitcoinCrypto getBitcoinCrypto() {
       try {
          try {
-            return bitcoinCryptoNoP = new BitcoinCrypto(testnet3, new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom", null, "", 0));
+            return bitcoinCryptoNoP = new BitcoinCrypto(testnet3, new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom", null, "", 1372550400));
          } catch (UnreadableWalletException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -66,6 +66,7 @@ public class BitcoinCryptoTest {
       decryptionKey2 = bitcoinCryptoNoP.makeDecryptionKey();
       System.out.println("\n Decryption: " + decryptionKey2.toString() + "\nEncryption: " + decryptionKey2.EncryptionKey().toString());
       System.out.println(bitcoinCryptoNoP.getKeyChainMnemonic());
+
    }
 
 
@@ -202,7 +203,7 @@ public class BitcoinCryptoTest {
       System.out.println(bitcoinCryptoNoP.getKit().wallet().currentReceiveAddress().toString() + nomKit.wallet().getIssuedReceiveAddresses().toString() + nomKit.wallet().getActiveKeychain().getMnemonicCode().toString() + " " + bitcoinCryptoNoP.getKit().wallet().getIssuedReceiveAddresses() + " " + bitcoinCryptoNoP.getKit().wallet().getBalance().toPlainString() + bitcoinCryptoNoP.getKeyChainMnemonic());
       org.bitcoinj.core.Transaction sentTransaction = bitcoinCryptoNoP.send("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc", 10000);
 
-      Wallet.SendResult sendResult = nomKit.wallet().sendCoins(null, new Address(bitcoinCryptoNoP.getParams(), "n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc"), Coin.valueOf(10000));
+      Wallet.SendResult sendResult = nomKit.wallet().sendCoins(nomKit.peerGroup(), new Address(bitcoinCryptoNoP.getParams(), "n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc"), Coin.valueOf(10000));
       System.out.println("Transaction sent with txID: " + sendResult.broadcastComplete.get());
 
       System.out.println(sentTransaction.getHashAsString());
