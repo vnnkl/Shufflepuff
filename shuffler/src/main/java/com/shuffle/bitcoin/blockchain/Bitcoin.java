@@ -17,11 +17,18 @@ import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
+import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerGroup;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.discovery.DnsDiscovery;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
@@ -372,6 +379,31 @@ public abstract class Bitcoin implements Coin {
         }
 
         return null;
+    }
+
+    // Takes in a transaction we want to sign (signTx) and a private key (privKey)
+    // and determines if there are any inputs to sign with the private key and signs them.
+
+    public Script signTransaction(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
+
+        for (int i = 0; i < signTx.getInputs().size(); i++) {
+            TransactionInput input = signTx.getInput(i);
+            TransactionOutput connectedOutput = input.getConnectedOutput();
+            Sha256Hash hash = signTx.hashForSignature(i, connectedOutput.getScriptPubKey().getPubKey(), org.bitcoinj.core.Transaction.SigHash.ALL, false);
+            ECKey.ECDSASignature ecSig = privKey.sign(hash);
+            TransactionSignature txSig = new TransactionSignature(ecSig, org.bitcoinj.core.Transaction.SigHash.ALL, false);
+            Script inputScript = ScriptBuilder.createInputScript(txSig, ECKey.fromPublicOnly(privKey.getPubKey()));
+            input.setScriptSig(inputScript);
+            try {
+                input.verify(connectedOutput);
+                return inputScript;
+            } catch (VerificationException e) {
+
+            }
+        }
+
+        return null;
+
     }
 
     // Since we rely on 3rd party services to query the blockchain, by

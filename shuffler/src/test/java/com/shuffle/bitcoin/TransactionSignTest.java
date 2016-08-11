@@ -1,5 +1,7 @@
 package com.shuffle.bitcoin;
 
+import com.shuffle.bitcoin.blockchain.Bitcoin;
+
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Transaction;
@@ -9,6 +11,9 @@ import org.bitcoinj.script.Script;
 import org.bitcoinj.script.ScriptBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
