@@ -389,7 +389,7 @@ public abstract class Bitcoin implements Coin {
         for (int i = 0; i < signTx.getInputs().size(); i++) {
             TransactionInput input = signTx.getInput(i);
             TransactionOutput connectedOutput = input.getConnectedOutput();
-            Sha256Hash hash = signTx.hashForSignature(i, connectedOutput.getScriptPubKey().getPubKey(), org.bitcoinj.core.Transaction.SigHash.ALL, false);
+            Sha256Hash hash = signTx.hashForSignature(i, connectedOutput.getScriptPubKey(), org.bitcoinj.core.Transaction.SigHash.ALL, false);
             ECKey.ECDSASignature ecSig = privKey.sign(hash);
             TransactionSignature txSig = new TransactionSignature(ecSig, org.bitcoinj.core.Transaction.SigHash.ALL, false);
             Script inputScript = ScriptBuilder.createInputScript(txSig, ECKey.fromPublicOnly(privKey.getPubKey()));

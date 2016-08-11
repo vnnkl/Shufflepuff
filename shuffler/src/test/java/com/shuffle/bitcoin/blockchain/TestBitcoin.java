@@ -5,10 +5,13 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.mock.MockAddress;
 
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Context;
+import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -174,5 +177,27 @@ public class TestBitcoin {
         Assert.assertTrue(mock.sufficientFunds(addr, 500000001l));
         */
 
+    }
+
+
+    /**
+     * Here, I use a TransactionOutput from the "parentTx" object and use it as a
+     * TransactionInput in the "tx" object.  I then specify the value in Satoshis
+     * and the address that I want to send to.  I then pass in the new "tx" object
+     * and the ECKey for the TransactionOutput that I want to redeem into
+     * signTransaction method.
+     */
+    @Test
+    public void testSignTransaction() throws AddressFormatException {
+        MockBitcoin mock = new MockBitcoin();
+        HexBinaryAdapter adapter = new HexBinaryAdapter();
+        Context context = Context.getOrCreate(mock.netParams);
+        ECKey privKey = ECKey.fromPrivate(Hex.decode("e10c115f49089edccfb767a4bc3398999d844329fa0aba199eaec18326d3a158"));
+        byte[] txBytes = adapter.unmarshal("0100000001e8284d14a1f0e4f5523ffcd6ee1233177e54e353d3ee9e49924991f3fe5772d2000000006a473044022055f03733993b7d3274c49798c77d7172818a81af1c0f1f4575fa276d3407553202200626ce053c0faa46cf8643682752a2298871bd29f5abf9bda42d8d5cca091db501210267434e7984dee20b294446741566e91d05a6ae3ae7754582a5326a6295becc63ffffffff01f0c4da60000000001976a914588f6f7840a1c4d24a1086ba78d7ddd4a3ca052988ac00000000");
+        Transaction parentTx = new Transaction(mock.netParams, txBytes);
+        Transaction tx = new Transaction(mock.netParams);
+        tx.addOutput(Coin.SATOSHI.multiply(parentTx.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "miJD28ZNPTYQcof4GNARwPL3Xo1NEHpEez"));
+        tx.addInput(parentTx.getOutput(0));
+        Assert.assertNotNull(mock.signTransaction(tx, privKey));
     }
 }
