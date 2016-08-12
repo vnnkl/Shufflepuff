@@ -2,7 +2,6 @@ package com.shuffle.bitcoin;
 
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
-import org.bitcoinj.core.DumpedPrivateKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.store.UnreadableWalletException;
@@ -182,29 +181,13 @@ public class BitcoinCryptoTest {
 
    @Test
    public void testSend() throws Exception {
-      // import the privkey of n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc
-      DumpedPrivateKey n20key = new DumpedPrivateKey(bitcoinCryptoNoP.getParams(), "cNd94mAuzSWEMU3frkTyFfHS4HnefVLmqiXo5UZs31qNjVdD6vnZ");
-      System.out.println(n20key.getKey().toAddress(bitcoinCryptoNoP.getParams()));
-      if (bitcoinCryptoNoP.getKit().wallet().importKey(n20key.getKey())) {
-         System.out.println(bitcoinCryptoNoP.getKit().wallet().getBalance());
-         if (bitcoinCryptoNoP.getKit().wallet().hasKey(n20key.getKey())) {
-            System.out.println("Testkey loaded " + n20key.getKey().toAddress(bitcoinCryptoNoP.getParams()));
-         }
-      }
-
-
       WalletAppKit nomKit = bitcoinCryptoNoP.getKit();
-      System.out.println(bitcoinCryptoNoP.getKit().wallet().currentReceiveAddress().toString() + nomKit.wallet().getIssuedReceiveAddresses().toString() + nomKit.wallet().getActiveKeychain().getMnemonicCode().toString() + " " + bitcoinCryptoNoP.getKit().wallet().getIssuedReceiveAddresses() + " " + bitcoinCryptoNoP.getKit().wallet().getBalance().toPlainString() + bitcoinCryptoNoP.getKeyChainMnemonic());
-
+      System.out.println("Current Receive Address: " + bitcoinCryptoNoP.getKit().wallet().currentReceiveAddress().toString() + "\nIssued Receive Addresses: \n" + nomKit.wallet().getIssuedReceiveAddresses().toString() + "\nMnemonic: " + nomKit.wallet().getActiveKeychain().getMnemonicCode().toString() + "\nWallets Balance: " + bitcoinCryptoNoP.getKit().wallet().getBalance().toPlainString() + " BTC");
       // Get a ready to send TX in its Raw HEX format
       System.out.println("Raw TX HEX: " + bitcoinCryptoNoP.sendOffline("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc", 10000));
       // Create and send transaciton using the wallets broadcast
       org.bitcoinj.core.Transaction sentTransaction = bitcoinCryptoNoP.send("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc", 10000);
-      System.out.println(sentTransaction.getHashAsString());
-
-      //System.out.println(nomKit.wallet().sendCoins(nomKit.peerGroup(), new Address(bitcoinCryptoNoP.getParams(), "n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc"), Coin.valueOf(10000)).tx.getHash());
-      //Wallet.SendResult sendResult = nomKit.wallet().sendCoins(nomKit.peerGroup(), new Address(bitcoinCryptoNoP.getParams(), "n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc"), Coin.valueOf(10000));
-      //System.out.println("Transaction sent with txID: " + sendResult.broadcastComplete.get());
+      System.out.println("Transaction sent. Find txid: " + sentTransaction.getHashAsString());
    }
 
    @Test
