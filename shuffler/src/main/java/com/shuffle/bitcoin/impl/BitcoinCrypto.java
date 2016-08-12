@@ -5,6 +5,7 @@ import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.p2p.Bytestring;
 
+import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Coin;
@@ -137,11 +138,13 @@ public class BitcoinCrypto implements Crypto {
             throw new RuntimeException(e);
         }
         Coin amount = Coin.valueOf(amountSatoshis);
-      // walletappkit?
+       // create a tx to destinationAddress of amount
         Transaction transaction = getKit().wallet().createSend(addressj, amount);
+       // get a SendRequest for tx
         Wallet.SendRequest sendRequest = Wallet.SendRequest.forTx(transaction);
+       // set dynamic fee
         sendRequest.feePerKb = getRecommendedFee();
-
+       // have wallet create tx, mark used utxos as spent and send out tx using wallets connected peergroup
         Wallet.SendResult sendResult = getKit().wallet().sendCoins(kit.peerGroup(), sendRequest);
         try {
             return sendResult.broadcastComplete.get();
@@ -151,20 +154,40 @@ public class BitcoinCrypto implements Crypto {
         }
     }
 
+   public String sendOffline(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
+      Address addressj;
+      try {
+         addressj = new Address(params, destinationAddress);
+      } catch (AddressFormatException e) {
+         e.printStackTrace();
+         throw new RuntimeException(e);
+      }
+      Coin amount = Coin.valueOf(amountSatoshis);
+      // create a SendRequest of amount to destinationAddress
+      Wallet.SendRequest sendRequest = Wallet.SendRequest.to(addressj, amount);
+      // set dynamic fee
+      sendRequest.feePerKb = getRecommendedFee();
+      // complete & sign tx
+      wallet.completeTx(sendRequest);
+      wallet.signTransaction(sendRequest);
+      // return tx bytes as hex encoded String
+      return Hex.encodeHexString(sendRequest.tx.bitcoinSerialize());
+   }
+
     private WalletAppKit initKit(@Nullable DeterministicSeed seed) {
       //initialize files and stuff here, add our address to the watched ones
         DeterministicSeed deterministicSeed = this.keyChainGroup.getActiveKeyChain().getSeed();
        WalletAppKit kit = new WalletAppKit(params, new File("./spv"), fileprefix);
-
        kit.setAutoSave(true);
        // kit.useTor();
-
-        if (seed != null) {
+       kit.setDiscovery(new DnsDiscovery(params));
+       // fresh restore if seed provided
+       if (seed != null) {
             kit.restoreWalletFromSeed(seed);
         }
-       kit.setDiscovery(null);
+       // startUp WalletAppKit
        kit.startAsync();
-
+       // wait for kit to sync and startup, print out every 3 sec
        while (!kit.isRunning()) {
           System.out.println("Waiting for kit to start up...");
           try {
@@ -172,7 +195,6 @@ public class BitcoinCrypto implements Crypto {
           } catch (TimeoutException ignored) {
           }
         }
-       kit.peerGroup().addPeerDiscovery(new DnsDiscovery(params));
       return kit;
    }
 
