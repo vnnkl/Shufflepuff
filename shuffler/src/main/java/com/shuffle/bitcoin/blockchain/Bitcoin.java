@@ -33,6 +33,7 @@ import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -381,29 +382,65 @@ public abstract class Bitcoin implements Coin {
         return null;
     }
 
-    // Takes in a transaction we want to sign (signTx) and a private key (privKey)
-    // and determines if there are any inputs to sign with the private key and signs them.
+    public org.bitcoinj.core.Transaction signTransaction(org.bitcoinj.core.Transaction signTx, List<Bytestring> programSignatures) {
 
-    public Script signTransaction(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
+        List<Script> inputScripts = new LinkedList<>();
+        for (Bytestring programs : programSignatures) {
+            if (!inputScripts.add(bytestringToInputScript(programs))) {
+                return null;
+            }
+        }
 
-        for (int i = 0; i < signTx.getInputs().size(); i++) {
-            TransactionInput input = signTx.getInput(i);
+        for (Script inScript : inputScripts) {
+            for (int i = 0; i < signTx.getInputs().size(); i++) {
+                TransactionInput input = signTx.getInput(i);
+                TransactionOutput connectedOutput = input.getConnectedOutput();
+                input.setScriptSig(inScript);
+                try {
+                    input.verify(connectedOutput);
+                    signTx.getInput(i).setScriptSig(inScript);
+                    break;
+                } catch (VerificationException e) {
+                    if (i == signTx.getInputs().size() - 1) {
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return signTx;
+    }
+
+    /**
+     * Takes in a transaction and a private key and returns a signature (if possible)
+     * as a Bytestring object.
+     */
+    public Bytestring getSignature(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
+
+        org.bitcoinj.core.Transaction copyTx = signTx;
+
+        for (int i = 0; i < copyTx.getInputs().size(); i++) {
+            TransactionInput input = copyTx.getInput(i);
             TransactionOutput connectedOutput = input.getConnectedOutput();
-            Sha256Hash hash = signTx.hashForSignature(i, connectedOutput.getScriptPubKey(), org.bitcoinj.core.Transaction.SigHash.ALL, false);
+            Sha256Hash hash = copyTx.hashForSignature(i, connectedOutput.getScriptPubKey(), org.bitcoinj.core.Transaction.SigHash.ALL, false);
             ECKey.ECDSASignature ecSig = privKey.sign(hash);
             TransactionSignature txSig = new TransactionSignature(ecSig, org.bitcoinj.core.Transaction.SigHash.ALL, false);
             Script inputScript = ScriptBuilder.createInputScript(txSig, ECKey.fromPublicOnly(privKey.getPubKey()));
             input.setScriptSig(inputScript);
             try {
                 input.verify(connectedOutput);
-                return inputScript;
+                return new Bytestring(inputScript.getProgram());
             } catch (VerificationException e) {
 
             }
         }
 
         return null;
+    }
 
+    // Converts a Bytestring object to a Script object.
+    public Script bytestringToInputScript(Bytestring program) {
+        return new Script(program.bytes);
     }
 
     // Since we rely on 3rd party services to query the blockchain, by
