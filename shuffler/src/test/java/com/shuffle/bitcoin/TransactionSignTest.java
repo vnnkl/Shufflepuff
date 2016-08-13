@@ -1,13 +1,21 @@
 package com.shuffle.bitcoin;
 
+import com.shuffle.bitcoin.blockchain.Bitcoin;
+
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.util.List;
+
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
@@ -27,20 +35,19 @@ public class TransactionSignTest {
         System.out.println(testbx.getOutput(0));
         tx.addInput(testbx.getOutput(0));
 
-        DumpedPrivateKey dumpKey = new DumpedPrivateKey(netParams, "cPgkVEoMUrGTdDNcBWNGfp5Ei8jsXmGAuB47W3tgwkfwdbcYrS3i");
-        Sha256Hash hash = tx.hashForSignature(0, testbx.getOutput(0).getScriptPubKey().getProgram(), Transaction.SigHash.ALL, false);
-        ECKey.ECDSASignature dumpSig = dumpKey.getKey().sign(hash);
-        System.out.println(dumpSig.r);
-        System.out.println(dumpSig.s);
-        System.out.println(new String(dumpSig.encodeToDER()));
-        //Script inputScript = Script.createInputScript(dumpSig.encodeToDER());
-
         String seckey = "3EC95EBFEDCF77373BABA0DE345A0962E51344CD2D0C8DBDF93AEFD0B66BE240";
         byte[] privkey = Hex.decode(seckey);
         ECKey ecPriv = ECKey.fromPrivate(privkey);
         Sha256Hash hash2 = tx.hashForSignature(0, testbx.getOutput(0).getScriptPubKey().getProgram(), Transaction.SigHash.ALL, false);
         ECKey.ECDSASignature ecSig = ecPriv.sign(hash2);
-        
+        TransactionSignature txSig = new TransactionSignature(ecSig, Transaction.SigHash.ALL, false);
+        Script inputScript = ScriptBuilder.createInputScript(txSig, ECKey.fromPublicOnly(ecPriv.getPubKey()));
+        tx.getInput(0).setScriptSig(inputScript);
+        String hexBin = DatatypeConverter.printHexBinary(tx.bitcoinSerialize());
+        System.out.println(hexBin);
+        tx.getInput(0).verify(testbx.getOutput(0));
+        // SUCCESSFULLY BROADCAST WOO!
+
     }
 
 }

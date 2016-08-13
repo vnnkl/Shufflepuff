@@ -3,12 +3,16 @@ package com.shuffle.bitcoin.blockchain;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.mock.MockAddress;
+import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.Context;
+import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -16,6 +20,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
@@ -175,4 +180,35 @@ public class TestBitcoin {
         */
 
     }
+
+    /**
+     *
+     */
+    @Test
+    public void testGetSignatureAndSign() throws AddressFormatException {
+        MockBitcoin mock = new MockBitcoin();
+        HexBinaryAdapter adapter = new HexBinaryAdapter();
+        ECKey privKey1 = ECKey.fromPrivate(Hex.decode("e10c115f49089edccfb767a4bc3398999d844329fa0aba199eaec18326d3a158"));
+        ECKey privKey2 = ECKey.fromPrivate(Hex.decode("14be56f97f5dc42330d53420f9d5dc290b8069ad16834581ca8bc1b8a20ee659"));
+        byte[] parentBytes1 = adapter.unmarshal("0100000001e8284d14a1f0e4f5523ffcd6ee1233177e54e353d3ee9e49924991f3fe5772d2000000006a473044022055f03733993b7d3274c49798c77d7172818a81af1c0f1f4575fa276d3407553202200626ce053c0faa46cf8643682752a2298871bd29f5abf9bda42d8d5cca091db501210267434e7984dee20b294446741566e91d05a6ae3ae7754582a5326a6295becc63ffffffff01f0c4da60000000001976a914588f6f7840a1c4d24a1086ba78d7ddd4a3ca052988ac00000000");
+        byte[] parentBytes2 = adapter.unmarshal("0100000001ce44d227ed4cb3061aaf27f746e21e0de4689d9546f4eb864785f3427b7fe5d0010000006a473044022058c0dfdbeedc955e3ecf03a934196405e306a74bd0b16f228e7c0a7a4b7011b302203050606da07476d7c5c3801a2840dd9e33e9a82089543970a6224054fb3fd5d701210224ec1e4c270ce373e6999eebfa01d0a7e7db3c537c026f265233350d5aab81fbfeffffff02408af701000000001976a91457ac06008966ba05a9880183757435a55cfb056e88acf03ba339000000001976a9146d87b900ca197da43851b5a1827873c7957cf29e88ac4d110e00");
+        Transaction parentTx1 = new Transaction(mock.netParams, parentBytes1);
+        Transaction parentTx2 = new Transaction(mock.netParams, parentBytes2);
+        Transaction tx = new Transaction(mock.netParams);
+        tx.addOutput(Coin.SATOSHI.multiply(parentTx1.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "n1pG4uaaSjcukvfr3CsvefDbG2sTfQXhsB"));
+        tx.addOutput(Coin.SATOSHI.multiply(parentTx2.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "mukfC6Dt2opm3YJ2rKZvshyicQKF67jYwP"));
+        tx.addInput(parentTx1.getOutput(0));
+        tx.addInput(parentTx2.getOutput(0));
+        Assert.assertNotNull(mock.getSignature(tx, privKey1));
+        Assert.assertNotNull(mock.getSignature(tx, privKey2));
+        Bytestring sig1 = mock.getSignature(tx, privKey1);
+        Bytestring sig2 = mock.getSignature(tx, privKey2);
+        List<Bytestring> signatures = new LinkedList<>();
+        signatures.add(sig1);
+        signatures.add(sig2);
+        Assert.assertNotNull(mock.signTransaction(tx, signatures));
+        Transaction signedTx = mock.signTransaction(tx, signatures);
+        System.out.println(DatatypeConverter.printHexBinary(signedTx.bitcoinSerialize()));
+    }
+
 }
