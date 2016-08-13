@@ -4,6 +4,7 @@ import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.p2p.Bytestring;
+import com.sun.istack.internal.NotNull;
 
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.Address;
@@ -173,7 +174,7 @@ public class BitcoinCrypto implements Crypto {
       DeterministicSeed deterministicSeed = this.keyChainGroup.getActiveKeyChain().getSeed();
       WalletAppKit kit = new WalletAppKit(params, new File("./spv"), fileprefix);
       kit.setAutoSave(true);
-      //kit.useTor();
+      kit.useTor();
       kit.setDiscovery(new DnsDiscovery(params));
       // fresh restore if seed provided
       if (seed != null) {
@@ -261,6 +262,7 @@ public class BitcoinCrypto implements Crypto {
 
    }
 
+   @NotNull
    public List<String> getKeyChainMnemonic() {
       return keyChainGroup.getActiveKeyChain().getSeed().getMnemonicCode();
    }
