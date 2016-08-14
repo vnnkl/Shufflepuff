@@ -9,6 +9,7 @@
 package com.shuffle.bitcoin;
 
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import java.io.Serializable;
 import java.util.concurrent.ExecutionException;
@@ -23,4 +24,12 @@ public interface Transaction extends Serializable {
     void send() throws CoinNetworkException, ExecutionException, InterruptedException;
 
     Bytestring serialize();
+
+    // Sign the transaction and return the input script.
+    Bytestring sign(SigningKey sk);
+
+    void addInputScript(Bytestring b) throws FormatException;
+
+    // Whether a transaction has enough signatures to be valid.
+    boolean isValid();
 }

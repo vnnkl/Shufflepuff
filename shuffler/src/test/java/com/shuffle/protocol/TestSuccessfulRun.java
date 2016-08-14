@@ -46,7 +46,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
             InterruptedException, BitcoinCrypto.Exception {
 
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
-        check(new RealTestCase(description).successfulTestCase(numPlayer));
+        check(newTestCase(description).successfulTestCase(numPlayer));
     }
 
     @Test

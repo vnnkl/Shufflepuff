@@ -10,7 +10,9 @@ package com.shuffle.sim;
 
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
+import com.shuffle.protocol.FormatException;
 
 /**
  * Represents a fake Bitcoin network that can be manipulated for testing purposes.
@@ -23,7 +25,7 @@ public interface MockCoin extends Coin {
     void put(Address addr, long value);
 
     // Make a transaction that spends the coins from a given address.
-    Transaction makeSpendingTransaction(Address from, Address to, long amount);
+    Transaction makeSpendingTransaction(SigningKey from, Address to, long amount) throws FormatException;
     
     // Whether the given transaction spends the funds in the given address.
     Transaction getSpendingTransaction(Address addr, long amount);

@@ -132,6 +132,10 @@ public class TestShuffleMachine {
         }
     }
 
+    public TestCase newTestCase(String session) {
+        return new MockTestCase(session);
+    }
+
     void check(InitialState init) throws ExecutionException, InterruptedException {
         int fail = 0;
         int success = 0;

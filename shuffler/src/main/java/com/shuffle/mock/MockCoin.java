@@ -11,6 +11,7 @@ package com.shuffle.mock;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
@@ -80,6 +81,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     public static class MockTransaction implements Transaction, Serializable {
         public final List<Output> inputs = new LinkedList<>();
         public final List<Output> outputs = new LinkedList<>();
+        public final Map<Output, SigningKey> signatures;
         // A number used to represented slight variations in a transaction which would
         // result in different signatures being produced.
         public final int z;
@@ -87,7 +89,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         private final transient MockCoin coin;
 
         MockTransaction(List<Output> inputs, List<Output> outputs, MockCoin coin) {
-            this(inputs, outputs, 1, coin);
+            this(inputs, outputs, 1, coin, new HashMap<Output, SigningKey>());
         }
 
         public static MockTransaction fromBytes(Bytestring b) throws FormatException {
@@ -102,7 +104,12 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
         }
 
-        public MockTransaction(List<Output> inputs, List<Output> outputs, int z, MockCoin coin) {
+        public MockTransaction(
+                List<Output> inputs,
+                List<Output> outputs,
+                int z, MockCoin coin,
+                Map<Output, SigningKey> signatures) {
+
             for (Output output : inputs)
                 if (output == null) throw new NullPointerException();
 
@@ -113,6 +120,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
             this.inputs.addAll(inputs);
             this.outputs.addAll(outputs);
             this.coin = coin;
+            this.signatures = signatures;
         }
 
         @Override
@@ -162,12 +170,44 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
             return new Bytestring(toString().getBytes());
         }
 
+        @Override
+        public Bytestring sign(SigningKey sk) {
+            return new Bytestring(sk.toString().getBytes());
+        }
+
+        @Override
+        public void addInputScript(Bytestring b) throws FormatException {
+            MockSigningKey sk = new MockSigningKey(new String(b.bytes));
+
+            for (Output o : inputs) {
+                SigningKey s = signatures.get(o);
+
+                if (s != null) continue;
+
+                if (sk.VerificationKey().address().equals(o.address)) {
+                    signatures.put(o, sk);
+                    break;
+                }
+            }
+        }
+
+        @Override
+        // Check whether a signature exists for each input.
+        public boolean isValid() {
+            for (Output o : inputs) {
+                SigningKey s = signatures.get(o);
+                if (s == null || s.VerificationKey().address().equals(o.address)) return false;
+            }
+
+            return true;
+        }
+
         public MockTransaction copy() {
-            return new MockTransaction(inputs, outputs, z, coin);
+            return new MockTransaction(inputs, outputs, z, coin, signatures);
         }
 
         public MockTransaction mutate() {
-            return new MockTransaction(inputs, outputs, z + 1, coin);
+            return new MockTransaction(inputs, outputs, z + 1, coin, signatures);
         }
 
         @Override
@@ -220,23 +260,28 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
-    public synchronized Transaction makeSpendingTransaction(Address from, Address to, long amount) {
+    public synchronized Transaction makeSpendingTransaction(SigningKey from, Address to, long amount) throws FormatException {
         Output output = blockchain.get(from);
 
         if (output == null) return null;
 
-        if (amount > valueHeld(from)) return null;
+        if (amount > valueHeld(from.VerificationKey().address())) return null;
 
         List<Output> in = new LinkedList<>();
         List<Output> out = new LinkedList<>();
         in.add(output);
         out.add(new Output(to, amount));
 
-        return new MockTransaction(in, out, this);
+        Transaction t = new MockTransaction(in, out, this);
+        t.addInputScript(new Bytestring(from.toString().getBytes()));
+        return t;
     }
 
     public synchronized void send(MockTransaction mt) throws CoinNetworkException {
         if (mt == null) throw new NullPointerException();
+
+        // Is the transaction valid?
+        if (!mt.isValid()) throw new CoinNetworkException("Invalid tx.");
 
         // First check that the transaction doesn't send more than it spends.
         long available = 0;
@@ -318,7 +363,8 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
         outputs.addAll(changes);
 
-        return new MockTransaction(inputs, outputs, 1, this);
+        return new MockTransaction(inputs, outputs, 1, this,
+                new HashMap<Output, SigningKey>());
     }
 
     @Override
@@ -502,7 +548,8 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
                     tr = new MockTransaction(tin, tout, mock);
                 } else {
                     z = (Long) zz;
-                    tr = new MockTransaction(tin, tout, z.intValue(), mock);
+                    tr = new MockTransaction(tin, tout, z.intValue(), mock,
+                            new HashMap<Output, SigningKey>());
                 }
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("Could not read z value " + zz + " as long.");

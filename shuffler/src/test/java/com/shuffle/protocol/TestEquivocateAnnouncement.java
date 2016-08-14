@@ -30,7 +30,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
             InitialState.Equivocation[] equivocators
     ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
         String description = "case " + caseNo + "; announcement equivocation test case.";
-        check(new RealTestCase(description).equivocateAnnouncementTestCase(
+        check(newTestCase(description).equivocateAnnouncementTestCase(
                 numPlayers, equivocators
         ));
     }

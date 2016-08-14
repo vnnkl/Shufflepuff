@@ -29,7 +29,7 @@ public class TestEquivocateBroadcast extends TestShuffleMachine {
             throws NoSuchAlgorithmException, ExecutionException,
             InterruptedException, BitcoinCrypto.Exception {
         String description = "case " + caseNo + "; broadcast equivocation test case.";
-        check(new RealTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
+        check(newTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
     }
 
     @Test

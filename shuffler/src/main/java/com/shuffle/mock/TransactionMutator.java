@@ -11,9 +11,11 @@ package com.shuffle.mock;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -39,7 +41,8 @@ public class TransactionMutator implements Coin {
         MockCoin.MockTransaction tr = (MockCoin.MockTransaction) coin.shuffleTransaction(
                         amount, from, to, changeAddresses);
 
-        return new MockCoin.MockTransaction(tr.inputs, tr.outputs, tr.z + 1, coin);
+        return new MockCoin.MockTransaction(tr.inputs, tr.outputs, tr.z + 1, coin,
+                new HashMap<MockCoin.Output, SigningKey>());
     }
 
     @Override

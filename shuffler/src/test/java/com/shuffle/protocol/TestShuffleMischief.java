@@ -36,7 +36,7 @@ public class TestShuffleMischief extends TestShuffleMachine {
             int[][] replaceDuplicate
     ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
         String description = "case " + caseNo + "; shuffle phase mischief test case.";
-        check(new RealTestCase(description).dropAddressTestCase(
+        check(newTestCase(description).dropAddressTestCase(
                 numPlayers, drop, replaceNew, replaceDuplicate
         ));
     }

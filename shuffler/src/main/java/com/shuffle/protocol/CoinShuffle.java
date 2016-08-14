@@ -228,7 +228,9 @@ public class CoinShuffle {
             Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
-            if (t == null) throw new RuntimeException("WTF it's null???");
+            if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
+
+
 
             mailbox.broadcast(messages.make().attach(sk.sign(t.serialize())), phase.get());
 

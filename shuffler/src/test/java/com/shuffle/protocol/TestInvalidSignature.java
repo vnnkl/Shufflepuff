@@ -29,7 +29,7 @@ public class TestInvalidSignature extends TestShuffleMachine{
             InterruptedException, BitcoinCrypto.Exception {
 
         String description = "case " + caseNo + "; invalid transaction signature test case.";
-        check(new RealTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
+        check(newTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
     }
 
     @Test

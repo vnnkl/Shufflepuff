@@ -12,8 +12,10 @@ package com.shuffle.bitcoin.blockchain;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
@@ -129,6 +131,23 @@ public abstract class Bitcoin implements Coin {
         @Override
         public Bytestring serialize() {
             return new Bytestring(bitcoinj.bitcoinSerialize());
+        }
+
+        @Override
+        // TODO
+        public Bytestring sign(SigningKey sk) {
+            return null;
+        }
+
+        @Override
+        public void addInputScript(Bytestring b) throws FormatException {
+            // TODO
+        }
+
+        @Override
+        // TODO
+        public boolean isValid() {
+            return false;
         }
 
         @Override

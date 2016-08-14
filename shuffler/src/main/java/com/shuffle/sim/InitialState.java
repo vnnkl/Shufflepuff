@@ -22,6 +22,7 @@ import com.shuffle.player.Messages;
 import com.shuffle.player.P;
 import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.CoinShuffle;
+import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.MaliciousMachine;
 import com.shuffle.protocol.blame.Evidence;
 import com.shuffle.protocol.blame.Matrix;
@@ -189,7 +190,7 @@ public class InitialState {
             return InitialState.this.crypto;
         }
 
-        public MockCoin coin() throws InterruptedException, ExecutionException, CoinNetworkException {
+        public MockCoin coin() throws InterruptedException, ExecutionException, CoinNetworkException, FormatException {
             if (networkPoints == null) {
                 networkPoints = new HashMap<>();
             }
@@ -208,18 +209,17 @@ public class InitialState {
                     if (player.initialAmount > 0) {
                         Address address = player.sk.VerificationKey().address();
 
-                        Address previousAddress
-                                = crypto.makeSigningKey().VerificationKey().address();
+                        SigningKey previous = crypto.makeSigningKey();
 
-                        mockCoin.put(previousAddress, player.initialAmount);
+                        mockCoin.put(previous.VerificationKey().address(), player.initialAmount);
                         mockCoin.makeSpendingTransaction(
-                                previousAddress, address, player.initialAmount
+                                previous, address, player.initialAmount
                         ).send();
 
                         // Plot twist! We spend it all!
                         if (player.spend > 0) {
                             mockCoin.makeSpendingTransaction(
-                                    address,
+                                    player.sk,
                                     crypto.makeSigningKey().VerificationKey().address(),
                                     player.spend
                             ).send();
@@ -236,7 +236,7 @@ public class InitialState {
         // Turn the initial state into an Adversary object that can be run in the simulator.
         public Adversary adversary(
                 MessageFactory messages
-        ) throws InterruptedException, ExecutionException, CoinNetworkException {
+        ) throws InterruptedException, ExecutionException, CoinNetworkException, FormatException {
 
             if (sk == null) {
                 return null;
@@ -265,8 +265,7 @@ public class InitialState {
             } else if (doubleSpend > 0) {
                 // is he going to double spend? If so, make a new transaction for him.
                 shuffle = MaliciousMachine.doubleSpender(messages, crypto, coin,
-                        coin.makeSpendingTransaction(
-                                address,
+                        coin.makeSpendingTransaction(sk,
                                 crypto.makeSigningKey().VerificationKey().address(),
                                 doubleSpend
                         )
@@ -401,10 +400,10 @@ public class InitialState {
                         player.adversary(new Messages(session, player.sk, c.send, c.receive,
                                 m)));
 
-            } catch (CoinNetworkException | NoSuchAlgorithmException e) {
+            } catch (FormatException | CoinNetworkException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
-            }
+            } 
         }
 
         networkPoints = null;

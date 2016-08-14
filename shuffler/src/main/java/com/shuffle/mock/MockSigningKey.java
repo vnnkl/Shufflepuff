@@ -11,6 +11,7 @@ package com.shuffle.mock;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -23,6 +24,18 @@ public class MockSigningKey implements SigningKey {
 
     public MockSigningKey(int index) {
         this.index = index;
+    }
+
+    public MockSigningKey(String str) throws FormatException {
+        if (str.length() <= 4) {
+            throw new FormatException("Cannot read MockSigningKey from string.");
+        }
+
+        try {
+            index = Integer.parseInt(str.substring(3, str.length() - 1));
+        } catch (NumberFormatException e) {
+            throw new FormatException(e.getMessage());
+        }
     }
 
     @Override
