@@ -34,6 +34,7 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -410,18 +411,22 @@ public abstract class Bitcoin implements Coin {
             }
         }
 
+        ArrayList<Integer> setScript = new ArrayList<>();
         for (Script inScript : inputScripts) {
             for (int i = 0; i < signTx.getInputs().size(); i++) {
-                TransactionInput input = signTx.getInput(i);
-                TransactionOutput connectedOutput = input.getConnectedOutput();
-                input.setScriptSig(inScript);
-                try {
-                    input.verify(connectedOutput);
-                    signTx.getInput(i).setScriptSig(inScript);
-                    break;
-                } catch (VerificationException e) {
-                    if (i == signTx.getInputs().size() - 1) {
-                        return null;
+                if (!setScript.contains(i)) {
+                    TransactionInput input = signTx.getInput(i);
+                    TransactionOutput connectedOutput = input.getConnectedOutput();
+                    input.setScriptSig(inScript);
+                    try {
+                        input.verify(connectedOutput);
+                        setScript.add(i);
+                        signTx.getInput(i).setScriptSig(inScript);
+                        break;
+                    } catch (VerificationException e) {
+                        if (i == signTx.getInputs().size() - 1) {
+                            return null;
+                        }
                     }
                 }
             }
