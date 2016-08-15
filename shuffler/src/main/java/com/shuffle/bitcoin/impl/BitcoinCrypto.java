@@ -4,7 +4,6 @@ import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.p2p.Bytestring;
-import com.sun.istack.internal.NotNull;
 
 import org.apache.commons.codec.binary.Hex;
 import org.bitcoinj.core.Address;
@@ -58,8 +57,8 @@ public class BitcoinCrypto implements Crypto {
    NetworkParameters params;
    KeyChainGroup keyChainGroup;
    private final KeyPairGenerator keyPG;
-   Wallet wallet;
-   WalletAppKit kit;
+   //Wallet wallet;
+   //WalletAppKit kit;
    String fileprefix = "shufflepuff";
 
    public static class Exception extends java.lang.Exception {
@@ -89,16 +88,16 @@ public class BitcoinCrypto implements Crypto {
       //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
       this.sr = SecureRandom.getInstance("SHA1PRNG");
       this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
-      this.kit = getKit();
-      this.wallet = getKit().wallet();
+      //this.kit = getKit();
+      //this.wallet = getKit().wallet();
 
    }
 
    public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException, Exception {
       this(networkParameters);
       this.keyChainGroup = keyChainGroup;
-      this.kit = getKit().restoreWalletFromSeed(keyChainGroup.getActiveKeyChain().getSeed());
-      this.wallet = kit.wallet();
+      //this.kit = getKit().restoreWalletFromSeed(keyChainGroup.getActiveKeyChain().getSeed());
+      //this.wallet = kit.wallet();
    }
 
    public BitcoinCrypto(NetworkParameters networkParameters, DeterministicSeed seed) throws Exception, NoSuchAlgorithmException {
@@ -109,15 +108,15 @@ public class BitcoinCrypto implements Crypto {
       //this.sr = SecureRandom.getInstance("SHA1PRNG", new BouncyCastleProvider());
       this.sr = SecureRandom.getInstance("SHA1PRNG");
       this.keyPG = KeyPairGenerator.getInstance("ECIES", new BouncyCastleProvider());
-      this.kit = initKit(seed);
-      this.wallet = kit.wallet();
+      //this.kit = initKit(seed);
+      //this.wallet = kit.wallet();
    }
 
    public NetworkParameters getParams() {
       return params;
    }
 
-   private void restoreFromSeed(String mnemonic) {
+   /*private void restoreFromSeed(String mnemonic) {
       kit.stopAsync().awaitTerminated();
       try {
          this.kit = initKit(new DeterministicSeed(mnemonic, null, "", 1230768000));
@@ -127,10 +126,10 @@ public class BitcoinCrypto implements Crypto {
 
       kit.startAsync().awaitRunning();
 
-   }
+   }*/
 
 
-   public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
+   /*public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
       Address addressj;
       try {
          addressj = new Address(params, destinationAddress);
@@ -147,9 +146,9 @@ public class BitcoinCrypto implements Crypto {
          e.printStackTrace();
          throw new RuntimeException(e);
       }
-   }
+   }*/
 
-   public String sendOffline(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
+   /*public String sendOffline(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
       Address addressj;
       try {
          addressj = new Address(params, destinationAddress);
@@ -167,9 +166,9 @@ public class BitcoinCrypto implements Crypto {
       wallet.signTransaction(sendRequest);
       // return tx bytes as hex encoded String
       return Hex.encodeHexString(sendRequest.tx.bitcoinSerialize());
-   }
+   }*/
 
-   private WalletAppKit initKit(@Nullable DeterministicSeed seed) {
+   /*private WalletAppKit initKit(@Nullable DeterministicSeed seed) {
       //initialize files and stuff here, add our address to the watched ones
       DeterministicSeed deterministicSeed = this.keyChainGroup.getActiveKeyChain().getSeed();
       WalletAppKit kit = new WalletAppKit(params, new File("./spv"), fileprefix);
@@ -198,7 +197,7 @@ public class BitcoinCrypto implements Crypto {
          initKit(null);
       }
       return kit;
-   }
+   }*/
 
    public Coin getRecommendedFee() {
       String url = "https://bitcoinfees.21.co/api/v1/fees/recommended";
@@ -262,7 +261,6 @@ public class BitcoinCrypto implements Crypto {
 
    }
 
-   @NotNull
    public List<String> getKeyChainMnemonic() {
       return keyChainGroup.getActiveKeyChain().getSeed().getMnemonicCode();
    }
