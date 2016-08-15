@@ -437,7 +437,6 @@ public abstract class Bitcoin implements Coin {
             for (int i = 0; i < signTx.getInputs().size(); i++) {
                 TransactionInput input = signTx.getInput(i);
                 TransactionOutput connectedOutput = input.getConnectedOutput();
-                final TransactionInput input2 = input;
                 byte[] originalScript = input.getScriptBytes().clone();
                 input.setScriptSig(inScript);
                 try {
