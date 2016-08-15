@@ -17,7 +17,7 @@ import javax.annotation.Nonnull;
  */
 public class SigningKeyImpl implements SigningKey {
 
-    final ECKey signingKey;
+    public final ECKey signingKey;
     final NetworkParameters params;
     private final VerificationKeyImpl vk;
 
