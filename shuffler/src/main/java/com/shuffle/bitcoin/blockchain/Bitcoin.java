@@ -156,6 +156,10 @@ public abstract class Bitcoin implements Coin {
         }
     }
 
+    public PeerGroup getPeerGroup(){
+        return peerGroup;
+    }
+
     public com.shuffle.bitcoin.Transaction fromBytes(byte[] bytes) {
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(this.netParams, bytes);
         return new Transaction(tx.getHashAsString(), tx, false);
