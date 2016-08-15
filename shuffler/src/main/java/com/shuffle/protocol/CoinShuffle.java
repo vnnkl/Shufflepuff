@@ -102,7 +102,8 @@ public class CoinShuffle {
 
         Transaction protocolDefinition(
         ) throws TimeoutException, Matrix, InterruptedException,
-                FormatException, IOException, CoinNetworkException, ExecutionException, AddressFormatException {
+                FormatException, IOException, CoinNetworkException,
+                ExecutionException, AddressFormatException {
 
             if (amount <= 0) {
                 throw new IllegalArgumentException();
@@ -225,14 +226,16 @@ public class CoinShuffle {
                 inputs.add(players.get(i));
             }
 
+            // Generate the join transaction.
             Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
+            // Generate the input script using our signing key.
+            Bytestring inputScript = t.sign(sk);
 
-
-            mailbox.broadcast(messages.make().attach(sk.sign(t.serialize())), phase.get());
+            mailbox.broadcast(messages.make().attach(inputScript), phase.get());
 
             Map<VerificationKey, Message> signatureMessages = null;
             boolean invalidClaim = false;
@@ -263,7 +266,8 @@ public class CoinShuffle {
                 VerificationKey key = sig.getKey();
                 Bytestring signature = sig.getValue().readSignature();
                 signatures.put(key, signature);
-                if (!key.verify(t.serialize(), signature)) {
+
+                if (t.addInputScript(signature)) {
                     invalid.put(key, signature);
                 }
             }

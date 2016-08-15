@@ -140,8 +140,9 @@ public abstract class Bitcoin implements Coin {
         }
 
         @Override
-        public void addInputScript(Bytestring b) throws FormatException {
+        public boolean addInputScript(Bytestring b) throws FormatException {
             // TODO
+            return false;
         }
 
         @Override

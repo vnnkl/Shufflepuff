@@ -28,7 +28,7 @@ public interface Transaction extends Serializable {
     // Sign the transaction and return the input script.
     Bytestring sign(SigningKey sk);
 
-    void addInputScript(Bytestring b) throws FormatException;
+    boolean addInputScript(Bytestring b) throws FormatException;
 
     // Whether a transaction has enough signatures to be valid.
     boolean isValid();

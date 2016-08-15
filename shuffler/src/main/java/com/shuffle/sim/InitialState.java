@@ -403,7 +403,7 @@ public class InitialState {
             } catch (FormatException | CoinNetworkException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
                 throw new RuntimeException(e);
-            } 
+            }
         }
 
         networkPoints = null;
