@@ -176,7 +176,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         }
 
         @Override
-        public void addInputScript(Bytestring b) throws FormatException {
+        public boolean addInputScript(Bytestring b) throws FormatException {
             MockSigningKey sk = new MockSigningKey(new String(b.bytes));
 
             for (Output o : inputs) {
@@ -186,9 +186,11 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
                 if (sk.VerificationKey().address().equals(o.address)) {
                     signatures.put(o, sk);
-                    break;
-                }
+                    return true;
+                } else return false;
             }
+
+            return false;
         }
 
         @Override
@@ -260,12 +262,15 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
-    public synchronized Transaction makeSpendingTransaction(SigningKey from, Address to, long amount) throws FormatException {
-        Output output = blockchain.get(from);
+    public synchronized Transaction makeSpendingTransaction(SigningKey from, Address to, long amount)
+            throws FormatException, CoinNetworkException {
 
-        if (output == null) return null;
+        Output output = blockchain.get(from.VerificationKey().address());
 
-        if (amount > valueHeld(from.VerificationKey().address())) return null;
+        if (output == null) throw new CoinNetworkException("Cannot find output.");
+
+        if (amount > valueHeld(from.VerificationKey().address()))
+            throw new CoinNetworkException("Insufficient funds.");
 
         List<Output> in = new LinkedList<>();
         List<Output> out = new LinkedList<>();
