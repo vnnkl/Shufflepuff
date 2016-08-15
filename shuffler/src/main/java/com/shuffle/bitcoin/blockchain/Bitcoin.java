@@ -144,16 +144,16 @@ public abstract class Bitcoin implements Coin {
         }
 
         @Override
-        // TODO
-        public void addInputScript(Bytestring b) throws FormatException {
+        public boolean addInputScript(Bytestring b) throws FormatException {
             List<Bytestring> programSignatures = new LinkedList<>();
             programSignatures.add(b);
-            // signTransaction can return null if the input script fails to be added
-            Bitcoin.this.signTransaction(this.bitcoinj, programSignatures);
+            if (Bitcoin.this.signTransaction(this.bitcoinj, programSignatures) == null) {
+                return false;
+            }
+            return true;
         }
 
         @Override
-        // TODO
         public boolean isValid() {
             for (TransactionInput input : this.bitcoinj.getInputs()) {
                 TransactionOutput output = input.getConnectedOutput();
