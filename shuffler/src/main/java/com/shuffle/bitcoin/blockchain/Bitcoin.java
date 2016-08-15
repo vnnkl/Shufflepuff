@@ -433,26 +433,22 @@ public abstract class Bitcoin implements Coin {
             }
         }
 
-        //ArrayList<Integer> setScript = new ArrayList<>();
         for (Script inScript : inputScripts) {
             for (int i = 0; i < signTx.getInputs().size(); i++) {
-                //if (!setScript.contains(i)) {
-                    TransactionInput input = signTx.getInput(i);
-                    TransactionOutput connectedOutput = input.getConnectedOutput();
-                    final TransactionInput input2 = input;
-                    byte[] originalScript = input.getScriptBytes().clone();
-                    input.setScriptSig(inScript);
-                    try {
-                        input.verify(connectedOutput);
-                        //setScript.add(i);
-                        break;
-                    } catch (VerificationException e) {
-                        input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
-                        if (i == signTx.getInputs().size() - 1) {
-                            return null;
-                        }
+                TransactionInput input = signTx.getInput(i);
+                TransactionOutput connectedOutput = input.getConnectedOutput();
+                final TransactionInput input2 = input;
+                byte[] originalScript = input.getScriptBytes().clone();
+                input.setScriptSig(inScript);
+                try {
+                    input.verify(connectedOutput);
+                    break;
+                } catch (VerificationException e) {
+                    input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
+                    if (i == signTx.getInputs().size() - 1) {
+                        return null;
                     }
-                //}
+                }
             }
         }
 
