@@ -433,22 +433,19 @@ public abstract class Bitcoin implements Coin {
             }
         }
 
-        ArrayList<Integer> setScript = new ArrayList<>();
         for (Script inScript : inputScripts) {
             for (int i = 0; i < signTx.getInputs().size(); i++) {
-                if (!setScript.contains(i)) {
-                    TransactionInput input = signTx.getInput(i);
-                    TransactionOutput connectedOutput = input.getConnectedOutput();
-                    input.setScriptSig(inScript);
-                    try {
-                        input.verify(connectedOutput);
-                        setScript.add(i);
-                        signTx.getInput(i).setScriptSig(inScript);
-                        break;
-                    } catch (VerificationException e) {
-                        if (i == signTx.getInputs().size() - 1) {
-                            return null;
-                        }
+                TransactionInput input = signTx.getInput(i);
+                TransactionOutput connectedOutput = input.getConnectedOutput();
+                byte[] originalScript = input.getScriptBytes().clone();
+                input.setScriptSig(inScript);
+                try {
+                    input.verify(connectedOutput);
+                    break;
+                } catch (VerificationException e) {
+                    input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
+                    if (i == signTx.getInputs().size() - 1) {
+                        return null;
                     }
                 }
             }
@@ -471,13 +468,14 @@ public abstract class Bitcoin implements Coin {
             Sha256Hash hash = copyTx.hashForSignature(i, connectedOutput.getScriptPubKey(), org.bitcoinj.core.Transaction.SigHash.ALL, false);
             ECKey.ECDSASignature ecSig = privKey.sign(hash);
             TransactionSignature txSig = new TransactionSignature(ecSig, org.bitcoinj.core.Transaction.SigHash.ALL, false);
+            byte[] originalScript = input.getScriptBytes().clone();
             Script inputScript = ScriptBuilder.createInputScript(txSig, ECKey.fromPublicOnly(privKey.getPubKey()));
             input.setScriptSig(inputScript);
             try {
                 input.verify(connectedOutput);
                 return new Bytestring(inputScript.getProgram());
             } catch (VerificationException e) {
-
+                input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
             }
         }
 
