@@ -14,6 +14,7 @@ import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
@@ -34,6 +35,7 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -134,21 +136,37 @@ public abstract class Bitcoin implements Coin {
         }
 
         @Override
-        // TODO
         public Bytestring sign(SigningKey sk) {
-            return null;
+            if (!(sk instanceof SigningKeyImpl)) {
+                return null;
+            }
+            return Bitcoin.this.getSignature(this.bitcoinj, ((SigningKeyImpl) sk).signingKey);
         }
 
         @Override
         public boolean addInputScript(Bytestring b) throws FormatException {
-            // TODO
-            return false;
+            List<Bytestring> programSignatures = new LinkedList<>();
+            programSignatures.add(b);
+            if (Bitcoin.this.signTransaction(this.bitcoinj, programSignatures) == null) {
+                return false;
+            }
+            return true;
         }
 
         @Override
-        // TODO
         public boolean isValid() {
-            return false;
+            for (TransactionInput input : this.bitcoinj.getInputs()) {
+                TransactionOutput output = input.getConnectedOutput();
+                if (input.getScriptSig() == null) {
+                    return false;
+                }
+                try {
+                    input.verify(output);
+                } catch (VerificationException e) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         @Override
@@ -415,18 +433,22 @@ public abstract class Bitcoin implements Coin {
             }
         }
 
+        ArrayList<Integer> setScript = new ArrayList<>();
         for (Script inScript : inputScripts) {
             for (int i = 0; i < signTx.getInputs().size(); i++) {
-                TransactionInput input = signTx.getInput(i);
-                TransactionOutput connectedOutput = input.getConnectedOutput();
-                input.setScriptSig(inScript);
-                try {
-                    input.verify(connectedOutput);
-                    signTx.getInput(i).setScriptSig(inScript);
-                    break;
-                } catch (VerificationException e) {
-                    if (i == signTx.getInputs().size() - 1) {
-                        return null;
+                if (!setScript.contains(i)) {
+                    TransactionInput input = signTx.getInput(i);
+                    TransactionOutput connectedOutput = input.getConnectedOutput();
+                    input.setScriptSig(inScript);
+                    try {
+                        input.verify(connectedOutput);
+                        setScript.add(i);
+                        signTx.getInput(i).setScriptSig(inScript);
+                        break;
+                    } catch (VerificationException e) {
+                        if (i == signTx.getInputs().size() - 1) {
+                            return null;
+                        }
                     }
                 }
             }

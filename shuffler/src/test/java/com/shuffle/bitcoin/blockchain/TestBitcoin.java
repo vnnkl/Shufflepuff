@@ -188,15 +188,15 @@ public class TestBitcoin {
     public void testGetSignatureAndSign() throws AddressFormatException {
         MockBitcoin mock = new MockBitcoin();
         HexBinaryAdapter adapter = new HexBinaryAdapter();
-        ECKey privKey1 = ECKey.fromPrivate(Hex.decode("e10c115f49089edccfb767a4bc3398999d844329fa0aba199eaec18326d3a158"));
-        ECKey privKey2 = ECKey.fromPrivate(Hex.decode("14be56f97f5dc42330d53420f9d5dc290b8069ad16834581ca8bc1b8a20ee659"));
-        byte[] parentBytes1 = adapter.unmarshal("0100000001e8284d14a1f0e4f5523ffcd6ee1233177e54e353d3ee9e49924991f3fe5772d2000000006a473044022055f03733993b7d3274c49798c77d7172818a81af1c0f1f4575fa276d3407553202200626ce053c0faa46cf8643682752a2298871bd29f5abf9bda42d8d5cca091db501210267434e7984dee20b294446741566e91d05a6ae3ae7754582a5326a6295becc63ffffffff01f0c4da60000000001976a914588f6f7840a1c4d24a1086ba78d7ddd4a3ca052988ac00000000");
-        byte[] parentBytes2 = adapter.unmarshal("0100000001ce44d227ed4cb3061aaf27f746e21e0de4689d9546f4eb864785f3427b7fe5d0010000006a473044022058c0dfdbeedc955e3ecf03a934196405e306a74bd0b16f228e7c0a7a4b7011b302203050606da07476d7c5c3801a2840dd9e33e9a82089543970a6224054fb3fd5d701210224ec1e4c270ce373e6999eebfa01d0a7e7db3c537c026f265233350d5aab81fbfeffffff02408af701000000001976a91457ac06008966ba05a9880183757435a55cfb056e88acf03ba339000000001976a9146d87b900ca197da43851b5a1827873c7957cf29e88ac4d110e00");
+        ECKey privKey1 = ECKey.fromPrivate(Hex.decode("bd28acf50b7304b098aefa12fd1bb1cbeb4975cc20e86055b3b9ea65b1c80972"));
+        ECKey privKey2 = ECKey.fromPrivate(Hex.decode("224de2bacfba369f854e8db918540d40f45f7459c83f8b47a9501306bce29715"));
+        byte[] parentBytes1 = adapter.unmarshal("01000000013607cf0cd0c29a6b5d6dd4d7e95c85be0577ee62bf3685c26ea6f36a55bba167000000006b483045022100c75ca43c81d9ecd0aaf1327b80512c1f386accbe2684ae8bcd302bc6e164979f02203efbc08bc5aaaaeb98cda97adf34903f67b803c364b0dde03c9284891d5fc2ee012102834755244b98488d24dd643c81403f0660abf9dff5804ce7d1a2076924e45862ffffffff01a001da60000000001976a914dea86c67b46e5d5bd89ab24d40590f871591ffae88ac00000000");
+        byte[] parentBytes2 = adapter.unmarshal("01000000018fff9cf295ab3545b974b4dbf87c8cf268f93b4fd88b0acfb9504ca187e1e548000000006a4730440220709d86aa33fabee055f6df16596ac3f171465edd1551856d46ce31a9a9b7bfb202204e482f8d2161322fc7665ad9184f5f0910934cf92b6b91e4176ba17982ee6948012103a3b087c39703146c561c7e9ddd9637de3176e2dfba1773307d9c6e7a5373fd25ffffffff01f0c6f601000000001976a9149c294ec749de349f114e19a32b6c3c585aa0f83588ac00000000");
         Transaction parentTx1 = new Transaction(mock.netParams, parentBytes1);
         Transaction parentTx2 = new Transaction(mock.netParams, parentBytes2);
         Transaction tx = new Transaction(mock.netParams);
-        tx.addOutput(Coin.SATOSHI.multiply(parentTx1.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "n1pG4uaaSjcukvfr3CsvefDbG2sTfQXhsB"));
-        tx.addOutput(Coin.SATOSHI.multiply(parentTx2.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "mukfC6Dt2opm3YJ2rKZvshyicQKF67jYwP"));
+        tx.addOutput(Coin.SATOSHI.multiply(parentTx1.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "mivwStMcpCfVqnDw5zmHYtEffCNgy7uqj6"));
+        tx.addOutput(Coin.SATOSHI.multiply(parentTx2.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "mthh7gRXtEwznD1tqbxaWggS8QjtfqkiSP"));
         tx.addInput(parentTx1.getOutput(0));
         tx.addInput(parentTx2.getOutput(0));
         Assert.assertNotNull(mock.getSignature(tx, privKey1));
@@ -209,6 +209,39 @@ public class TestBitcoin {
         Assert.assertNotNull(mock.signTransaction(tx, signatures));
         Transaction signedTx = mock.signTransaction(tx, signatures);
         System.out.println(DatatypeConverter.printHexBinary(signedTx.bitcoinSerialize()));
-    }
+        // this transaction can be seen here
+        // https://live.blockcypher.com/btc-testnet/tx/c48d33e9dc2585c9d096dae9be6b4f78503904d3b59c9d615c0e015f9584e2d7/
 
+
+        // this transaction has one input whose connected transaction output is already spent
+        // trying to broadcast the associated raw hex will fail
+        ECKey privKey3 = ECKey.fromPrivate(Hex.decode("06b44f756b5dbbbc86bd673ba8ec28b2e74772545f2390d199c84c0663848048"));
+        ECKey privKey4 = ECKey.fromPrivate(Hex.decode("224de2bacfba369f854e8db918540d40f45f7459c83f8b47a9501306bce29715"));
+        byte[] parentBytes3 = adapter.unmarshal("01000000018ae4722cc5174589e386bf67dda5d7572636812b302b0f9abe43dd602f043517010000006a473044022016c8b29e15135271ea7ecd76d4963f69d50bf932ad8ab9e9366aa5ddb0193816022062814e4dfff12124747554e117a80e164a7eef3882f38ec7b2c965d9c95af35d01210359374b5da4105fe505d46a65d3372b3bfbf26e299473b10ae34e65313db408d4feffffff0240164000000000001976a914191697ea01d67e6a981ead0ad719aa52d62989e088ace0c86d07000000001976a9148b0adad35d2f13a6894e248fd2f1fc18a977909c88ac84120e00");
+        byte[] parentBytes4 = adapter.unmarshal("01000000018fff9cf295ab3545b974b4dbf87c8cf268f93b4fd88b0acfb9504ca187e1e548000000006a4730440220709d86aa33fabee055f6df16596ac3f171465edd1551856d46ce31a9a9b7bfb202204e482f8d2161322fc7665ad9184f5f0910934cf92b6b91e4176ba17982ee6948012103a3b087c39703146c561c7e9ddd9637de3176e2dfba1773307d9c6e7a5373fd25ffffffff01f0c6f601000000001976a9149c294ec749de349f114e19a32b6c3c585aa0f83588ac00000000");
+        Transaction parentTx3 = new Transaction(mock.netParams, parentBytes3);
+        Transaction parentTx4 = new Transaction(mock.netParams, parentBytes4);
+        Transaction tx2 = new Transaction(mock.netParams);
+        tx2.addOutput(Coin.SATOSHI.multiply(parentTx3.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "mhnL4vqyHDXohpwFUL9YDkJvxhCZVK7tzE"));
+        tx2.addOutput(Coin.SATOSHI.multiply(parentTx4.getOutput(0).getValue().value - 50000l), new org.bitcoinj.core.Address(mock.netParams, "mnx5s59NbfN3UfbfgUvTRpaU2MZ3vW7LNY"));
+        tx2.addInput(parentTx3.getOutput(0));
+        tx2.addInput(parentTx4.getOutput(0));
+        Assert.assertNotNull(mock.getSignature(tx2, privKey3));
+        Assert.assertNotNull(mock.getSignature(tx2, privKey4));
+        Bytestring sig3 = mock.getSignature(tx2, privKey3);
+        Bytestring sig4 = mock.getSignature(tx2, privKey4);
+        List<Bytestring> signatures2 = new LinkedList<>();
+        signatures2.add(sig3);
+        signatures2.add(sig4);
+        Assert.assertNotNull(mock.signTransaction(tx2, signatures2));
+        Transaction signedTx2 = mock.signTransaction(tx2, signatures2);
+        System.out.println(DatatypeConverter.printHexBinary(signedTx2.bitcoinSerialize()));
+        /**
+         * https://live.blockcypher.com/btc-testnet/pushtx/ gives the following error:
+         *
+         * Error validating transaction: Transaction 1c7646221a165358ad87cb172b050b4f1e7b0042156f5288995bdcdb6307cc38
+         * referenced by input 1 of 1c01532c4335c47bc94cd6302b8c873f38bb58098a44d74172e24cff6d5e35f7
+         * has already been spent..
+         */
+    }
 }
