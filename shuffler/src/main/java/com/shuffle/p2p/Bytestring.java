@@ -14,6 +14,8 @@ package com.shuffle.p2p;
  * Created by Daniel Krawisz on 1/19/16.
  */
 
+import org.apache.commons.codec.binary.Hex;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -137,6 +139,6 @@ public class Bytestring implements Serializable {
 
     @Override
     public String toString() {
-        return "Bytestring" + Arrays.toString(bytes);
+        return "Bytestring[" + Hex.encodeHexString(bytes) + "]";
     }
 }
