@@ -16,6 +16,7 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
 import com.shuffle.bitcoin.blockchain.Btcd;
 
+import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.store.BlockStoreException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,7 +26,9 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
@@ -35,6 +38,9 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 public class TestBtcd {
 
     NetworkParameters netParams = MainNetParams.get();
+
+
+    // the below objects are mainnet objects
     Btcd testCase;
     HexBinaryAdapter adapter = new HexBinaryAdapter();
     Context context = Context.getOrCreate(netParams);
@@ -73,7 +79,6 @@ public class TestBtcd {
          * I feel like this is a suitable enough test to see that getWalletTransactions contains
          * the correct bitcoinj Transaction objects and is working.
          */
-
         List<Bitcoin.Transaction> listOfTx = testCase.getAddressTransactions(testAddress);
         Transaction testTx = listOfTx.get(0).bitcoinj();
         Transaction testTx2 = listOfTx.get(1).bitcoinj();
