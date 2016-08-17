@@ -279,6 +279,11 @@ public class Btcd extends Bitcoin {
         if (json.isNull("result")) {
             JSONObject errorObj = json.getJSONObject("error");
             String errorMsg = errorObj.getString("message");
+            String parsed = errorMsg.substring(0,37);
+            // transaction is already in mempool, return true
+            if (parsed.equals("TX rejected: already have transaction")) {
+                return true;
+            }
             throw new CoinNetworkException(errorMsg);
         }
 
