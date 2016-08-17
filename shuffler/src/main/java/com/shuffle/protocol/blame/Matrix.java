@@ -70,7 +70,10 @@ public class Matrix extends Throwable {
 
     public Map<VerificationKey, Evidence> getAccusations(VerificationKey accused) {
         Map<VerificationKey, Evidence> accusations = new HashMap<>();
-        accusations.putAll(blame.get(accused));
+        Map<VerificationKey, Evidence> oobleck = blame.get(accused);
+        if (oobleck != null) {
+            accusations.putAll(oobleck);
+        }
         return accusations;
     }
 

@@ -8,7 +8,12 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
+
 import org.junit.Test;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for players who spend their funds while the protocol is going on.
@@ -20,13 +25,19 @@ public class TestDoubleSpend extends TestShuffleMachine {
         super(99, 10);
     }
 
-    private void DoubleSpend(int[] views, int[] doubleSpenders) {
+    private void DoubleSpend(int[] views, int[] doubleSpenders)
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
+
         String description = "case " + caseNo + "; Double spend test case.";
-        check(new MockTestCase(description).doubleSpendTestCase(views, doubleSpenders));
+        check(newTestCase(description).doubleSpendTestCase(views, doubleSpenders));
     }
 
     @Test
-    public void testDoubleSpending() {
+    public void testDoubleSpending()
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
+
         // Tests for players who spend funds while
         // the protocol is going on.
         DoubleSpend(new int[]{0, 0}, new int[]{1});

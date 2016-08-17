@@ -46,18 +46,11 @@ public class MockAddress implements Address, Serializable {
 
     @Override
     public String toString() {
-        return "ad[" + addr + "]";
+        return addr;
     }
 
     @Override
     public int compareTo(Address address) {
-        if (address instanceof MockDecryptedAddress) {
-            return -1;
-        }
-
-        if (address instanceof MockEncryptedAddress) {
-            return 1;
-        }
 
         if (!(address instanceof MockAddress)) {
             return 0;

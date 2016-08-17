@@ -404,7 +404,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             // TODO
-            public void close() throws InterruptedException {
+            public void close() {
 
             }
 
@@ -494,12 +494,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             @Override
-            public synchronized void close() throws InterruptedException {
+            public synchronized void close() {
                 session.close();
             }
 
             @Override
-            public synchronized boolean closed() throws InterruptedException {
+            public synchronized boolean closed() {
                 return session.closed();
             }
 
@@ -544,13 +544,13 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             running = false;
             this.connection.close();
         }
 
         @Override
-        public boolean closed() throws InterruptedException {
+        public boolean closed() {
             return connection.closed();
         }
 

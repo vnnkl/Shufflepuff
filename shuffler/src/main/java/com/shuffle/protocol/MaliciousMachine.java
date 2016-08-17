@@ -26,6 +26,8 @@ import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Packet;
 import com.shuffle.protocol.message.Phase;
 
+import org.bitcoinj.core.AddressFormatException;
+
 import java.io.IOException;
 import java.util.Deque;
 import java.util.HashMap;
@@ -36,6 +38,7 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.concurrent.ExecutionException;
 
 /**
  * An extension of CoinShuffle that includes a lot of malicious behavior for testing purposes.
@@ -69,6 +72,8 @@ public final class MaliciousMachine extends CoinShuffle {
 
                 dk = crypto.makeDecryptionKey();
                 alt = crypto.makeDecryptionKey();
+                System.out.println("Player " + me + " makes new decryption key " + dk + " with encryption key " + dk.EncryptionKey());
+                System.out.println("Player " + me + " makes new decryption key " + alt + " with encryption key " + alt.EncryptionKey());
 
                 // Broadcast the public key and store it in the set with everyone else's.
                 encryptionKeys.put(vk, dk.EncryptionKey());
@@ -103,6 +108,7 @@ public final class MaliciousMachine extends CoinShuffle {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             Message otherCheck = equivocationCheckHash(players, otherKeys, newAddresses);
+            System.out.println("Malicious player " + me + " makes equivocation messages " + equivocationCheck + " and " + otherCheck);
 
             for (VerificationKey to : players.values()) {
                 mailbox.send(equivocate.contains(to) ? otherCheck : equivocationCheck, phase.get(), to);
@@ -240,7 +246,7 @@ public final class MaliciousMachine extends CoinShuffle {
             int i = 1;
             while (!shuffled.isEmpty()) {
                 if (i != drop) {
-                    dropped = dropped.attach(shuffled.readAddress());
+                    dropped = dropped.attach(shuffled.readString());
                 }
                 shuffled = shuffled.rest();
                 i ++;
@@ -272,11 +278,11 @@ public final class MaliciousMachine extends CoinShuffle {
                 throws FormatException {
             Message findDuplcate = shuffled;
             shuffled = messages.make();
-            Address duplicate = null;
+            String duplicate = null;
 
             int i = 1;
             while (!shuffled.isEmpty()) {
-                Address address = findDuplcate.readAddress();
+                String address = findDuplcate.readString();
                 if (i == replace) {
                     duplicate = address;
                 }
@@ -289,7 +295,7 @@ public final class MaliciousMachine extends CoinShuffle {
             i = 1;
             while (!shuffled.isEmpty()) {
                 if (i != drop && duplicate != null) {
-                    dropped = dropped.attach(shuffled.readAddress());
+                    dropped = dropped.attach(shuffled.readString());
                 } else {
                     dropped = dropped.attach(duplicate);
                 }
@@ -368,7 +374,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 try {
                     t.send();
                     spent = true;
-                } catch (CoinNetworkException e) {
+                } catch (CoinNetworkException | ExecutionException e) {
                     // TODO
                 }
             }
@@ -404,7 +410,7 @@ public final class MaliciousMachine extends CoinShuffle {
     ) throws TimeoutException,
             InvalidParticipantSetException,
             InterruptedException, FormatException,
-            IOException, CoinNetworkException, Matrix {
+            IOException, CoinNetworkException, Matrix, ExecutionException {
 
         if (amount <= 0) {
             throw new IllegalArgumentException();
@@ -490,6 +496,10 @@ public final class MaliciousMachine extends CoinShuffle {
             // If we are a double spender, we can try to spend our own transaction and get
             // an exception as a result, which we catch here.
             return e.t;
+        } catch (AddressFormatException e) {
+            // This shouldn't happen.
+            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 

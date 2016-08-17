@@ -8,7 +8,12 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
+
 import org.junit.Test;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * It is possible for the last player to equivocate during the broadcast phase by sending a
@@ -20,15 +25,18 @@ import org.junit.Test;
 public class TestEquivocateBroadcast extends TestShuffleMachine {
 
     // Run a test case for equivocation during phase 3.
-    private void EquivocateOutput(int numPlayers, int[] equivocation) {
+    private void EquivocateOutput(int numPlayers, int[] equivocation)
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
         String description = "case " + caseNo + "; broadcast equivocation test case.";
-        check(new MockTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
+        check(newTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
     }
 
     @Test
     // Tests for malicious players who send different output vectors to different players.
-    public void testEquivocationBroadcast() {
-        int caseNo = 0;
+    public void testEquivocationBroadcast()
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
 
         // A player sends different output vectors to different players.
         EquivocateOutput(3, new int[]{1});

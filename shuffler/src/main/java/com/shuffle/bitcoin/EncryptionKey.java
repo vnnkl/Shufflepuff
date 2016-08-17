@@ -8,6 +8,8 @@
 
 package com.shuffle.bitcoin;
 
+import com.shuffle.protocol.FormatException;
+
 /**
  *
  * A public encryption key.
@@ -15,5 +17,5 @@ package com.shuffle.bitcoin;
  * Created by Daniel Krawisz on 12/4/15.
  */
 public interface EncryptionKey {
-    Address encrypt(Address m);
+    String encrypt(String m);
 }

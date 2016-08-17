@@ -8,9 +8,13 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.sim.InitialState;
 
 import org.junit.Test;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * During the announcement phase, a player could send different encryption keys to other players.
@@ -24,15 +28,17 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
     private void EquivocateAnnouncement(
             int numPlayers,
             InitialState.Equivocation[] equivocators
-    ) {
+    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
         String description = "case " + caseNo + "; announcement equivocation test case.";
-        check(new MockTestCase(description).equivocateAnnouncementTestCase(
+        check(newTestCase(description).equivocateAnnouncementTestCase(
                 numPlayers, equivocators
         ));
     }
 
     @Test
-    public void testEquivocationAnnounce() {
+    public void testEquivocationAnnounce()
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
+
         // A player sends different encryption keys to different players.
         EquivocateAnnouncement(3,
                 new InitialState.Equivocation[]{

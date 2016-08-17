@@ -42,6 +42,9 @@ public final class BlockchainDotInfo extends Bitcoin {
 
     public BlockchainDotInfo(NetworkParameters netParams, int minPeers) {
         super(netParams, minPeers);
+        if (!netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+            throw new IllegalArgumentException();
+        }
     }
 
     /**
@@ -49,7 +52,8 @@ public final class BlockchainDotInfo extends Bitcoin {
      * Given a wallet address, this function looks up the address' balance using Blockchain.info's
      * API. The amount returned is of type long and represents the number of satoshis.
      */
-    public long getAddressBalance(String address) throws IOException {
+    @Override
+    public synchronized long getAddressBalance(String address) throws IOException {
         String url = "https://blockchain.info/rawaddr/" + address;
         URL obj = new URL(url);
         JSONTokener tokener = new JSONTokener(obj.openStream());
@@ -65,7 +69,7 @@ public final class BlockchainDotInfo extends Bitcoin {
      * array.
      *
      */
-    public List<Transaction> getAddressTransactions(String address) throws IOException {
+    protected final List<Transaction> getAddressTransactionsInner(String address) throws IOException {
 
         String url = "https://blockchain.info/rawaddr/" + address;
         URL obj = new URL(url);
@@ -73,8 +77,15 @@ public final class BlockchainDotInfo extends Bitcoin {
         JSONObject root = new JSONObject(tokener);
         List<Transaction> txhashes = new LinkedList<>();
         for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
+            boolean confirmed;
+            String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
+            if (blockHeight == null) {
+                confirmed = false;
+            } else {
+                confirmed = true;
+            }
             txhashes.add(new Transaction(
-                    root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false));
+                    root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
         }
         if (txhashes.size() == 50) {
             return null;
@@ -89,7 +100,7 @@ public final class BlockchainDotInfo extends Bitcoin {
      * After some formatting, it returns a bitcoinj Transaction object using this transaction hash.
      *
      */
-    public org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    public synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
 
         String url = "https://blockchain.info/tr/rawtx/" + transactionHash + "?format=hex";
         URL obj = new URL(url);

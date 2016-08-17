@@ -8,6 +8,8 @@
 
 package com.shuffle.bitcoin;
 
+import com.shuffle.player.Protobuf;
+
 /**
  *
  * A set of cryptographic functions used in the protocol. According to the original paper,

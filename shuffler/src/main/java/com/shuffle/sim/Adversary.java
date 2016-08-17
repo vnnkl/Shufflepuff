@@ -25,6 +25,8 @@ import com.shuffle.protocol.InvalidParticipantSetException;
 import com.shuffle.protocol.TimeoutException;
 import com.shuffle.protocol.blame.Matrix;
 
+import org.bitcoinj.core.AddressFormatException;
+
 import java.io.IOException;
 import java.util.Map;
 import java.util.SortedSet;
@@ -97,9 +99,11 @@ public class Adversary {
 
                     } catch (Matrix m) {
                         q.send(new Either<Transaction, Matrix>(null, m));
-                    } catch (TimeoutException
+                    } catch (ExecutionException
+                            | TimeoutException
                             | FormatException
                             | CoinNetworkException
+                            | AddressFormatException
                             | InvalidParticipantSetException e) {
 
                         e.printStackTrace();

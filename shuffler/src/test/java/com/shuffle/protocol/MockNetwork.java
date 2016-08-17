@@ -11,13 +11,13 @@ package com.shuffle.protocol;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.BasicChan;
-import com.shuffle.chan.BasicInbox;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.Inbox;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.JavaShuffleMarshaller;
 import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.player.P;
@@ -51,14 +51,12 @@ public class MockNetwork  {
             throws NoSuchAlgorithmException {
 
         // First create the inbox and outbox.
-        outbox = new BasicInbox<>(cap);
+        outbox = new Inbox<>(cap);
 
         Inbox<VerificationKey, Signed<Packet<VerificationKey, P>>> inbox
-                = new BasicInbox<>(cap);
+                = new Inbox<>(cap);
 
         VerificationKey vk = me.VerificationKey();
-
-        JavaMarshaller<Packet<VerificationKey, P>> jm = new JavaMarshaller<>();
 
         for (SigningKey skp : others) {
             if (skp.equals(me)) continue;
@@ -76,14 +74,11 @@ public class MockNetwork  {
 
             messages.put(vkp, new Messages(session, skp, outFrom,
                     new BasicChan<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>>(),
-                    new JavaMarshaller<Message.Atom>(),
-                    new JavaMarshaller<Packet<VerificationKey, P>>()));
+                    new JavaShuffleMarshaller()));
 
         }
 
-        messages.put(vk, new Messages(session, me, out, inbox,
-                new JavaMarshaller<Message.Atom>(),
-                new JavaMarshaller<Packet<VerificationKey, P>>()));
+        messages.put(vk, new Messages(session, me, out, inbox, new JavaShuffleMarshaller()));
     }
 
     public Messages messages(VerificationKey k) {

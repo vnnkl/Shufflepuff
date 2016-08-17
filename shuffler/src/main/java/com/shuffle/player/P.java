@@ -12,7 +12,7 @@ public class P implements Serializable {
     public final Message message;
     public final Phase phase;
 
-    P(
+    public P(
             Phase phase,
             Message message
     ) {

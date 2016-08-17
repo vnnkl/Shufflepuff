@@ -8,6 +8,7 @@
 
 package com.shuffle.sim;
 
+import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
@@ -38,7 +39,8 @@ public final class Simulator {
     private Simulator() {
     }
 
-    public static Map<SigningKey, Either<Transaction, Matrix>> run(InitialState init) {
+    public static Map<SigningKey, Either<Transaction, Matrix>> run(InitialState init)
+            throws ExecutionException, InterruptedException {
 
         final Initializer<Packet<VerificationKey, P>> initializer = new Initializer<>(init.session, 2 * (1 + init.size() ));
         final Map<SigningKey, Adversary> machines = init.getPlayers(initializer);

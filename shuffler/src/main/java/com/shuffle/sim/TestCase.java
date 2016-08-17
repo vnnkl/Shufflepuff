@@ -8,18 +8,23 @@
 
 package com.shuffle.sim;
 
+import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.blame.Matrix;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * TestCase attempts to provide a unified way of constructing test cases for different
@@ -46,7 +51,8 @@ public abstract class TestCase {
 
     // Returns a map containing the set of results which did not match expectations. An empty map
     // represents a successful test.
-    public static Map<SigningKey, Mismatch> test(InitialState init) {
+    public static Map<SigningKey, Mismatch> test(InitialState init)
+            throws ExecutionException, InterruptedException {
 
         // Run the simulation.
         Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init);
@@ -94,56 +100,58 @@ public abstract class TestCase {
 
     // Get the cryptography service for this test case (could be mock crypto or real, depending
     // on what we're testing.)
-    protected abstract Crypto crypto();
+    protected abstract Crypto crypto() throws NoSuchAlgorithmException, BitcoinCrypto.Exception;
+    protected abstract Protobuf proto();
 
-    public final InitialState successfulTestCase(final int numPlayers) {
-        return InitialState.successful(session, amount, crypto(), numPlayers);
+    public final InitialState successfulTestCase(final int numPlayers)
+            throws BitcoinCrypto.Exception, NoSuchAlgorithmException {
+        return InitialState.successful(session, amount, crypto(), proto(), numPlayers);
     }
 
     public final InitialState insufficientFundsTestCase(
             final int numPlayers,
             final int[] deadbeats,
             final int[] poor,
-            final int[] spenders) {
+            final int[] spenders) throws BitcoinCrypto.Exception, NoSuchAlgorithmException {
         return InitialState.insufficientFunds(
-                session, amount, crypto(), numPlayers, deadbeats, poor, spenders);
+                session, amount, crypto(), proto(), numPlayers, deadbeats, poor, spenders);
     }
 
     public final InitialState doubleSpendTestCase(
             final int[] views,
             final int[] spenders
-    ) {
-        return InitialState.doubleSpend(session, amount, crypto(), views, spenders);
+    ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
+        return InitialState.doubleSpend(session, amount, crypto(), proto(), views, spenders);
     }
 
     public final InitialState equivocateAnnouncementTestCase(
             final int numPlayers,
             final InitialState.Equivocation[] equivocators
-    ) {
+    ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
         return InitialState.equivocateAnnouncement(
-                session, amount, crypto(), numPlayers, equivocators);
+                session, amount, crypto(), proto(), numPlayers, equivocators);
     }
 
     public final InitialState equivocateBroadcastTestCase(
             final int numPlayers,
-            final int[] equivocation) {
+            final int[] equivocation) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
         return InitialState.equivocateBroadcast(
-                session, amount, crypto(), numPlayers, equivocation);
+                session, amount, crypto(), proto(), numPlayers, equivocation);
     }
 
     public final InitialState dropAddressTestCase(
             final int numPlayers,
             final int[][] drop,
             final int[][] replaceNew,
-            final int[][] replaceDuplicate) {
+            final int[][] replaceDuplicate) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
         return InitialState.dropAddress(
-                session, amount, crypto(), numPlayers, drop, replaceNew, replaceDuplicate);
+                session, amount, crypto(), proto(), numPlayers, drop, replaceNew, replaceDuplicate);
     }
 
     public final InitialState invalidSignatureTestCase(
             final int numPlayers,
             final int[] mutants
-    ) {
-        return InitialState.invalidSignature(session, amount, crypto(), numPlayers, mutants);
+    ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
+        return InitialState.invalidSignature(session, amount, crypto(), proto(), numPlayers, mutants);
     }
 }

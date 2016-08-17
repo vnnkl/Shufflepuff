@@ -12,28 +12,44 @@ package com.shuffle.bitcoin.blockchain;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerGroup;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.discovery.DnsDiscovery;
+import org.bitcoinj.script.Script;
+import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ExecutionException;
 
 public abstract class Bitcoin implements Coin {
+    static long cach_expire = 10000; // Ten seconds.
 
     final NetworkParameters netParams;
     final PeerGroup peerGroup;
     final int minPeers;
+    final Context context;
 
     /**
      *
@@ -46,16 +62,23 @@ public abstract class Bitcoin implements Coin {
     public Bitcoin(NetworkParameters netParams, int minPeers) {
         this.netParams = netParams;
         this.minPeers = minPeers;
-        peerGroup = new PeerGroup(netParams);
-        peerGroup.setMinBroadcastConnections(minPeers);
-        peerGroup.addPeerDiscovery(new DnsDiscovery(netParams));
-        peerGroup.startAsync();
+        if (minPeers == 0) {
+            peerGroup = null;
+        } else {
+            peerGroup = new PeerGroup(netParams);
+            peerGroup.setMinBroadcastConnections(minPeers);
+            peerGroup.addPeerDiscovery(new DnsDiscovery(netParams));
+            peerGroup.start();
+        }
+        this.context = Context.getOrCreate(this.netParams);
     }
 
     public class Transaction implements com.shuffle.bitcoin.Transaction {
         final String hash;
         private org.bitcoinj.core.Transaction bitcoinj;
         final boolean canSend;
+        boolean confirmed;
+        boolean sent = false;
 
         public Transaction(String hash, boolean canSend) {
             this.hash = hash;
@@ -66,6 +89,19 @@ public abstract class Bitcoin implements Coin {
             this.hash = hash;
             this.bitcoinj = bitcoinj;
             this.canSend = canSend;
+        }
+
+        public Transaction(String hash, boolean canSend, boolean confirmed) {
+            this.hash = hash;
+            this.canSend = canSend;
+            this.confirmed = confirmed;
+        }
+
+        public Transaction(String hash, org.bitcoinj.core.Transaction bitcoinj, boolean canSend, boolean confirmed) {
+            this.hash = hash;
+            this.bitcoinj = bitcoinj;
+            this.canSend = canSend;
+            this.confirmed = confirmed;
         }
 
         // Get the underlying bitcoinj representation of this transaction.
@@ -86,25 +122,84 @@ public abstract class Bitcoin implements Coin {
          */
 
         @Override
-        public boolean send() throws CoinNetworkException {
-            if (!this.canSend) {
-                return false;
-            }
+        public synchronized void send()
+                throws ExecutionException, InterruptedException, CoinNetworkException {
 
-            peerGroup.start(); //calls a blocking start while peerGroup discovers peers
-            try {
-                //checks to see if transaction was broadcast
-                peerGroup.broadcastTransaction(this.bitcoinj).future().get();
-            } catch (Exception e) {
-                throw new CoinNetworkException();
+            if (!Bitcoin.this.send(this)) {
+                throw new CoinNetworkException("Could not send transaction.");
             }
-            return true;
         }
 
         @Override
         public Bytestring serialize() {
             return new Bytestring(bitcoinj.bitcoinSerialize());
         }
+
+        @Override
+        public Bytestring sign(SigningKey sk) {
+            if (!(sk instanceof SigningKeyImpl)) {
+                return null;
+            }
+            return Bitcoin.this.getSignature(this.bitcoinj, ((SigningKeyImpl) sk).signingKey);
+        }
+
+        @Override
+        public boolean addInputScript(Bytestring b) throws FormatException {
+            List<Bytestring> programSignatures = new LinkedList<>();
+            programSignatures.add(b);
+            if (Bitcoin.this.signTransaction(this.bitcoinj, programSignatures) == null) {
+                return false;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean isValid() {
+            for (TransactionInput input : this.bitcoinj.getInputs()) {
+                TransactionOutput output = input.getConnectedOutput();
+                if (input.getScriptSig() == null) {
+                    return false;
+                }
+                try {
+                    input.verify(output);
+                } catch (VerificationException e) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return hash;
+        }
+    }
+
+    public PeerGroup getPeerGroup(){
+        return peerGroup;
+    }
+
+    public com.shuffle.bitcoin.Transaction fromBytes(byte[] bytes) {
+        org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(this.netParams, bytes);
+        return new Transaction(tx.getHashAsString(), tx, false);
+    }
+
+    protected class Cached {
+        public final String address;
+        public final List<Bitcoin.Transaction> txList;
+        public final long last;
+
+        private Cached(String address, List<Bitcoin.Transaction> txList, long last) {
+            this.address = address;
+            this.txList = txList;
+            this.last = last;
+        }
+    }
+
+    protected Map<String, Cached> cache = new HashMap<>();
+
+    public NetworkParameters getNetParams(){
+        return netParams;
     }
 
     // TODO
@@ -130,10 +225,11 @@ public abstract class Bitcoin implements Coin {
 
     @Override
     public Bitcoin.Transaction shuffleTransaction(long amount,
+
                                                   List<VerificationKey> from,
                                                   Queue<Address> to,
                                                   Map<VerificationKey, Address> changeAddresses)
-            throws CoinNetworkException {
+            throws CoinNetworkException, AddressFormatException {
 
 
         // this section adds inputs to the transaction and adds outputs to the change addresses.
@@ -162,7 +258,7 @@ public abstract class Bitcoin implements Coin {
                 }
 
             } catch (IOException e) {
-                throw new CoinNetworkException();
+                throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
             }
         }
 
@@ -172,7 +268,7 @@ public abstract class Bitcoin implements Coin {
                 List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
                 if (transactions.size() > 0) return null;
             } catch (IOException e) {
-                throw new CoinNetworkException();
+                throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
             }
             try {
                 tx.addOutput(org.bitcoinj.core.Coin.SATOSHI.multiply(amount),
@@ -193,11 +289,11 @@ public abstract class Bitcoin implements Coin {
      */
 
     @Override
-    public long valueHeld(Address addr) throws CoinNetworkException {
+    public long valueHeld(Address addr) throws CoinNetworkException, AddressFormatException {
         try {
             return getAddressBalance(addr.toString());
         } catch (IOException e) {
-            throw new CoinNetworkException();
+            throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
         }
     }
 
@@ -208,7 +304,7 @@ public abstract class Bitcoin implements Coin {
      *
      */
 
-    protected long getAddressBalance(String address) throws IOException {
+    protected synchronized long getAddressBalance(String address) throws IOException, CoinNetworkException, AddressFormatException {
 
         List<Bitcoin.Transaction> txList = getAddressTransactions(address);
 
@@ -223,7 +319,7 @@ public abstract class Bitcoin implements Coin {
             for (Bitcoin.Transaction checkTx : txList) {
                 org.bitcoinj.core.Transaction tempTx = checkTx.bitcoinj;
                 for (TransactionInput input : tempTx.getInputs()) {
-                    if (input.getParentTransaction().getHashAsString().equals(txhash)) {
+                    if (input.getOutpoint().getHash().toString().equals(txhash)) {
                         usedInput = true;
                         break outerloop;
                     }
@@ -247,21 +343,189 @@ public abstract class Bitcoin implements Coin {
         return sum;
     }
 
-    // TODO
     @Override
-    public com.shuffle.bitcoin.Transaction getConflictingTransaction(Address addr, long amount) {
+    public final boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
+        String address = addr.toString();
+
+        List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
+
+        if (transactions.size() == 1) {
+            Bitcoin.Transaction tx = transactions.get(0);
+            if (!tx.confirmed) {
+                return false;
+            }
+            long txAmount = 0;
+
+            if (tx.bitcoinj == null) {
+                try {
+                    tx.bitcoinj = getTransaction(tx.hash);
+                } catch (IOException e) {
+                    return false;
+                }
+            }
+
+            for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
+
+                /**
+                 * Every address in the outputs should be of type pay to public key hash, not pay to script hash
+                 */
+
+                String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
+                if (address.equals(addressP2pkh)) {
+                    txAmount += output.getValue().value;
+                }
+            }
+            return txAmount >= amount;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public synchronized com.shuffle.bitcoin.Transaction getConflictingTransaction(
+            com.shuffle.bitcoin.Transaction t, Address addr, long amount) throws CoinNetworkException, AddressFormatException {
+
+        if (!(t instanceof Transaction)) throw new IllegalArgumentException();
+        Transaction transaction = (Transaction)t;
+
+        String address = addr.toString();
+
+        List<Bitcoin.Transaction> transactions = null;
+        try {
+            transactions = getAddressTransactions(address);
+        } catch (IOException e) {
+            // Can we return null here?
+            return null;
+        }
+
+        // Ensures that all transactions have the bitcoinj field set
+        for (Bitcoin.Transaction tx : transactions) {
+            if (tx.bitcoinj == null) {
+                try {
+                    tx.bitcoinj = getTransaction(tx.hash);
+                } catch (IOException e) {
+                    // We should not have an IOException
+                    return null;
+                }
+            }
+        }
+
+        for (Bitcoin.Transaction tx : transactions) {
+            for (TransactionInput input : tx.bitcoinj.getInputs()) {
+                // Can be multiple inputs for transaction parameter.
+                for (TransactionInput txInput : transaction.bitcoinj.getInputs()) {
+                    if (input.equals(txInput)) {
+                        return tx;
+                    }
+                }
+            }
+        }
+
         return null;
     }
 
-    // TODO
-    @Override
-    public com.shuffle.bitcoin.Transaction getSpendingTransaction(Address addr, long amount) {
+    public org.bitcoinj.core.Transaction signTransaction(org.bitcoinj.core.Transaction signTx, List<Bytestring> programSignatures) {
+
+        List<Script> inputScripts = new LinkedList<>();
+        for (Bytestring programs : programSignatures) {
+            if (!inputScripts.add(bytestringToInputScript(programs))) {
+                return null;
+            }
+        }
+
+        for (Script inScript : inputScripts) {
+            for (int i = 0; i < signTx.getInputs().size(); i++) {
+                TransactionInput input = signTx.getInput(i);
+                TransactionOutput connectedOutput = input.getConnectedOutput();
+                byte[] originalScript = input.getScriptBytes().clone();
+                input.setScriptSig(inScript);
+                try {
+                    input.verify(connectedOutput);
+                    break;
+                } catch (VerificationException e) {
+                    input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
+                    if (i == signTx.getInputs().size() - 1) {
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return signTx;
+    }
+
+    /**
+     * Takes in a transaction and a private key and returns a signature (if possible)
+     * as a Bytestring object.
+     */
+    public Bytestring getSignature(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
+
+        org.bitcoinj.core.Transaction copyTx = signTx;
+
+        for (int i = 0; i < copyTx.getInputs().size(); i++) {
+            TransactionInput input = copyTx.getInput(i);
+            TransactionOutput connectedOutput = input.getConnectedOutput();
+            Sha256Hash hash = copyTx.hashForSignature(i, connectedOutput.getScriptPubKey(), org.bitcoinj.core.Transaction.SigHash.ALL, false);
+            ECKey.ECDSASignature ecSig = privKey.sign(hash);
+            TransactionSignature txSig = new TransactionSignature(ecSig, org.bitcoinj.core.Transaction.SigHash.ALL, false);
+            byte[] originalScript = input.getScriptBytes().clone();
+            Script inputScript = ScriptBuilder.createInputScript(txSig, ECKey.fromPublicOnly(privKey.getPubKey()));
+            input.setScriptSig(inputScript);
+            try {
+                input.verify(connectedOutput);
+                return new Bytestring(inputScript.getProgram());
+            } catch (VerificationException e) {
+                input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
+            }
+        }
+
         return null;
     }
 
-    abstract List<Bitcoin.Transaction> getAddressTransactions(String address)
-            throws IOException;
+    // Converts a Bytestring object to a Script object.
+    public Script bytestringToInputScript(Bytestring program) {
+        return new Script(program.bytes);
+    }
 
+    // Since we rely on 3rd party services to query the blockchain, by
+    // default we cache the result.
+    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(String address)
+            throws IOException, CoinNetworkException, AddressFormatException {
+
+        long now = System.currentTimeMillis();
+        Cached cached = cache.get(address);
+        if (cached != null) {
+            if (now - cached.last < cach_expire) {
+                return cached.txList;
+            }
+        }
+
+        List<Bitcoin.Transaction> txList = getAddressTransactionsInner(address);
+
+        cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
+
+        return txList;
+    }
+
+    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException, CoinNetworkException {
+        if (!t.canSend || t.sent) {
+            return false;
+        }
+
+        //checks to see if transaction was broadcast
+        if (peerGroup == null) {
+            return false;
+        }
+        peerGroup.broadcastTransaction(t.bitcoinj).future().get();
+        t.sent = true;
+        return true;
+    }
+
+    // Should NOT be synchronized.
+    abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(String address)
+            throws IOException, CoinNetworkException, AddressFormatException;
+
+    // Should be synchronized.
     abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)
             throws IOException;
 }

@@ -14,6 +14,8 @@ package com.shuffle.p2p;
  * Created by Daniel Krawisz on 1/19/16.
  */
 
+import org.apache.commons.codec.binary.Hex;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -78,7 +80,7 @@ public class Bytestring implements Serializable {
 
     public Bytestring xor(Bytestring b) {
         if (bytes.length != b.bytes.length) {
-            throw new IllegalArgumentException("different length not allowed");
+            throw new IllegalArgumentException("different lengths not allowed");
         }
 
         byte[] newBytes = new byte[bytes.length];
@@ -90,25 +92,39 @@ public class Bytestring implements Serializable {
         return new Bytestring(newBytes);
     }
 
+    public Bytestring drop(int a) {
+        if (a < 0) {
+            return take(0, bytes.length + a);
+        } else {
+            return take(a, bytes.length);
+        }
+    }
+
+    public Bytestring take(int a, int b) {
+        int from, to;
+        if (a < 0) {
+            from = bytes.length - a;
+        } else {
+            from = a;
+        }
+
+        if (b < 0) {
+            to = bytes.length - b;
+        } else {
+            to = b;
+        }
+
+        if (to <= from || to > bytes.length || from > bytes.length) {
+            throw new IllegalArgumentException();
+        }
+
+        return new Bytestring(Arrays.copyOfRange(bytes, from, to));
+    }
+
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof Bytestring)) {
-            return false;
-        }
+        return o instanceof Bytestring && Arrays.equals(bytes, ((Bytestring) o).bytes);
 
-        Bytestring b = (Bytestring)o;
-
-        if (b.bytes.length != bytes.length) {
-            return false;
-        }
-
-        for (int i = 0; i < bytes.length; i ++) {
-            if (bytes[i] != b.bytes[i]) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     @Override
@@ -123,6 +139,6 @@ public class Bytestring implements Serializable {
 
     @Override
     public String toString() {
-        return Arrays.toString(bytes);
+        return "Bytestring[" + Hex.encodeHexString(bytes) + "]";
     }
 }

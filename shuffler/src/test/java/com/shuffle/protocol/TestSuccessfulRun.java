@@ -12,9 +12,11 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Matrix;
@@ -24,10 +26,12 @@ import com.shuffle.sim.Simulator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Tests for a successful run of the protocol.
@@ -37,14 +41,19 @@ import java.util.Map;
 public class TestSuccessfulRun extends TestShuffleMachine {
 
     // Create a test case representing a successful run.
-    private void SuccessfulRun(int numPlayer) {
+    private void SuccessfulRun(int numPlayer)
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
+
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
-        check(new MockTestCase(description).successfulTestCase(numPlayer));
+        check(newTestCase(description).successfulTestCase(numPlayer));
     }
 
     @Test
     // Tests for successful runs of the protocol.
-    public void testSuccess() {
+    public void testSuccess()
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
 
         // Tests for successful runs.
         int minPlayers = 2;
@@ -91,7 +100,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
     @Test
     // Test that the resulting transaction has the correct outputs.
-    public void testOutputs() {
+    public void testOutputs() throws ExecutionException, InterruptedException {
         ChangeTestCase[] tests = new ChangeTestCase[]{
                 new ChangeTestCase(37,
                         new ChangeTestInput(45, true), new ChangeTestInput(78, true)),
@@ -109,7 +118,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
         for (ChangeTestCase test : tests) {
             i ++;
             Bytestring session = new Bytestring(("change test case " + i).getBytes());
-            InitialState init = new InitialState(session, test.amount, mc);
+            InitialState init = new InitialState(session, test.amount, mc, new MockProtobuf());
 
             // First create the bitcoin mock network.
             List<ChangeTestExpected> expected = new LinkedList<>();

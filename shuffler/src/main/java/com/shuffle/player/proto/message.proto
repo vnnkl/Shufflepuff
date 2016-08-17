@@ -35,8 +35,9 @@ message Message {
     EncryptionKey key = 2;
     Hash hash = 3;
     Signature signature = 4;
-    Blame blame = 5;
-    Message next = 6;
+    string str = 5;
+    Blame blame = 6;
+    Message next = 7;
 }
 
 message Address {
@@ -53,6 +54,7 @@ message EncryptionKey {
 
 message DecryptionKey {
     string key = 1;
+    string public = 2;
 }
 
 message Hash {
@@ -78,15 +80,14 @@ message Blame {
 
 enum Reason {
     INSUFFICIENTFUNDS = 0;
-    NOFUNDSATALL = 1;
-    DOUBLESPEND = 2;
-    EQUIVOCATIONFAILURE = 3;
-    SHUFFLEFAILURE = 4;
-    SHUFFLEANDEQUIVOCATIONFAILURE = 5;
-    INVALIDSIGNATURE = 6;
-    MISSINGOUTPUT = 7;
-    LIAR = 8;
-    INVALIDFORMAT = 9;
+    DOUBLESPEND = 1;
+    EQUIVOCATIONFAILURE = 2;
+    SHUFFLEFAILURE = 3;
+    SHUFFLEANDEQUIVOCATIONFAILURE = 4;
+    INVALIDSIGNATURE = 5;
+    MISSINGOUTPUT = 6;
+    LIAR = 7;
+    INVALIDFORMAT = 8;
 }
 
 message Invalid {

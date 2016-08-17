@@ -35,4 +35,23 @@ public class Either<X, Y> {
 
         return second.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Either<?, ?> either = (Either<?, ?>) o;
+
+        return first != null ? first.equals(either.first) : either.first == null
+                && (second != null ? second.equals(either.second) : either.second == null);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = first != null ? first.hashCode() : 0;
+        result = 31 * result + (second != null ? second.hashCode() : 0);
+        return result;
+    }
 }

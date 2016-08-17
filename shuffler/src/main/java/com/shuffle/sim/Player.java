@@ -22,9 +22,11 @@ import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCrypto;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.p2p.Collector;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
+import com.shuffle.player.JavaShuffleMarshaller;
 import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.mock.MockSigningKey;
@@ -33,6 +35,7 @@ import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.p2p.Connect;
 import com.shuffle.player.P;
+import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.InvalidParticipantSetException;
@@ -42,6 +45,7 @@ import com.shuffle.protocol.blame.Matrix;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.bitcoinj.core.AddressFormatException;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -57,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.regex.Pattern;
@@ -189,6 +194,7 @@ class Player<Address> implements Runnable {
                 new Bytestring(("CoinShuffle Shufflepuff simulation " + (options.get("-id"))).getBytes()),
                 Integer.parseInt(options.get("-amount")),
                 crypto,
+                new MockProtobuf(),
                 Integer.parseInt(options.get("-players")));
         List<VerificationKey> keys = init.getKeys();
 
@@ -230,7 +236,7 @@ class Player<Address> implements Runnable {
 
         // The tcp channel over which we will be connecting.
         Channel<InetSocketAddress, Bytestring> tcp =
-                new TcpChannel(InetSocketAddress.createUnresolved("localhost", param.port), exec);
+                new TcpChannel(InetSocketAddress.createUnresolved("localhost", param.port));
         Player<InetSocketAddress> player = new Player<>(param, msg, tcp);
         Thread thread = new Thread(player);
 
@@ -269,17 +275,15 @@ class Player<Address> implements Runnable {
         Thread.sleep(5000);
 
         Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> m = null;
-        try {
-            m = conn.connect(keys, 3);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+
+        m = conn.connect(keys, 3);
+        if (m == null) throw new NullPointerException();
 
         Messages messages = null;
 
         try {
             messages = new Messages(param.session, param.me, m.connected, m.inbox,
-                    new JavaMarshaller<Message.Atom>(), new JavaMarshaller<Packet<VerificationKey, P>>());
+                    new JavaShuffleMarshaller());
             return new CoinShuffle(
                     messages, param.init.crypto(), param.init.coin()
             ).runProtocol(
@@ -294,7 +298,9 @@ class Player<Address> implements Runnable {
                 | TimeoutException // Indicates a lost
                 | FormatException // TODO also all improperly formatted messages are ignored.
                 | InvalidParticipantSetException
-                | NoSuchAlgorithmException e) {
+                | NoSuchAlgorithmException
+                | AddressFormatException
+                | ExecutionException e) {
             // TODO handle these problems appropriately.
             return null;
         } catch (Matrix matrix) {

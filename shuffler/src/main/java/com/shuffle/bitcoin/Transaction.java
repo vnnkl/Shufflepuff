@@ -9,8 +9,10 @@
 package com.shuffle.bitcoin;
 
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.protocol.FormatException;
 
 import java.io.Serializable;
+import java.util.concurrent.ExecutionException;
 
 /**
  * A representation of a Bitcoin or other cryptocurrency transaction.
@@ -19,7 +21,15 @@ import java.io.Serializable;
  */
 public interface Transaction extends Serializable {
     // Send the transaction into the network.
-    boolean send() throws CoinNetworkException;
+    void send() throws CoinNetworkException, ExecutionException, InterruptedException;
 
     Bytestring serialize();
+
+    // Sign the transaction and return the input script.
+    Bytestring sign(SigningKey sk);
+
+    boolean addInputScript(Bytestring b) throws FormatException;
+
+    // Whether a transaction has enough signatures to be valid.
+    boolean isValid();
 }

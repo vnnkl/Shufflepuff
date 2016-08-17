@@ -15,8 +15,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * Tests for the tcp connection
@@ -71,15 +69,14 @@ public class TestTcpChannel {
         private final Integer me;
         private final int[] ports;
 
-        TcpTestChannel(Integer me, int[] ports, Executor exec)
+        TcpTestChannel(Integer me, int[] ports)
                 throws UnknownHostException {
 
             this.me = me;
             this.ports = ports;
             tcp = new TcpChannel(
                     new TcpTestHeader(),
-                    new InetSocketAddress(InetAddress.getLocalHost(), ports[me]),
-                    exec);
+                    new InetSocketAddress(InetAddress.getLocalHost(), ports[me]));
 
         }
 
@@ -128,7 +125,7 @@ public class TestTcpChannel {
             }
 
             @Override
-            public boolean closed() throws InterruptedException {
+            public boolean closed() {
                 return session.closed();
             }
 
@@ -144,7 +141,7 @@ public class TestTcpChannel {
             }
 
             @Override
-            public void close() throws InterruptedException {
+            public void close() {
                 session.close();
             }
         }
@@ -174,12 +171,12 @@ public class TestTcpChannel {
             }
 
             @Override
-            public void close() throws InterruptedException {
+            public void close() {
                 conn.close();
             }
 
             @Override
-            public boolean closed() throws InterruptedException {
+            public boolean closed() {
                 return conn.closed();
             }
         }
@@ -239,7 +236,7 @@ public class TestTcpChannel {
         }
 
         @Override
-        public void close() throws InterruptedException {
+        public void close() {
             inner.close();
             closed = true;
         }
@@ -334,10 +331,6 @@ public class TestTcpChannel {
         // Channels for receiving messages [from][to]
         Chan<Integer> chan[][] = (Chan<Integer>[][]) new Chan[3][3];
 
-        // The executor for running all the threads.
-        // Need one thread for each listener and connection endpoint, so 9 total.
-        Executor exec = Executors.newFixedThreadPool(9);
-
         // Channel for sending new sessions made my remote peers. A vector.
         Chan<Session<Integer, Integer>>[] sch = new Chan[3];
 
@@ -363,7 +356,7 @@ public class TestTcpChannel {
             // create listeners.
             listen[i] = new TestListener(i, chan[i], sch[i]);
 
-            channels[i] = new TcpTestChannel(i, port, exec);
+            channels[i] = new TcpTestChannel(i, port);
         }
 
         // create peers. This is really cool because you can pretty much

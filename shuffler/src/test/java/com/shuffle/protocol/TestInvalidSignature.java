@@ -8,7 +8,12 @@
 
 package com.shuffle.protocol;
 
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
+
 import org.junit.Test;
+
+import java.security.NoSuchAlgorithmException;
+import java.util.concurrent.ExecutionException;
 
 /**
  * It is possible for a player to generate a different signature than everyone else. The players
@@ -19,13 +24,19 @@ import org.junit.Test;
  */
 public class TestInvalidSignature extends TestShuffleMachine{
 
-    private void InvalidTransactionSignature(int numPlayers, int[] mutants) {
+    private void InvalidTransactionSignature(int numPlayers, int[] mutants)
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
+
         String description = "case " + caseNo + "; invalid transaction signature test case.";
-        check(new MockTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
+        check(newTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
     }
 
     @Test
-    public void testInvalidSignature() {
+    public void testInvalidSignature()
+            throws NoSuchAlgorithmException, ExecutionException,
+            InterruptedException, BitcoinCrypto.Exception {
+
         // Player generates a different transaction signature to everyone else.
         InvalidTransactionSignature(2, new int[]{2});
         InvalidTransactionSignature(5, new int[]{2});

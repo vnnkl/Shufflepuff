@@ -49,7 +49,7 @@ public class TestOtrChannel {
             }
 
             @Override
-            public void close() throws InterruptedException {
+            public void close() {
 
             }
         };
@@ -74,7 +74,7 @@ public class TestOtrChannel {
             }
 
             @Override
-            public void close() throws InterruptedException {
+            public void close() {
 
             }
         };

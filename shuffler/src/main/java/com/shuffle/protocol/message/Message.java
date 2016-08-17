@@ -28,6 +28,8 @@ public interface Message extends Serializable {
 
     Message attach(Address addr);
 
+    Message attach(String str);
+
     Message attach(Bytestring sig);
 
     Message attach(Blame blame);
@@ -37,6 +39,8 @@ public interface Message extends Serializable {
     Bytestring readSignature() throws FormatException;
 
     Address readAddress() throws FormatException;
+
+    String readString() throws FormatException;
 
     Blame readBlame() throws FormatException;
 

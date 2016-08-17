@@ -31,6 +31,7 @@ import com.shuffle.protocol.message.Phase;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.bitcoinj.core.AddressFormatException;
 
 import java.io.IOException;
 import java.util.Deque;
@@ -44,6 +45,7 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
 
 /**
  *
@@ -100,7 +102,8 @@ public class CoinShuffle {
 
         Transaction protocolDefinition(
         ) throws TimeoutException, Matrix, InterruptedException,
-                FormatException, IOException, CoinNetworkException {
+                FormatException, IOException, CoinNetworkException,
+                ExecutionException, AddressFormatException {
 
             if (amount <= 0) {
                 throw new IllegalArgumentException();
@@ -138,7 +141,6 @@ public class CoinShuffle {
             }
 
             readAnnouncements(announcement, encryptionKeys, changeAddresses);
-            System.out.println("Player " + me + ":" + sk + " receives keys " + encryptionKeys);
 
             // Phase 2: Shuffle
             // In the shuffle phase, players go in order and reorder the addresses they have been
@@ -190,7 +192,6 @@ public class CoinShuffle {
                         // Continue on to next case.
                     }
                     case ShuffleFailure: {
-                        // This was sent
                         blameShuffleMisbehavior();
                     }
                     default: {
@@ -225,11 +226,16 @@ public class CoinShuffle {
                 inputs.add(players.get(i));
             }
 
+            // Generate the join transaction.
             Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
+            if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
-            mailbox.broadcast(messages.make().attach(sk.sign(t.serialize())), phase.get());
+            // Generate the input script using our signing key.
+            Bytestring inputScript = t.sign(sk);
+
+            mailbox.broadcast(messages.make().attach(inputScript), phase.get());
 
             Map<VerificationKey, Message> signatureMessages = null;
             boolean invalidClaim = false;
@@ -260,7 +266,8 @@ public class CoinShuffle {
                 VerificationKey key = sig.getKey();
                 Bytestring signature = sig.getValue().readSignature();
                 signatures.put(key, signature);
-                if (!key.verify(t.serialize(), signature)) {
+
+                if (t.addInputScript(signature)) {
                     invalid.put(key, signature);
                 }
             }
@@ -302,7 +309,6 @@ public class CoinShuffle {
             if (change != null) {
                 message = message.attach(change);
             }
-            System.out.println("Player " + me + " broadcasts key " + message);
 
             mailbox.broadcast(message, phase.get());
             return dk;
@@ -326,7 +332,7 @@ public class CoinShuffle {
 
             // Add our own address to the mix. Note that if me == N, ie, the last player, then no
             // encryption is done. That is because we have reached the last layer of encryption.
-            Address encrypted = addrNew;
+            String encrypted = addrNew.toString();
             for (int i = N; i > me; i--) {
                 // Successively encrypt with the keys of the players who haven't had their turn yet.
                 encrypted = encryptionKeys.get(players.get(i)).encrypt(encrypted);
@@ -350,6 +356,7 @@ public class CoinShuffle {
                 newAddresses = readNewAddresses(shuffled);
                 mailbox.broadcast(shuffled, phase.get());
             } else {
+                // All other players just receive their addresses from the last one.
                 newAddresses = readNewAddresses(mailbox.receiveFrom(players.get(N), phase.get()));
             }
 
@@ -364,15 +371,15 @@ public class CoinShuffle {
             Message decrypted = messages.make();
 
             int count = 0;
-            Set<Address> addrs = new HashSet<>(); // Used to check that all addresses are different.
+            Set<String> addrs = new HashSet<>(); // Used to check that all addresses are different.
 
             while (!message.isEmpty()) {
-                Address address = message.readAddress();
+                String encrypted = message.readString();
                 message = message.rest();
 
-                addrs.add(address);
+                addrs.add(encrypted);
                 count++;
-                decrypted = decrypted.attach(key.decrypt(address));
+                decrypted = decrypted.attach(key.decrypt(encrypted));
             }
 
             if (addrs.size() != count || count != expected) {
@@ -392,7 +399,7 @@ public class CoinShuffle {
                 throws TimeoutException, Matrix,
                 InterruptedException, FormatException, IOException {
 
-            // First skip to phase 4 and do an equivocation check.
+            // Skip to phase 4 and do an equivocation check.
             phase.set(Phase.EquivocationCheck);
             equivocationCheck(encryptionKeys, newAddresses, true);
         }
@@ -407,7 +414,6 @@ public class CoinShuffle {
         ) throws InterruptedException, TimeoutException, Matrix, IOException, FormatException {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
-            System.out.println("Player " + me + " makes equivocation check message " + equivocationCheck);
             mailbox.broadcast(equivocationCheck, phase.get());
 
             // Wait for a similar message from everyone else and check that the result is the name.
@@ -416,7 +422,6 @@ public class CoinShuffle {
                     phase.get());
 
             hashes.put(vk, equivocationCheck);
-            System.out.println("Player " + me + " checks hashes " + hashes);
 
             if (areEqual(hashes.values())) {
                 // We may have got this far as part of a normal part of the protocol or as a part
@@ -447,12 +452,14 @@ public class CoinShuffle {
 
         // Check for players with insufficient funds.
         private void blameInsufficientFunds()
-                throws CoinNetworkException, TimeoutException, Matrix, IOException, InterruptedException, FormatException {
+                throws CoinNetworkException, TimeoutException, Matrix,
+                IOException, InterruptedException, FormatException, AddressFormatException {
+
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
             for (VerificationKey player : players.values()) {
-                if (coin.valueHeld(player.address()) < amount) {
+                if (!coin.sufficientFunds(player.address(), amount)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }
@@ -465,13 +472,7 @@ public class CoinShuffle {
             phase.set(Phase.Blame);
             Message blameMessage = messages.make();
             for (VerificationKey offender : offenders) {
-                Transaction t = coin.getConflictingTransaction(offender.address(), amount);
-
-                if (t == null) {
-                    blameMessage = blameMessage.attach(Blame.NoFundsAtAll(offender));
-                } else {
-                    blameMessage = blameMessage.attach(Blame.InsufficientFunds(offender, t));
-                }
+                blameMessage = blameMessage.attach(Blame.InsufficientFunds(offender));
             }
 
             // Broadcast offending transactions.
@@ -500,12 +501,12 @@ public class CoinShuffle {
         }
 
         void checkDoubleSpending(Transaction t) throws InterruptedException, IOException,
-                FormatException, TimeoutException, Matrix {
+                FormatException, TimeoutException, Matrix, CoinNetworkException, AddressFormatException {
 
             // Check for double spending.
             Message doubleSpend = messages.make();
             for (VerificationKey key : players.values()) {
-                Transaction o = coin.getConflictingTransaction(key.address(), amount);
+                Transaction o = coin.getConflictingTransaction(t, key.address(), amount);
                 if (o != null) {
                     doubleSpend = doubleSpend.attach(Blame.DoubleSpend(key, o));
                 }
@@ -568,23 +569,15 @@ public class CoinShuffle {
                         message = message.rest();
 
                         switch (blame.reason) {
-                            case NoFundsAtAll: {
-                                // TODO Do we agree that this player has insufficient funds?
-                                matrix.put(from, Evidence.NoFundsAtAll(blame.accused));
-                                break;
-                            }
                             case InsufficientFunds: {
-                                if (blame.t == null) {
-                                    // A transaction must be included to claim insufficient funds.
-                                    matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
-                                    break;
-                                }
-
                                 // Is the evidence included sufficient?
                                 // TODO check whether this is a conflicting transaction.
-                                matrix.put(from, Evidence.InsufficientFunds(blame.accused, blame.t));
+                                matrix.put(from, Evidence.InsufficientFunds(blame.accused));
                                 break;
                             }
+
+                            // If there is an equivocation failure, all players must send a blame
+                            // message containing the messages they received in phases 1 and 4.
                             case EquivocationFailure: {
                                 // These are the keys received by
                                 // this player in the announcement phase.
@@ -619,9 +612,10 @@ public class CoinShuffle {
 
                                 // Check if this player correctly reported
                                 // the hash previously sent to us.
-                                if (!hashes.get(from).equals(
-                                        equivocationCheckHash(players, receivedKeys, addresses))
-                                        ) {
+                                Message newHash =
+                                        equivocationCheckHash(players, receivedKeys, addresses);
+
+                                if (!hashes.get(from).equals(newHash)) {
                                     matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
                                 }
 
@@ -731,7 +725,6 @@ public class CoinShuffle {
 
                         if (next == null) {
                             // blame player to. He should have sent us this.
-
                             matrix.put(vk, Evidence.Placeholder(to, Reason.Liar));
                             continue;
                         }
@@ -758,7 +751,7 @@ public class CoinShuffle {
                 leftover.removeAll(outputVectors.keySet());
                 if (leftover.size() > 0) {
                     for (VerificationKey key : leftover) {
-                        matrix.put(vk, Evidence.Placeholder(key, Reason.Liar));
+                        //matrix.put(vk, Evidence.Placeholder(key, Reason.Liar));
                     }
                 }
 
@@ -887,10 +880,10 @@ public class CoinShuffle {
         Message shuffled = messages.make();
 
         // Read all elements of the packet and insert them in a Queue.
-        Queue<Address> old = new LinkedList<>();
+        Queue<String> old = new LinkedList<>();
         int N = 0;
         while (!message.isEmpty()) {
-            old.add(message.readAddress());
+            old.add(message.readString());
             message = message.rest();
             N++;
         }
@@ -912,14 +905,18 @@ public class CoinShuffle {
     }
 
     // Test whether a set of messages are equal.
-    static boolean areEqual(Iterable<Message> messages) {
+    static synchronized boolean areEqual(Iterable<Message> messages) {
+
         Message last = null;
         for (Message m : messages) {
-            if (last != null) {
-                boolean equal = last.equals(m);
-                if (!equal) {
-                    return false;
-                }
+            if (last == null) {
+                last = m;
+                continue;
+            }
+
+            boolean equal = last.equals(m);
+            if (!equal) {
+                return false;
             }
 
             last = m;
@@ -1030,28 +1027,12 @@ public class CoinShuffle {
                 || shuffleMessages == null || broadcastMessages == null)
             throw new NullPointerException();
 
-        SortedSet<Address> outputs = new TreeSet<>();
+        SortedSet<String> outputs = new TreeSet<>();
 
         // Go through the steps of shuffling messages.
-        for (int i = 1; i <= players.size(); i++) {
+        for (int i = 1; i < players.size(); i++) {
 
-            // The last step is from phase three, so we have to check for that.
-            Packet packet = null;
-            if (i < players.size()) {
-                packet = shuffleMessages.get(players.get(i + 1));
-            } else {
-                // All broadcast messages should have the same content and we should
-                // have already checked for this. Therefore we just look for the first
-                // one that is available. (The message for player 1 should always be available.)
-                for (int j = 1; j <= players.size(); j++) {
-                    packet = broadcastMessages.get(players.get(j));
-
-                    if (packet != null) {
-                        break;
-                    }
-                }
-            }
-
+            Packet packet = shuffleMessages.get(players.get(i + 1));
             if (packet == null) {
                 // TODO Blame a player for lying.
 
@@ -1061,43 +1042,61 @@ public class CoinShuffle {
             Message message = packet.payload();
 
             // Grab the correct number of addresses and decrypt them.
-            SortedSet<Address> addresses = new TreeSet<>();
+            // SortedSet<Address> addresses = new TreeSet<>();
+            SortedSet<String> decrypted = new TreeSet<>();
             for (int j = 0; j < i; j++) {
                 if (message.isEmpty()) {
                     return Evidence.ShuffleMisbehaviorDropAddress(
                             players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
                 }
 
-                Address address = message.readAddress();
+                String address = message.readString();
                 message = message.rest();
                 for (int k = i + 1; k <= players.size(); k++) {
                     address = decryptionKeys.get(players.get(k)).decrypt(address);
                 }
 
                 // There shouldn't be duplicates.
-                if (addresses.contains(address)) {
+                if (decrypted.contains(address)) {
                     return Evidence.ShuffleMisbehaviorDropAddress(
                             players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
                 }
-                addresses.add(address);
+                decrypted.add(address);
             }
 
             // Does this contain all the previous addresses?
-            if (!addresses.containsAll(outputs)) {
+            if (!decrypted.containsAll(outputs)) {
                 return Evidence.ShuffleMisbehaviorDropAddress(
                         players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
             }
 
-            addresses.removeAll(outputs);
+            decrypted.removeAll(outputs);
 
             // There should be one new address.
-            if (addresses.size() != 1) {
+            if (decrypted.size() != 1) {
                 return Evidence.ShuffleMisbehaviorDropAddress(
                         players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
             }
 
-            outputs.add(addresses.first());
+            outputs.add(decrypted.first());
         }
+
+        // Now check the last set of messages from player N.
+        // All broadcast messages should have the same content and we should
+        // have already checked for this. Therefore we just look for the first
+        // one that is available.
+        // (The message for player 1 should always be available, so theoretically
+        // we don't need to loop through everybody, but who knows what might have happened.)
+        Packet packet = null;
+        for (int j = 1; j <= players.size(); j++) {
+            packet = broadcastMessages.get(players.get(j));
+
+            if (packet != null) {
+                break;
+            }
+        }
+
+        // TODO
 
         return null;
     }
@@ -1114,7 +1113,7 @@ public class CoinShuffle {
             // query the phase as it runs.
             Send<Phase> chan
     ) throws TimeoutException, Matrix, InterruptedException, InvalidParticipantSetException,
-            FormatException, IOException, CoinNetworkException {
+            FormatException, IOException, CoinNetworkException, ExecutionException, AddressFormatException {
 
         if (amount <= 0) {
             throw new IllegalArgumentException();

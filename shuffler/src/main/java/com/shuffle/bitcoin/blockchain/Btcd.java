@@ -8,7 +8,7 @@
 
 package com.shuffle.bitcoin.blockchain;
 
-import com.shuffle.mock.MockCoin;
+import com.shuffle.bitcoin.CoinNetworkException;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -16,17 +16,22 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 
 import org.apache.commons.codec.binary.Base64;
 
+import org.bitcoinj.store.BlockStoreException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -53,23 +58,34 @@ import org.json.JSONObject;
  */
 public class Btcd extends Bitcoin {
 
-    String rpcuser;
-    String rpcpass;
+    private final String rpcuser;
+    private final String rpcpass;
+    private final URL url;
 
-    public Btcd(NetworkParameters netParams, int minPeers, String rpcuser, String rpcpass) {
-        super(netParams, minPeers);
+    public Btcd(NetworkParameters netParams, String rpcuser, String rpcpass)
+            throws MalformedURLException {
+
+        super(netParams, 0);
         this.rpcuser = rpcuser;
         this.rpcpass = rpcpass;
+
+        if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+            url = new URL("http://127.0.0.1:8334");
+        } else if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+            url = new URL("http://127.0.0.1:18334");
+        } else {
+            throw new IllegalArgumentException("Invalid network parameters passed to btcd. ");
+        }
     }
 
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
      */
-    public org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
 
         org.bitcoinj.core.Transaction tx = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawtransaction\", \"params\":[\"" + transactionHash + "\"]}";
-        URL url = new URL("http://127.0.0.1:8334");
+
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
@@ -115,11 +131,11 @@ public class Btcd extends Bitcoin {
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
      */
-    public List<Transaction> getAddressTransactions(String address) throws IOException {
+    public synchronized List<Transaction> getAddressTransactionsInner(String address) throws IOException {
 
         List<Transaction> txList = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
-        URL url = new URL("http://127.0.0.1:8334");
+
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
@@ -146,16 +162,28 @@ public class Btcd extends Bitcoin {
             rd.close();
 
             JSONObject json = new JSONObject(response.toString());
-            JSONArray jsonarray = json.getJSONArray("result");
+            JSONArray jsonarray = null;
             txList = new LinkedList<>();
+            if (json.isNull("result")) {
+                return txList;
+            } else {
+                jsonarray = json.getJSONArray("result");
+            }
             for (int i = 0; i < jsonarray.length(); i++) {
                 JSONObject currentJson = jsonarray.getJSONObject(i);
                 String txid = currentJson.get("txid").toString();
                 HexBinaryAdapter adapter = new HexBinaryAdapter();
                 byte[] bytearray = adapter.unmarshal(currentJson.get("hex").toString());
                 Context context = Context.getOrCreate(netParams);
+                int confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
+                boolean confirmed;
+                if (confirmations == 0) {
+                    confirmed = false;
+                } else {
+                    confirmed = true;
+                }
                 org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytearray);
-                Transaction tx = new Transaction(txid, bitTx, false);
+                Transaction tx = new Transaction(txid, bitTx, false, confirmed);
                 txList.add(tx);
             }
 
@@ -166,6 +194,105 @@ public class Btcd extends Bitcoin {
 
         return txList;
 
+    }
+
+    @Override
+    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException, CoinNetworkException {
+        if (!t.canSend || t.sent) {
+            return false;
+        }
+
+        String hexTx = null;
+        try {
+            hexTx = DatatypeConverter.printHexBinary(t.bitcoinj().bitcoinSerialize());
+        } catch (BlockStoreException e) {
+            return false;
+        } catch (IOException er) {
+            return false;
+        }
+        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"sendrawtransaction\", \"params\":[\"" + hexTx + "\"]}";
+
+        HttpURLConnection connection = null;
+        try {
+            connection = (HttpURLConnection) url.openConnection();
+        } catch (IOException e) {
+            return false;
+        }
+        connection.setDoOutput(true);
+        try {
+            connection.setRequestMethod("POST");
+        } catch (java.net.ProtocolException e) {
+            return false;
+        }
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        Base64 b = new Base64();
+        String authString = rpcuser + ":" + rpcpass;
+        String encoding = b.encodeAsString(authString.getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + encoding);
+        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
+        connection.setDoInput(true);
+        OutputStream out;
+        try {
+            out = connection.getOutputStream();
+        } catch (IOException e) {
+            return false;
+        }
+        try {
+            out.write(requestBody.getBytes());
+        } catch (IOException e) {
+            return false;
+        }
+
+        try {
+            if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return false;
+        } catch (IOException e) {
+            return false;
+        }
+
+        InputStream is;
+        try {
+            is = connection.getInputStream();
+        } catch (IOException e) {
+            return false;
+        }
+        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+        String line;
+        StringBuffer response = new StringBuffer();
+        while (true) {
+            try {
+                if ((line = rd.readLine()) == null) break;
+            } catch (IOException e) {
+                return false;
+            }
+            response.append(line);
+            response.append('\r');
+        }
+
+        try {
+            rd.close();
+        } catch (IOException e) {
+            return false;
+        }
+
+        JSONObject json = new JSONObject(response.toString());
+        if (json.isNull("result")) {
+            JSONObject errorObj = json.getJSONObject("error");
+            String errorMsg = errorObj.getString("message");
+            String parsed = errorMsg.substring(0,37);
+            // transaction is already in mempool, return true
+            if (parsed.equals("TX rejected: already have transaction")) {
+                return true;
+            }
+            throw new CoinNetworkException(errorMsg);
+        }
+
+        return true;
+    }
+
+    @Override
+    protected synchronized List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
+        return getAddressTransactionsInner(address);
     }
 
 }

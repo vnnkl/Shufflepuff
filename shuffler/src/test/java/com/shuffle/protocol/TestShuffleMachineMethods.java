@@ -17,7 +17,6 @@ import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockAddress;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
-import com.shuffle.mock.MockEncryptedAddress;
 import com.shuffle.mock.MockEncryptionKey;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Messages;
@@ -185,7 +184,7 @@ public class TestShuffleMachineMethods {
 
     @Test
     // This tests some cases for the function that randomly shuffles a message.
-    public void shuffleTest() throws NoSuchAlgorithmException {
+    public void shuffleTest() throws NoSuchAlgorithmException, FormatException {
         ShuffleTestCase[] tests = new ShuffleTestCase[]{
                 // The empty case, of course!
                 new ShuffleTestCase(
@@ -265,20 +264,16 @@ public class TestShuffleMachineMethods {
 
             Message input = messages.make();
             for (int i : test.input) {
-                input = input.attach(new MockAddress(i));
+                input = input.attach(new MockAddress(i).toString());
             }
             Message expected = messages.make();
             for (int i : test.expected) {
-                expected = expected.attach(new MockAddress(i));
+                expected = expected.attach(new MockAddress(i).toString());
             }
-            try {
-                Message result = machine.shuffle(input);
-                log.info("got " + result.toString() + "; expected " + expected.toString());
-                Assert.assertTrue(result.equals(expected));
-            } catch (FormatException e) {
-                e.printStackTrace();
-                Assert.fail("Unexpected FormatException: ");
-            }
+
+            Message result = machine.shuffle(input);
+            log.info("got " + result.toString() + "; expected " + expected.toString());
+            Assert.assertTrue(result.equals(expected));
         }
     }
 
@@ -418,8 +413,7 @@ public class TestShuffleMachineMethods {
             for (int i = 0; i <= 5; i++) {
 
                 // Set up a session identifier and signing key.
-                Bytestring session
-                        = new Bytestring(("testDecryptAll" + i).getBytes());
+                Bytestring session = new Bytestring(("testDecryptAll" + i).getBytes());
 
                 SortedSet<SigningKey> players = new TreeSet<>();
                 for (int j = 0; j <= i; j++) {
@@ -444,12 +438,11 @@ public class TestShuffleMachineMethods {
                     playersPublic.add(key);
                     Address addr = key.address();
 
-                    output = output.attach(addr);
-                    input = input.attach(new MockEncryptedAddress(addr, dk.EncryptionKey()));
+                    output = output.attach(addr.toString());
+                    input = input.attach(dk.EncryptionKey().encrypt(addr.toString()));
                 }
 
-                Mailbox mailbox
-                        = new Mailbox(sk.VerificationKey(), playersPublic, messages);
+                Mailbox mailbox = new Mailbox(sk.VerificationKey(), playersPublic, messages);
 
                 CoinShuffle.Round round = standardTestInitialization(
                         session, 1, new MockAddress(-1), players, crypto, mailbox

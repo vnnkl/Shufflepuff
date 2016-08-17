@@ -12,6 +12,7 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import java.io.Serializable;
+import java.util.regex.Pattern;
 
 /**
  *
@@ -29,16 +30,14 @@ public class MockEncryptionKey implements EncryptionKey, Serializable {
     }
 
     @Override
-    public Address encrypt(Address m) {
-        if (m instanceof MockDecryptedAddress) {
-            MockDecryptedAddress dec = (MockDecryptedAddress) m;
+    public String encrypt(String m) {
+        String decrypted = "~decrypt[" + index + "]";
 
-            if (equals(dec.key)) {
-                return dec.decrypted;
-            }
+        if (m.endsWith(decrypted)) {
+            return m.substring(0, m.length() - decrypted.length());
         }
 
-        return new MockEncryptedAddress(m, this);
+        return m + "~encrypt[" + index + "]";
     }
 
     @Override

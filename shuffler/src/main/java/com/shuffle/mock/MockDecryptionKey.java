@@ -41,18 +41,14 @@ public class MockDecryptionKey implements DecryptionKey, Serializable {
 
     @Override
     // Intended blockchain decrypt a single element.
-    public Address decrypt(Address m) throws FormatException {
+    public String decrypt(String m) {
+        String encrypted = "~encrypt[" + index + "]";
 
-        if (m instanceof MockEncryptedAddress) {
-
-            MockEncryptedAddress enc = ((MockEncryptedAddress) m);
-
-            if (enc.key.equals(key)) {
-                return enc.encrypted;
-            }
+        if (m.endsWith(encrypted)) {
+            return m.substring(0, m.length() - encrypted.length());
         }
 
-        return new MockDecryptedAddress(m, key);
+        return m + "~decrypt[" + index + "]";
     }
 
     @Override

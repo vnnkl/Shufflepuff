@@ -6,24 +6,29 @@
  *
  */
 
-package com.shuffle.bitcoin;
+package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.*;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.params.MainNetParams;
 
+import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
 import com.shuffle.bitcoin.blockchain.Btcd;
 
+import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.store.BlockStoreException;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
@@ -33,13 +38,16 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 public class TestBtcd {
 
     NetworkParameters netParams = MainNetParams.get();
-    Btcd testCase = new Btcd(netParams, 2, "admin", "pass");
+
+
+    // the below objects are mainnet objects
+    Btcd testCase;
+    HexBinaryAdapter adapter = new HexBinaryAdapter();
+    Context context = Context.getOrCreate(netParams);
 
     String txid = "7301b595279ece985f0c415e420e425451fcf7f684fcce087ba14d10ffec1121";
     String hexTx = "01000000014dff4050dcee16672e48d755c6dd25d324492b5ea306f85a3ab23b4df26e16e9000000008c493046022100cb6dc911ef0bae0ab0e6265a45f25e081fc7ea4975517c9f848f82bc2b80a909022100e30fb6bb4fb64f414c351ed3abaed7491b8f0b1b9bcd75286036df8bfabc3ea5014104b70574006425b61867d2cbb8de7c26095fbc00ba4041b061cf75b85699cb2b449c6758741f640adffa356406632610efb267cb1efa0442c207059dd7fd652eeaffffffff020049d971020000001976a91461cf5af7bb84348df3fd695672e53c7d5b3f3db988ac30601c0c060000001976a914fd4ed114ef85d350d6d40ed3f6dc23743f8f99c488ac00000000";
-    HexBinaryAdapter adapter = new HexBinaryAdapter();
     byte[] bytearray = adapter.unmarshal(hexTx);
-    Context context = Context.getOrCreate(netParams);
     org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(netParams, bytearray);
 
     String txid2 = "e9166ef24d3bb23a5af806a35e2b4924d325ddc655d7482e6716eedc5040ff4d";
@@ -50,13 +58,17 @@ public class TestBtcd {
     String testAddress = "18heVg1RMgPbrciP2iW42nfsTtyPrMhpkd";
     List<Transaction> txList = new LinkedList<>(Arrays.asList(tx,tx2));
 
+    public TestBtcd() throws MalformedURLException {
+        testCase = new Btcd(netParams, "admin", "pass");
+    }
+
 
     @Test
     public void testGetTransaction() throws IOException {
         Assert.assertEquals(testCase.getTransaction(txid), tx);
     }
 
-    public void testGetWalletTransactions() throws IOException, BlockStoreException {
+    public void testGetWalletTransactions() throws IOException, BlockStoreException, AddressFormatException, CoinNetworkException {
 
         /**
          * there are only two transactions for testAddress.
@@ -67,7 +79,6 @@ public class TestBtcd {
          * I feel like this is a suitable enough test to see that getWalletTransactions contains
          * the correct bitcoinj Transaction objects and is working.
          */
-
         List<Bitcoin.Transaction> listOfTx = testCase.getAddressTransactions(testAddress);
         Transaction testTx = listOfTx.get(0).bitcoinj();
         Transaction testTx2 = listOfTx.get(1).bitcoinj();

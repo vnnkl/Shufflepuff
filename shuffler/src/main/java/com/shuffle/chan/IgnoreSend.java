@@ -10,10 +10,10 @@ package com.shuffle.chan;
  */
 public class IgnoreSend<X> implements Send<X> {
     @Override
-    public boolean send(X x) throws InterruptedException {
+    public boolean send(X x) {
         return true;
     }
 
     @Override
-    public void close() throws InterruptedException {}
+    public void close() {}
 }
