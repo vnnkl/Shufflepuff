@@ -444,11 +444,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             OtrSession otrSession = new OtrSession(session);
 
+            /*
             String query = "?OTRv23?"; // This depends on the type of encryption that the user wants.
             otrSession.send(new Bytestring(query.getBytes()));
 
             sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();
+            sendClient.pollReceivedMessage();*/
 
             return otrSession;
         }

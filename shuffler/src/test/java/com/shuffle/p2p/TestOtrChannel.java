@@ -93,25 +93,30 @@ public class TestOtrChannel {
 
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
-        OtrChannel.OtrPeer clientPeer = otrClient.getPeer("server");
+        // client
+        OtrChannel.OtrPeer clientPeer = otrServer.getPeer("client");
+        // client receiving from server
         OtrChannel.OtrPeer.OtrSession clientSession = clientPeer.openSession(clientSend);
 
-        OtrChannel.OtrPeer serverPeer = otrServer.getPeer("client");
+        // server
+        OtrChannel.OtrPeer serverPeer = otrClient.getPeer("server");
+        // server receiving from client
         OtrChannel.OtrPeer.OtrSession serverSession = serverPeer.openSession(serverSend);
 
-        /*
         String query = "?OTRv23?";
         clientSession.send(new Bytestring(query.getBytes()));
 
-        Assert.assertNotNull(serverSession);
-        Assert.assertNotNull(serverPeer.sendClient.getConnection().session);
+        // the server's session is set
+        Assert.assertNotNull(otrServer.sendClient.getConnection().session);
+        // the client's session is not set
+        Assert.assertNotNull(otrClient.sendClient.getConnection().session);
 
         // Key Exchange starts here
-        serverPeer.sendClient.pollReceivedMessage();
-        clientPeer.sendClient.pollReceivedMessage();
-        serverPeer.sendClient.pollReceivedMessage();
-        clientPeer.sendClient.pollReceivedMessage();
-        serverPeer.sendClient.pollReceivedMessage();*/
+        otrServer.sendClient.pollReceivedMessage();
+        otrClient.sendClient.pollReceivedMessage();
+        otrServer.sendClient.pollReceivedMessage();
+        otrClient.sendClient.pollReceivedMessage();
+        otrServer.sendClient.pollReceivedMessage();
 
         // This should be encrypted
         String message = "hey, encryption test";
