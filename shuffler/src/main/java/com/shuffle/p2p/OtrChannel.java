@@ -35,6 +35,7 @@ import net.java.otr4j.session.SessionID;
 
 public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
+    SendClient sendClient;
     public class SendClient {
 
         private final String account;
@@ -167,16 +168,24 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 }
             }
 
-            public void run() throws OtrException, InterruptedException {
+            public void run() {
                 synchronized (messageQueue) {
                     while (true) {
 
                         Message m = messageQueue.poll();
 
                         if (m == null) {
-                            messageQueue.wait();
+                            try {
+                                messageQueue.wait();
+                            } catch (InterruptedException e) {
+
+                            }
                         } else {
-                            process(m);
+                            try {
+                                process(m);
+                            } catch (OtrException e) {
+
+                            }
                         }
 
                         if (stopped)
@@ -205,8 +214,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         private class SendOtrEngineHost implements OtrEngineHost {
 
-            public void injectMessage(SessionID sessionID, String msg) throws OtrException, InterruptedException, IOException {
-                connection.send(sessionID.getUserID(), msg);
+            public void injectMessage(SessionID sessionID, String msg) throws OtrException {
+                try {
+                    connection.send(sessionID.getUserID(), msg);
+                } catch (IOException e) {
+
+                } catch (InterruptedException er) {
+
+                }
             }
 
             public void smpError(SessionID sessionID, int tlvType, boolean cheated)
@@ -400,7 +415,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     public class OtrPeer extends FundamentalPeer<Address, Bytestring> {
 
         Peer<Address, Bytestring> peer;
-        SendClient sendClient;
+        //SendClient sendClient;
 
         public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
             super(identity);
@@ -450,7 +465,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             // session here
 
             // initialize this variable
-            OtrSession otrSession;
+            OtrSession otrSession = null;
 
             sendClient.pollReceivedMessage();
             sendClient.pollReceivedMessage();
