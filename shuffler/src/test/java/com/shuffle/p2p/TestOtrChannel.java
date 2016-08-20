@@ -19,29 +19,29 @@ import java.io.IOException;
 public class TestOtrChannel {
 
     MockNetwork<String, Bytestring> network;
-    Channel<String, Bytestring> client;
-    Channel<String, Bytestring> server;
-    OtrChannel<String> otrClient;
-    OtrChannel<String> otrServer;
-    Bytestring clientMessage;
-    Bytestring serverMessage;
-    Send<Bytestring> clientSend;
-    Send<Bytestring> serverSend;
+    Channel<String, Bytestring> alice;
+    Channel<String, Bytestring> bob;
+    OtrChannel<String> otrAlice;
+    OtrChannel<String> otrBob;
+    Bytestring aliceMessage;
+    Bytestring bobMessage;
+    Send<Bytestring> aliceSend;
+    Send<Bytestring> bobSend;
 
     @Before
     public void setup() throws InterruptedException, IOException {
         network = new MockNetwork<>();
-        client = network.node("client");
-        server = network.node("server");
-        otrClient = new OtrChannel<>(client, "client");
-        otrServer = new OtrChannel<>(server, "server");
+        alice = network.node("alice");
+        bob = network.node("bob");
+        otrAlice = new OtrChannel<>(alice, "alice");
+        otrBob = new OtrChannel<>(bob, "bob");
 
-        clientSend = new Send<Bytestring>() {
+        aliceSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                TestOtrChannel.this.clientMessage = message;
+                TestOtrChannel.this.aliceMessage = message;
                 try {
-                    otrClient.sendClient.receive("server", message);
+                    otrAlice.sendClient.receive("bob", message);
                 } catch (OtrException e) {
                     return false;
                 }
@@ -54,19 +54,19 @@ public class TestOtrChannel {
             }
         };
 
-        Listener<String, Bytestring> clientListener = new Listener<String, Bytestring>() {
+        Listener<String, Bytestring> aliceListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
-                return clientSend; //?
+                return aliceSend; //?
             }
         };
 
-        serverSend = new Send<Bytestring>() {
+        bobSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                TestOtrChannel.this.serverMessage = message;
+                TestOtrChannel.this.bobMessage = message;
                 try {
-                    otrServer.sendClient.receive("client", message);
+                    otrBob.sendClient.receive("alice", message);
                 } catch (OtrException e) {
                     return false;
                 }
@@ -79,51 +79,51 @@ public class TestOtrChannel {
             }
         };
 
-        Listener<String, Bytestring> serverListener = new Listener<String, Bytestring>() {
+        Listener<String, Bytestring> bobListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
-                return serverSend;
+                return bobSend;
             }
         };
 
-        otrClient.open(clientListener);
-        otrServer.open(serverListener);
+        otrAlice.open(aliceListener);
+        otrBob.open(bobListener);
 
     }
 
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
         // client
-        OtrChannel.OtrPeer clientPeer = otrServer.getPeer("client");
+        OtrChannel.OtrPeer alicePeer = otrBob.getPeer("alice");
         // client receiving from server
-        OtrChannel.OtrPeer.OtrSession clientSession = clientPeer.openSession(clientSend);
+        OtrChannel.OtrPeer.OtrSession aliceSession = alicePeer.openSession(aliceSend);
 
         // server
-        OtrChannel.OtrPeer serverPeer = otrClient.getPeer("server");
+        OtrChannel.OtrPeer bobPeer = otrAlice.getPeer("bob");
         // server receiving from client
-        OtrChannel.OtrPeer.OtrSession serverSession = serverPeer.openSession(serverSend);
+        OtrChannel.OtrPeer.OtrSession bobSession = bobPeer.openSession(bobSend);
 
         String query = "?OTRv23?";
-        clientSession.send(new Bytestring(query.getBytes()));
+        aliceSession.send(new Bytestring(query.getBytes()));
 
         // the server's session is set
-        Assert.assertNotNull(otrServer.sendClient.getConnection().session);
+        Assert.assertNotNull(otrBob.sendClient.getConnection().session);
         // the client's session is not set
-        Assert.assertNotNull(otrClient.sendClient.getConnection().session);
+        Assert.assertNotNull(otrAlice.sendClient.getConnection().session);
 
         // Key Exchange starts here
-        otrServer.sendClient.pollReceivedMessage();
-        otrClient.sendClient.pollReceivedMessage();
-        otrServer.sendClient.pollReceivedMessage();
-        otrClient.sendClient.pollReceivedMessage();
-        otrServer.sendClient.pollReceivedMessage();
+        otrBob.sendClient.pollReceivedMessage();
+        otrAlice.sendClient.pollReceivedMessage();
+        otrBob.sendClient.pollReceivedMessage();
+        otrAlice.sendClient.pollReceivedMessage();
+        otrBob.sendClient.pollReceivedMessage();
 
         // This should be encrypted
         String message = "hey, encryption test";
 
-        serverSession.send(new Bytestring(message.getBytes()));
+        bobSession.send(new Bytestring(message.getBytes()));
 
-        Assert.assertEquals(message, clientMessage);
+        Assert.assertEquals(message, aliceMessage);
     }
 
     @After
