@@ -43,7 +43,7 @@ public class TestShuffleMachine {
     static final Logger log = LogManager.getLogger(TestShuffleMachine.class);
     private static final int defaultSeed = 99;
     private static final int defaultTrials = 1;
-    private static final boolean override = true;
+    private static final boolean override = false;
 
     private int seed = 99;
 

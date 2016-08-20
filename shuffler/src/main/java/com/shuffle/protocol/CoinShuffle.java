@@ -229,8 +229,6 @@ public class CoinShuffle {
             // Generate the join transaction.
             Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
 
-            if (me == 1) System.out.println("Player 1 generated tx: " + t.serialize());
-
             checkDoubleSpending(t);
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
@@ -288,8 +286,6 @@ public class CoinShuffle {
                 mailbox.broadcast(blameMessage, phase.get());
                 throw fillBlameMatrix();
             }
-
-            if (me == 1) System.out.println("Player 1 adds signatures and gets: " + t.serialize());
 
             // Send the transaction into the net.
             t.send();
@@ -914,14 +910,12 @@ public class CoinShuffle {
 
         Message last = null;
         for (Message m : messages) {
-            if (last == null) {
-                last = m;
-                continue;
-            }
+            if (last != null) {
 
-            boolean equal = last.equals(m);
-            if (!equal) {
-                return false;
+                boolean equal = last.equals(m);
+                if (!equal) {
+                    return false;
+                }
             }
 
             last = m;

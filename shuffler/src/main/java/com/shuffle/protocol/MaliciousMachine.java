@@ -72,8 +72,6 @@ public final class MaliciousMachine extends CoinShuffle {
 
                 dk = crypto.makeDecryptionKey();
                 alt = crypto.makeDecryptionKey();
-                System.out.println("Player " + me + " makes new decryption key " + dk + " with encryption key " + dk.EncryptionKey());
-                System.out.println("Player " + me + " makes new decryption key " + alt + " with encryption key " + alt.EncryptionKey());
 
                 // Broadcast the public key and store it in the set with everyone else's.
                 encryptionKeys.put(vk, dk.EncryptionKey());
@@ -108,7 +106,6 @@ public final class MaliciousMachine extends CoinShuffle {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             Message otherCheck = equivocationCheckHash(players, otherKeys, newAddresses);
-            System.out.println("Malicious player " + me + " makes equivocation messages " + equivocationCheck + " and " + otherCheck);
 
             for (VerificationKey to : players.values()) {
                 mailbox.send(equivocate.contains(to) ? otherCheck : equivocationCheck, phase.get(), to);

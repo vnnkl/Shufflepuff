@@ -57,15 +57,16 @@ public class TestShuffleMischief extends TestShuffleMachine {
     }
 
     /*@Test
-    public void testDropAddressReplaceNew() throws NoSuchAlgorithmException {
+    public void testDropAddressReplaceNew() throws NoSuchAlgorithmException,
+            InterruptedException, ExecutionException, BitcoinCrypto.Exception {
         DropAddress(3, null, new int[][]{new int[]{2, 1}}, null);
         DropAddress(3, null, new int[][]{new int[]{3, 2}}, null);
         DropAddress(4, null, new int[][]{new int[]{3, 2}}, null);
     }
 
     @Test
-    // Tests for failures during the shuffle phase.
-    public void testDropAddressDuplicate() throws NoSuchAlgorithmException {
+    public void testDropAddressDuplicate() throws NoSuchAlgorithmException,
+            InterruptedException, ExecutionException, BitcoinCrypto.Exception {
 
         // A player drops an address and adds a duplicate in phase 2.
         DropAddress(4, null, null, new int[][]{new int[]{3, 1, 2}});
