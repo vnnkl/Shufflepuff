@@ -1041,7 +1041,6 @@ public class CoinShuffle {
             Message message = packet.payload();
 
             // Grab the correct number of addresses and decrypt them.
-            // SortedSet<Address> addresses = new TreeSet<>();
             SortedSet<String> decrypted = new TreeSet<>();
             for (int j = 0; j < i; j++) {
                 if (message.isEmpty()) {
@@ -1095,7 +1094,44 @@ public class CoinShuffle {
             }
         }
 
-        // TODO
+        if (packet == null) {
+            // TODO blame someone.
+            return null;
+        }
+
+        Message message = packet.payload();
+
+        // Grab the correct number of addresses and decrypt them.
+        SortedSet<String> addresses = new TreeSet<>();
+        for (int j = 0; j < players.size(); j++) {
+            if (message.isEmpty()) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+
+            Address address = message.readAddress();
+
+            // There shouldn't be duplicates.
+            if (addresses.contains(address.toString())) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+            addresses.add(address.toString());
+        }
+
+        // Does this contain all the previous addresses?
+        if (!addresses.containsAll(outputs)) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
+
+        addresses.removeAll(outputs);
+
+        // There should be one new address.
+        if (addresses.size() != 1) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
 
         return null;
     }

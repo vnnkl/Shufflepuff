@@ -68,24 +68,22 @@ public final class MaliciousMachine extends CoinShuffle {
         final DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
                 throws IOException, InterruptedException, FormatException {
 
-            DecryptionKey dk = null;
+            dk = crypto.makeDecryptionKey();
+            alt = crypto.makeDecryptionKey();
 
-                dk = crypto.makeDecryptionKey();
-                alt = crypto.makeDecryptionKey();
+            // Broadcast the public key and store it in the set with everyone else's.
+            encryptionKeys.put(vk, dk.EncryptionKey());
+            changeAddresses.put(vk, change);
+            Message message = messages.make().attach(dk.EncryptionKey());
+            Message eq = messages.make().attach(alt.EncryptionKey());
 
-                // Broadcast the public key and store it in the set with everyone else's.
-                encryptionKeys.put(vk, dk.EncryptionKey());
-                changeAddresses.put(vk, change);
-                Message message = messages.make().attach(dk.EncryptionKey());
-                Message eq = messages.make().attach(alt.EncryptionKey());
+            if (change != null) {
+                message.attach(change);
+            }
 
-                if (change != null) {
-                    message.attach(change);
-                }
-
-                for (VerificationKey to : players.values()) {
-                    mailbox.send(equivocate.contains(to) ? eq : message, phase.get(), to);
-                }
+            for (VerificationKey to : players.values()) {
+                mailbox.send(equivocate.contains(to) ? eq : message, phase.get(), to);
+            }
 
             return dk;
         }
@@ -238,6 +236,22 @@ public final class MaliciousMachine extends CoinShuffle {
         @Override
         Message shufflePhase(Message shuffled, Address addrNew)
                 throws FormatException {
+
+            // If the dropped address is MY address, just do a normal shuffle phase
+            // without adding any new addresses.
+            if (drop == me) {
+                // Add our own address to the mix. Note that if me == N, ie, the last player, then no
+                // encryption is done. That is because we have reached the last layer of encryption.
+                String encrypted = addrNew.toString();
+                for (int i = N; i > me; i--) {
+                    // Successively encrypt with the keys of the players who haven't had their turn yet.
+                    encrypted = encryptionKeys.get(players.get(i)).encrypt(encrypted);
+                }
+
+                // Insert new entry and reorder the keys.
+                return shuffle(shuffled);
+            }
+
             Message dropped = messages.make();
 
             int i = 1;
@@ -307,7 +321,7 @@ public final class MaliciousMachine extends CoinShuffle {
     // Drop an address and replace it with a new one during the shuffle phase.
     public class DropAddressReplaceNew extends Round {
         final int drop;
-        Address replace;
+        String replace;
 
         DropAddressReplaceNew(
                 CurrentPhase machine,
@@ -318,7 +332,7 @@ public final class MaliciousMachine extends CoinShuffle {
                 Address change, Mailbox mailbox, int drop) throws InvalidParticipantSetException {
             super(machine, amount, sk, players, addrNew, change, mailbox);
             this.drop = drop;
-            replace = crypto.makeSigningKey().VerificationKey().address();
+            replace = crypto.makeSigningKey().VerificationKey().address().toString();
         }
 
         @Override
@@ -329,7 +343,7 @@ public final class MaliciousMachine extends CoinShuffle {
             int i = 1;
             while (!shuffled.isEmpty()) {
                 if (i != drop) {
-                    dropped = dropped.attach(shuffled.readAddress());
+                    dropped = dropped.attach(shuffled.readString());
                 } else {
                     dropped = dropped.attach(replace);
                 }

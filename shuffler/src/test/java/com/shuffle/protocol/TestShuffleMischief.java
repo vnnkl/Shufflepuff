@@ -8,11 +8,13 @@
 
 package com.shuffle.protocol;
 
+import com.google.common.collect.ImmutableMap;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
 import org.junit.Test;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 
@@ -25,16 +27,20 @@ import java.util.concurrent.ExecutionException;
 public class TestShuffleMischief extends TestShuffleMachine {
 
     public TestShuffleMischief() {
-        super(99, 10);
+        super(99, 1);
     }
 
     // Run a test case for a player who drops an address in phase 2.
     private void DropAddress(
             int numPlayers,
-            int[][] drop,
+            Map<Integer, Integer> drop,
             int[][] replaceNew,
             int[][] replaceDuplicate
     ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
+        if (drop == null) {
+            drop = ImmutableMap.of();
+        }
+
         String description = "case " + caseNo + "; shuffle phase mischief test case.";
         check(newTestCase(description).dropAddressTestCase(
                 numPlayers, drop, replaceNew, replaceDuplicate
@@ -44,19 +50,19 @@ public class TestShuffleMischief extends TestShuffleMachine {
     @Test
     public void testDropAddress() throws NoSuchAlgorithmException,
             ExecutionException, InterruptedException, BitcoinCrypto.Exception {
-        DropAddress(2, new int[][]{new int[]{1, 1}}, null, null);
-        DropAddress(2, new int[][]{new int[]{2, 1}}, null, null);
-        DropAddress(2, new int[][]{new int[]{2, 2}}, null, null);
-        DropAddress(3, new int[][]{new int[]{2, 1}}, null, null);
-        DropAddress(3, new int[][]{new int[]{3, 2}}, null, null);
-        DropAddress(3, new int[][]{new int[]{3, 3}}, null, null);
-        DropAddress(3, new int[][]{new int[]{3, 1}}, null, null);
-        DropAddress(4, new int[][]{new int[]{3, 2}}, null, null);
-        DropAddress(4, new int[][]{new int[]{4, 1}}, null, null);
-        DropAddress(4, new int[][]{new int[]{4, 2}}, null, null);
+        DropAddress(2, ImmutableMap.of(1, 1), null, null);
+        DropAddress(2, ImmutableMap.of(2, 1), null, null);
+        DropAddress(2, ImmutableMap.of(2, 2), null, null);
+        DropAddress(3, ImmutableMap.of(2, 1), null, null);
+        DropAddress(3, ImmutableMap.of(3, 2), null, null);
+        DropAddress(3, ImmutableMap.of(3, 3), null, null);
+        DropAddress(3, ImmutableMap.of(3, 1), null, null);
+        DropAddress(4, ImmutableMap.of(3, 2), null, null);
+        DropAddress(4, ImmutableMap.of(4, 1), null, null);
+        DropAddress(4, ImmutableMap.of(4, 2), null, null);
     }
 
-    /*@Test
+    @Test
     public void testDropAddressReplaceNew() throws NoSuchAlgorithmException,
             InterruptedException, ExecutionException, BitcoinCrypto.Exception {
         DropAddress(3, null, new int[][]{new int[]{2, 1}}, null);
@@ -73,5 +79,5 @@ public class TestShuffleMischief extends TestShuffleMachine {
         DropAddress(4, null, null, new int[][]{new int[]{4, 3, 2}});
         DropAddress(5, null, null, new int[][]{new int[]{4, 3, 2}});
 
-    }*/
+    }
 }
