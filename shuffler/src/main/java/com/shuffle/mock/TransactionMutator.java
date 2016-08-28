@@ -42,7 +42,7 @@ public class TransactionMutator implements Coin {
                         amount, from, to, changeAddresses);
 
         return new MockCoin.MockTransaction(tr.inputs, tr.outputs, tr.z + 1, coin,
-                new HashMap<MockCoin.Output, SigningKey>());
+                new HashMap<MockCoin.Output, VerificationKey>());
     }
 
     @Override

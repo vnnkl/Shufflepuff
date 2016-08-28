@@ -237,6 +237,9 @@ public class CoinShuffle {
 
             mailbox.broadcast(inputScript, phase.get());
 
+            // Send signature messages around and receive them from other players.
+            // During this time we could also get notices of invalid signatures
+            // or double spends, so we have to watch out for that.
             Map<VerificationKey, Message> signatureMessages = null;
             boolean invalidClaim = false;
             try {

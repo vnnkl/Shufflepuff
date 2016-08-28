@@ -23,6 +23,9 @@ import java.util.concurrent.ExecutionException;
  * Created by Daniel Krawisz on 3/17/16.
  */
 public class TestInvalidSignature extends TestShuffleMachine{
+    public TestInvalidSignature() {
+        super(99, 1);
+    }
 
     private void InvalidTransactionSignature(int numPlayers, int[] mutants)
             throws NoSuchAlgorithmException, ExecutionException,
