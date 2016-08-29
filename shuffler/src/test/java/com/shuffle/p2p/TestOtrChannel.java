@@ -39,12 +39,13 @@ public class TestOtrChannel {
         aliceSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                TestOtrChannel.this.aliceMessage = message;
                 try {
                     otrAlice.sendClient.receive("bob", message);
                 } catch (OtrException e) {
                     return false;
                 }
+                TestOtrChannel.this.aliceMessage = message;
+
                 return true;
             }
 
@@ -64,12 +65,13 @@ public class TestOtrChannel {
         bobSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                TestOtrChannel.this.bobMessage = message;
                 try {
                     otrBob.sendClient.receive("alice", message);
                 } catch (OtrException e) {
                     return false;
                 }
+                TestOtrChannel.this.bobMessage = message;
+
                 return true;
             }
 
@@ -94,15 +96,13 @@ public class TestOtrChannel {
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
 
-        OtrChannel.OtrPeer alicePeer = otrBob.getPeer("alice"); // correct peer?
-        OtrChannel.OtrPeer.OtrSession aliceSession = alicePeer.openSession(aliceSend);
-
-        OtrChannel.OtrPeer bobPeer = otrAlice.getPeer("bob"); // correct peer?
-        OtrChannel.OtrPeer.OtrSession bobSession = bobPeer.openSession(bobSend);
+        OtrChannel.OtrPeer alice = otrBob.getPeer("alice");
+        OtrChannel.OtrPeer.OtrSession aliceSession = alice.openSession(aliceSend);
 
         String query = "?OTRv23?";
+        // NullPointerException here
         aliceSession.send(new Bytestring(query.getBytes()));
-        Assert.assertEquals(query, new String(aliceMessage.bytes));
+        Assert.assertEquals(query, new String(bobMessage.bytes));
         // throws error --> bobSession.send(new Bytestring(query.getBytes()));
 
         Assert.assertNotNull(otrBob.sendClient.getConnection().session);
@@ -120,7 +120,7 @@ public class TestOtrChannel {
         // This should be encrypted
         String message = "hey, encryption test";
 
-        bobSession.send(new Bytestring(message.getBytes()));
+        //bobSession.send(new Bytestring(message.getBytes()));
 
         Assert.assertEquals(message, aliceMessage);
     }
