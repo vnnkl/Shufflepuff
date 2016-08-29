@@ -97,7 +97,9 @@ public class TestOtrChannel {
     public void encryptedChat() throws InterruptedException, IOException {
 
         OtrChannel.OtrPeer alice = otrBob.getPeer("alice");
+        System.out.println(alice.peer.identity()); // alice.peer is alice
         OtrChannel.OtrPeer.OtrSession aliceSession = alice.openSession(aliceSend);
+
 
         String query = "?OTRv23?";
         // NullPointerException here
