@@ -104,26 +104,26 @@ public class TestOtrChannel {
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
 
+        // Bob to Alice
         OtrChannel.OtrPeer alice = otrBob.getPeer("alice");
         System.out.println(alice.peer.identity()); // alice.peer is alice
-        OtrChannel.OtrPeer.OtrSession aliceSession = alice.openSession(aliceSend);
+        OtrChannel.OtrPeer.OtrSession aliceSession = alice.openSession(bobSend);
 
+        // OTR v2/3 initialization string
         String query = "?OTRv23?";
-        // NullPointerException here
+        // sends to alice
         aliceSession.send(new Bytestring(query.getBytes()));
         Assert.assertEquals(query, new String(aliceMessage.bytes));
-        // throws error --> bobSession.send(new Bytestring(query.getBytes()));
 
+        // Alice to Bob
         OtrChannel.OtrPeer bob = otrAlice.getPeer("bob");
         System.out.println(bob.peer.identity());
         OtrChannel.OtrPeer.OtrSession bobSession = bob.openBobSession(bobSend, tempSession);
         //OtrChannel.OtrPeer.OtrSession bobSession = bob.new OtrSession(tempSession);
         bobSession.send(new Bytestring(query.getBytes()));
 
-
         Assert.assertNotNull(otrBob.sendClient.getConnection().session);
 
-        // SendClient is null ---- session is null
         Assert.assertNotNull(otrAlice.sendClient.getConnection().session);
 
         // Key Exchange starts here
