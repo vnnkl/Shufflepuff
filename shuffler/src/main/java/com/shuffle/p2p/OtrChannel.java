@@ -456,21 +456,23 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         // TODO
         // This method is ONLY for Bob
-        public synchronized OtrSession openBobSession(Send<Bytestring> send) throws InterruptedException, IOException {
+        public synchronized OtrSession openBobSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
 
             // How does Bob's session variable get set?
-            Session<Address, Bytestring> session;
+            // Session<Address, Bytestring> session;
 
             sendClient.send = send;
             sendClient.connect();
             // session here
 
             // initialize this variable
-            OtrSession otrSession = null;
+            //OtrSession otrSession = null;
+            sendClient.connection.session = session;
+            OtrSession otrSession = new OtrSession(session);
 
-            sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();
+            //sendClient.pollReceivedMessage();
+            //sendClient.pollReceivedMessage();
+            //sendClient.pollReceivedMessage();
 
             return otrSession;
         }

@@ -27,6 +27,7 @@ public class TestOtrChannel {
     Bytestring bobMessage;
     Send<Bytestring> aliceSend;
     Send<Bytestring> bobSend;
+    Session<String, Bytestring> tempSession;
 
     @Before
     public void setup() throws InterruptedException, IOException {
@@ -39,11 +40,13 @@ public class TestOtrChannel {
         aliceSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
+                /* sendClient only initiated when openSession() called
                 try {
                     otrAlice.sendClient.receive("bob", message);
                 } catch (OtrException e) {
                     return false;
-                }
+                }*/
+                System.out.println("Alice received from Bob");
                 TestOtrChannel.this.aliceMessage = message;
 
                 return true;
@@ -58,6 +61,8 @@ public class TestOtrChannel {
         Listener<String, Bytestring> aliceListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
+                System.out.println("heyyyy" + session);
+                tempSession = session;
                 return aliceSend; //?
             }
         };
@@ -65,11 +70,13 @@ public class TestOtrChannel {
         bobSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
+                /*
                 try {
                     otrBob.sendClient.receive("alice", message);
                 } catch (OtrException e) {
                     return false;
-                }
+                }*/
+                System.out.println("Bob received from Alice");
                 TestOtrChannel.this.bobMessage = message;
 
                 return true;
@@ -84,6 +91,7 @@ public class TestOtrChannel {
         Listener<String, Bytestring> bobListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
+                System.out.println("message received from Alice!!!");
                 return bobSend;
             }
         };
@@ -100,16 +108,22 @@ public class TestOtrChannel {
         System.out.println(alice.peer.identity()); // alice.peer is alice
         OtrChannel.OtrPeer.OtrSession aliceSession = alice.openSession(aliceSend);
 
-
         String query = "?OTRv23?";
         // NullPointerException here
         aliceSession.send(new Bytestring(query.getBytes()));
-        Assert.assertEquals(query, new String(bobMessage.bytes));
+        Assert.assertEquals(query, new String(aliceMessage.bytes));
         // throws error --> bobSession.send(new Bytestring(query.getBytes()));
+
+        OtrChannel.OtrPeer bob = otrAlice.getPeer("bob");
+        System.out.println(bob.peer.identity());
+        OtrChannel.OtrPeer.OtrSession bobSession = bob.openBobSession(bobSend, tempSession);
+        //OtrChannel.OtrPeer.OtrSession bobSession = bob.new OtrSession(tempSession);
+        bobSession.send(new Bytestring(query.getBytes()));
+
 
         Assert.assertNotNull(otrBob.sendClient.getConnection().session);
 
-        // session is null
+        // SendClient is null ---- session is null
         Assert.assertNotNull(otrAlice.sendClient.getConnection().session);
 
         // Key Exchange starts here
