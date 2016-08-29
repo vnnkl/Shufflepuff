@@ -93,22 +93,21 @@ public class TestOtrChannel {
 
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
-        // client
-        OtrChannel.OtrPeer alicePeer = otrBob.getPeer("alice");
-        // client receiving from server
+
+        OtrChannel.OtrPeer alicePeer = otrBob.getPeer("alice"); // correct peer?
         OtrChannel.OtrPeer.OtrSession aliceSession = alicePeer.openSession(aliceSend);
 
-        // server
-        OtrChannel.OtrPeer bobPeer = otrAlice.getPeer("bob");
-        // server receiving from client
+        OtrChannel.OtrPeer bobPeer = otrAlice.getPeer("bob"); // correct peer?
         OtrChannel.OtrPeer.OtrSession bobSession = bobPeer.openSession(bobSend);
 
         String query = "?OTRv23?";
         aliceSession.send(new Bytestring(query.getBytes()));
+        Assert.assertEquals(query, new String(aliceMessage.bytes));
+        // throws error --> bobSession.send(new Bytestring(query.getBytes()));
 
-        // the server's session is set
         Assert.assertNotNull(otrBob.sendClient.getConnection().session);
-        // the client's session is not set
+
+        // session is null
         Assert.assertNotNull(otrAlice.sendClient.getConnection().session);
 
         // Key Exchange starts here

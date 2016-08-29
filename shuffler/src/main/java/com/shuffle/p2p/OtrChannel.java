@@ -519,7 +519,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.listener = listener;
         }
 
-
         // Why would we need an OtrListener??
         @Override
         public void run() {
