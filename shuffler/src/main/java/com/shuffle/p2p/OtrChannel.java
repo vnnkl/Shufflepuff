@@ -456,7 +456,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         // TODO
         // This method is ONLY for Bob
-        public synchronized OtrSession openBobSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
+        public synchronized OtrSession openReceivingSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
 
             // How does Bob's session variable get set?
             // Session<Address, Bytestring> session;

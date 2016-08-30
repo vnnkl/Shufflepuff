@@ -40,12 +40,11 @@ public class TestOtrChannel {
         aliceSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                /* sendClient only initiated when openSession() called
                 try {
                     otrAlice.sendClient.receive("bob", message);
                 } catch (OtrException e) {
                     return false;
-                }*/
+                }
                 System.out.println("Alice received from Bob");
                 TestOtrChannel.this.aliceMessage = message;
 
@@ -61,21 +60,20 @@ public class TestOtrChannel {
         Listener<String, Bytestring> aliceListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
-                System.out.println("heyyyy" + session);
+                System.out.println("alice listener caught: " + session);
                 tempSession = session;
-                return aliceSend; //?
+                return aliceSend;
             }
         };
 
         bobSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                /*
                 try {
                     otrBob.sendClient.receive("alice", message);
                 } catch (OtrException e) {
                     return false;
-                }*/
+                }
                 System.out.println("Bob received from Alice");
                 TestOtrChannel.this.bobMessage = message;
 
@@ -91,7 +89,8 @@ public class TestOtrChannel {
         Listener<String, Bytestring> bobListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
-                System.out.println("message received from Alice!!!");
+                System.out.println("bob listener caught: " + session);
+                tempSession = session;
                 return bobSend;
             }
         };
@@ -104,26 +103,24 @@ public class TestOtrChannel {
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
 
+        // Alice to Bob
+        OtrChannel.OtrPeer bob = otrAlice.getPeer("bob");
+        System.out.println(bob.peer.identity()); // bob.peer is bob
+        OtrChannel.OtrPeer.OtrSession bobSession = bob.openSession(aliceSend);  // bob.openBobSession(aliceSend, tempSession);
+
         // Bob to Alice
         OtrChannel.OtrPeer alice = otrBob.getPeer("alice");
         System.out.println(alice.peer.identity()); // alice.peer is alice
-        OtrChannel.OtrPeer.OtrSession aliceSession = alice.openSession(bobSend);
+        OtrChannel.OtrPeer.OtrSession aliceSession = alice.openReceivingSession(bobSend, tempSession);
 
         // OTR v2/3 initialization string
         String query = "?OTRv23?";
-        // sends to alice
-        aliceSession.send(new Bytestring(query.getBytes()));
-        Assert.assertEquals(query, new String(aliceMessage.bytes));
-
-        // Alice to Bob
-        OtrChannel.OtrPeer bob = otrAlice.getPeer("bob");
-        System.out.println(bob.peer.identity());
-        OtrChannel.OtrPeer.OtrSession bobSession = bob.openBobSession(bobSend, tempSession);
-        //OtrChannel.OtrPeer.OtrSession bobSession = bob.new OtrSession(tempSession);
+        // Alice sends the initialization string to Bob.
         bobSession.send(new Bytestring(query.getBytes()));
+        Assert.assertEquals(query, new String(bobMessage.bytes));
 
+        // Check that Alice and Bob's SendClients have been initialized.
         Assert.assertNotNull(otrBob.sendClient.getConnection().session);
-
         Assert.assertNotNull(otrAlice.sendClient.getConnection().session);
 
         // Key Exchange starts here
@@ -132,14 +129,8 @@ public class TestOtrChannel {
         otrAlice.sendClient.pollReceivedMessage();
         otrBob.sendClient.pollReceivedMessage();
         otrAlice.sendClient.pollReceivedMessage();
-        otrBob.sendClient.pollReceivedMessage();*/
-
-        // This should be encrypted
-        //String message = "hey, encryption test";
-
-        //bobSession.send(new Bytestring(message.getBytes()));
-
-        //Assert.assertEquals(message, aliceMessage.bytes);
+        otrBob.sendClient.pollReceivedMessage();
+        */
     }
 
     @After
