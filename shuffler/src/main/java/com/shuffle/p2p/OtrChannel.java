@@ -9,6 +9,8 @@
 package com.shuffle.p2p;
 
 
+import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.chan.Send;
 
 import java.io.IOException;
@@ -17,6 +19,7 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.logging.Logger;
 
 import net.java.otr4j.OtrEngineHost;
 import net.java.otr4j.OtrException;
@@ -42,9 +45,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private net.java.otr4j.session.Session session;
         private OtrPolicy policy;
         public SendConnection connection;
-        private MessageProcessor processor;
-        private Queue<ProcessedMessage> processedMsgs = new LinkedList<>();
+        public MessageProcessor processor;
+        public Queue<ProcessedMessage> processedMsgs = new LinkedList<>();
         private Send<Bytestring> send;
+
+        int injectInt = 0;
 
         public SendClient(String account, Send<Bytestring> send) {
             this.account = account;
@@ -122,7 +127,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
 
-        private class Message {
+        public class Message {
             public Message(String sender, String content){
                 this.sender = sender;
                 this.content = content;
@@ -140,7 +145,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
         }
 
-        private class ProcessedMessage extends Message {
+        public class ProcessedMessage extends Message {
             final Message originalMessage;
 
             public ProcessedMessage(Message originalMessage, String content) {
@@ -150,9 +155,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
 
-        private class MessageProcessor implements Runnable {
+        public class MessageProcessor implements Runnable {
 
-            private final Queue<Message> messageQueue = new LinkedList<>();
+            public final Queue<Message> messageQueue = new LinkedList<>();
             private boolean stopped;
 
             private void process(Message m) throws OtrException {
@@ -162,6 +167,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 }
 
                 String receivedMessage = session.transformReceiving(m.getContent());
+                //String receivedMessage = session.transformReceiving("?OTR,2,3?");
+                //String receivedMessage = session.transformReceiving(null);
+                // transformReceiving never finishes executing with m.Content()
                 synchronized (processedMsgs) {
                     processedMsgs.add(new ProcessedMessage(m, receivedMessage));
                     processedMsgs.notify();
@@ -216,6 +224,15 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             public void injectMessage(SessionID sessionID, String msg) throws OtrException {
                 try {
+                    /*
+                    String[] outgoingMessage = session.transformSending(msg, null);
+
+                    for (String part : outgoingMessage) {
+                        connection.send(sessionID.getUserID(), part);
+                    }*/
+                    /* // Silly test
+                    if (injectInt > 0) throw new NullPointerException(msg);
+                    injectInt++;*/
                     connection.send(sessionID.getUserID(), msg);
                 } catch (IOException e) {
 
@@ -324,7 +341,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             public void messageFromAnotherInstanceReceived(SessionID sessionID) {
-                return;
+                throw new NullPointerException("Message from another instance received: " + sessionID.toString());
             }
 
             public void multipleInstancesDetected(SessionID sessionID) {
@@ -386,7 +403,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             // THIS IS NEVER USED ??
             // THIS FUNCTION IS POINTLESS BUT WE NEED IT FOR openSession() !!
             public boolean send(Bytestring msg) throws IOException, InterruptedException {
-                String sender = "doesnt matter";
+                String sender = "bob";
 
                 //decrypts the message
                 try {
@@ -398,9 +415,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 // this won't work because we could receive a new message by the time we poll...
                 // @danielk does a synchronized method solve this issue?
                 // also made SendClient's receive() method synchronized
-                String pollMessage = this.client.pollReceivedMessage().originalMessage.content;
-                Bytestring bytestring = new Bytestring(pollMessage.getBytes());
-                return this.send.send(bytestring);
+                //String pollMessage = this.client.pollReceivedMessage().originalMessage.content;
+                //Bytestring bytestring = new Bytestring(pollMessage.getBytes());
+                //return this.send.send(bytestring);
+                return true;
             }
 
             // TODO

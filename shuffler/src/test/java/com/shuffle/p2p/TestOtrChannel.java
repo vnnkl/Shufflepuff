@@ -42,7 +42,9 @@ public class TestOtrChannel {
             public boolean send(Bytestring message) throws InterruptedException {
                 try {
                     otrAlice.sendClient.receive("bob", message);
+                    System.out.println("alice receive succeeded");
                 } catch (OtrException e) {
+                    System.out.println("alice receive failed");
                     return false;
                 }
                 System.out.println("Alice received from Bob");
@@ -71,7 +73,9 @@ public class TestOtrChannel {
             public boolean send(Bytestring message) throws InterruptedException {
                 try {
                     otrBob.sendClient.receive("alice", message);
+                    System.out.println("bob receive succeeded");
                 } catch (OtrException e) {
+                    System.out.println("bob receive failed");
                     return false;
                 }
                 System.out.println("Bob received from Alice");
@@ -106,7 +110,7 @@ public class TestOtrChannel {
         // Alice to Bob
         OtrChannel.OtrPeer bob = otrAlice.getPeer("bob");
         System.out.println(bob.peer.identity()); // bob.peer is bob
-        OtrChannel.OtrPeer.OtrSession bobSession = bob.openSession(aliceSend);  // bob.openBobSession(aliceSend, tempSession);
+        OtrChannel.OtrPeer.OtrSession bobSession = bob.openSession(aliceSend);
 
         // Bob to Alice
         OtrChannel.OtrPeer alice = otrBob.getPeer("alice");
@@ -118,10 +122,47 @@ public class TestOtrChannel {
         // Alice sends the initialization string to Bob.
         bobSession.send(new Bytestring(query.getBytes()));
         Assert.assertEquals(query, new String(bobMessage.bytes));
+        // if you send any other string, you don't get a "ping" back.
 
         // Check that Alice and Bob's SendClients have been initialized.
         Assert.assertNotNull(otrBob.sendClient.getConnection().session);
         Assert.assertNotNull(otrAlice.sendClient.getConnection().session);
+
+        System.out.println("messageQueue size: " + otrBob.sendClient.processor.messageQueue.size());
+        System.out.println("messageQueue poll: " + otrBob.sendClient.processor.messageQueue.poll());
+        // processedMsgs is not being updated with the initialization string !
+        System.out.println("processedMsgs size: " + otrBob.sendClient.processedMsgs.size());
+        System.out.println("processedMsgs poll: " + otrBob.sendClient.processedMsgs.poll());
+
+        OtrChannel.SendClient.ProcessedMessage m = otrBob.sendClient.pollReceivedMessage();
+        System.out.println("1: " + m.getContent());
+        System.out.println("1: " + m.getSender());
+        if (m == null) System.out.println("m is null");
+        OtrChannel.SendClient.ProcessedMessage n = otrAlice.sendClient.pollReceivedMessage();
+        System.out.println("2: " + n.getContent());
+        System.out.println("2: " + n.getSender());
+        if (n == null) System.out.println("n is null");
+        OtrChannel.SendClient.ProcessedMessage m1 = otrBob.sendClient.pollReceivedMessage();
+        System.out.println("3: " + m1.getContent());
+        System.out.println("3: " + m1.getSender());
+        if (m1 == null) System.out.println("m1 is null");
+        OtrChannel.SendClient.ProcessedMessage n1 = otrAlice.sendClient.pollReceivedMessage();
+        System.out.println("4: " + n1.getContent());
+        System.out.println("4: " + n1.getSender());
+        if (n1 == null) System.out.println("n1 is null");
+        OtrChannel.SendClient.ProcessedMessage m2 = otrBob.sendClient.pollReceivedMessage();
+        System.out.println("5: " + m2.getContent());
+        System.out.println("5: " + m2.getSender());
+        if (m2 == null) System.out.println("m2 is null");
+
+        bobSession.send(new Bytestring("Houston".getBytes()));
+        OtrChannel.SendClient.ProcessedMessage m3 = otrBob.sendClient.pollReceivedMessage();
+        System.out.println("Encrypted Message: " + m3.getContent());
+
+        //otrAlice.sendClient.pollReceivedMessage();
+        //otrBob.sendClient.pollReceivedMessage();
+        //otrAlice.sendClient.pollReceivedMessage();
+        //otrBob.sendClient.pollReceivedMessage();
 
         // Key Exchange starts here
         /*
