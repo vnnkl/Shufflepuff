@@ -183,6 +183,7 @@ public class BitcoinCryptoTest {
    */
 
 
+
    @Test
    public void testSend() throws Exception {
       WalletAppKit nomKit = bitcoinCryptoNoP.getKit();
@@ -193,7 +194,7 @@ public class BitcoinCryptoTest {
       // Create and send transaciton using the wallets broadcast
       org.bitcoinj.core.Transaction sentTransaction = bitcoinCryptoNoP.send("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc", 10000);
       System.out.println("Transaction sent. Find txid: " + sentTransaction.getHashAsString());
-   }
+   }*/
 
    @Test
    public void testGetKeyChainMnemonic() throws Exception {
