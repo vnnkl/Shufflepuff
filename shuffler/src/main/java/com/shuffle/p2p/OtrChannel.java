@@ -172,6 +172,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                     if (receivedMessage != null)
                         throw new NullPointerException(session.getSessionStatus().toString() + "    ----   " + receivedMessage + "   ----   " + m.getContent());
                 }*/
+
                 synchronized (processedMsgs) {
                     processedMsgs.add(new ProcessedMessage(m, receivedMessage));
                     processedMsgs.notify();
@@ -398,7 +399,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                     return false;
                 }
 
-                return true;
+                return send.send(msg);
             }
 
             // TODO
@@ -431,14 +432,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             sendClient.send = send;
             sendClient.connect();
-            session = peer.openSession(sendClient.connection);
+            session = peer.openSession(sendClient.connection); // passed to the internal peer
             sendClient.connection.session = session;
 
-            /*
             if (session == null) {
                 return null;
             }
-            */
 
             OtrSession otrSession = new OtrSession(session);
 
@@ -456,17 +455,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         // This method is ONLY for Bob
         public synchronized OtrSession openReceivingSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
 
-            // How does Bob's session variable get set?
-            // Session<Address, Bytestring> session;
-
             sendClient.send = send;
             sendClient.connect();
-            // session here
-
-            // initialize this variable
-            //OtrSession otrSession = null;
             sendClient.connection.session = session;
-            OtrSession otrSession = new OtrSession(session);
+            OtrSession otrSession = new OtrSession(session); // nothing passed to the internal peer
 
             //sendClient.pollReceivedMessage();
             //sendClient.pollReceivedMessage();
