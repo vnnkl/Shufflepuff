@@ -167,15 +167,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 }
 
                 String receivedMessage = session.transformReceiving(m.getContent());
-                //if (receivedMessage!= null) throw new NullPointerException(Integer.toString(session.getProtocolVersion()));
+                /*
                 if (m.getSender().equals("bob")) {
                     if (receivedMessage != null)
                         throw new NullPointerException(session.getSessionStatus().toString() + "    ----   " + receivedMessage + "   ----   " + m.getContent());
-                }
-
-                //String receivedMessage = session.transformReceiving("?OTR,2,3?");
-                //String receivedMessage = session.transformReceiving(null);
-                // transformReceiving never finishes executing with m.Content()
+                }*/
                 synchronized (processedMsgs) {
                     processedMsgs.add(new ProcessedMessage(m, receivedMessage));
                     processedMsgs.notify();
@@ -230,15 +226,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             public void injectMessage(SessionID sessionID, String msg) throws OtrException {
                 try {
-                    /*
-                    String[] outgoingMessage = session.transformSending(msg, null);
-
-                    for (String part : outgoingMessage) {
-                        connection.send(sessionID.getUserID(), part);
-                    }*/
-                    /* // Silly test
-                    if (injectInt > 0) throw new NullPointerException(msg);
-                    injectInt++;*/
                     connection.send(sessionID.getUserID(), msg);
                 } catch (IOException e) {
 
@@ -402,28 +389,15 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 session.send(bytestring);
             }
 
-
-            // TODO
-            // receives a message
-            // synchronized?
-            // THIS IS NEVER USED ??
-            // THIS FUNCTION IS POINTLESS BUT WE NEED IT FOR openSession() !!
             public boolean send(Bytestring msg) throws IOException, InterruptedException {
                 String sender = "bob";
 
-                //decrypts the message
                 try {
                     this.client.receive(sender, msg);
                 } catch (OtrException e) {
                     return false;
                 }
 
-                // this won't work because we could receive a new message by the time we poll...
-                // @danielk does a synchronized method solve this issue?
-                // also made SendClient's receive() method synchronized
-                //String pollMessage = this.client.pollReceivedMessage().originalMessage.content;
-                //Bytestring bytestring = new Bytestring(pollMessage.getBytes());
-                //return this.send.send(bytestring);
                 return true;
             }
 

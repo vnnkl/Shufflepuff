@@ -134,6 +134,7 @@ public class TestOtrChannel {
         System.out.println("processedMsgs size: " + otrBob.sendClient.processedMsgs.size());
         System.out.println("processedMsgs poll: " + otrBob.sendClient.processedMsgs.poll());
 
+        // Key Exchange
         OtrChannel.SendClient.ProcessedMessage m = otrBob.sendClient.pollReceivedMessage();
         System.out.println("1: " + m.getContent());
         System.out.println("1: " + m.getSender());
@@ -163,20 +164,6 @@ public class TestOtrChannel {
         aliceSession.send(new Bytestring("Weston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage n2 = otrAlice.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message: " + n2.getContent());
-
-        //otrAlice.sendClient.pollReceivedMessage();
-        //otrBob.sendClient.pollReceivedMessage();
-        //otrAlice.sendClient.pollReceivedMessage();
-        //otrBob.sendClient.pollReceivedMessage();
-
-        // Key Exchange starts here
-        /*
-        otrBob.sendClient.pollReceivedMessage();
-        otrAlice.sendClient.pollReceivedMessage();
-        otrBob.sendClient.pollReceivedMessage();
-        otrAlice.sendClient.pollReceivedMessage();
-        otrBob.sendClient.pollReceivedMessage();
-        */
     }
 
     @After
