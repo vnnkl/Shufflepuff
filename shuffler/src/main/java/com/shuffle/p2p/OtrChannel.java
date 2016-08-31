@@ -167,6 +167,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 }
 
                 String receivedMessage = session.transformReceiving(m.getContent());
+                //if (receivedMessage!= null) throw new NullPointerException(Integer.toString(session.getProtocolVersion()));
+                if (m.getSender().equals("bob")) {
+                    if (receivedMessage != null)
+                        throw new NullPointerException(session.getSessionStatus().toString() + "    ----   " + receivedMessage + "   ----   " + m.getContent());
+                }
+
                 //String receivedMessage = session.transformReceiving("?OTR,2,3?");
                 //String receivedMessage = session.transformReceiving(null);
                 // transformReceiving never finishes executing with m.Content()

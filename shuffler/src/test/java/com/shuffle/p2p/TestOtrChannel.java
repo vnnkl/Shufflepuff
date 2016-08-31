@@ -155,9 +155,14 @@ public class TestOtrChannel {
         System.out.println("5: " + m2.getSender());
         if (m2 == null) System.out.println("m2 is null");
 
+
         bobSession.send(new Bytestring("Houston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage m3 = otrBob.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message: " + m3.getContent());
+
+        aliceSession.send(new Bytestring("Weston".getBytes()));
+        OtrChannel.SendClient.ProcessedMessage n2 = otrAlice.sendClient.pollReceivedMessage();
+        System.out.println("Encrypted Message: " + n2.getContent());
 
         //otrAlice.sendClient.pollReceivedMessage();
         //otrBob.sendClient.pollReceivedMessage();
