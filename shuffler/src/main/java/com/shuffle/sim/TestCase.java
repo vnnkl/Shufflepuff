@@ -141,7 +141,7 @@ public abstract class TestCase {
 
     public final InitialState dropAddressTestCase(
             final int numPlayers,
-            final int[][] drop,
+            final Map<Integer, Integer> drop,
             final int[][] replaceNew,
             final int[][] replaceDuplicate) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
         return InitialState.dropAddress(

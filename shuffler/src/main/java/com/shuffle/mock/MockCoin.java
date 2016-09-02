@@ -156,7 +156,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
         @Override
         public String toString() {
-            return "{" + inputs.toString() + " ==> " + outputs.toString() + "; z:" + z + "}";
+            return "{" + inputs.toString() + " ==> " + outputs.toString() + "; z:" + z + "; " + signatures + "}";
         }
 
         @Override
@@ -187,7 +187,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
                 if (sk.VerificationKey().address().equals(o.address)) {
                     signatures.put(o, sk);
                     return true;
-                } else return false;
+                }
             }
 
             return false;
@@ -198,7 +198,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         public boolean isValid() {
             for (Output o : inputs) {
                 SigningKey s = signatures.get(o);
-                if (s == null || s.VerificationKey().address().equals(o.address)) return false;
+                if (s == null || !s.VerificationKey().address().equals(o.address)) return false;
             }
 
             return true;
@@ -279,6 +279,10 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
         Transaction t = new MockTransaction(in, out, this);
         t.addInputScript(new Bytestring(from.toString().getBytes()));
+
+        // TODO remove this line.
+        if (!t.isValid()) throw new CoinNetworkException("xxxx");
+
         return t;
     }
 

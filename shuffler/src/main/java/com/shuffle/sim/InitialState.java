@@ -716,23 +716,13 @@ public class InitialState {
             final Crypto crypto,
             final Protobuf proto,
             final int numPlayers,
-            final int[][] drop,
+            final Map<Integer, Integer> drop,
             final int[][] replaceNew,
             final int[][] replaceDuplicate
     ) {
 
-        final Map<Integer, Integer> dropMap = new HashMap<>();
         final Map<Integer, Integer> replaceNewMap = new HashMap<>();
         final Map<Integer, Integer[]> replaceDuplicateMap = new HashMap<>();
-
-
-        if (drop != null) {
-            for (int[] d : drop) {
-                if (d.length == 2 && d[1] < d[0]) {
-                    dropMap.put(d[0], d[1]);
-                }
-            }
-        }
 
         if (replaceDuplicate != null) {
             for (int[] d : replaceDuplicate) {
@@ -750,15 +740,14 @@ public class InitialState {
             }
         }
 
-
         InitialState init = new InitialState(session, amount, crypto, proto);
 
         for (int i = 1; i <= numPlayers; i ++) {
 
             init.player().initialFunds(20);
 
-            if (dropMap.containsKey(i)) {
-                init.drop(dropMap.get(i));
+            if (drop.containsKey(i)) {
+                init.drop(drop.get(i));
             } else if (replaceDuplicateMap.containsKey(i)) {
                 Integer[] dup = replaceDuplicateMap.get(i);
                 init.replace(dup[0], dup[1]);

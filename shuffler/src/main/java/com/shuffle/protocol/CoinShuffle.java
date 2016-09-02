@@ -233,14 +233,15 @@ public class CoinShuffle {
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
             // Generate the input script using our signing key.
-            Bytestring inputScript = t.sign(sk);
+            Message inputScript = messages.make().attach(t.sign(sk));
 
-            mailbox.broadcast(messages.make().attach(inputScript), phase.get());
+            mailbox.broadcast(inputScript, phase.get());
 
             Map<VerificationKey, Message> signatureMessages = null;
             boolean invalidClaim = false;
             try {
                 signatureMessages = mailbox.receiveFromMultiple(playerSet(1, N), phase.get());
+                signatureMessages.put(vk, inputScript);
             } catch (BlameException e) {
                 switch (e.packet.payload().readBlame().reason) {
                     case InvalidSignature: {
@@ -267,7 +268,7 @@ public class CoinShuffle {
                 Bytestring signature = sig.getValue().readSignature();
                 signatures.put(key, signature);
 
-                if (t.addInputScript(signature)) {
+                if (!t.addInputScript(signature)) {
                     invalid.put(key, signature);
                 }
             }
@@ -909,14 +910,12 @@ public class CoinShuffle {
 
         Message last = null;
         for (Message m : messages) {
-            if (last == null) {
-                last = m;
-                continue;
-            }
+            if (last != null) {
 
-            boolean equal = last.equals(m);
-            if (!equal) {
-                return false;
+                boolean equal = last.equals(m);
+                if (!equal) {
+                    return false;
+                }
             }
 
             last = m;
@@ -1042,7 +1041,6 @@ public class CoinShuffle {
             Message message = packet.payload();
 
             // Grab the correct number of addresses and decrypt them.
-            // SortedSet<Address> addresses = new TreeSet<>();
             SortedSet<String> decrypted = new TreeSet<>();
             for (int j = 0; j < i; j++) {
                 if (message.isEmpty()) {
@@ -1096,7 +1094,44 @@ public class CoinShuffle {
             }
         }
 
-        // TODO
+        if (packet == null) {
+            // TODO blame someone.
+            return null;
+        }
+
+        Message message = packet.payload();
+
+        // Grab the correct number of addresses and decrypt them.
+        SortedSet<String> addresses = new TreeSet<>();
+        for (int j = 0; j < players.size(); j++) {
+            if (message.isEmpty()) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+
+            Address address = message.readAddress();
+
+            // There shouldn't be duplicates.
+            if (addresses.contains(address.toString())) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+            addresses.add(address.toString());
+        }
+
+        // Does this contain all the previous addresses?
+        if (!addresses.containsAll(outputs)) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
+
+        addresses.removeAll(outputs);
+
+        // There should be one new address.
+        if (addresses.size() != 1) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
 
         return null;
     }

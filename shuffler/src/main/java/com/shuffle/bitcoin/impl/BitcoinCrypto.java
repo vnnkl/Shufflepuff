@@ -57,8 +57,7 @@ public class BitcoinCrypto implements Crypto {
    NetworkParameters params;
    KeyChainGroup keyChainGroup;
    private final KeyPairGenerator keyPG;
-   //Wallet wallet;
-   //WalletAppKit kit;
+   WalletAppKit kit;
    String fileprefix = "shufflepuff";
 
    public static class Exception extends java.lang.Exception {
@@ -129,7 +128,7 @@ public class BitcoinCrypto implements Crypto {
    }*/
 
 
-   /*public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
+   public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
       Address addressj;
       try {
          addressj = new Address(params, destinationAddress);
@@ -146,9 +145,9 @@ public class BitcoinCrypto implements Crypto {
          e.printStackTrace();
          throw new RuntimeException(e);
       }
-   }*/
+   }
 
-   /*public String sendOffline(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
+   public String sendOffline(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
       Address addressj;
       try {
          addressj = new Address(params, destinationAddress);
@@ -162,15 +161,14 @@ public class BitcoinCrypto implements Crypto {
       // set dynamic fee
       sendRequest.feePerKb = getRecommendedFee();
       // complete & sign tx
-      wallet.completeTx(sendRequest);
-      wallet.signTransaction(sendRequest);
+      kit.wallet().completeTx(sendRequest);
+      kit.wallet().signTransaction(sendRequest);
       // return tx bytes as hex encoded String
       return Hex.encodeHexString(sendRequest.tx.bitcoinSerialize());
-   }*/
+   }
 
-   /*private WalletAppKit initKit(@Nullable DeterministicSeed seed) {
+   private WalletAppKit initKit(@Nullable DeterministicSeed seed) {
       //initialize files and stuff here, add our address to the watched ones
-      DeterministicSeed deterministicSeed = this.keyChainGroup.getActiveKeyChain().getSeed();
       WalletAppKit kit = new WalletAppKit(params, new File("./spv"), fileprefix);
       kit.setAutoSave(true);
       kit.useTor();
@@ -180,24 +178,16 @@ public class BitcoinCrypto implements Crypto {
          kit.restoreWalletFromSeed(seed);
       }
       // startUp WalletAppKit
-      kit.startAsync();
-      // wait for kit to sync and startup, print out every 3 sec
-      while (!kit.isRunning()) {
-         System.out.println("Waiting for kit to start up ...");
-         try {
-            kit.awaitRunning(3, TimeUnit.SECONDS);
-         } catch (TimeoutException ignored) {
-         }
-      }
+      kit.startAndWait();
       return kit;
    }
 
    public WalletAppKit getKit() {
       if (kit == null) {
-         initKit(null);
+         kit = initKit(keyChainGroup.getActiveKeyChain().getSeed());
       }
       return kit;
-   }*/
+   }
 
    public Coin getRecommendedFee() {
       String url = "https://bitcoinfees.21.co/api/v1/fees/recommended";
