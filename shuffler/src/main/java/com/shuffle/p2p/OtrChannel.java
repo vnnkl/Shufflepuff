@@ -408,7 +408,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.peer = peer;
             sendClient = new SendClient("nothing", null);
             sendClient.setPolicy(new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
-                    | OtrPolicy.ERROR_START_AKE));
+                    | OtrPolicy.ERROR_START_AKE)); // this assumes the user wants OTR v2 or v3.
         }
 
         // This method is ONLY for Alice
@@ -429,9 +429,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             OtrSession otrSession = new OtrSession(session);
 
             /*
-            String query = "?OTRv23?"; // This depends on the type of encryption that the user wants.
-            otrSession.send(new Bytestring(query.getBytes()));
-
+            String query = "?OTRv23?"; // This string depends on the version / type of OTR encryption that the user wants.
+            otrSession.send(new Bytestring(query.getBytes()))
             sendClient.pollReceivedMessage();
             sendClient.pollReceivedMessage();*/
 
@@ -439,7 +438,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         // TODO
-        // This method is ONLY for Bob
+        // This method is the equivalent of openSession(), but for Bob
         public synchronized OtrSession openReceivingSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
 
             sendClient.send = send;
@@ -447,9 +446,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             sendClient.connection.session = session;
             OtrSession otrSession = new OtrSession(session); // nothing passed to the internal peer
 
-            //sendClient.pollReceivedMessage();
-            //sendClient.pollReceivedMessage();
-            //sendClient.pollReceivedMessage();
+            /*
+            sendClient.pollReceivedMessage();
+            sendClient.pollReceivedMessage();
+            sendClient.pollReceivedMessage();*/
 
             return otrSession;
         }
@@ -556,9 +556,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             throw new NullPointerException();
         }
 
-        this.listener = listener;
+        if (running) {
+            return null;
+        }
 
-        if (running) return null;
+        this.listener = listener;
         running = true;
         return new OtrConnection(this.channel.open(listener));
 

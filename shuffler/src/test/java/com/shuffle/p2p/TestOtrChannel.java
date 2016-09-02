@@ -28,6 +28,8 @@ public class TestOtrChannel {
     Session<String, Bytestring> tempSession;
     OtrChannel.OtrPeer aliceToBob;
     OtrChannel.OtrPeer bobToAlice;
+    OtrChannel.OtrPeer.OtrSession aliceToBobSession;
+    OtrChannel.OtrPeer.OtrSession bobToAliceSession;
 
     @Before
     public void setup() throws InterruptedException, IOException {
@@ -97,11 +99,11 @@ public class TestOtrChannel {
 
         // Alice to Bob
         aliceToBob = otrAlice.getPeer("bob");
-        OtrChannel.OtrPeer.OtrSession aliceToBobSession = aliceToBob.openSession(aliceSend);
+        aliceToBobSession = aliceToBob.openSession(aliceSend);
 
         // Bob to Alice
         bobToAlice = otrBob.getPeer("alice");
-        OtrChannel.OtrPeer.OtrSession bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
+        bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
         // OTR v2/3 query initialization string
         String query = "?OTRv23?";
@@ -116,12 +118,12 @@ public class TestOtrChannel {
         bobToAlice.sendClient.pollReceivedMessage();
 
         aliceToBobSession.send(new Bytestring("Houston".getBytes()));
-        OtrChannel.SendClient.ProcessedMessage m3 = bobToAlice.sendClient.pollReceivedMessage();
-        System.out.println("Encrypted Message: " + m3.getContent());
+        OtrChannel.SendClient.ProcessedMessage messageForBob = bobToAlice.sendClient.pollReceivedMessage();
+        System.out.println("Encrypted Message (message for bob) : " + messageForBob.getContent());
 
         bobToAliceSession.send(new Bytestring("Weston".getBytes()));
-        OtrChannel.SendClient.ProcessedMessage n2 = aliceToBob.sendClient.pollReceivedMessage();
-        System.out.println("Encrypted Message: " + n2.getContent());
+        OtrChannel.SendClient.ProcessedMessage messageForAlice = aliceToBob.sendClient.pollReceivedMessage();
+        System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());
 
     }
 
