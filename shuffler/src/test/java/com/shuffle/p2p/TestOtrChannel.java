@@ -19,37 +19,28 @@ import java.io.IOException;
 public class TestOtrChannel {
 
     MockNetwork<String, Bytestring> network;
-    Channel<String, Bytestring> alice;
-    Channel<String, Bytestring> bob;
+    Channel<String, Bytestring> aliceNode;
+    Channel<String, Bytestring> bobNode;
     OtrChannel<String> otrAlice;
     OtrChannel<String> otrBob;
-    Bytestring aliceMessage;
-    Bytestring bobMessage;
     Send<Bytestring> aliceSend;
     Send<Bytestring> bobSend;
     Session<String, Bytestring> tempSession;
+    OtrChannel.OtrPeer aliceToBob;
+    OtrChannel.OtrPeer bobToAlice;
 
     @Before
     public void setup() throws InterruptedException, IOException {
         network = new MockNetwork<>();
-        alice = network.node("alice");
-        bob = network.node("bob");
-        otrAlice = new OtrChannel<>(alice, "alice");
-        otrBob = new OtrChannel<>(bob, "bob");
+        aliceNode = network.node("alice");
+        bobNode = network.node("bob");
+        otrAlice = new OtrChannel<>(aliceNode, "alice");
+        otrBob = new OtrChannel<>(bobNode, "bob");
 
         aliceSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                //try {
-                    //otrAlice.sendClient.receive("bob", message);
-                    System.out.println("alice receive succeeded");
-                //} catch (OtrException e) {
-                    //System.out.println("alice receive failed");
-                    //return false;
-                //}
                 System.out.println("Alice received from Bob");
-                TestOtrChannel.this.aliceMessage = message;
-
                 return true;
             }
 
@@ -72,15 +63,12 @@ public class TestOtrChannel {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
                 try {
-                    otrBob.sendClient.receive("alice", message);
-                    System.out.println("bob receive succeeded");
+                    bobToAlice.sendClient.receive("alice", message);
                 } catch (OtrException e) {
                     System.out.println("bob receive failed");
                     return false;
                 }
                 System.out.println("Bob received from Alice");
-                TestOtrChannel.this.bobMessage = message;
-
                 return true;
             }
 
@@ -108,61 +96,33 @@ public class TestOtrChannel {
     public void encryptedChat() throws InterruptedException, IOException {
 
         // Alice to Bob
-        OtrChannel.OtrPeer bob = otrAlice.getPeer("bob");
-        System.out.println(bob.peer.identity()); // bob.peer is bob
-        OtrChannel.OtrPeer.OtrSession bobSession = bob.openSession(aliceSend);
+        aliceToBob = otrAlice.getPeer("bob");
+        OtrChannel.OtrPeer.OtrSession aliceToBobSession = aliceToBob.openSession(aliceSend);
 
         // Bob to Alice
-        OtrChannel.OtrPeer alice = otrBob.getPeer("alice");
-        System.out.println(alice.peer.identity()); // alice.peer is alice
-        OtrChannel.OtrPeer.OtrSession aliceSession = alice.openReceivingSession(bobSend, tempSession);
+        bobToAlice = otrBob.getPeer("alice");
+        OtrChannel.OtrPeer.OtrSession bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
-        // OTR v2/3 initialization string
+        // OTR v2/3 query initialization string
         String query = "?OTRv23?";
         // Alice sends the initialization string to Bob.
-        bobSession.send(new Bytestring(query.getBytes()));
-        Assert.assertEquals(query, new String(bobMessage.bytes));
-        // if you send any other string, you don't get a "ping" back.
-
-        // Check that Alice and Bob's SendClients have been initialized.
-        Assert.assertNotNull(otrBob.sendClient.getConnection().session);
-        Assert.assertNotNull(otrAlice.sendClient.getConnection().session);
-
-        System.out.println("messageQueue size: " + otrBob.sendClient.processor.messageQueue.size());
-        System.out.println("messageQueue poll: " + otrBob.sendClient.processor.messageQueue.poll());
-        // processedMsgs is not being updated with the initialization string !
-        System.out.println("processedMsgs size: " + otrBob.sendClient.processedMsgs.size());
-        System.out.println("processedMsgs poll: " + otrBob.sendClient.processedMsgs.poll());
+        aliceToBobSession.send(new Bytestring(query.getBytes()));
 
         // Key Exchange
-        OtrChannel.SendClient.ProcessedMessage m = otrBob.sendClient.pollReceivedMessage();
-        System.out.println("1: " + m.getContent());
-        System.out.println("1: " + m.getSender());
-        if (m == null) System.out.println("m is null");
-        OtrChannel.SendClient.ProcessedMessage n = otrAlice.sendClient.pollReceivedMessage();
-        System.out.println("2: " + n.getContent());
-        System.out.println("2: " + n.getSender());
-        if (n == null) System.out.println("n is null");
-        OtrChannel.SendClient.ProcessedMessage m1 = otrBob.sendClient.pollReceivedMessage();
-        System.out.println("3: " + m1.getContent());
-        System.out.println("3: " + m1.getSender());
-        if (m1 == null) System.out.println("m1 is null");
-        OtrChannel.SendClient.ProcessedMessage n1 = otrAlice.sendClient.pollReceivedMessage();
-        System.out.println("4: " + n1.getContent());
-        System.out.println("4: " + n1.getSender());
-        if (n1 == null) System.out.println("n1 is null");
-        OtrChannel.SendClient.ProcessedMessage m2 = otrBob.sendClient.pollReceivedMessage();
-        System.out.println("5: " + m2.getContent());
-        System.out.println("5: " + m2.getSender());
-        if (m2 == null) System.out.println("m2 is null");
+        bobToAlice.sendClient.pollReceivedMessage();
+        aliceToBob.sendClient.pollReceivedMessage();
+        bobToAlice.sendClient.pollReceivedMessage();
+        aliceToBob.sendClient.pollReceivedMessage();
+        bobToAlice.sendClient.pollReceivedMessage();
 
-        bobSession.send(new Bytestring("Houston".getBytes()));
-        OtrChannel.SendClient.ProcessedMessage m3 = otrBob.sendClient.pollReceivedMessage();
+        aliceToBobSession.send(new Bytestring("Houston".getBytes()));
+        OtrChannel.SendClient.ProcessedMessage m3 = bobToAlice.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message: " + m3.getContent());
 
-        aliceSession.send(new Bytestring("Weston".getBytes()));
-        OtrChannel.SendClient.ProcessedMessage n2 = otrAlice.sendClient.pollReceivedMessage();
+        bobToAliceSession.send(new Bytestring("Weston".getBytes()));
+        OtrChannel.SendClient.ProcessedMessage n2 = aliceToBob.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message: " + n2.getContent());
+
     }
 
     @After

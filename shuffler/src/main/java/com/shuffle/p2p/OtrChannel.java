@@ -8,9 +8,6 @@
 
 package com.shuffle.p2p;
 
-
-import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.chan.Send;
 
 import java.io.IOException;
@@ -19,7 +16,6 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.logging.Logger;
 
 import net.java.otr4j.OtrEngineHost;
 import net.java.otr4j.OtrException;
@@ -38,7 +34,6 @@ import net.java.otr4j.session.SessionID;
 
 public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
-    SendClient sendClient;
     public class SendClient {
 
         private final String account;
@@ -48,8 +43,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public MessageProcessor processor;
         public Queue<ProcessedMessage> processedMsgs = new LinkedList<>();
         private Send<Bytestring> send;
-
-        int injectInt = 0;
 
         public SendClient(String account, Send<Bytestring> send) {
             this.account = account;
@@ -68,11 +61,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.policy = policy;
         }
 
-        // sends a message
-        // does this create a new session with every message?
         public void send(String recipient, Bytestring s) throws OtrException, InterruptedException, IOException {
             if (session == null) {
-                final SessionID sessionID = new SessionID(account, recipient, "SendProtocol");
+                final SessionID sessionID = new SessionID(account, recipient, "");
                 session = new SessionImpl(sessionID, new SendOtrEngineHost());
             }
 
@@ -94,17 +85,16 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.processor.enqueue(sender, new String(s.bytes));
         }
 
-        // TODO
         public void connect() {
             this.processor = new MessageProcessor();
             new Thread(this.processor).start();
-            this.connection = new SendConnection(this, this.getAccount() + ".0", this.send);
+            this.connection = new SendConnection(this, this.getAccount(), this.send);
         }
 
-        // how would this even WORK with our current design?
+        // TODO
         public void secureSession(String recipient) throws OtrException {
             if (session == null) {
-                final SessionID sessionID = new SessionID(account, recipient, "SendProtocol");
+                final SessionID sessionID = new SessionID(account, recipient, "");
                 session = new SessionImpl(sessionID, new SendOtrEngineHost());
             }
 
@@ -162,16 +152,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             private void process(Message m) throws OtrException {
                 if (session == null) {
-                    final SessionID sessionID = new SessionID(account, m.getSender(), "DummyProtocol");
+                    final SessionID sessionID = new SessionID(account, m.getSender(), "");
                     session = new SessionImpl(sessionID, new SendOtrEngineHost());
                 }
 
                 String receivedMessage = session.transformReceiving(m.getContent());
-                /*
-                if (m.getSender().equals("bob")) {
-                    if (receivedMessage != null)
-                        throw new NullPointerException(session.getSessionStatus().toString() + "    ----   " + receivedMessage + "   ----   " + m.getContent());
-                }*/
 
                 synchronized (processedMsgs) {
                     processedMsgs.add(new ProcessedMessage(m, receivedMessage));
@@ -222,6 +207,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         }
 
+        /**
+         * Most of the methods for SendOtrEngineHost are not filled out, but it does not matter
+         * here.  If you need other jitsi/otr functionality, feel free to change the methods.
+         */
 
         private class SendOtrEngineHost implements OtrEngineHost {
 
@@ -382,8 +371,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                         '}';
             }
 
-            // TODO
-            // sends a message
             public void send(String recipient, String msg) throws OtrException, InterruptedException, IOException {
                 this.sentMessage = msg;
                 Bytestring bytestring = new Bytestring(msg.getBytes());
@@ -391,7 +378,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             public boolean send(Bytestring msg) throws IOException, InterruptedException {
-                String sender = "bob";
+                String sender = account;
 
                 try {
                     this.client.receive(sender, msg);
@@ -414,7 +401,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     public class OtrPeer extends FundamentalPeer<Address, Bytestring> {
 
         Peer<Address, Bytestring> peer;
-        //SendClient sendClient;
+        SendClient sendClient;
 
         public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
             super(identity);
@@ -432,7 +419,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             sendClient.send = send;
             sendClient.connect();
-            session = peer.openSession(sendClient.connection); // passed to the internal peer
+            session = peer.openSession(sendClient.connection);
             sendClient.connection.session = session;
 
             if (session == null) {
