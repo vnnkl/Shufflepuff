@@ -10,13 +10,6 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.Send;
 
-import java.io.IOException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.util.LinkedList;
-import java.util.Queue;
-
 import net.java.otr4j.OtrEngineHost;
 import net.java.otr4j.OtrException;
 import net.java.otr4j.OtrPolicy;
@@ -25,8 +18,15 @@ import net.java.otr4j.crypto.OtrCryptoEngineImpl;
 import net.java.otr4j.crypto.OtrCryptoException;
 import net.java.otr4j.session.FragmenterInstructions;
 import net.java.otr4j.session.InstanceTag;
-import net.java.otr4j.session.SessionImpl;
 import net.java.otr4j.session.SessionID;
+import net.java.otr4j.session.SessionImpl;
+
+import java.io.IOException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Created by Eugene Siegel on 5/10/16.
@@ -70,7 +70,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             String[] outgoingMessage = session.transformSending(new String(s.bytes), null);
 
             for (String part : outgoingMessage) {
-                connection.send(recipient, part);
+                connection.send(part);
             }
         }
 
@@ -216,7 +216,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             public void injectMessage(SessionID sessionID, String msg) throws OtrException {
                 try {
-                    connection.send(sessionID.getUserID(), msg);
+                    connection.send(msg);
                 } catch (IOException e) {
 
                 } catch (InterruptedException er) {
@@ -371,7 +371,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                         '}';
             }
 
-            public void send(String recipient, String msg) throws OtrException, InterruptedException, IOException {
+            public void send(String msg) throws OtrException, InterruptedException, IOException {
                 this.sentMessage = msg;
                 Bytestring bytestring = new Bytestring(msg.getBytes());
                 session.send(bytestring);
@@ -440,8 +440,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         // TODO
         // This method is the equivalent of openSession(), but for Bob
         public synchronized OtrSession openReceivingSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
-
+            // messageprocesser is connected to sendClient
             sendClient.send = send;
+            // starts listening
             sendClient.connect();
             sendClient.connection.session = session;
             OtrSession otrSession = new OtrSession(session); // nothing passed to the internal peer
