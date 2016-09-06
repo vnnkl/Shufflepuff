@@ -386,13 +386,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    public class OtrPeer extends FundamentalPeer<Address, Bytestring> {
+    public class OtrPeer implements Peer<Address, Bytestring> {
 
         Peer<Address, Bytestring> peer;
         SendClient sendClient;
 
-        public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
-            super(identity);
+        public OtrPeer(Peer<Address, Bytestring> peer) {
             this.peer = peer;
             sendClient = new SendClient(null);
             sendClient.setPolicy(new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
@@ -441,6 +440,19 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             sendClient.pollReceivedMessage();*/
 
             return otrSession;
+        }
+
+        public Address identity() {
+            return peer.identity();
+        }
+
+        public void close() throws InterruptedException {
+            peer.close();
+            try {
+                sendClient.exit();
+            } catch (OtrException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         public class OtrSession implements Session<Address, Bytestring> {
@@ -560,7 +572,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         if (you.equals(me)) return null;
 
-        return new OtrPeer(you, this.channel.getPeer(you));
+        return new OtrPeer(this.channel.getPeer(you));
     }
 
 }
