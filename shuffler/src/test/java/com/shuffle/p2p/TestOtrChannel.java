@@ -88,11 +88,18 @@ public class TestOtrChannel {
             }
         };
 
+        /**
+         * Open both Channels and start listening with their respective listeners
+         */
         otrAlice.open(aliceListener);
         otrBob.open(bobListener);
 
     }
 
+    /**
+     * A class that implements Runnable so that Alice and Bob can communicate.
+     * This class will call openSession on Alice's OtrPeer object.
+     */
     public class runnableSessions implements Runnable {
 
         public OtrChannel.OtrPeer peer;
@@ -134,6 +141,17 @@ public class TestOtrChannel {
         Thread.sleep(3000);
         bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
+        // ASCII because why not.
+        System.out.println(" *~------------------------------------------~*");
+        System.out.println(" ||     _______     _________   ______       ||");
+        System.out.println(" ||    //      \\\\   !___  __!  !!     \\      ||");
+        System.out.println(" ||    !|  **  !|       !!      !! **  |     ||");
+        System.out.println(" ||    !| **** !|       !!      |!`  //      ||");
+        System.out.println(" ||    !|  **  !|       !!      !|!  \\\\      ||");
+        System.out.println(" ||    \\\\_____//        !!      |!!   \\\\     ||");
+        System.out.println(" ||                                          ||");
+        System.out.println(" *~------------------------------------------~*");
+
         //Alice sends encrypted message to Bob
         aliceToBobSession.send(new Bytestring("Houston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForBob = bobToAlice.sendClient.pollReceivedMessage();
@@ -143,7 +161,6 @@ public class TestOtrChannel {
         bobToAliceSession.send(new Bytestring("Weston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForAlice = aliceToBob.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());
-
 
     }
 
