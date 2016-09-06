@@ -36,7 +36,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     public class SendClient {
 
-        private final String account;
         private net.java.otr4j.session.Session session;
         private OtrPolicy policy;
         public SendConnection connection;
@@ -44,17 +43,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public Queue<ProcessedMessage> processedMsgs = new LinkedList<>();
         private Send<Bytestring> send;
 
-        public SendClient(String account, Send<Bytestring> send) {
-            this.account = account;
+        public SendClient(Send<Bytestring> send) {
             this.send = send;
         }
 
         public net.java.otr4j.session.Session getSession() {
             return this.session;
-        }
-
-        public String getAccount() {
-            return this.account;
         }
 
         public void setPolicy(OtrPolicy policy) {
@@ -88,7 +82,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public void connect() {
             this.processor = new MessageProcessor();
             new Thread(this.processor).start();
-            this.connection = new SendConnection(this, this.getAccount(), this.send);
+            this.connection = new SendConnection(this, "CoinShuffle Encrypted Chat", this.send);
         }
 
         // TODO
@@ -399,7 +393,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
             super(identity);
             this.peer = peer;
-            sendClient = new SendClient("", null);
+            sendClient = new SendClient(null);
             sendClient.setPolicy(new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
                     | OtrPolicy.ERROR_START_AKE)); // this assumes the user wants OTR v2 or v3.
         }
