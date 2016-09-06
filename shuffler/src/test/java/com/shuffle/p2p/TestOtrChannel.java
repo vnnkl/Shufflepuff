@@ -6,7 +6,6 @@ import com.shuffle.mock.MockNetwork;
 import net.java.otr4j.OtrException;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 

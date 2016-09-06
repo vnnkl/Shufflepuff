@@ -398,6 +398,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                     | OtrPolicy.ERROR_START_AKE)); // this assumes the user wants OTR v2 or v3.
         }
 
+        // TODO
         // This method is ONLY for Alice
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
@@ -491,28 +492,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
     }
-
-    private class OtrListener implements Runnable {
-        final Listener<Address, Bytestring> listener;
-
-        private OtrListener(Listener<Address, Bytestring> listener) {
-            this.listener = listener;
-        }
-
-        // Why would we need an OtrListener??
-        @Override
-        public void run() {
-
-        }
-
-    }
-
-    Listener<Address, Bytestring> bobListener = new Listener<Address, Bytestring>() {
-        @Override
-        public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
-            return null;
-        }
-    };
 
     private class OtrConnection implements Connection<Address> {
 
