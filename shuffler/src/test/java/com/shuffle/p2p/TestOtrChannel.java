@@ -97,7 +97,6 @@ public class TestOtrChannel {
 
         public OtrChannel.OtrPeer peer;
         public Send<Bytestring> send;
-        public OtrChannel.OtrPeer.OtrSession session;
 
         public runnableSessions(OtrChannel.OtrPeer peer, Send<Bytestring> send) {
             this.peer = peer;
@@ -106,7 +105,7 @@ public class TestOtrChannel {
 
         public void run()  {
             try {
-                this.session = peer.openSession(send);
+                aliceToBobSession = peer.openSession(send);
             } catch (IOException e) {
 
             } catch (InterruptedException er) {
@@ -125,28 +124,15 @@ public class TestOtrChannel {
 
         // Alice to Bob
         aliceToBob = otrAlice.getPeer("bob");
-        //aliceToBobSession = aliceToBob.openSession(aliceSend);
 
         // Bob to Alice
         bobToAlice = otrBob.getPeer("alice");
-        //bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
-        new Thread(new runnableSessions(aliceToBob, aliceSend)).start();
+        runnableSessions aliceRun = new runnableSessions(aliceToBob, aliceSend);
+        new Thread(aliceRun).start();
+        // wait for bobToAlice to receive
         Thread.sleep(3000);
-        bobToAlice.openReceivingSession(bobSend, tempSession);
-
-        /*
-        // OTR v2/3 query initialization string
-        String query = "?OTRv23?";
-        // Alice sends the initialization string to Bob.
-        aliceToBobSession.send(new Bytestring(query.getBytes()));
-
-        // Key Exchange
-        bobToAlice.sendClient.pollReceivedMessage();
-        aliceToBob.sendClient.pollReceivedMessage();
-        bobToAlice.sendClient.pollReceivedMessage();
-        aliceToBob.sendClient.pollReceivedMessage();
-        bobToAlice.sendClient.pollReceivedMessage();
+        bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
         //Alice sends encrypted message to Bob
         aliceToBobSession.send(new Bytestring("Houston".getBytes()));
@@ -156,7 +142,7 @@ public class TestOtrChannel {
         //Bob sends encrypted message to Alice
         bobToAliceSession.send(new Bytestring("Weston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForAlice = aliceToBob.sendClient.pollReceivedMessage();
-        System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());*/
+        System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());
 
 
     }
