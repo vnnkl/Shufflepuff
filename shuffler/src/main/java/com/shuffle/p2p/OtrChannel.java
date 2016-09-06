@@ -71,6 +71,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public void exit() throws OtrException {
             this.processor.stop();
             this.send.close();
+            this.connection.close();
             if (session != null) {
                 session.endSession();
             }
@@ -379,11 +380,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             public void close() {
                 session.close();
-                try {
-                    client.exit();
-                } catch (OtrException e) {
-                    throw new RuntimeException(e);
-                }
             }
 
         }
