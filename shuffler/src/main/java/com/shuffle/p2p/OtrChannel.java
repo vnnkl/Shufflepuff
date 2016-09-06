@@ -416,11 +416,17 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             OtrSession otrSession = new OtrSession(session);
 
-            /*
             String query = "?OTRv23?"; // This string depends on the version / type of OTR encryption that the user wants.
-            otrSession.send(new Bytestring(query.getBytes()))
+            while (true) {
+                try {
+                    otrSession.send(new Bytestring(query.getBytes()));
+                    break;
+                } catch (NullPointerException e) {
+
+                }
+            }
             sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();*/
+            sendClient.pollReceivedMessage();
 
             return otrSession;
         }
@@ -435,10 +441,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             sendClient.connection.session = session;
             OtrSession otrSession = new OtrSession(session); // nothing passed to the internal peer
 
-            /*
             sendClient.pollReceivedMessage();
             sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();*/
+            sendClient.pollReceivedMessage();
 
             return otrSession;
         }

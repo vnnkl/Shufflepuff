@@ -93,17 +93,49 @@ public class TestOtrChannel {
 
     }
 
+    public class runnableSessions implements Runnable {
+
+        public OtrChannel.OtrPeer peer;
+        public Send<Bytestring> send;
+        public OtrChannel.OtrPeer.OtrSession session;
+
+        public runnableSessions(OtrChannel.OtrPeer peer, Send<Bytestring> send) {
+            this.peer = peer;
+            this.send = send;
+        }
+
+        public void run()  {
+            try {
+                this.session = peer.openSession(send);
+            } catch (IOException e) {
+
+            } catch (InterruptedException er) {
+
+            }
+        }
+
+    }
+
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
 
+        /**
+         * close aliceToBobSession, see if closing aliceToBob closes aliceToBobSession
+         */
+
         // Alice to Bob
         aliceToBob = otrAlice.getPeer("bob");
-        aliceToBobSession = aliceToBob.openSession(aliceSend);
+        //aliceToBobSession = aliceToBob.openSession(aliceSend);
 
         // Bob to Alice
         bobToAlice = otrBob.getPeer("alice");
-        bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
+        //bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
+        new Thread(new runnableSessions(aliceToBob, aliceSend)).start();
+        Thread.sleep(3000);
+        bobToAlice.openReceivingSession(bobSend, tempSession);
+
+        /*
         // OTR v2/3 query initialization string
         String query = "?OTRv23?";
         // Alice sends the initialization string to Bob.
@@ -124,10 +156,12 @@ public class TestOtrChannel {
         //Bob sends encrypted message to Alice
         bobToAliceSession.send(new Bytestring("Weston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForAlice = aliceToBob.sendClient.pollReceivedMessage();
-        System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());
+        System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());*/
+
 
     }
 
+    // TODO
     @After
     public void shutdown() {
 
