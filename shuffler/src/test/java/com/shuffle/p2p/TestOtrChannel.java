@@ -65,7 +65,7 @@ public class TestOtrChannel {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
                 try {
-                    bobToAlice.sendClient.receive("alice", message);
+                    bobToAlice.sendClient.receive(message);
                 } catch (OtrException e) {
                     System.out.println("bob receive failed");
                     return false;
@@ -117,10 +117,12 @@ public class TestOtrChannel {
         aliceToBob.sendClient.pollReceivedMessage();
         bobToAlice.sendClient.pollReceivedMessage();
 
+        //Alice sends encrypted message to Bob
         aliceToBobSession.send(new Bytestring("Houston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForBob = bobToAlice.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message (message for bob) : " + messageForBob.getContent());
 
+        //Bob sends encrypted message to Alice
         bobToAliceSession.send(new Bytestring("Weston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForAlice = aliceToBob.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());

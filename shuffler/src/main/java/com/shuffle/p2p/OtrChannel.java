@@ -61,9 +61,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.policy = policy;
         }
 
-        public void send(String recipient, Bytestring s) throws OtrException, InterruptedException, IOException {
+        public void send(Bytestring s) throws OtrException, InterruptedException, IOException {
             if (session == null) {
-                final SessionID sessionID = new SessionID(account, recipient, "");
+                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
                 session = new SessionImpl(sessionID, new SendOtrEngineHost());
             }
 
@@ -81,8 +81,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
         }
 
-        public synchronized void receive(String sender, Bytestring s) throws OtrException {
-            this.processor.enqueue(sender, new String(s.bytes));
+        public synchronized void receive(Bytestring s) throws OtrException {
+            this.processor.enqueue(new String(s.bytes));
         }
 
         public void connect() {
@@ -92,9 +92,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         // TODO
-        public void secureSession(String recipient) throws OtrException {
+        public void secureSession() throws OtrException {
             if (session == null) {
-                final SessionID sessionID = new SessionID(account, recipient, "");
+                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
                 session = new SessionImpl(sessionID, new SendOtrEngineHost());
             }
 
@@ -118,17 +118,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
 
         public class Message {
-            public Message(String sender, String content){
-                this.sender = sender;
+            public Message(String content){
                 this.content = content;
             }
 
-            private final String sender;
             private final String content;
-
-            public String getSender() {
-                return sender;
-            }
 
             public String getContent() {
                 return content;
@@ -139,7 +133,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             final Message originalMessage;
 
             public ProcessedMessage(Message originalMessage, String content) {
-                super(originalMessage.getSender(), content);
+                super(content);
                 this.originalMessage = originalMessage;
             }
         }
@@ -152,7 +146,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             private void process(Message m) throws OtrException {
                 if (session == null) {
-                    final SessionID sessionID = new SessionID(account, m.getSender(), "");
+                    final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
                     session = new SessionImpl(sessionID, new SendOtrEngineHost());
                 }
 
@@ -190,9 +184,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 }
             }
 
-            public void enqueue(String sender, String s) {
+            public void enqueue(String s) {
                 synchronized (messageQueue) {
-                    messageQueue.add(new Message(sender, s));
+                    messageQueue.add(new Message(s));
                     messageQueue.notify();
                 }
             }
@@ -378,10 +372,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             public boolean send(Bytestring msg) throws IOException, InterruptedException {
-                String sender = account;
 
                 try {
-                    this.client.receive(sender, msg);
+                    this.client.receive(msg);
                 } catch (OtrException e) {
                     return false;
                 }
@@ -406,7 +399,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public OtrPeer(Address identity, Peer<Address, Bytestring> peer) {
             super(identity);
             this.peer = peer;
-            sendClient = new SendClient("nothing", null);
+            sendClient = new SendClient("", null);
             sendClient.setPolicy(new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
                     | OtrPolicy.ERROR_START_AKE)); // this assumes the user wants OTR v2 or v3.
         }
@@ -466,7 +459,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             @Override
             public synchronized boolean send(Bytestring message) throws InterruptedException, IOException {
                 try {
-                    sendClient.send("recipient",message);
+                    sendClient.send(message);
                     return true;
                 } catch (OtrException e) {
                     return false;
