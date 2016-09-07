@@ -54,9 +54,7 @@ public class TestOtrChannel {
         Listener<String, Bytestring> aliceListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
-                System.out.println("alice listener caught: " + session);
-                tempSession = session;
-                return aliceSend;
+                return null;
             }
         };
 
@@ -112,7 +110,7 @@ public class TestOtrChannel {
 
         public void run()  {
             try {
-                aliceToBobSession = peer.openSession(send);
+                aliceToBobSession = peer.openSession(send); // should be an OtrSend, not a normal Send<>
             } catch (IOException e) {
 
             } catch (InterruptedException er) {

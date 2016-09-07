@@ -364,7 +364,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             sendClient.send = send;
             sendClient.connect();
-            session = peer.openSession(sendClient.connection);
+            session = peer.openSession(sendClient.connection); //OtrSend(send) -- essentially
             sendClient.connection.session = session;
 
             if (session == null) {
