@@ -231,6 +231,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public boolean send(Bytestring message) {
             SessionImpl session = sessionMap.get();
+
+            if (session == null) {
+                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
+                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
+                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
+                session = new SessionImpl(sessionID, new SendOtrEngineHost(policy, Session<Address, Bytestring> session));
+            }
+
             String receivedMessage;
             try {
                 receivedMessage = session.transformReceiving(new String(message.bytes));
@@ -282,17 +290,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         // This method is ONLY for Alice
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
-
-            Session<Address, Bytestring> session;
-
-            sendClient.send = send;
-            sendClient.connect();
-            session = peer.openSession(sendClient.connection); //OtrSend(send) -- essentially
-            sendClient.connection.session = session;
-
-            if (session == null) {
-                return null;
-            }
+            if (send == null) return null;
+            Session<Address, Bytestring> session = peer.openSession(new OtrSend(send));
+            if (session == null) return null;
 
             OtrSession otrSession = new OtrSession(session);
 
@@ -305,8 +305,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
                 }
             }
-            sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();
 
             return otrSession;
         }
@@ -314,31 +312,21 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         // TODO
         // This method is the equivalent of openSession(), but for Bob
         public synchronized OtrSession openReceivingSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
-            // messageprocesser is connected to sendClient
-            sendClient.send = send;
-            // starts listening
-            sendClient.connect();
-            sendClient.connection.session = session;
-            OtrSession otrSession = new OtrSession(session); // nothing passed to the internal peer
 
-            sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();
-            sendClient.pollReceivedMessage();
+            // what do I do with the Send<> object?
+            OtrSession otrSession = new OtrSession(session);
 
             return otrSession;
         }
 
+        @Override
         public Address identity() {
             return peer.identity();
         }
 
+        @Override
         public void close() throws InterruptedException {
             peer.close();
-            try {
-                sendClient.exit();
-            } catch (OtrException e) {
-                throw new RuntimeException(e);
-            }
         }
 
     }
