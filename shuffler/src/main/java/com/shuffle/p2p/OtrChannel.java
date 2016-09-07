@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
 
@@ -34,311 +35,237 @@ import java.util.Queue;
 
 public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
-    public class SendClient {
+    /**
+     * Most of the methods for SendOtrEngineHost are not filled out, but it does not matter
+     * here.  If you need other jitsi/otr functionality, feel free to change the methods.
+     */
 
-        private net.java.otr4j.session.Session session;
-        private OtrPolicy policy;
-        public SendConnection connection;
-        public MessageProcessor processor;
-        public Queue<ProcessedMessage> processedMsgs = new LinkedList<>();
-        private Send<Bytestring> send;
+    private class SendOtrEngineHost implements OtrEngineHost {
+        private final OtrPolicy policy;
+        private final Session<Address, Bytestring> session;
 
-        public SendClient(Send<Bytestring> send) {
-            this.send = send;
-        }
-
-        public void setPolicy(OtrPolicy policy) {
+        private SendOtrEngineHost(OtrPolicy policy, Session<Address, Bytestring> session) {
             this.policy = policy;
+            this.session = session;
         }
 
-        public void send(Bytestring s) throws OtrException, InterruptedException, IOException {
+        @Override
+        public void injectMessage(SessionID sessionID, String msg) {
+            try {
+                session.send(new Bytestring(msg.getBytes()));
+            } catch (IOException e) {
+
+            } catch (InterruptedException er) {
+
+            }
+        }
+
+        @Override
+        public void smpError(SessionID sessionID, int tlvType, boolean cheated)
+                throws OtrException {
+            return;
+        }
+
+        @Override
+        public void smpAborted(SessionID sessionID) throws OtrException {
+            return;
+        }
+
+        @Override
+        public void finishedSessionMessage(SessionID sessionID, String msgText) throws OtrException {
+            return;
+        }
+
+        @Override
+        public void requireEncryptedMessage(SessionID sessionID, String msgText) throws OtrException {
+            return;
+        }
+
+        @Override
+        public void unreadableMessageReceived(SessionID sessionID) throws OtrException {
+            return;
+        }
+
+        @Override
+        public void unencryptedMessageReceived(SessionID sessionID, String msg) throws OtrException {
+            return;
+        }
+
+        @Override
+        public void showError(SessionID sessionID, String error) throws OtrException {
+            return;
+        }
+
+        @Override
+        public KeyPair getLocalKeyPair(SessionID paramSessionID) {
+            KeyPairGenerator kg;
+            try {
+                kg = KeyPairGenerator.getInstance("DSA");
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+                return null;
+            }
+            return kg.genKeyPair();
+        }
+
+        @Override
+        public OtrPolicy getSessionPolicy(SessionID ctx) {
+            return policy;
+        }
+
+        @Override
+        public byte[] getLocalFingerprintRaw(SessionID sessionID) {
+            try {
+                return new OtrCryptoEngineImpl()
+                        .getFingerprintRaw(getLocalKeyPair(sessionID)
+                                .getPublic());
+            } catch (OtrCryptoException e) {
+                e.printStackTrace();
+            }
+            return null;
+        }
+
+        @Override
+        public void askForSecret(SessionID sessionID, InstanceTag receiverTag, String question) {
+            return;
+        }
+
+        @Override
+        public void verify(SessionID sessionID, String fingerprint, boolean approved) {
+            return;
+        }
+
+        @Override
+        public void unverify(SessionID sessionID, String fingerprint) {
+            return;
+        }
+
+        @Override
+        public String getReplyForUnreadableMessage(SessionID sessionID) {
+            return null;
+        }
+
+        @Override
+        public String getFallbackMessage(SessionID sessionID) {
+            return null;
+        }
+
+        @Override
+        public void messageFromAnotherInstanceReceived(SessionID sessionID) {
+            throw new NullPointerException("Message from another instance received: " + sessionID.toString());
+        }
+
+        @Override
+        public void multipleInstancesDetected(SessionID sessionID) {
+            return;
+        }
+
+        @Override
+        public FragmenterInstructions getFragmenterInstructions(SessionID sessionID) {
+            return new FragmenterInstructions(FragmenterInstructions.UNLIMITED,
+                    FragmenterInstructions.UNLIMITED);
+        }
+
+    }
+
+    private class OtrSession implements Session<Address, Bytestring> {
+        private final Session<Address, Bytestring> s;
+
+        private OtrSession(Session<Address, Bytestring> s) {
+            this.s = s;
+        }
+
+        @Override
+        public boolean send(Bytestring message) throws InterruptedException, IOException {
+            SessionImpl session = sessionMap.get();
             if (session == null) {
                 final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
-                session = new SessionImpl(sessionID, new SendOtrEngineHost());
+                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
+                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
+                session = new SessionImpl(sessionID, new SendOtrEngineHost(policy, s));
             }
 
-            String[] outgoingMessage = session.transformSending(new String(s.bytes), null);
+            String[] outgoingMessage;
+            try {
+                outgoingMessage = session.transformSending(new String(message.bytes), null);
+            } catch (OtrException e) {
+                return false;
+            }
 
             for (String part : outgoingMessage) {
-                connection.send(part);
+                s.send(new Bytestring(part.getBytes()));
+            }
+            return true;
+        }
+
+        @Override
+        public boolean closed() {
+            return s.closed();
+        }
+
+        @Override
+        public void close() {
+            s.close();
+        }
+
+        @Override
+        public Peer<Address, Bytestring> peer() {
+            return new OtrPeer(new OtrPeer(s.peer()));
+        }
+
+    }
+
+    /**
+     * Filter init string / key exchange / termination messages
+     * (accept passed-in session object from newSession)
+     * Make this stateful.
+     */
+
+    private class OtrSend implements Send<Bytestring> {
+        private final Send<Bytestring> z;
+
+        private OtrSend(Send<Bytestring> z) {
+            this.z = z;
+        }
+
+        @Override
+        public boolean send(Bytestring message) {
+            SessionImpl session = sessionMap.get();
+            String receivedMessage;
+            try {
+                receivedMessage = session.transformReceiving(new String(message.bytes));
+            } catch (OtrException e) {
+                return false;
+            }
+
+            try {
+                return z.send(new Bytestring(receivedMessage.getBytes()));
+            } catch (InterruptedException e) {
+                return false;
+            } catch (IOException e) {
+                return false;
             }
         }
 
-        public void exit() throws OtrException {
-            this.processor.stop();
-            this.send.close();
-            this.connection.close();
-            if (session != null) {
-                session.endSession();
-            }
+        @Override
+        public void close() {
+            z.close();
         }
 
-        public synchronized void receive(Bytestring s) throws OtrException {
-            this.processor.enqueue(new String(s.bytes));
+    }
+
+    private class OtrListener implements Listener<Address, Bytestring> {
+        private final Listener<Address, Bytestring> l;
+
+        private OtrListener(Listener<Address, Bytestring> l) {
+            this.l = l;
         }
 
-        public void connect() {
-            this.processor = new MessageProcessor();
-            new Thread(this.processor).start();
-            this.connection = new SendConnection(this, "CoinShuffle Encrypted Chat", this.send);
-        }
-
-        public SendConnection getConnection() {
-            return connection;
-        }
-
-        public ProcessedMessage pollReceivedMessage() throws InterruptedException {
-            synchronized (processedMsgs) {
-                ProcessedMessage m;
-                while ((m = processedMsgs.poll()) == null) {
-                    processedMsgs.wait();
-                }
-
-                return m;
-            }
-        }
-
-
-        public class Message {
-            public Message(String content){
-                this.content = content;
-            }
-
-            private final String content;
-
-            public String getContent() {
-                return content;
-            }
-        }
-
-        public class ProcessedMessage extends Message {
-            final Message originalMessage;
-
-            public ProcessedMessage(Message originalMessage, String content) {
-                super(content);
-                this.originalMessage = originalMessage;
-            }
-        }
-
-        public class MessageProcessor implements Runnable {
-
-            public final Queue<Message> messageQueue = new LinkedList<>();
-            private boolean stopped;
-
-            private void process(Message m) throws OtrException {
-                if (session == null) {
-                    final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
-                    session = new SessionImpl(sessionID, new SendOtrEngineHost());
-                }
-
-                String receivedMessage = session.transformReceiving(m.getContent());
-
-                synchronized (processedMsgs) {
-                    processedMsgs.add(new ProcessedMessage(m, receivedMessage));
-                    processedMsgs.notify();
-                }
-            }
-
-            public void run() {
-                synchronized (messageQueue) {
-                    while (true) {
-
-                        Message m = messageQueue.poll();
-
-                        if (m == null) {
-                            try {
-                                messageQueue.wait();
-                            } catch (InterruptedException e) {
-
-                            }
-                        } else {
-                            try {
-                                process(m);
-                            } catch (OtrException e) {
-
-                            }
-                        }
-
-                        if (stopped)
-                            break;
-                    }
-                }
-            }
-
-            public void enqueue(String s) {
-                synchronized (messageQueue) {
-                    messageQueue.add(new Message(s));
-                    messageQueue.notify();
-                }
-            }
-
-            public void stop() {
-                stopped = true;
-
-                synchronized (messageQueue) {
-                    messageQueue.notify();
-                }
-            }
-
-        }
-
-        /**
-         * Most of the methods for SendOtrEngineHost are not filled out, but it does not matter
-         * here.  If you need other jitsi/otr functionality, feel free to change the methods.
-         */
-
-        private class SendOtrEngineHost implements OtrEngineHost {
-
-            public void injectMessage(SessionID sessionID, String msg) throws OtrException {
-                try {
-                    connection.send(msg);
-                } catch (IOException e) {
-
-                } catch (InterruptedException er) {
-
-                }
-            }
-
-            public void smpError(SessionID sessionID, int tlvType, boolean cheated)
-                    throws OtrException {
-                return;
-            }
-
-            public void smpAborted(SessionID sessionID) throws OtrException {
-                return;
-            }
-
-            public void finishedSessionMessage(SessionID sessionID, String msgText) throws OtrException {
-                return;
-            }
-
-            public void requireEncryptedMessage(SessionID sessionID, String msgText) throws OtrException {
-                return;
-            }
-
-            public void unreadableMessageReceived(SessionID sessionID) throws OtrException {
-                return;
-            }
-
-            public void unencryptedMessageReceived(SessionID sessionID, String msg) throws OtrException {
-                return;
-            }
-
-            public void showError(SessionID sessionID, String error) throws OtrException {
-                return;
-            }
-
-            public KeyPair getLocalKeyPair(SessionID paramSessionID) {
-                KeyPairGenerator kg;
-                try {
-                    kg = KeyPairGenerator.getInstance("DSA");
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                    return null;
-                }
-                return kg.genKeyPair();
-            }
-
-            public OtrPolicy getSessionPolicy(SessionID ctx) {
-                return policy;
-            }
-
-            public byte[] getLocalFingerprintRaw(SessionID sessionID) {
-                try {
-                    return new OtrCryptoEngineImpl()
-                            .getFingerprintRaw(getLocalKeyPair(sessionID)
-                                    .getPublic());
-                } catch (OtrCryptoException e) {
-                    e.printStackTrace();
-                }
-                return null;
-            }
-
-            public void askForSecret(SessionID sessionID, InstanceTag receiverTag, String question) {
-                return;
-            }
-
-            public void verify(SessionID sessionID, String fingerprint, boolean approved) {
-                return;
-            }
-
-            public void unverify(SessionID sessionID, String fingerprint) {
-                return;
-            }
-
-            public String getReplyForUnreadableMessage(SessionID sessionID) {
-                return null;
-            }
-
-            public String getFallbackMessage(SessionID sessionID) {
-                return null;
-            }
-
-            public void messageFromAnotherInstanceReceived(SessionID sessionID) {
-                throw new NullPointerException("Message from another instance received: " + sessionID.toString());
-            }
-
-            public void multipleInstancesDetected(SessionID sessionID) {
-                return;
-            }
-
-            public FragmenterInstructions getFragmenterInstructions(SessionID sessionID) {
-                return new FragmenterInstructions(FragmenterInstructions.UNLIMITED,
-                        FragmenterInstructions.UNLIMITED);
-            }
-
-        }
-
-        public class SendConnection implements Send<Bytestring> {
-
-            private final SendClient client;
-            private final String connectionName;
-            private String sentMessage;
-            private Send<Bytestring> send;
-            public Session<Address, Bytestring> session;
-
-            public SendConnection(SendClient client, String connectionName, Send<Bytestring> send) {
-                this.client = client;
-                this.connectionName = connectionName;
-                this.send = send;
-            }
-
-            public String getSentMessage() {
-                return sentMessage;
-            }
-
-            public SendClient getClient() {
-                return client;
-            }
-
-            @Override
-            public String toString() {
-                return "PriorityConnection{" +
-                        "connectionName='" + connectionName + '\'' +
-                        '}';
-            }
-
-            public void send(String msg) throws OtrException, InterruptedException, IOException {
-                this.sentMessage = msg;
-                Bytestring bytestring = new Bytestring(msg.getBytes());
-                session.send(bytestring);
-            }
-
-            public boolean send(Bytestring msg) throws IOException, InterruptedException {
-
-                try {
-                    this.client.receive(msg);
-                } catch (OtrException e) {
-                    return false;
-                }
-
-                return send.send(msg);
-            }
-
-            public void close() {
-                session.close();
-            }
-
+        @Override
+        public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
+            Send<Bytestring> z = l.newSession(new OtrSession(session));
+            if (z == null) return null;
+            return new OtrSend(z);
         }
 
     }
@@ -346,13 +273,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     public class OtrPeer implements Peer<Address, Bytestring> {
 
         Peer<Address, Bytestring> peer;
-        SendClient sendClient;
 
         public OtrPeer(Peer<Address, Bytestring> peer) {
             this.peer = peer;
-            sendClient = new SendClient(null);
-            sendClient.setPolicy(new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
-                    | OtrPolicy.ERROR_START_AKE)); // this assumes the user wants OTR v2 or v3.
         }
 
         // TODO
@@ -418,41 +341,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
         }
 
-        public class OtrSession implements Session<Address, Bytestring> {
-
-            Session<Address, Bytestring> session;
-
-            public OtrSession(Session<Address, Bytestring> session) {
-                this.session = session;
-            }
-
-            @Override
-            public synchronized boolean send(Bytestring message) throws InterruptedException, IOException {
-                try {
-                    sendClient.send(message);
-                    return true;
-                } catch (OtrException e) {
-                    return false;
-                }
-            }
-
-            @Override
-            public synchronized void close() {
-                session.close();
-            }
-
-            @Override
-            public synchronized boolean closed() {
-                return session.closed();
-            }
-
-            @Override
-            public Peer<Address, Bytestring> peer() {
-                return OtrPeer.this;
-            }
-
-        }
-
     }
 
     private class OtrConnection implements Connection<Address> {
@@ -477,18 +365,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     }
 
     Channel<Address, Bytestring> channel;
-    private final Address me;
     private boolean running = false;
     Listener<Address, Bytestring> listener;
+    HashMap<String, SessionID> sessionMap = new HashMap<>();
 
-    public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
-        if (me == null) {
-            throw new NullPointerException();
-        }
-
+    public OtrChannel(Channel<Address, Bytestring> channel) {
         this.channel = channel;
-        this.me = me;
-
     }
 
     @Override
@@ -504,16 +386,15 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         this.listener = listener;
         running = true;
-        return new OtrConnection(this.channel.open(listener));
+        return new OtrConnection(this.channel.open(new OtrListener(listener)));
 
     }
 
     @Override
-    public OtrPeer getPeer(Address you) {
-
-        if (you.equals(me)) return null;
-
-        return new OtrPeer(this.channel.getPeer(you));
+    public Peer<Address, Bytestring> getPeer(Address you) {
+        Peer<Address, Bytestring> p = channel.getPeer(you);
+        if (p == null) return null;
+        return new OtrPeer(p);
     }
 
 }
