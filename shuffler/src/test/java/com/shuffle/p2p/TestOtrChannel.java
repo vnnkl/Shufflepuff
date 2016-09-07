@@ -142,22 +142,24 @@ public class TestOtrChannel {
         bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
         // ASCII because why not.
+        System.out.println("");
         System.out.println(" *~------------------------------------------~*");
         System.out.println(" ||     _______     _________   ______       ||");
-        System.out.println(" ||    //      \\\\   !___  __!  !!     \\      ||");
-        System.out.println(" ||    !|  **  !|       !!      !! **  |     ||");
-        System.out.println(" ||    !| **** !|       !!      |!`  //      ||");
-        System.out.println(" ||    !|  **  !|       !!      !|!  \\\\      ||");
-        System.out.println(" ||    \\\\_____//        !!      |!!   \\\\     ||");
+        System.out.println(" ||    //      \\\\   !_______!  !!  .. \\      ||");
+        System.out.println(" ||    !|  **  !|      !.!      !! **  |     ||");
+        System.out.println(" ||    !| **** !|      !.!      |!`  //      ||");
+        System.out.println(" ||    !|  **  !|      !.!      !|!  \\\\      ||");
+        System.out.println(" ||    \\\\_____//       !.!      |!!   \\\\     ||");
         System.out.println(" ||                                          ||");
         System.out.println(" *~------------------------------------------~*");
+        System.out.println("");
 
-        //Alice sends encrypted message to Bob
+        // Alice sends encrypted message to Bob
         aliceToBobSession.send(new Bytestring("Houston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForBob = bobToAlice.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message (message for bob) : " + messageForBob.getContent());
 
-        //Bob sends encrypted message to Alice
+        // Bob sends encrypted message to Alice
         bobToAliceSession.send(new Bytestring("Weston".getBytes()));
         OtrChannel.SendClient.ProcessedMessage messageForAlice = aliceToBob.sendClient.pollReceivedMessage();
         System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());

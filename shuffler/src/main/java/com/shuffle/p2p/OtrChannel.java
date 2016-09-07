@@ -47,10 +47,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.send = send;
         }
 
-        public net.java.otr4j.session.Session getSession() {
-            return this.session;
-        }
-
         public void setPolicy(OtrPolicy policy) {
             this.policy = policy;
         }
@@ -85,16 +81,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.processor = new MessageProcessor();
             new Thread(this.processor).start();
             this.connection = new SendConnection(this, "CoinShuffle Encrypted Chat", this.send);
-        }
-
-        // TODO
-        public void secureSession() throws OtrException {
-            if (session == null) {
-                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
-                session = new SessionImpl(sessionID, new SendOtrEngineHost());
-            }
-
-            session.startSession();
         }
 
         public SendConnection getConnection() {
@@ -133,7 +119,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 this.originalMessage = originalMessage;
             }
         }
-
 
         public class MessageProcessor implements Runnable {
 
@@ -227,10 +212,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return;
             }
 
-            public void finishedSessionMessage(SessionID sessionID) throws OtrException {
-                return;
-            }
-
             public void requireEncryptedMessage(SessionID sessionID, String msgText) throws OtrException {
                 return;
             }
@@ -247,14 +228,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return;
             }
 
-            public String getReplyForUnreadableMessage() {
-                return "You sent me an unreadable encrypted message.";
-            }
-
-            public void sessionStatusChanged(SessionID sessionID) {
-                return;
-            }
-
             public KeyPair getLocalKeyPair(SessionID paramSessionID) {
                 KeyPairGenerator kg;
                 try {
@@ -268,18 +241,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             public OtrPolicy getSessionPolicy(SessionID ctx) {
                 return policy;
-            }
-
-            public void askForSecret(SessionID sessionID, String question) {
-                return;
-            }
-
-            public void verify(SessionID sessionID, boolean approved) {
-                return;
-            }
-
-            public void unverify(SessionID sessionID) {
-                return;
             }
 
             public byte[] getLocalFingerprintRaw(SessionID sessionID) {
@@ -319,10 +280,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             public void multipleInstancesDetected(SessionID sessionID) {
                 return;
-            }
-
-            public String getFallbackMessage() {
-                return "Off-the-Record private conversation has been requested. However, you do not have a plugin to support that.";
             }
 
             public FragmenterInstructions getFragmenterInstructions(SessionID sessionID) {
