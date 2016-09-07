@@ -53,7 +53,6 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
     }
 
-    // This class should not exist.
     private class UnmarshallSend implements Send<Bytestring> {
         private final Send<X> z;
 

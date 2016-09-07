@@ -142,17 +142,17 @@ public class TestOtrChannel {
         bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
 
         // ASCII because why not.
-        System.out.println("         •••••••••••••••••••••••••••••••••••••••••••••••••• ");
-        System.out.println("        •• *~------------------------------------------~* ••");
-        System.out.println("       ••  ||     _______     _________   ______       ||  ••");
-        System.out.println("      ••   ||    //      \\\\   !_______!  !!  .. \\      ||   ••");
-        System.out.println("     ••    ||    !|  **  !|      !.!      !! **  |     ||    ••");
-        System.out.println("    ••     ||    !| **** !|      !.!      |!`  //      ||     ••");
-        System.out.println("     ••    ||    !|  **  !|      !.!      !|!  \\\\      ||    ••");
-        System.out.println("      ••   ||    \\\\_____//       !.!      |!!   \\\\     ||   ••");
-        System.out.println("       ••  ||                                          ||  ••");
-        System.out.println("        •• *~------------------------------------------~* ••");
-        System.out.println("         ••••••••••••••••••••••••••••••••••••••••••••••••••");
+        System.out.println("");
+        System.out.println("         *~------------------------------------------~* ");
+        System.out.println("         ||     _______     _________   ______       ||  ");
+        System.out.println("         ||    //      \\\\   !_______!  !!  .. \\      ||   ");
+        System.out.println("         ||    !|  **  !|      !.!      !! **  |     ||    ");
+        System.out.println("         ||    !| **** !|      !.!      |!`  //      ||     ");
+        System.out.println("         ||    !|  **  !|      !.!      !|!  \\\\      ||    ");
+        System.out.println("         ||    \\\\_____//       !.!      |!!   \\\\     ||   ");
+        System.out.println("         ||                                          ||  ");
+        System.out.println("         *~------------------------------------------~* ");
+        System.out.println("");
 
         // Alice sends encrypted message to Bob
         aliceToBobSession.send(new Bytestring("Houston".getBytes()));
