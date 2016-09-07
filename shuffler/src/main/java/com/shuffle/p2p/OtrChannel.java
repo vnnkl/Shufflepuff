@@ -177,17 +177,16 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
-            SessionImpl session = sessionMap.get();
-            if (session == null) {
+            if (sessionImpl == null) {
                 final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
                 OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
                         | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
-                session = new SessionImpl(sessionID, new SendOtrEngineHost(policy, s));
+                sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, s));
             }
 
             String[] outgoingMessage;
             try {
-                outgoingMessage = session.transformSending(new String(message.bytes), null);
+                outgoingMessage = sessionImpl.transformSending(new String(message.bytes), null);
             } catch (OtrException e) {
                 return false;
             }
@@ -230,18 +229,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) {
-            SessionImpl session = sessionMap.get();
-
-            if (session == null) {
-                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
-                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
-                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
-                session = new SessionImpl(sessionID, new SendOtrEngineHost(policy, Session<Address, Bytestring> session));
-            }
-
             String receivedMessage;
             try {
-                receivedMessage = session.transformReceiving(new String(message.bytes));
+                receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
             } catch (OtrException e) {
                 return false;
             }
@@ -271,6 +261,13 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
+            if (sessionImpl == null) {
+                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
+                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
+                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
+                sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
+            }
+
             Send<Bytestring> z = l.newSession(new OtrSession(session));
             if (z == null) return null;
             return new OtrSend(z);
@@ -278,7 +275,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    public class OtrPeer implements Peer<Address, Bytestring> {
+    private class OtrPeer implements Peer<Address, Bytestring> {
 
         Peer<Address, Bytestring> peer;
 
@@ -311,12 +308,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         // TODO
         // This method is the equivalent of openSession(), but for Bob
-        public synchronized OtrSession openReceivingSession(Send<Bytestring> send, Session<Address, Bytestring> session) throws InterruptedException, IOException {
-
-            // what do I do with the Send<> object?
-            OtrSession otrSession = new OtrSession(session);
-
-            return otrSession;
+        private synchronized OtrSession openReceivingSession(Session<Address, Bytestring> session) throws InterruptedException, IOException {
+            return new OtrSession(session);
         }
 
         @Override
@@ -331,7 +324,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    private class OtrConnection implements Connection<Address> {
+    public class OtrConnection implements Connection<Address> {
 
         Connection<Address> connection;
 
@@ -352,13 +345,20 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    Channel<Address, Bytestring> channel;
+    private Channel<Address, Bytestring> channel;
     private boolean running = false;
-    Listener<Address, Bytestring> listener;
-    HashMap<String, SessionID> sessionMap = new HashMap<>();
+    private Listener<Address, Bytestring> listener;
+    private HashMap<String, SessionID> sessionMap = new HashMap<>();
+    private SessionImpl sessionImpl;
+    private final Address me;
 
-    public OtrChannel(Channel<Address, Bytestring> channel) {
+    public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
+        if (me == null) {
+            throw new NullPointerException();
+        }
+
         this.channel = channel;
+        this.me = me;
     }
 
     @Override
@@ -380,6 +380,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     @Override
     public Peer<Address, Bytestring> getPeer(Address you) {
+        if (you.equals(me)) return null;
         Peer<Address, Bytestring> p = channel.getPeer(you);
         if (p == null) return null;
         return new OtrPeer(p);

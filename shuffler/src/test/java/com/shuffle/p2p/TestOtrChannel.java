@@ -25,10 +25,10 @@ public class TestOtrChannel {
     Send<Bytestring> aliceSend;
     Send<Bytestring> bobSend;
     Session<String, Bytestring> tempSession;
-    OtrChannel.OtrPeer aliceToBob;
-    OtrChannel.OtrPeer bobToAlice;
-    OtrChannel.OtrPeer.OtrSession aliceToBobSession;
-    OtrChannel.OtrPeer.OtrSession bobToAliceSession;
+    Peer<String, Bytestring> aliceToBob;
+    Peer<String, Bytestring> bobToAlice;
+    Session<String, Bytestring> aliceToBobSession;
+    Session<String, Bytestring> bobToAliceSession;
 
     @Before
     public void setup() throws InterruptedException, IOException {
