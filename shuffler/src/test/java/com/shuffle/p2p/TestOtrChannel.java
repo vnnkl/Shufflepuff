@@ -18,15 +18,19 @@ import java.io.IOException;
 public class TestOtrChannel {
 
     MockNetwork<String, Bytestring> network;
+
     Channel<String, Bytestring> aliceNode;
     Channel<String, Bytestring> bobNode;
+
     OtrChannel<String> otrAlice;
     OtrChannel<String> otrBob;
+
     Send<Bytestring> aliceSend;
     Send<Bytestring> bobSend;
-    Session<String, Bytestring> tempSession;
+
     Peer<String, Bytestring> aliceToBob;
     Peer<String, Bytestring> bobToAlice;
+
     Session<String, Bytestring> aliceToBobSession;
     Session<String, Bytestring> bobToAliceSession;
 
@@ -41,7 +45,7 @@ public class TestOtrChannel {
         aliceSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                System.out.println("Alice received from Bob");
+                System.out.println("Alice received: " + new String(message.bytes));
                 return true;
             }
 
@@ -54,20 +58,15 @@ public class TestOtrChannel {
         Listener<String, Bytestring> aliceListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
-                return null;
+                System.out.println("alice listener caught: " + session);
+                return aliceSend;
             }
         };
 
         bobSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
-                try {
-                    bobToAlice.sendClient.receive(message);
-                } catch (OtrException e) {
-                    System.out.println("bob receive failed");
-                    return false;
-                }
-                System.out.println("Bob received from Alice");
+                System.out.println("Bob received: " + new String(message.bytes));
                 return true;
             }
 
@@ -80,43 +79,20 @@ public class TestOtrChannel {
         Listener<String, Bytestring> bobListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
+
+                /**
+                 * This Session object is an OtrSession object because of how we constructed
+                 * OtrListener's newSession method.
+                 */
+                bobToAliceSession = session;
                 System.out.println("bob listener caught: " + session);
-                tempSession = session;
                 return bobSend;
             }
         };
 
-        /**
-         * Open both Channels and start listening with their respective listeners
-         */
+        // Open both Channels and start listening
         otrAlice.open(aliceListener);
         otrBob.open(bobListener);
-
-    }
-
-    /**
-     * A class that implements Runnable so that Alice and Bob can communicate.
-     * This class will call openSession on Alice's OtrPeer object.
-     */
-    public class runnableSessions implements Runnable {
-
-        public OtrChannel.OtrPeer peer;
-        public Send<Bytestring> send;
-
-        public runnableSessions(OtrChannel.OtrPeer peer, Send<Bytestring> send) {
-            this.peer = peer;
-            this.send = send;
-        }
-
-        public void run()  {
-            try {
-                aliceToBobSession = peer.openSession(send); // should be an OtrSend, not a normal Send<>
-            } catch (IOException e) {
-
-            } catch (InterruptedException er) {
-
-            }
-        }
 
     }
 
@@ -133,11 +109,8 @@ public class TestOtrChannel {
         // Bob to Alice
         bobToAlice = otrBob.getPeer("alice");
 
-        runnableSessions aliceRun = new runnableSessions(aliceToBob, aliceSend);
-        new Thread(aliceRun).start();
-        // wait for bobToAlice to receive
-        Thread.sleep(3000);
-        bobToAliceSession = bobToAlice.openReceivingSession(bobSend, tempSession);
+        // Alice opens the session
+        aliceToBobSession = aliceToBob.openSession(aliceSend);
 
         // ASCII because why not.
         System.out.println("");
@@ -152,15 +125,8 @@ public class TestOtrChannel {
         System.out.println("         *~------------------------------------------~* ");
         System.out.println("");
 
-        // Alice sends encrypted message to Bob
-        aliceToBobSession.send(new Bytestring("Houston".getBytes()));
-        OtrChannel.SendClient.ProcessedMessage messageForBob = bobToAlice.sendClient.pollReceivedMessage();
-        System.out.println("Encrypted Message (message for bob) : " + messageForBob.getContent());
-
-        // Bob sends encrypted message to Alice
-        bobToAliceSession.send(new Bytestring("Weston".getBytes()));
-        OtrChannel.SendClient.ProcessedMessage messageForAlice = aliceToBob.sendClient.pollReceivedMessage();
-        System.out.println("Encrypted Message (message for alice) : " + messageForAlice.getContent());
+        aliceToBobSession.send(new Bytestring("Bob, Do Not Buy OneCoin".getBytes()));
+        bobToAliceSession.send(new Bytestring("CryptoCurrency OneCoin is a Virus".getBytes()));
 
     }
 

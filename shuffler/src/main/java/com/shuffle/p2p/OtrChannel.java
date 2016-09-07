@@ -236,6 +236,17 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return false;
             }
 
+            if (receivedMessage == null) {
+                return false;
+            }
+
+            /**
+             * If uncommented, the below line will throw a NullPointerException with the
+             * Jitsi Session Status ("ENCRYPTED" if all goes well), the ciphertext of the message,
+             * and the deciphered plaintext message.
+             */
+            //if (true) throw new NullPointerException(sessionImpl.getSessionStatus() + "\n" + new String(message.bytes) + "\n" + receivedMessage);
+
             try {
                 return z.send(new Bytestring(receivedMessage.getBytes()));
             } catch (InterruptedException e) {
@@ -293,23 +304,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             OtrSession otrSession = new OtrSession(session);
 
-            String query = "?OTRv23?"; // This string depends on the version / type of OTR encryption that the user wants.
-            while (true) {
-                try {
-                    otrSession.send(new Bytestring(query.getBytes()));
-                    break;
-                } catch (NullPointerException e) {
-
-                }
-            }
+            // This string depends on the version / type of OTR encryption that the user wants.
+            String query = "?OTRv23?";
+            otrSession.send(new Bytestring(query.getBytes()));
 
             return otrSession;
-        }
-
-        // TODO
-        // This method is the equivalent of openSession(), but for Bob
-        private synchronized OtrSession openReceivingSession(Session<Address, Bytestring> session) throws InterruptedException, IOException {
-            return new OtrSession(session);
         }
 
         @Override
