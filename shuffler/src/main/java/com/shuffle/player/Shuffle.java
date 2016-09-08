@@ -73,6 +73,7 @@ import java.util.concurrent.Executors;
 import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import joptsimple.OptionSpecBuilder;
 
 /**
  *
@@ -81,7 +82,7 @@ import joptsimple.OptionSet;
  */
 public class Shuffle {
     // Turn this on to enable test mode options.
-    private static boolean TEST_MODE = true;
+    private static boolean TEST_MODE = false;
 
     // 1 / 100 of a bitcoin.
     private static long MIN_AMMOUNT = 1000000;
@@ -94,7 +95,7 @@ public class Shuffle {
         parser.accepts("help", "print help message.");
 
         ArgumentAcceptingOptionSpec<String> query = parser.acceptsAll(Arrays.asList("q", "query"),
-                "Means of performing blockchain queries. btcd and blockchain.info are supported")
+                "Means of performing blockchain queries. btcd, blockcypher.com and blockchain.info are supported")
                 .withRequiredArg().ofType(String.class);
 
         ArgumentAcceptingOptionSpec<String> blockchain = parser.acceptsAll(Arrays.asList("b", "blockchain"),
@@ -128,11 +129,11 @@ public class Shuffle {
                     .defaultsTo("protobuf");
 
             // Five seconds from now.
-            time.defaultsTo(System.currentTimeMillis() + 5000L);
+            //time.defaultsTo(System.currentTimeMillis() + 5000L);
 
         } else {
-            query.defaultsTo("blockchain.info");
-            blockchain.defaultsTo("test");
+            query.defaultsTo("blockcypher.com");
+            blockchain.defaultsTo("main");
         }
 
         parser.acceptsAll(Arrays.asList("S", "session"),
@@ -149,28 +150,33 @@ public class Shuffle {
                 .withRequiredArg()
                 .ofType(String.class);
 
-        parser.acceptsAll(Arrays.asList("k", "key"), "Your private key.")
-                .requiredUnless("local")
-                .withRequiredArg().ofType(String.class);
-        parser.accepts("port", "Port on which to listen for connections.")
-                .requiredUnless("local").withRequiredArg().ofType(Long.class);
-        parser.accepts("change", "Your change address. Optional")
-                .requiredUnless("local")
-                .withRequiredArg().ofType(String.class);
-        parser.accepts("anon")
-                .requiredUnless("local")
-                .withRequiredArg()
-                .ofType(String.class);
-        parser.accepts("timeout")
+        OptionSpecBuilder key = parser.acceptsAll(Arrays.asList("k", "key"), "Your private key.");
+        OptionSpecBuilder port = parser.accepts("port", "Port on which to listen for connections.");
+        OptionSpecBuilder change = parser.accepts("change", "Your change address. Optional.");
+        OptionSpecBuilder anon = parser.accepts("anon", "A Bitcoin address to which the anonymized coins are sent.");
+
+        if (TEST_MODE) {
+            key.requiredUnless("local");
+            port.requiredUnless("local");
+            change.requiredUnless("local");
+            anon.requiredUnless("local");
+        }
+
+        key.withRequiredArg().ofType(String.class);
+        port.withRequiredArg().ofType(Long.class);
+        change.withRequiredArg().ofType(String.class);
+        anon.withRequiredArg().ofType(String.class);
+
+        parser.accepts("timeout", "The time in milliseconds that Shufflepuff waits before disconnecting due to a timeout.")
                 .withRequiredArg()
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
-        parser.accepts("minBitcoinNetworkPeers")
+        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction. Only used with blockchain.info and blockcypher.com.")
                 .withRequiredArg().ofType(Long.class).defaultsTo(5L);
-        parser.accepts("rpcuser")
+        parser.accepts("rpcuser", "Username to log in to btcd.")
                 .withRequiredArg().ofType(String.class);
-        parser.accepts("rpcpass")
+        parser.accepts("rpcpass", "Password to log in to btcd.")
                 .withRequiredArg().ofType(String.class);
 
         parser.accepts("peers",
@@ -282,8 +288,8 @@ public class Shuffle {
 
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (options.has("minBitcoinNetworkPeers")) {
-                    throw new IllegalArgumentException("minBitcoinNetworkPeers not required for btcd.");
+                } else if (options.has("minbitcoinnetworkpeers")) {
+                    throw new IllegalArgumentException("minbitcoinnetworkpeers not required for btcd.");
                 } else if (!options.has("rpcuser")) {
                     throw new IllegalArgumentException("Need to set rpcuser parameter (rpc server login)");
                 } else if (!options.has("rpcpass")) {
@@ -301,37 +307,37 @@ public class Shuffle {
                     throw new IllegalArgumentException("Blockchain.info does not support testnet.");
                 }
 
-                if (!options.has("minBitcoinNetworkPeers")) {
-                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
+                if (!options.has("minbitcoinnetworkpeers")) {
+                    throw new IllegalArgumentException("Need to set minbitcoinnetworkpeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
                 } else if (options.has("rpcpass")) {
                     throw new IllegalArgumentException("Blockchain.info does not use a rpcpass parameter");
                 }
 
-                Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
+                Long minbitcoinnetworkpeers = (Long)options.valueOf("minbitcoinnetworkpeers");
 
-                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
+                int minbitcoinnetworkpeersInt = Ints.checkedCast(minbitcoinnetworkpeers);
 
-                coin = new BlockchainDotInfo(netParams, minBitcoinNetworkPeersInt);
+                coin = new BlockchainDotInfo(netParams, minbitcoinnetworkpeersInt);
                 break;
             } case "blockcypher.com" : {
 
                 if (!options.has("blockchain")) {
                     throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (!options.has("minBitcoinNetworkPeers")) {
-                    throw new IllegalArgumentException("Need to set minBitcoinNetworkPeers parameter (min peers to connect to in Bitcoin Network)");
+                } else if (!options.has("minbitcoinnetworkpeers")) {
+                    throw new IllegalArgumentException("Need to set minbitcoinnetworkpeers parameter (min peers to connect to in Bitcoin Network)");
                 } else if (options.has("rpcuser")) {
                     throw new IllegalArgumentException("Blockcypher.com does not use a rpcuser parameter");
                 } else if (options.has("rpcpass")) {
                     throw new IllegalArgumentException("Blockcypher.com does not use a rpcpass parameter");
                 }
 
-                Long minBitcoinNetworkPeers = (Long)options.valueOf("minBitcoinNetworkPeers");
+                Long minbitcoinnetworkpeers = (Long)options.valueOf("minbitcoinnetworkpeers");
 
-                int minBitcoinNetworkPeersInt = Ints.checkedCast(minBitcoinNetworkPeers);
+                int minbitcoinnetworkpeersInt = Ints.checkedCast(minbitcoinnetworkpeers);
 
-                coin = new BlockCypherDotCom(netParams, minBitcoinNetworkPeersInt);
+                coin = new BlockCypherDotCom(netParams, minbitcoinnetworkpeersInt);
                 break;
             } case "mock" : {
                 if (TEST_MODE) {
@@ -346,10 +352,11 @@ public class Shuffle {
                 // fallthrough.
             } default : {
                 throw new IllegalArgumentException(
-                        "Invalid option for 'blockchain' supplied. Available options are 'btcd' " +
-                                "and 'blockchain.info'. 'btcd' allows for looking up options on " +
-                                "a local instance of the blockchain. 'blockchain.info' allows for" +
-                                " querying the blockchain over the web through blockchain.info."
+                        "Invalid option for 'blockchain' supplied. Available options are 'btcd', " +
+                                "'blockcypher.com', and 'blockchain.info'. 'btcd' allows for " +
+                                "looking up options on a local instance of the blockchain. " +
+                                "'blockcypher.com' and 'blockchain.info' allow for querying the " +
+                                "blockchain over the web."
                 );
             }
         }
