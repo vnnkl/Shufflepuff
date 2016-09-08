@@ -368,9 +368,9 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
-    // TODO transaction fees.
     public Transaction shuffleTransaction(
             final long amount,
+            final long fee,
             List<VerificationKey> from,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException {
@@ -394,7 +394,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
             // If a change address has been provided, add that.
             Address change = changeAddresses.get(key);
-            if (change != null) changes.add(new Output(change, value - amount));
+            if (change != null) changes.add(new Output(change, value - amount - fee));
         }
 
         for (Address address : to) outputs.add(new Output(address, amount));

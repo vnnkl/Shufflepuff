@@ -34,6 +34,7 @@ package com.shuffle.bitcoin;
 public interface Coin {
     Transaction shuffleTransaction(
             long amount,
+            long fee,
             List<VerificationKey> from,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException, AddressFormatException;
