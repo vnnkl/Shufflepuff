@@ -74,6 +74,8 @@ public class CoinShuffle {
 
         private final long amount; // The amount to be shuffled.
 
+        private final long fee; // The miner fee to be paid per player.
+
         final SigningKey sk; // My signing private key.
 
         public final int me; // Which player am I?
@@ -227,7 +229,8 @@ public class CoinShuffle {
             }
 
             // Generate the join transaction.
-            Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
+            Transaction t = coin.shuffleTransaction(
+                    amount, fee, inputs, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
@@ -463,7 +466,7 @@ public class CoinShuffle {
 
             // Check that each participant has the required amounts.
             for (VerificationKey player : players.values()) {
-                if (!coin.sufficientFunds(player.address(), amount)) {
+                if (!coin.sufficientFunds(player.address(), amount + fee)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }
@@ -845,6 +848,7 @@ public class CoinShuffle {
         // A round is a single run of the protocol.
         Round(  CurrentPhase phase,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew,
@@ -853,6 +857,7 @@ public class CoinShuffle {
 
             this.phase = phase;
             this.amount = amount;
+            this.fee = fee;
             this.sk = sk;
             this.players = players;
             this.change = change;
@@ -1142,6 +1147,7 @@ public class CoinShuffle {
     // Run the protocol without creating a new thread.
     public Transaction runProtocol(
             long amount, // The amount to be shuffled per player.
+            long fee, // The miner fee to be paid per player.
             SigningKey sk, // The signing key of the current player.
             // The set of players, sorted alphabetically by address.
             SortedSet<VerificationKey> players,
@@ -1180,7 +1186,7 @@ public class CoinShuffle {
                 sk.VerificationKey(), numberedPlayers.values(), messages);
 
         return this.new Round(
-                machine, amount, sk, numberedPlayers, addrNew, change, mailbox
+                machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox
         ).protocolDefinition();
     }
 

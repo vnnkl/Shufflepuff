@@ -202,9 +202,6 @@ public abstract class Bitcoin implements Coin {
         return netParams;
     }
 
-    // TODO
-    // Take transaction fees into account
-
     /**
      *
      * The shuffleTransaction method returns a Bitcoin.Transaction object that contains a bitcoinj
@@ -225,7 +222,7 @@ public abstract class Bitcoin implements Coin {
 
     @Override
     public Bitcoin.Transaction shuffleTransaction(long amount,
-
+                                                  long fee,
                                                   List<VerificationKey> from,
                                                   Queue<Address> to,
                                                   Map<VerificationKey, Address> changeAddresses)
@@ -247,7 +244,7 @@ public abstract class Bitcoin implements Coin {
                         if (!changeAddresses.containsKey(key) | changeAddresses.get(key) != null) {
                             try {
                                 tx.addOutput(output.getValue().subtract(
-                                                org.bitcoinj.core.Coin.SATOSHI.multiply(amount)),
+                                        org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
                                         new org.bitcoinj.core.Address(
                                                 netParams, changeAddresses.get(key).toString()));
                             } catch (AddressFormatException e) {
