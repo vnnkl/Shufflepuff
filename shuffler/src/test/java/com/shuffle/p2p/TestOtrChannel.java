@@ -1,10 +1,10 @@
 package com.shuffle.p2p;
 
-import com.shuffle.bitcoin.Address;
 import com.shuffle.chan.Send;
 import com.shuffle.mock.MockNetwork;
 
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,15 +21,6 @@ public class TestOtrChannel {
     Channel<String, Bytestring> aliceNode;
     Channel<String, Bytestring> bobNode;
 
-    Channel<String, Bytestring> charlieNode;
-    OtrChannel<String> otrCharlie;
-    Connection<String> charlieConnection;
-    Send<Bytestring> charlieSend;
-    Peer<String, Bytestring> charlieToAlice;
-    Peer<String, Bytestring> aliceToCharlie;
-    Session<String, Bytestring> charlieToAliceSession;
-    Session<String, Bytestring> aliceToCharlieSession;
-
     OtrChannel<String> otrAlice;
     OtrChannel<String> otrBob;
 
@@ -44,6 +35,15 @@ public class TestOtrChannel {
 
     Session<String, Bytestring> aliceToBobSession;
     Session<String, Bytestring> bobToAliceSession;
+
+    Channel<String, Bytestring> charlieNode;
+    OtrChannel<String> otrCharlie;
+    Connection<String> charlieConnection;
+    Send<Bytestring> charlieSend;
+    Peer<String, Bytestring> charlieToAlice;
+    Peer<String, Bytestring> aliceToCharlie;
+    Session<String, Bytestring> charlieToAliceSession;
+    Session<String, Bytestring> aliceToCharlieSession;
 
     @Before
     public void setup() throws InterruptedException, IOException {
@@ -62,7 +62,7 @@ public class TestOtrChannel {
 
             @Override
             public void close() {
-
+                System.out.println("aliceSend closed");
             }
         };
 
@@ -83,7 +83,7 @@ public class TestOtrChannel {
 
             @Override
             public void close() {
-
+                System.out.println("bobSend closed");
             }
         };
 
@@ -117,7 +117,7 @@ public class TestOtrChannel {
 
             @Override
             public void close() {
-
+                System.out.println("charlieSend closed");
             }
         };
 
@@ -134,7 +134,7 @@ public class TestOtrChannel {
                 return bobSend;
             }
         };
-        otrCharlie.open(charlieListener);
+        charlieConnection = otrCharlie.open(charlieListener);
 
     }
 
@@ -170,19 +170,28 @@ public class TestOtrChannel {
         aliceToBobSession.send(new Bytestring("Bob, Do Not Buy OneCoin".getBytes()));
         bobToAliceSession.send(new Bytestring("CryptoCurrency OneCoin is a Virus".getBytes()));
 
-
+        /*
         System.out.println("\n \n \n \n");
         aliceToCharlie = otrAlice.getPeer("charlie");
         charlieToAlice = otrCharlie.getPeer("alice");
         aliceToCharlieSession = aliceToCharlie.openSession(aliceSend);
         aliceToCharlieSession.send(new Bytestring("CHARLIE DONT BUY ONECOIN".getBytes()));
+        */
 
     }
 
     // TODO
     @After
-    public void shutdown() {
+    public void shutdown() throws InterruptedException, IOException {
+        aliceToBobSession.close();
+        bobToAliceSession.close();
+        aliceConnection.close();
+        bobConnection.close();
 
+        Assert.assertTrue(aliceToBobSession.closed());
+        Assert.assertTrue(bobToAliceSession.closed());
+        Assert.assertTrue(aliceConnection.closed());
+        Assert.assertTrue(bobConnection.closed());
     }
 
 }
