@@ -178,7 +178,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
             if (sessionImpl == null) {
-                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
+                final SessionID sessionID = new SessionID("", "", "");
                 OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
                         | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
                 sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, s));
@@ -273,7 +273,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
             if (sessionImpl == null) {
-                final SessionID sessionID = new SessionID("", "", "CoinShuffle Encrypted Chat");
+                final SessionID sessionID = new SessionID("", "", "");
                 OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
                         | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
                 sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
@@ -323,11 +323,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    public class OtrConnection implements Connection<Address> {
+    private class OtrConnection implements Connection<Address> {
 
-        Connection<Address> connection;
+        private Connection<Address> connection;
 
-        public OtrConnection(Connection<Address> connection) {
+        private OtrConnection(Connection<Address> connection) {
             this.connection = connection;
         }
 
@@ -346,10 +346,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     private Channel<Address, Bytestring> channel;
     private boolean running = false;
-    private Listener<Address, Bytestring> listener;
-    private HashMap<String, SessionID> sessionMap = new HashMap<>();
-    private SessionImpl sessionImpl;
     private final Address me;
+    private SessionImpl sessionImpl;
 
     public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
         if (me == null) {
@@ -371,10 +369,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             return null;
         }
 
-        this.listener = listener;
         running = true;
         return new OtrConnection(this.channel.open(new OtrListener(listener)));
-
     }
 
     @Override
