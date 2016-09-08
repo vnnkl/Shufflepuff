@@ -209,7 +209,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public Peer<Address, Bytestring> peer() {
-            return new OtrPeer(new OtrPeer(s.peer()));
+            return new OtrPeer(s.peer());
         }
 
     }
@@ -348,6 +348,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     private boolean running = false;
     private final Address me;
     private SessionImpl sessionImpl;
+    private HashMap<Integer, SessionImpl> sessionMap = new HashMap<>();
 
     public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
         if (me == null) {

@@ -180,7 +180,6 @@ public class TestOtrChannel {
 
     }
 
-    // TODO
     @After
     public void shutdown() throws InterruptedException, IOException {
         aliceToBobSession.close();
