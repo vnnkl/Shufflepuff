@@ -127,4 +127,8 @@ public class SendMoneyController {
         final int peers = sendResult.tx.getConfidence().numBroadcastPeers();
         titleLabel.setText(String.format("Broadcasting ... seen by %d peers", peers));
     }
+
+    public void addInput(ActionEvent actionEvent) {
+
+    }
 }
