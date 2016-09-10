@@ -118,7 +118,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
         for (ChangeTestCase test : tests) {
             i ++;
             Bytestring session = new Bytestring(("change test case " + i).getBytes());
-            InitialState init = new InitialState(session, test.amount, mc, new MockProtobuf());
+            final long testFee = 5000L;
+            InitialState init = new InitialState(session, test.amount, testFee, mc, new MockProtobuf());
 
             // First create the bitcoin mock network.
             List<ChangeTestExpected> expected = new LinkedList<>();

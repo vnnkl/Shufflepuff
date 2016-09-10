@@ -49,7 +49,7 @@ Options that all players must agree on for the protocol to run:
     * --session  A unique session identifier (any unique string is fine). 
     * --amount   An amount to be joined per player (in satoshis).
     * --time     The time for the protocol to begin. 
-    * --fee      The miner's fee to be payed by each player (not yet implemented).
+    * --fee      The miner's fee to be payed by each player.
 
 Options that the player must provide to play his own role in the protocol: 
 

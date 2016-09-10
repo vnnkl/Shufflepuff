@@ -85,7 +85,9 @@ public class Shuffle {
     private static boolean TEST_MODE = false;
 
     // 1 / 100 of a bitcoin.
-    private static long MIN_AMMOUNT = 1000000;
+    private static long MIN_AMOUNT = 1000000;
+    // 5000 satoshis
+    private static long MIN_FEE = 5000L;
 
     // Entropy checker must think there is at least this much entropy.
     private static int MIN_APPARENT_ENTROPY = 128;
@@ -145,6 +147,10 @@ public class Shuffle {
                 "amount to be transferred (satoshis)")
                 .withRequiredArg()
                 .ofType(Long.class);
+        parser.acceptsAll(Arrays.asList("f", "fee"),
+                "miner fee to be paid (satoshis)")
+                .withRequiredArg()
+                .ofType(Long.class);
         parser.acceptsAll(Arrays.asList("s", "seed"),
                 "random number seed")
                 .withRequiredArg()
@@ -193,6 +199,7 @@ public class Shuffle {
     public final String seed;
     public final long time;
     public final long amount;
+    public final long fee;
     public final long timeout;
     public final Bytestring session;
     public final Crypto crypto;
@@ -211,6 +218,11 @@ public class Shuffle {
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
                     "is to be shuffled for each player in the join transaction.");
+        }
+
+        if (options.valueOf("fee") == null) {
+            throw new IllegalArgumentException("No option 'fee' supplied. We need to know what miner fee " +
+                    "is to be paid by each player in the join transaction.");
         }
 
         if (options.valueOf("time") == null) {
@@ -410,8 +422,13 @@ public class Shuffle {
         }
 
         amount = (Long)options.valueOf("amount");
-        if (amount <= MIN_AMMOUNT) {
+        if (amount <= MIN_AMOUNT) {
             throw new IllegalArgumentException("Amount is too small. ");
+        }
+
+        fee = (Long)options.valueOf("fee");
+        if (fee <= MIN_FEE) {
+            throw new IllegalArgumentException("Fee is too small. ");
         }
 
         // Finally, get the peers.
@@ -643,7 +660,7 @@ public class Shuffle {
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, coin, crypto, channel, m, System.out);
+                amount, fee, coin, crypto, channel, m, System.out);
     }
 
     private static JSONArray readJSONArray(String ar) {

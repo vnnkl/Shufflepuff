@@ -47,10 +47,12 @@ public class Adversary {
     private final Address anon;
     private final SortedSet<VerificationKey> players;
     private final long amount;
+    private final long fee;
     private final Address change; // Change address. (can be null)
 
     Adversary(
             long amount,
+            long fee,
             SigningKey sk,
             SortedSet<VerificationKey> players,
             Address anon,
@@ -61,6 +63,7 @@ public class Adversary {
             throw new NullPointerException();
 
         this.amount = amount;
+        this.fee = fee;
         this.sk = sk;
         this.players = players;
         this.shuffle = shuffle;
@@ -74,6 +77,7 @@ public class Adversary {
 
             final CoinShuffle shuffle,
             final long amount, // The amount to be shuffled per player.
+            final long fee, // The miner fee to be paid per player,
             final SigningKey sk, // The signing key of the current player.
             // The set of players, sorted alphabetically by address.
             final SortedSet<VerificationKey> players
@@ -94,7 +98,7 @@ public class Adversary {
                 try {
                     try {
                         q.send(new Either<Transaction, Matrix>(shuffle.runProtocol(
-                                amount, sk, players, anon, change, null
+                                amount, fee, sk, players, anon, change, null
                         ), null));
 
                     } catch (Matrix m) {
@@ -193,7 +197,7 @@ public class Adversary {
     // Return a future that can be composed with others.
     public Future<Summable.SummableElement<Map<SigningKey, Either<Transaction, Matrix>>>> turnOn() {
 
-        return runProtocolFuture(shuffle, amount, sk, players);
+        return runProtocolFuture(shuffle, amount, fee, sk, players);
     }
 
     public SigningKey identity() {

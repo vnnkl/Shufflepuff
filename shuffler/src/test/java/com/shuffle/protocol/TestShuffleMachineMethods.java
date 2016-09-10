@@ -59,6 +59,7 @@ public class TestShuffleMachineMethods {
             Messages messages) throws InvalidParticipantSetException {
 
         long amount = 20L;
+        long fee = 5000L;
 
         SortedSet<VerificationKey> playerSet = new TreeSet<>();
         playerSet.addAll(players.values());
@@ -67,7 +68,7 @@ public class TestShuffleMachineMethods {
         );
         CoinShuffle.CurrentPhase machine = new CoinShuffle.CurrentPhase();
         return shuffle.new Round(
-                machine, amount, sk, players, addr, null, new Mailbox(sk.VerificationKey(), playerSet, messages)
+                machine, amount, fee, sk, players, addr, null, new Mailbox(sk.VerificationKey(), playerSet, messages)
         );
     }
 
@@ -392,6 +393,7 @@ public class TestShuffleMachineMethods {
         SigningKey sk = new MockSigningKey(me);
 
         long amount = 20L;
+        long fee = 5000L;
 
         MockNetwork net = new MockNetwork(session, sk, others, 100);
 
@@ -399,7 +401,7 @@ public class TestShuffleMachineMethods {
                 crypto, new MockCoin());
 
         return shuffle.new Round(
-                new CoinShuffle.CurrentPhase(), amount, sk, players, addr, null, mailbox
+                new CoinShuffle.CurrentPhase(), amount, fee, sk, players, addr, null, mailbox
         );
     }
 
