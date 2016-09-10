@@ -44,6 +44,6 @@ public class TestMockEncryption {
                         .equals("abcd~encrypt[1]~decrypt[2]"));
         Assert.assertTrue(
                 new MockDecryptionKey(1).decrypt("abcd~decrypt[2]")
-                        .equals("abcd~encrypt[2]~decrypt[1]"));
+                        .equals("abcd~decrypt[2]~decrypt[1]"));
     }
 }
