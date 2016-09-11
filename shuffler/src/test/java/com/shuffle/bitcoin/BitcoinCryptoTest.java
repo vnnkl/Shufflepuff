@@ -3,6 +3,7 @@ package com.shuffle.bitcoin;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.store.UnreadableWalletException;
 import org.bitcoinj.utils.BriefLogFormatter;
@@ -39,7 +40,7 @@ public class BitcoinCryptoTest {
    private static final BitcoinCrypto getBitcoinCrypto() {
       try {
          try {
-            return bitcoinCryptoNoP = new BitcoinCrypto(testnet3, new DeterministicSeed("mom mom mom mom mom mom mom mom mom mom mom mom", null, "", 1372550400));
+            return bitcoinCryptoNoP = new BitcoinCrypto(testnet3, new DeterministicSeed("grape door social correct slight assault honey steel solar learn atom unit", null, "", 1472502060));
          } catch (UnreadableWalletException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -179,12 +180,15 @@ public class BitcoinCryptoTest {
       }
       System.out.println(bitcoinCryptoNoP.getKit().wallet().currentReceiveAddress().toString());
    }
+   */
+
 
 
    @Test
    public void testSend() throws Exception {
       WalletAppKit nomKit = bitcoinCryptoNoP.getKit();
-      System.out.println("Current Receive Address: " + bitcoinCryptoNoP.getKit().wallet().currentReceiveAddress().toString() + "\nIssued Receive Addresses: \n" + nomKit.wallet().getIssuedReceiveAddresses().toString() + "\nMnemonic: " + nomKit.wallet().getActiveKeychain().getMnemonicCode().toString() + "\nWallets Balance: " + bitcoinCryptoNoP.getKit().wallet().getBalance().toPlainString() + " BTC");
+      Wallet wallet = nomKit.wallet();
+      System.out.println("Current Receive Address: " + wallet.currentReceiveAddress().toString() + "\nIssued Receive Addresses: \n" + wallet.getIssuedReceiveAddresses().toString() + "\nMnemonic: " + wallet.getActiveKeychain().getMnemonicCode().toString() + "\nWallets Balance: " + wallet.getBalance().toPlainString() + " BTC");
       // Get a ready to send TX in its Raw HEX format
       System.out.println("Raw TX HEX: " + bitcoinCryptoNoP.sendOffline("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc", 10000));
       // Create and send transaciton using the wallets broadcast

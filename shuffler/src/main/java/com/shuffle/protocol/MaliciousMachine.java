@@ -54,13 +54,14 @@ public final class MaliciousMachine extends CoinShuffle {
         AnnouncementEquivocatorRound(
                 CurrentPhase machine,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew,
                 Address change,
                 Mailbox mailbox,
                 Set<VerificationKey> equivocate) throws InvalidParticipantSetException {
-            super(machine, amount, sk, players, addrNew, change, mailbox);
+            super(machine, amount, fee, sk, players, addrNew, change, mailbox);
             this.equivocate = equivocate;
         }
 
@@ -68,26 +69,22 @@ public final class MaliciousMachine extends CoinShuffle {
         final DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
                 throws IOException, InterruptedException, FormatException {
 
-            DecryptionKey dk = null;
+            dk = crypto.makeDecryptionKey();
+            alt = crypto.makeDecryptionKey();
 
-                dk = crypto.makeDecryptionKey();
-                alt = crypto.makeDecryptionKey();
-                System.out.println("Player " + me + " makes new decryption key " + dk + " with encryption key " + dk.EncryptionKey());
-                System.out.println("Player " + me + " makes new decryption key " + alt + " with encryption key " + alt.EncryptionKey());
+            // Broadcast the public key and store it in the set with everyone else's.
+            encryptionKeys.put(vk, dk.EncryptionKey());
+            changeAddresses.put(vk, change);
+            Message message = messages.make().attach(dk.EncryptionKey());
+            Message eq = messages.make().attach(alt.EncryptionKey());
 
-                // Broadcast the public key and store it in the set with everyone else's.
-                encryptionKeys.put(vk, dk.EncryptionKey());
-                changeAddresses.put(vk, change);
-                Message message = messages.make().attach(dk.EncryptionKey());
-                Message eq = messages.make().attach(alt.EncryptionKey());
+            if (change != null) {
+                message.attach(change);
+            }
 
-                if (change != null) {
-                    message.attach(change);
-                }
-
-                for (VerificationKey to : players.values()) {
-                    mailbox.send(equivocate.contains(to) ? eq : message, phase.get(), to);
-                }
+            for (VerificationKey to : players.values()) {
+                mailbox.send(equivocate.contains(to) ? eq : message, phase.get(), to);
+            }
 
             return dk;
         }
@@ -108,7 +105,6 @@ public final class MaliciousMachine extends CoinShuffle {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             Message otherCheck = equivocationCheckHash(players, otherKeys, newAddresses);
-            System.out.println("Malicious player " + me + " makes equivocation messages " + equivocationCheck + " and " + otherCheck);
 
             for (VerificationKey to : players.values()) {
                 mailbox.send(equivocate.contains(to) ? otherCheck : equivocationCheck, phase.get(), to);
@@ -144,13 +140,14 @@ public final class MaliciousMachine extends CoinShuffle {
         BroadcastEquivocatorRound(
                 CurrentPhase machine,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew,
                 Address change,
                 Mailbox mailbox,
                 Set<VerificationKey> equivocate) throws InvalidParticipantSetException {
-            super(machine, amount, sk, players, addrNew, change, mailbox);
+            super(machine, amount, fee, sk, players, addrNew, change, mailbox);
             this.equivocate = equivocate;
         }
 
@@ -230,17 +227,34 @@ public final class MaliciousMachine extends CoinShuffle {
         DropAddress(
                 CurrentPhase machine,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew,
                 Address change, Mailbox mailbox, int drop) throws InvalidParticipantSetException {
-            super(machine, amount, sk, players, addrNew, change, mailbox);
+            super(machine, amount, fee, sk, players, addrNew, change, mailbox);
             this.drop = drop;
         }
 
         @Override
         Message shufflePhase(Message shuffled, Address addrNew)
                 throws FormatException {
+
+            // If the dropped address is MY address, just do a normal shuffle phase
+            // without adding any new addresses.
+            if (drop == me) {
+                // Add our own address to the mix. Note that if me == N, ie, the last player, then no
+                // encryption is done. That is because we have reached the last layer of encryption.
+                String encrypted = addrNew.toString();
+                for (int i = N; i > me; i--) {
+                    // Successively encrypt with the keys of the players who haven't had their turn yet.
+                    encrypted = encryptionKeys.get(players.get(i)).encrypt(encrypted);
+                }
+
+                // Insert new entry and reorder the keys.
+                return shuffle(shuffled);
+            }
+
             Message dropped = messages.make();
 
             int i = 1;
@@ -264,11 +278,12 @@ public final class MaliciousMachine extends CoinShuffle {
         DropAddressReplaceDuplicate(
                 CurrentPhase machine,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew, Address change,
                 Mailbox mailbox, int drop, int replace) throws InvalidParticipantSetException {
-            super(machine, amount, sk, players, addrNew, change, mailbox);
+            super(machine, amount, fee, sk, players, addrNew, change, mailbox);
             this.drop = drop;
             this.replace = replace;
         }
@@ -310,18 +325,19 @@ public final class MaliciousMachine extends CoinShuffle {
     // Drop an address and replace it with a new one during the shuffle phase.
     public class DropAddressReplaceNew extends Round {
         final int drop;
-        Address replace;
+        String replace;
 
         DropAddressReplaceNew(
                 CurrentPhase machine,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew,
                 Address change, Mailbox mailbox, int drop) throws InvalidParticipantSetException {
-            super(machine, amount, sk, players, addrNew, change, mailbox);
+            super(machine, amount, fee, sk, players, addrNew, change, mailbox);
             this.drop = drop;
-            replace = crypto.makeSigningKey().VerificationKey().address();
+            replace = crypto.makeSigningKey().VerificationKey().address().toString();
         }
 
         @Override
@@ -332,7 +348,7 @@ public final class MaliciousMachine extends CoinShuffle {
             int i = 1;
             while (!shuffled.isEmpty()) {
                 if (i != drop) {
-                    dropped = dropped.attach(shuffled.readAddress());
+                    dropped = dropped.attach(shuffled.readString());
                 } else {
                     dropped = dropped.attach(replace);
                 }
@@ -351,12 +367,13 @@ public final class MaliciousMachine extends CoinShuffle {
         DoubleSpender(
                 CurrentPhase machine,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew,
                 Address change, Mailbox mailbox, Transaction t
         ) throws InvalidParticipantSetException {
-            super(machine, amount, sk, players, addrNew, change, mailbox);
+            super(machine, amount, fee, sk, players, addrNew, change, mailbox);
             this.t = t;
         }
 
@@ -399,6 +416,7 @@ public final class MaliciousMachine extends CoinShuffle {
     @Override
     public Transaction runProtocol(
             long amount, // The amount to be shuffled per player.
+            long fee, // The miner fee to be paid per player,
             SigningKey sk, // The signing key of the current player.
             // The set of players, sorted alphabetically by address.
             SortedSet<VerificationKey> players,
@@ -445,7 +463,7 @@ public final class MaliciousMachine extends CoinShuffle {
             case Announcement: {
                 if (equivocate != null) {
                     round = new AnnouncementEquivocatorRound(
-                            machine, amount, sk, numberedPlayers, addrNew, change, mailbox, equivocate);
+                            machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox, equivocate);
                 }
                 break;
             }
@@ -453,16 +471,16 @@ public final class MaliciousMachine extends CoinShuffle {
                 if (drop != 0) {
                     if (duplicate != 0) {
                         round = new DropAddressReplaceDuplicate(
-                                machine, amount, sk,
+                                machine, amount, fee, sk,
                                 numberedPlayers, addrNew, change, mailbox, drop, duplicate
                         );
                     } else if (replaceNew) {
                         round = new DropAddressReplaceNew(
-                                machine, amount, sk, numberedPlayers, addrNew, change, mailbox, drop
+                                machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox, drop
                         );
                     } else {
                         round = new DropAddress(
-                                machine, amount, sk, numberedPlayers, addrNew, change, mailbox, drop
+                                machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox, drop
                         );
                     }
                 }
@@ -471,7 +489,7 @@ public final class MaliciousMachine extends CoinShuffle {
             case BroadcastOutput: {
                 if (equivocate != null) {
                     round = new BroadcastEquivocatorRound(
-                            machine, amount, sk,
+                            machine, amount, fee, sk,
                             numberedPlayers, addrNew, change, mailbox, equivocate
                     );
                 }
@@ -479,7 +497,7 @@ public final class MaliciousMachine extends CoinShuffle {
             }
             case VerificationAndSubmission: {
                 round = new DoubleSpender(
-                        machine, amount, sk, numberedPlayers, addrNew, change, mailbox, t
+                        machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox, t
                 );
                 break;
             }
@@ -487,7 +505,7 @@ public final class MaliciousMachine extends CoinShuffle {
         }
 
         if (round == null) {
-            round = this.new Round(machine, amount, sk, numberedPlayers, addrNew, change, mailbox);
+            round = this.new Round(machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox);
         }
 
         try {

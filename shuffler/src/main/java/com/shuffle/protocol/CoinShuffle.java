@@ -74,6 +74,8 @@ public class CoinShuffle {
 
         private final long amount; // The amount to be shuffled.
 
+        private final long fee; // The miner fee to be paid per player.
+
         final SigningKey sk; // My signing private key.
 
         public final int me; // Which player am I?
@@ -227,20 +229,25 @@ public class CoinShuffle {
             }
 
             // Generate the join transaction.
-            Transaction t = coin.shuffleTransaction(amount, inputs, newAddresses, changeAddresses);
+            Transaction t = coin.shuffleTransaction(
+                    amount, fee, inputs, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
             // Generate the input script using our signing key.
-            Bytestring inputScript = t.sign(sk);
+            Message inputScript = messages.make().attach(t.sign(sk));
 
-            mailbox.broadcast(messages.make().attach(inputScript), phase.get());
+            mailbox.broadcast(inputScript, phase.get());
 
+            // Send signature messages around and receive them from other players.
+            // During this time we could also get notices of invalid signatures
+            // or double spends, so we have to watch out for that.
             Map<VerificationKey, Message> signatureMessages = null;
             boolean invalidClaim = false;
             try {
                 signatureMessages = mailbox.receiveFromMultiple(playerSet(1, N), phase.get());
+                signatureMessages.put(vk, inputScript);
             } catch (BlameException e) {
                 switch (e.packet.payload().readBlame().reason) {
                     case InvalidSignature: {
@@ -267,7 +274,7 @@ public class CoinShuffle {
                 Bytestring signature = sig.getValue().readSignature();
                 signatures.put(key, signature);
 
-                if (t.addInputScript(signature)) {
+                if (!t.addInputScript(signature)) {
                     invalid.put(key, signature);
                 }
             }
@@ -459,7 +466,7 @@ public class CoinShuffle {
 
             // Check that each participant has the required amounts.
             for (VerificationKey player : players.values()) {
-                if (!coin.sufficientFunds(player.address(), amount)) {
+                if (!coin.sufficientFunds(player.address(), amount + fee)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }
@@ -841,6 +848,7 @@ public class CoinShuffle {
         // A round is a single run of the protocol.
         Round(  CurrentPhase phase,
                 long amount,
+                long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
                 Address addrNew,
@@ -849,6 +857,7 @@ public class CoinShuffle {
 
             this.phase = phase;
             this.amount = amount;
+            this.fee = fee;
             this.sk = sk;
             this.players = players;
             this.change = change;
@@ -909,14 +918,12 @@ public class CoinShuffle {
 
         Message last = null;
         for (Message m : messages) {
-            if (last == null) {
-                last = m;
-                continue;
-            }
+            if (last != null) {
 
-            boolean equal = last.equals(m);
-            if (!equal) {
-                return false;
+                boolean equal = last.equals(m);
+                if (!equal) {
+                    return false;
+                }
             }
 
             last = m;
@@ -1042,7 +1049,6 @@ public class CoinShuffle {
             Message message = packet.payload();
 
             // Grab the correct number of addresses and decrypt them.
-            // SortedSet<Address> addresses = new TreeSet<>();
             SortedSet<String> decrypted = new TreeSet<>();
             for (int j = 0; j < i; j++) {
                 if (message.isEmpty()) {
@@ -1096,7 +1102,44 @@ public class CoinShuffle {
             }
         }
 
-        // TODO
+        if (packet == null) {
+            // TODO blame someone.
+            return null;
+        }
+
+        Message message = packet.payload();
+
+        // Grab the correct number of addresses and decrypt them.
+        SortedSet<String> addresses = new TreeSet<>();
+        for (int j = 0; j < players.size(); j++) {
+            if (message.isEmpty()) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+
+            Address address = message.readAddress();
+
+            // There shouldn't be duplicates.
+            if (addresses.contains(address.toString())) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+            addresses.add(address.toString());
+        }
+
+        // Does this contain all the previous addresses?
+        if (!addresses.containsAll(outputs)) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
+
+        addresses.removeAll(outputs);
+
+        // There should be one new address.
+        if (addresses.size() != 1) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
 
         return null;
     }
@@ -1104,6 +1147,7 @@ public class CoinShuffle {
     // Run the protocol without creating a new thread.
     public Transaction runProtocol(
             long amount, // The amount to be shuffled per player.
+            long fee, // The miner fee to be paid per player.
             SigningKey sk, // The signing key of the current player.
             // The set of players, sorted alphabetically by address.
             SortedSet<VerificationKey> players,
@@ -1142,7 +1186,7 @@ public class CoinShuffle {
                 sk.VerificationKey(), numberedPlayers.values(), messages);
 
         return this.new Round(
-                machine, amount, sk, numberedPlayers, addrNew, change, mailbox
+                machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox
         ).protocolDefinition();
     }
 

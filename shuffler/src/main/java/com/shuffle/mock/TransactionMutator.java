@@ -34,15 +34,16 @@ public class TransactionMutator implements Coin {
     @Override
     public Transaction shuffleTransaction(
             long amount,
+            long fee,
             List<VerificationKey> from,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses
     ) throws CoinNetworkException {
         MockCoin.MockTransaction tr = (MockCoin.MockTransaction) coin.shuffleTransaction(
-                        amount, from, to, changeAddresses);
+                        amount, fee, from, to, changeAddresses);
 
         return new MockCoin.MockTransaction(tr.inputs, tr.outputs, tr.z + 1, coin,
-                new HashMap<MockCoin.Output, SigningKey>());
+                new HashMap<MockCoin.Output, VerificationKey>());
     }
 
     @Override

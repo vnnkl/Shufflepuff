@@ -75,6 +75,7 @@ class Player {
     private final long time; // The time at which the join is scheduled to happen.
 
     private final long amount;
+    private final long fee;
     private final Address anon;
     private final Address change;
     private final Messages.ShuffleMarshaller m;
@@ -92,6 +93,7 @@ class Player {
          SortedSet<VerificationKey> addrs,
          long time,
          long amount,
+         long fee,
          Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
          Crypto crypto,
          Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel,
@@ -108,6 +110,7 @@ class Player {
         this.crypto = crypto;
         this.time = time;
         this.amount = amount;
+        this.fee = fee;
         this.anon = anon;
         this.change = change;
         this.channel = channel;
@@ -154,7 +157,7 @@ class Player {
                 // it has been successful.
                 Messages messages = new Messages(session, sk, collector.connected, collector.inbox, m);
                 CoinShuffle cs = new CoinShuffle(messages, crypto, coin);
-                return Report.success(cs.runProtocol(amount, sk, addrs, anon, change, ch));
+                return Report.success(cs.runProtocol(amount, fee, sk, addrs, anon, change, ch));
             } catch (Matrix m) {
                 return Report.failure(m, addrs);
             } catch (TimeoutException e) {

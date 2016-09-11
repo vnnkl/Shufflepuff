@@ -14,9 +14,12 @@ public class Main {
 
     private Main() {}
 
-    public static void printHelpMessage(PrintStream stream) {
-        // TODO
-        stream.println("You should be learning how to use the program.");
+    public static void printHelpMessage(PrintStream stream) {// TODO
+        stream.println("To use Shufflepuff, run 'java -jar shuffler.jar <command> <options...>");
+        stream.println("Use 'java -jar shuffler.jar <command> --help for more info.");
+        stream.println("  Supported commands:");
+        stream.println("    * shuffle   - connect with several players and create a join transaction");
+        stream.println("                  using the CoinShuffle protocol.");
     }
 
     public static void printVersionMessage(PrintStream stream) {

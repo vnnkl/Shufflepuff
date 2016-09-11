@@ -139,6 +139,7 @@ public class InitialState {
 
     public final Bytestring session;
     private final long amount;
+    private final long fee;
     private final Crypto crypto;
     private final LinkedList<PlayerInitialState> players = new LinkedList<>();
     private MockCoin mockCoin = null;
@@ -184,6 +185,10 @@ public class InitialState {
 
         public long getAmount() {
             return InitialState.this.amount;
+        }
+
+        public long getFee() {
+            return InitialState.this.fee;
         }
 
         public Crypto crypto() {
@@ -276,7 +281,7 @@ public class InitialState {
                 shuffle = new CoinShuffle(messages, crypto, coin);
             }
 
-            return new Adversary(amount, sk, keys, addr, change, shuffle);
+            return new Adversary(amount, fee, sk, keys, addr, change, shuffle);
         }
 
         // The sort of malicious behavior to be performed by this player, if any.
@@ -429,10 +434,11 @@ public class InitialState {
 
     private final Messages.ShuffleMarshaller m;
 
-    public InitialState(Bytestring session, long amount, Crypto crypto, Messages.ShuffleMarshaller m) {
+    public InitialState(Bytestring session, long amount, long fee, Crypto crypto, Messages.ShuffleMarshaller m) {
 
         this.session = session;
         this.amount = amount;
+        this.fee = fee;
         this.crypto = crypto;
         this.m = m;
     }
@@ -551,11 +557,12 @@ public class InitialState {
     public static InitialState successful(
             final Bytestring session,
             final long amount,
+            final long fee,
             final Crypto crypto,
             final Protobuf proto,
             final int numPlayers
     ) {
-        InitialState init = new InitialState(session, amount, crypto, proto);
+        InitialState init = new InitialState(session, amount, fee, crypto, proto);
 
         for (int i = 1; i <= numPlayers; i++) {
             init.player().initialFunds(20);
@@ -569,6 +576,7 @@ public class InitialState {
     public static InitialState insufficientFunds(
             final Bytestring session,
             final long amount,
+            final long fee,
             final Crypto crypto,
             final Protobuf proto,
             final int numPlayers,
@@ -576,7 +584,7 @@ public class InitialState {
             final int[] poor, // Players who didn't put enough in their address.
             final int[] spenders // Players who don't have enough because they spent it.
     ) {
-        InitialState init = new InitialState(session, amount, crypto, proto);
+        InitialState init = new InitialState(session, amount, fee, crypto, proto);
 
         pit : for (int i = 1; i <= numPlayers; i++) {
             init.player().initialFunds(20);
@@ -606,6 +614,7 @@ public class InitialState {
     public static InitialState doubleSpend(
             final Bytestring session,
             final long amount,
+            final long fee,
             final Crypto crypto,
             final Protobuf proto,
             final int[] views, // Each player may have a different view of the network; ie,
@@ -619,7 +628,7 @@ public class InitialState {
             doubleSpenders.add(d);
         }
 
-        InitialState init = new InitialState(session, amount, crypto, proto);
+        InitialState init = new InitialState(session, amount, fee, crypto, proto);
         for (int i = 0; i < views.length; i ++) {
             init.player().initialFunds(20).networkPoint(views[i]);
 
@@ -663,12 +672,13 @@ public class InitialState {
     public static InitialState equivocateAnnouncement(
             final Bytestring session,
             final long amount,
+            final long fee,
             final Crypto crypto,
             final Protobuf proto,
             final int numPlayers,
             final Equivocation[] equivocators
     ) {
-        InitialState init = new InitialState(session, amount, crypto, proto);
+        InitialState init = new InitialState(session, amount, fee, crypto, proto);
 
         int eq = 0;
         for (int i = 1; i <= numPlayers; i ++) {
@@ -690,13 +700,14 @@ public class InitialState {
     public static InitialState equivocateBroadcast(
             final Bytestring session,
             final long amount,
+            final long fee,
             final Crypto crypto,
             final Protobuf proto,
             final int numPlayers,
             final int[] equivocation
     ) {
 
-        InitialState init = new InitialState(session, amount, crypto, proto);
+        InitialState init = new InitialState(session, amount, fee, crypto, proto);
 
         // Only the last player can equivocate.
         for (int i = 1; i < numPlayers; i ++) {
@@ -713,26 +724,17 @@ public class InitialState {
     public static InitialState dropAddress(
             final Bytestring session,
             final long amount,
+            final long fee,
             final Crypto crypto,
             final Protobuf proto,
             final int numPlayers,
-            final int[][] drop,
+            final Map<Integer, Integer> drop,
             final int[][] replaceNew,
             final int[][] replaceDuplicate
     ) {
 
-        final Map<Integer, Integer> dropMap = new HashMap<>();
         final Map<Integer, Integer> replaceNewMap = new HashMap<>();
         final Map<Integer, Integer[]> replaceDuplicateMap = new HashMap<>();
-
-
-        if (drop != null) {
-            for (int[] d : drop) {
-                if (d.length == 2 && d[1] < d[0]) {
-                    dropMap.put(d[0], d[1]);
-                }
-            }
-        }
 
         if (replaceDuplicate != null) {
             for (int[] d : replaceDuplicate) {
@@ -750,15 +752,14 @@ public class InitialState {
             }
         }
 
-
-        InitialState init = new InitialState(session, amount, crypto, proto);
+        InitialState init = new InitialState(session, amount, fee, crypto, proto);
 
         for (int i = 1; i <= numPlayers; i ++) {
 
             init.player().initialFunds(20);
 
-            if (dropMap.containsKey(i)) {
-                init.drop(dropMap.get(i));
+            if (drop.containsKey(i)) {
+                init.drop(drop.get(i));
             } else if (replaceDuplicateMap.containsKey(i)) {
                 Integer[] dup = replaceDuplicateMap.get(i);
                 init.replace(dup[0], dup[1]);
@@ -773,6 +774,7 @@ public class InitialState {
     public static InitialState invalidSignature(
             final Bytestring session,
             final long amount,
+            final long fee,
             final Crypto crypto,
             final Protobuf proto,
             final int numPlayers,
@@ -783,7 +785,7 @@ public class InitialState {
             mutantsSet.add(mutant);
         }
 
-        InitialState init = new InitialState(session, amount, crypto, proto);
+        InitialState init = new InitialState(session, amount, fee, crypto, proto);
 
         for (int i = 1; i <= numPlayers; i ++) {
             init.player().initialFunds(20);

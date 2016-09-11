@@ -1,11 +1,8 @@
+
 ## Mycelium Shufflepuff
 
 **Mycelium Shufflepuff** is an implementation of the CoinShuffle protocol in java.
-This code is experimental, so don't trust it with your life savings. A bug is 
-much more likely to cause the protocol to fail than to result in lost funds, 
-however. Shufflepuff does not yet use end-to-end encryption. I don't think that
-this makes the protocol insecure, but I would like this feature to be working
-before it is used for serious purposes. 
+This code is experimental, so don't trust it with your life savings.
 
 If you wish to support this project, please contact 
 (daniel.krawisz@thingobjectentity.net) for tasks that you might try completing.
@@ -13,25 +10,71 @@ If you wish to support this project, please contact
 CoinShuffle description: 
 http://crypsys.mmci.uni-saarland.de/projects/CoinShuffle/coinshuffle.pdf
 
+## The CoinShuffle protocol
+
+The idea of a join transaction is that n people create a single transaction in
+which each of them redeems a single output and each of them creates a new 
+output. Each output stores the same number of coins. Therefore, A blockchain observer 
+won't know who owns which output. 
+
+CoinShuffle allows n people to create a join transaction which anonymizes their
+outputs even to one another. By the end, each player knows which anonymized 
+output he owns, but he does not know which player owns any other anonymized
+output. CoinShuffle allows for the identification of a malicious player in 
+the case of misbehavoir. 
+
 ## Functionality 
 
 Shufflepuff can run on its own or it can be used as a library and encorporated
 into a java program. 
 
-If it is run on its own, it takes a private key, an amount to be shuffled, and a
-set of IP addresses or websocket addresses denoting the other players. 
+### Using Shufflepuff as a standalone application
 
-Shufflepuff can also be used as a library in another application. The other 
-application would instantiate player.Player and it works from there. 
-Stufflpuff comes with a bitcoinj implementation, but the user could provide an
-implementation in another library too. 
+Shufflepuff currently supports only basic functionality. The user must provide
+Shufflepuff with the details of the join transaciton to be constructed and
+contact information for the other players. 
 
 Shufflepuff needs to look up address balances in order to run the protocol. 
-For lite applications there is an option for querying blockchain.info. For
+For lite applications there is an option for querying blockcypher.com. For
 players with full nodes, an option is provided to look up balances using btcd. 
-The user could also provide other options by extending the Bitcoin class. 
+(We couldn't use bitcoin-core because it does not provide the option to index
+all addresses in the blockchain. 
 
-## Organization of the Project
+Usage:
+
+    java -jar shuffler.jar shuffle <options...>
+
+Options that all players must agree on for the protocol to run: 
+
+    * --session  A unique session identifier (any unique string is fine). 
+    * --amount   An amount to be joined per player (in satoshis).
+    * --time     The time for the protocol to begin. 
+    * --fee      The miner's fee to be payed by each player.
+
+Options that the player must provide to play his own role in the protocol: 
+
+    * --port     A port on which to listen for connections from other players. 
+    * --key      A private Bitcoin key in WIF format which holds enough funds to create the transaction (amount + fee). The funds must be in a single output. 
+    * --anon     An address to store the anonymized funds. The output to this address must NEVER be merged with any other output owned by the user or his anonymity is destroyed, and that of the other players is weakened. 
+    * --change   An optional change address. The change address is not anonymized. If a change address is not provided, any remaining funds go to the miners.
+
+The user must provide contact information for the other players. 
+
+    * --peers   Contact info for the other players, entered as a JSON array. Each entry in the array contains a JSON object with the following parameters:
+        * address  Contact info for the peer. Currently the only supported means is tcp in the form ip:peer. 
+        * key      A public key corresponding to a Bitcoin address containing sufficient funds.  
+
+Blockchain options: 
+
+    * --blockchain  Available options are 'test' and 'main'. Default is 'main'. 
+    * --query       Means of querying the blockchain. Options are 'btcd', 'blockcypher.com', 'blockchain.info'. 
+
+### Using Shufflepuff as a Library
+
+Shufflepuff can be used as a library in some other project. In order to do
+this, the other application would instantiate player.Player and it works
+from there. Stufflpuff comes with a bitcoinj implementation, but the user
+could provide an implementation in another library too. 
 
 Package protocol implements Coin Shuffle according to the same concepts as in
 the original paper. It abstracts away a lot. In order to implement this version
@@ -68,7 +111,7 @@ Package bitcoin will provide an implementation of Coin and Crypto which is
 specific to the Bitcoin network and which provides the cryptography as described
 in the paper. It relies on bitcoinj and Spongey Castle.
 
-status: nearly ready.
+status: working.
 
 Package p2p includes classes for constructing various internet channels, by
 which instances of this program will communicate. 
