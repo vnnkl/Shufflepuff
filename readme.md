@@ -102,8 +102,8 @@ The link to the Java 8 JCE Policy Files is below:
 http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
 
 **Automatic Installation**
-Once you have downloaded the jce_policy-8.zip file, move it to the ShufflePuff directory.
-Then, simply run the jcepolicy.sh script in the ShufflePuff directory.
+Once you have downloaded the jce_policy-8.zip file, move it (still zipped) to the ShufflePuff
+directory. Then, simply run the jcepolicy.sh script in the ShufflePuff directory.
 
 **Manual Installation**
 Once you have downloaded the jce_policy-8.zip file, unzip the file.  If your $JAVA_HOME
