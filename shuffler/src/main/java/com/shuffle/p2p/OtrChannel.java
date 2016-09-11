@@ -26,8 +26,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Queue;
 
 /**
  * Created by Eugene Siegel on 5/10/16.
@@ -298,9 +296,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         // This method is ONLY for Alice
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
-            if (send == null) return null;
+            if (send == null) throw new NullPointerException();
             Session<Address, Bytestring> session = peer.openSession(new OtrSend(send));
-            if (session == null) return null;
+            if (session == null) throw new NullPointerException();
 
             OtrSession otrSession = new OtrSession(session);
 
