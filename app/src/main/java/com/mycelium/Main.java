@@ -16,33 +16,30 @@
 
 package com.mycelium;
 
-import com.google.common.io.BaseEncoding;
-import com.google.common.util.concurrent.*;
-import javafx.scene.input.*;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.net.discovery.HttpDiscovery;
-import org.bitcoinj.params.*;
-import org.bitcoinj.utils.BriefLogFormatter;
-import org.bitcoinj.utils.Threading;
-import org.bitcoinj.wallet.DeterministicSeed;
+import com.google.common.util.concurrent.Service;
+import com.mycelium.controls.NotificationBarPane;
+import com.mycelium.utils.GuiUtils;
+import com.mycelium.utils.TextFieldValidator;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import com.mycelium.controls.NotificationBarPane;
-import com.mycelium.utils.GuiUtils;
-import com.mycelium.utils.TextFieldValidator;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.params.RegTestParams;
+import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.utils.BriefLogFormatter;
+import org.bitcoinj.utils.Threading;
+import org.bitcoinj.wallet.DeterministicSeed;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 
 import static com.mycelium.utils.GuiUtils.*;
@@ -150,7 +147,7 @@ public class Main extends Application {
             bitcoin.connectToLocalHost();   // You should run a regtest mode bitcoind locally.
         } else if (params == TestNet3Params.get()) {
             // As an example!
-            bitcoin.useTor();
+            //bitcoin.useTor();
             //bitcoin.setDiscovery(new HttpDiscovery(params, URI.create("http://localhost:8080/peers"), ECKey.fromPublicOnly(BaseEncoding.base16().decode("02cba68cfd0679d10b186288b75a59f9132b1b3e222f6332717cb8c4eb2040f940".toUpperCase()))));
         }
         bitcoin.setDownloadListener(controller.progressBarUpdater())

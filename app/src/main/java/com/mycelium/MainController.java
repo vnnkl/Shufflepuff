@@ -16,36 +16,33 @@
 
 package com.mycelium;
 
-import javafx.beans.binding.Binding;
-import javafx.beans.binding.Bindings;
-import javafx.scene.control.ListCell;
-import javafx.scene.control.ListView;
-import javafx.scene.control.cell.TextFieldListCell;
-import javafx.util.Callback;
-import javafx.util.StringConverter;
-import org.bitcoinj.core.Address;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.listeners.DownloadProgressTracker;
-import org.bitcoinj.core.Coin;
-import org.bitcoinj.utils.MonetaryFormat;
+import com.mycelium.controls.ClickableBitcoinAddress;
+import com.mycelium.controls.NotificationBarPane;
+import com.mycelium.utils.BitcoinUIModel;
+import com.mycelium.utils.easing.EasingMode;
+import com.mycelium.utils.easing.ElasticInterpolator;
 import com.subgraph.orchid.TorClient;
 import com.subgraph.orchid.TorInitializationListener;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.HBox;
 import javafx.util.Duration;
+import javafx.util.StringConverter;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Coin;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.listeners.DownloadProgressTracker;
+import org.bitcoinj.utils.MonetaryFormat;
 import org.fxmisc.easybind.EasyBind;
-import com.mycelium.controls.ClickableBitcoinAddress;
-import com.mycelium.controls.NotificationBarPane;
-import com.mycelium.utils.BitcoinUIModel;
-import com.mycelium.utils.easing.EasingMode;
-import com.mycelium.utils.easing.ElasticInterpolator;
 
 import static com.mycelium.Main.bitcoin;
 
@@ -172,5 +169,9 @@ public class MainController {
 
     public DownloadProgressTracker progressBarUpdater() {
         return model.getDownloadProgressTracker();
+    }
+
+    public void shuffleClicked(ActionEvent actionEvent) {
+        Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_money.fxml");
     }
 }

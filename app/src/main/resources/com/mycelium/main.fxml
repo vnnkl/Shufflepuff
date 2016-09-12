@@ -2,18 +2,16 @@
 
 <?scenebuilder-classpath-element ../../../../target/classes?>
 <?scenebuilder-classpath-element ../../../../../core/target/bitcoinj-0.12-SNAPSHOT.jar?>
-<?import java.lang.*?>
-<?import java.util.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.effect.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.input.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.paint.*?>
-<?import javafx.scene.text.*?>
-<?import com.mycelium.controls.*?>
 
+<?import com.mycelium.controls.ClickableBitcoinAddress?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.BoxBlur?>
+<?import javafx.scene.effect.ColorAdjust?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
 <AnchorPane maxHeight="Infinity" maxWidth="Infinity" minHeight="200.0" minWidth="300.0" prefHeight="451.0" prefWidth="800.0" styleClass="root-pane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycelium.MainController">
   <children>
     <Label layoutX="14.0" layoutY="14.0" text="Balance">
@@ -36,7 +34,7 @@
     </HBox>
     <HBox fx:id="controlsBox" alignment="TOP_LEFT" fillHeight="true" layoutX="14.0" layoutY="347.0" minHeight="16.0" prefHeight="36.0" prefWidth="243.0" spacing="10.0" translateY="60.0" visible="true" AnchorPane.bottomAnchor="17.0">
       <children>
-        <Button defaultButton="true" mnemonicParsing="false" styleClass="fat-button" text="Primary" />
+        <Button defaultButton="true" mnemonicParsing="false" styleClass="fat-button" text="Shuffle" onAction="#shuffleClicked"/>
         <Button cancelButton="true" mnemonicParsing="false" styleClass="fat-button" text="Secondary" />
       </children>
     </HBox>
