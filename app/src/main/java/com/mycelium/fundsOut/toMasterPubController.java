@@ -14,32 +14,25 @@
  * limitations under the License.
  */
 
-package com.mycelium;
+package com.mycelium.fundsOut;
 
+import com.mycelium.Main;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
-import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import org.bitcoinj.wallet.Wallet;
-import org.spongycastle.crypto.params.KeyParameter;
 
 import java.util.ArrayList;
 
-public class ShuffleMoneyController {
+public class toMasterPubController {
     public Button AddBtn;
     public Button cancelBtn;
-    public TextField inputHashEdit;
-    public Label hashLabel;
+    public TextField inputPrivKEdit;
     public TextField inputIndexEdit;
-    public Label indexLabel;
-    public ArrayList<String> inputList;
-    public ListView inputListView;
-
+    public ArrayList<String> privKeyList;
+    public ListView privKeyListView;
     public Main.OverlayUI overlayUI;
 
-    private Wallet.SendResult sendResult;
-    private KeyParameter aesKey;
 
     // Called by FXMLLoader
     public void initialize() {
@@ -51,14 +44,15 @@ public class ShuffleMoneyController {
 
     public void addInput(ActionEvent event) {
         // add Input, could be invalid still
-            String newInput = inputHashEdit.getText()+":"+inputIndexEdit.getText();
-            inputList.add(newInput);
+            String newInput = inputPrivKEdit.getText();
+            privKeyList.add(newInput);
 
 
 
             /**SendRequest req;
             if (amount.equals(Main.bitcoin.wallet().getBalance()))
                 req = SendRequest.emptyWallet(destination);
+
             else
                 req = SendRequest.to(destination, amount);
             req.aesKey = aesKey;
@@ -97,7 +91,7 @@ public class ShuffleMoneyController {
             // We only get here if the user found the right password. If they don't or they cancel, we end up back on
             // the main UI screen. By now the send money screen is history so we must recreate it.
             checkGuiThread();
-            Main.OverlayUI<ShuffleMoneyController> screen = Main.instance.overlayUI("send_money.fxml");
+            Main.OverlayUI<addUTXOController> screen = Main.instance.overlayUI("send_money.fxml");
             screen.controller.aesKey = cur;
             screen.controller.address.setText(addressStr);
             screen.controller.amountEdit.setText(amountStr);
@@ -105,10 +99,6 @@ public class ShuffleMoneyController {
         });**/
     }
 
-    private void updateTitleForBroadcast() {
-       // final int peers = sendResult.tx.getConfidence().numBroadcastPeers();
-       // titleLabel.setText(String.format("Broadcasting ... seen by %d peers", peers));
-    }
 
     public void next(ActionEvent actionEvent) {
 

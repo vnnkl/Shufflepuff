@@ -172,6 +172,6 @@ public class MainController {
     }
 
     public void shuffleClicked(ActionEvent actionEvent) {
-        Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_money.fxml");
+        Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_addPrivKeyinWIF.fxml");
     }
 }

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.effect.DropShadow?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycelium.fundsIn.addPrivKeyinWIFController">
+   <children>
+       <VBox alignment="CENTER_LEFT" layoutY="26.0" prefHeight="348.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+           <effect>
+               <DropShadow />
+           </effect>
+           <padding>
+               <Insets bottom="30.0" left="30.0" right="30.0" top="30.0" />
+           </padding>
+          <children>
+              <Label fx:id="titleLabel" alignment="TOP_LEFT" text="Add private Keys holding funds">
+                  <font>
+                      <Font size="25.0" />
+                  </font>
+              </Label>
+              <HBox fx:id="topHBox" alignment="CENTER" spacing="15.0">
+                 <children>
+                     <HBox prefHeight="46.0" prefWidth="544.0">
+                        <children>
+                            <VBox alignment="CENTER" prefHeight="46.0" prefWidth="439.0">
+                               <children>
+                                   <Label fx:id="privKLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="507.0" text="in WIF (52 characters base58, starts with a 'K' or 'L')">
+                                       <font>
+                                           <Font size="15.0" />
+                                       </font>
+                                   </Label>
+                                   <TextField fx:id="inputPrivKEdit" prefHeight="27.0" prefWidth="392.0" text="L4jHPh9qxfyZuXYRC2pm15jFJpsvwqTmFAhbwRerA9gZRB5Aszj1" />
+                               </children>
+                            </VBox>
+                            <VBox alignment="CENTER" prefHeight="65.0" prefWidth="54.0">
+                               <children>
+                                   <Label fx:id="btcLabel11" alignment="CENTER" contentDisplay="CENTER" visible="false" wrapText="true">
+                                       <font>
+                                           <Font size="15.0" />
+                                       </font>
+                                   </Label>
+                                   <Button fx:id="AddBtn" alignment="CENTER" mnemonicParsing="false" onAction="#addInput" prefHeight="27.0" prefWidth="44.0" text="Add" />
+                               </children>
+                            </VBox>
+                        </children>
+                     </HBox>
+                 </children>
+              </HBox>
+              <HBox alignment="CENTER_LEFT" prefHeight="108.0" prefWidth="473.0" spacing="15.0">
+                 <children>
+                     <VBox prefHeight="108.0" prefWidth="439.0">
+                        <children>
+                            <Label fx:id="privKListLabel" text="the private Keys funds will be shuffled:" />
+                            <ListView fx:id="privKeyListView" prefHeight="84.0" prefWidth="217.0" />
+                        </children>
+                     </VBox>
+                 </children>
+              </HBox>
+              <HBox alignment="CENTER_RIGHT" prefHeight="30.0" prefWidth="600.0" spacing="15.0">
+                 <children>
+                     <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Next Step: add Outputs" />
+                     <Button fx:id="cancelBtn" cancelButton="true" mnemonicParsing="false" onAction="#cancel" prefWidth="79.0" text="Cancel" />
+                     <Button fx:id="nextBtn" defaultButton="true" mnemonicParsing="false" onAction="#next" prefWidth="79.0" text="Next" />
+                 </children>
+              </HBox>
+          </children>
+       </VBox>
+   </children>
+</AnchorPane>
