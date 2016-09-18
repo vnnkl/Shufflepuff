@@ -62,7 +62,7 @@ The user must provide contact information for the other players.
 
     * --peers   Contact info for the other players, entered as a JSON array. Each entry in the array contains a JSON object with the following parameters:
         * address  Contact info for the peer. Currently the only supported means is tcp in the form ip:peer. 
-        * key      A public key corresponding to a Bitcoin address containing sufficient funds.  
+        * key      A public key corresponding to a Bitcoin address containing sufficient funds.
 
 Blockchain options: 
 
@@ -92,6 +92,27 @@ in the development of a working version of the protocol, which will greatly
 reduce the risk of introducing errors as the rest of the development work 
 proceeds. Furthermore, this protocol can be adapted to any java implementation
 of Bitcoin, or any other cryptocurrency.
+
+### Installing Java 8 Policy Files
+
+Because ShufflePuff requires larger key sizes than standard Java allows, the user
+must download the Java 8 Cryptography Extension (JCE) Unlimited Strength Jurisdiction
+Policy Files.  These files bypass the encryption export restrictions that are in place.
+The link to the Java 8 JCE Policy Files is below:
+http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
+
+**Automatic Installation**
+Once you have downloaded the jce_policy-8.zip file, move it (still zipped) to the ShufflePuff
+directory. Then, simply run the jcepolicy.sh script in the ShufflePuff directory.
+
+**Manual Installation**
+Once you have downloaded the jce_policy-8.zip file, unzip the file.  If your $JAVA_HOME
+environment variable is not set, set that now to the version of Java that you will
+run ShufflePuff with.  Then, move the three policy files (README.txt, local_policy.jar, and
+US_export_policy.jar) to the $JAVA_HOME/jre/lib/security directory.  Now you should be
+able to run ShufflePuff's cryptographic functions smoothly.
+
+### Status Log
 
 status: Works! 
 
