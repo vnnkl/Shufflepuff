@@ -221,6 +221,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     private class OtrSendA implements Send<Bytestring> {
         private final Send<Bytestring> z;
+        private boolean encrypted = false;
+        private int messageCount = 0;
 
         private OtrSendA(Send<Bytestring> z) {
             this.z = z;
@@ -231,7 +233,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
-            } catch (OtrException e) {
+                if (!encrypted) {
+                    messageCount++;
+                    if (messageCount == 2) {
+                        chan.send(new Bytestring("encrypted".getBytes()));
+                        encrypted = true;
+                    }
+                }
+            } catch (OtrException | InterruptedException e) {
                 return false;
             }
 
@@ -243,11 +252,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
              * If uncommented, the below line will throw a NullPointerException with the
              * Jitsi Session Status ("ENCRYPTED" if all goes well), the ciphertext of the message,
              * and the deciphered plaintext message.
+             *
+             * if (true) throw new NullPointerException(sessionImpl.getSessionStatus() + "\n" + new String(message.bytes) + "\n" + receivedMessage);
+             *
              */
-            //if (true) throw new NullPointerException(sessionImpl.getSessionStatus() + "\n" + new String(message.bytes) + "\n" + receivedMessage);
 
             try {
-                chan.send(new Bytestring(receivedMessage.getBytes()));
                 return z.send(new Bytestring(receivedMessage.getBytes()));
             } catch (InterruptedException e) {
                 return false;
@@ -348,7 +358,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             session.send(new Bytestring(query.getBytes()));
 
             /**
-             * Initialization phase is happening before it returns
+             * Waiting for the final OTR initialization message from Bob.
              */
 
             chan.receive();
