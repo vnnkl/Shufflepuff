@@ -8,6 +8,7 @@
 
 package com.shuffle.p2p;
 
+import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Send;
 
 import net.java.otr4j.OtrEngineHost;
@@ -218,10 +219,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
      * Make this stateful.
      */
 
-    private class OtrSend implements Send<Bytestring> {
+    private class OtrSendA implements Send<Bytestring> {
         private final Send<Bytestring> z;
 
-        private OtrSend(Send<Bytestring> z) {
+        private OtrSendA(Send<Bytestring> z) {
             this.z = z;
         }
 
@@ -246,6 +247,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             //if (true) throw new NullPointerException(sessionImpl.getSessionStatus() + "\n" + new String(message.bytes) + "\n" + receivedMessage);
 
             try {
+                chan.send(new Bytestring(receivedMessage.getBytes()));
                 return z.send(new Bytestring(receivedMessage.getBytes()));
             } catch (InterruptedException e) {
                 return false;
@@ -257,6 +259,51 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public void close() {
             z.close();
+        }
+
+    }
+
+    private class OtrSendB implements Send<Bytestring> {
+        private final Listener<Address, Bytestring> l;
+        private final Session<Address, Bytestring> s;
+
+        private OtrSendB(Listener<Address, Bytestring> l, Session<Address, Bytestring> s) {
+            this.l = l;
+            this.s = s;
+        }
+
+        @Override
+        public boolean send(Bytestring message) {
+            String receivedMessage;
+            try {
+                receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
+            } catch (OtrException e) {
+                return false;
+            }
+
+            if (receivedMessage == null) {
+                return false;
+            }
+
+            /**
+             * What do I do when I eventually call:
+             * Send<Bytestring> z = l.newSession(new OtrSession(s));
+             *
+             * What is the Send<> z object used for?
+             */
+
+            /**
+             * We don't have a Send<> object here to pass along messages..?
+             * l.newSession(session)
+             */
+
+
+            return false;
+        }
+
+        @Override
+        public void close() {
+            s.close();
         }
 
     }
@@ -277,9 +324,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
             }
 
-            Send<Bytestring> z = l.newSession(new OtrSession(session));
-            if (z == null) return null;
-            return new OtrSend(z);
+            return new OtrSendB(this.l, session);
         }
 
     }
@@ -292,21 +337,29 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.peer = peer;
         }
 
-        // TODO
-        // This method is ONLY for Alice
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
             if (send == null) throw new NullPointerException();
-            Session<Address, Bytestring> session = peer.openSession(new OtrSend(send));
+            Session<Address, Bytestring> session = peer.openSession(new OtrSendA(send));
             if (session == null) throw new NullPointerException();
 
-            OtrSession otrSession = new OtrSession(session);
+            OtrSession s = new OtrSession(session);
 
             // This string depends on the version / type of OTR encryption that the user wants.
             String query = "?OTRv23?";
-            otrSession.send(new Bytestring(query.getBytes()));
+            s.send(new Bytestring(query.getBytes()));
 
-            return otrSession;
+            /**
+             * Initialization phase is happening before it returns
+             *
+             * Wouldn't this block the OtrSession thread (same thread) from sending out messages
+             * when the OtrSendA object tells it to?
+             */
+
+            chan.receive();
+            chan.receive();
+
+            return s;
         }
 
         @Override
@@ -347,6 +400,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     private final Address me;
     private SessionImpl sessionImpl;
     private HashMap<Integer, SessionImpl> sessionMap = new HashMap<>();
+    private BasicChan<Bytestring> chan = new BasicChan<>(1);
 
     public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
         if (me == null) {
