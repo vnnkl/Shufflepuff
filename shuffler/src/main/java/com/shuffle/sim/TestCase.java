@@ -103,9 +103,11 @@ public abstract class TestCase {
     protected abstract Crypto crypto() throws NoSuchAlgorithmException, BitcoinCrypto.Exception;
     protected abstract Protobuf proto();
 
+    public static final long TEST_FEE = 5000L;
+
     public final InitialState successfulTestCase(final int numPlayers)
             throws BitcoinCrypto.Exception, NoSuchAlgorithmException {
-        return InitialState.successful(session, amount, crypto(), proto(), numPlayers);
+        return InitialState.successful(session, amount, TEST_FEE, crypto(), proto(), numPlayers);
     }
 
     public final InitialState insufficientFundsTestCase(
@@ -114,14 +116,14 @@ public abstract class TestCase {
             final int[] poor,
             final int[] spenders) throws BitcoinCrypto.Exception, NoSuchAlgorithmException {
         return InitialState.insufficientFunds(
-                session, amount, crypto(), proto(), numPlayers, deadbeats, poor, spenders);
+                session, amount, TEST_FEE, crypto(), proto(), numPlayers, deadbeats, poor, spenders);
     }
 
     public final InitialState doubleSpendTestCase(
             final int[] views,
             final int[] spenders
     ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-        return InitialState.doubleSpend(session, amount, crypto(), proto(), views, spenders);
+        return InitialState.doubleSpend(session, amount, TEST_FEE, crypto(), proto(), views, spenders);
     }
 
     public final InitialState equivocateAnnouncementTestCase(
@@ -129,14 +131,14 @@ public abstract class TestCase {
             final InitialState.Equivocation[] equivocators
     ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
         return InitialState.equivocateAnnouncement(
-                session, amount, crypto(), proto(), numPlayers, equivocators);
+                session, amount, TEST_FEE, crypto(), proto(), numPlayers, equivocators);
     }
 
     public final InitialState equivocateBroadcastTestCase(
             final int numPlayers,
             final int[] equivocation) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
         return InitialState.equivocateBroadcast(
-                session, amount, crypto(), proto(), numPlayers, equivocation);
+                session, amount, TEST_FEE, crypto(), proto(), numPlayers, equivocation);
     }
 
     public final InitialState dropAddressTestCase(
@@ -145,13 +147,13 @@ public abstract class TestCase {
             final int[][] replaceNew,
             final int[][] replaceDuplicate) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
         return InitialState.dropAddress(
-                session, amount, crypto(), proto(), numPlayers, drop, replaceNew, replaceDuplicate);
+                session, amount, TEST_FEE, crypto(), proto(), numPlayers, drop, replaceNew, replaceDuplicate);
     }
 
     public final InitialState invalidSignatureTestCase(
             final int numPlayers,
             final int[] mutants
     ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-        return InitialState.invalidSignature(session, amount, crypto(), proto(), numPlayers, mutants);
+        return InitialState.invalidSignature(session, amount, TEST_FEE, crypto(), proto(), numPlayers, mutants);
     }
 }

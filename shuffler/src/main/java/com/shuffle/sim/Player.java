@@ -193,6 +193,7 @@ class Player<Address> implements Runnable {
         InitialState init = InitialState.successful(
                 new Bytestring(("CoinShuffle Shufflepuff simulation " + (options.get("-id"))).getBytes()),
                 Integer.parseInt(options.get("-amount")),
+                Integer.parseInt(options.get("-fee")),
                 crypto,
                 new MockProtobuf(),
                 Integer.parseInt(options.get("-players")));
@@ -288,6 +289,7 @@ class Player<Address> implements Runnable {
                     messages, param.init.crypto(), param.init.coin()
             ).runProtocol(
                     param.init.getAmount(),
+                    param.init.getFee(),
                     param.init.sk,
                     param.init.keys,
                     param.init.addr,
