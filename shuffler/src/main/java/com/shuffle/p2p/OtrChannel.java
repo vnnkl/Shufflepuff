@@ -343,23 +343,17 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             Session<Address, Bytestring> session = peer.openSession(new OtrSendA(send));
             if (session == null) throw new NullPointerException();
 
-            OtrSession s = new OtrSession(session);
-
             // This string depends on the version / type of OTR encryption that the user wants.
             String query = "?OTRv23?";
-            s.send(new Bytestring(query.getBytes()));
+            session.send(new Bytestring(query.getBytes()));
 
             /**
              * Initialization phase is happening before it returns
-             *
-             * Wouldn't this block the OtrSession thread (same thread) from sending out messages
-             * when the OtrSendA object tells it to?
              */
 
             chan.receive();
-            chan.receive();
 
-            return s;
+            return new OtrSession(session);
         }
 
         @Override
