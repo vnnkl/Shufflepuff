@@ -96,8 +96,8 @@ of Bitcoin, or any other cryptocurrency.
 ### Installing Java 8 Policy Files
 
 Because ShufflePuff requires larger key sizes than standard Java allows, the user
-must download the Java 8 Cryptography Extension (JCE) Unlimited Strength Jurisdiction
-Policy Files.  These files bypass the encryption export restrictions that are in place.
+must can either download the Java 8 Cryptography Extension (JCE) Unlimited Strength Jurisdiction
+Policy Files or use OpenJDK.  The JCE files bypass the encryption export restrictions that are in place.
 The link to the Java 8 JCE Policy Files is below:
 http://www.oracle.com/technetwork/java/javase/downloads/jce8-download-2133166.html
 
