@@ -176,13 +176,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
-            if (sessionImpl == null) {
-                final SessionID sessionID = new SessionID("", "", "");
-                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
-                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
-                sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, s));
-            }
-
             String[] outgoingMessage;
             try {
                 outgoingMessage = sessionImpl.transformSending(new String(message.bytes), null);
@@ -354,6 +347,13 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             if (send == null) throw new NullPointerException();
             Session<Address, Bytestring> session = peer.openSession(new OtrSendA(send));
             if (session == null) throw new NullPointerException();
+
+            if (sessionImpl == null) {
+                final SessionID sessionID = new SessionID("", "", "");
+                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
+                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
+                sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
+            }
 
             // This string depends on the version / type of OTR encryption that the user wants.
             String query = "?OTRv23?";
