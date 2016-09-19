@@ -17,9 +17,7 @@
 package com.mycelium;
 
 import javafx.event.ActionEvent;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 
 import java.util.ArrayList;
 
@@ -34,56 +32,43 @@ public class shuffleStartController {
 
     // Called by FXMLLoader
     public void initialize() {
+        // create Group for FundsIn
+        final ToggleGroup fundsInGroup = new ToggleGroup();
+
+        RadioButton fundsInReceiveAddress = new RadioButton("Send to ShufflePuff");
+        fundsInReceiveAddress.setToggleGroup(fundsInGroup);
+
+        RadioButton fundsInPrivKeyWIF = new RadioButton("Private Keys (WIF)");
+        fundsInPrivKeyWIF.setToggleGroup(fundsInGroup);
+
+        RadioButton fundsInMasterPrivKey = new RadioButton("Master PrivKey");
+        fundsInMasterPrivKey.setToggleGroup(fundsInGroup);
+
+        RadioButton fundsInUTXOs = new RadioButton("UTXOs");
+        fundsInUTXOs.setToggleGroup(fundsInGroup);
+
+        // create Group for FundsOut
+        final ToggleGroup fundsOutGroup = new ToggleGroup();
+
+        RadioButton fundsOutInternalHD = new RadioButton("ShufflePuffWallet (HD Seed)");
+        fundsOutInternalHD.setToggleGroup(fundsOutGroup);
+
+        RadioButton fundsOutExtAddresses = new RadioButton("external address(es)");
+        fundsOutExtAddresses.setToggleGroup(fundsOutGroup);
+
+        RadioButton fundsOutXPub = new RadioButton("xPub");
+        fundsOutXPub.setToggleGroup(fundsOutGroup);
+
     }
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
     }
 
-    public void addInput(ActionEvent event) {
-        // add Input, could be invalid still
-            String newInput = inputHashEdit.getText()+":"+inputIndexEdit.getText();
-            inputList.add(newInput);
-
-
-
-            /**SendRequest req;
-            if (amount.equals(Main.bitcoin.wallet().getBalance()))
-                req = SendRequest.emptyWallet(destination);
-
-            else
-                req = SendRequest.to(destination, amount);
-            req.aesKey = aesKey;
-            sendResult = Main.bitcoin.wallet().sendCoins(req);
-            Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<Transaction>() {
-                @Override
-                public void onSuccess(@Nullable Transaction result) {
-                    checkGuiThread();
-                    overlayUI.done();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    // We died trying to empty the wallet.
-                    crashAlert(t);
-                }
-            });
-            sendResult.tx.getConfidence().addEventListener((tx, reason) -> {
-                if (reason == TransactionConfidence.Listener.ChangeReason.SEEN_PEERS)
-                    updateTitleForBroadcast();
-            });
-            AddBtn.setDisable(true);
-            address.setDisable(true);
-            ((HBox)amountEdit.getParent()).getChildren().remove(amountEdit);
-            ((HBox)btcLabel.getParent()).getChildren().remove(btcLabel);
-            updateTitleForBroadcast();
-             **/
-
-    }
-
 
     public void next(ActionEvent actionEvent) {
+        // if next is clicked
 
-        Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
+        Main.OverlayUI<com.mycelium.fundsIn.addMasterPrivController> screen = Main.instance.overlayUI("fundsIn/shuffle_addMasterPriv.fxml");
     }
 }
