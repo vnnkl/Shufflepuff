@@ -294,7 +294,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return false;
             }
 
-            if (receivedMessage == null || receivedMessage.equals("?OTRv23?")) {
+            if (receivedMessage == null) {
                 return false;
             }
 
