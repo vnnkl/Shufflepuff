@@ -276,6 +276,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     private class OtrSendB implements Send<Bytestring> {
         private final Listener<Address, Bytestring> l;
         private final Session<Address, Bytestring> s;
+        private boolean encrypted = false;
+        private int messageCount = 0;
+        private Send<Bytestring> z;
 
         private OtrSendB(Listener<Address, Bytestring> l, Session<Address, Bytestring> s) {
             this.l = l;
@@ -287,28 +290,27 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
-            } catch (OtrException e) {
+                if (!encrypted) {
+                    messageCount++;
+                    if (messageCount == 3) {
+                        this.z = l.newSession(new OtrSession(s));
+                        encrypted = true;
+                    }
+                }
+            } catch (OtrException | InterruptedException e) {
                 return false;
             }
 
-            if (receivedMessage == null) {
+            if (receivedMessage == null || receivedMessage.equals("?OTRv23?")) {
                 return false;
             }
 
-            /**
-             * What do I do when I eventually call:
-             * Send<Bytestring> z = l.newSession(new OtrSession(s));
-             *
-             * What is the Send<> z object used for?
-             */
+            try {
+                return z.send(new Bytestring(receivedMessage.getBytes()));
+            } catch (IOException | InterruptedException e) {
+                return false;
+            }
 
-            /**
-             * We don't have a Send<> object here to pass along messages..?
-             * l.newSession(session)
-             */
-
-
-            return false;
         }
 
         @Override
