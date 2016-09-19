@@ -24,7 +24,7 @@ import javafx.scene.control.TextField;
 
 import java.util.ArrayList;
 
-public class toMasterPubController {
+public class toHDAddressesController {
     public Button AddBtn;
     public Button cancelBtn;
     public TextField inputPrivKEdit;

@@ -19,12 +19,13 @@ package com.mycelium.fundsOut;
 import com.mycelium.Main;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
 import java.util.ArrayList;
 
-public class toMasterPubController {
+public class toExtAddressController {
     public Button AddBtn;
     public Button cancelBtn;
     public TextField inputPrivKEdit;
@@ -32,6 +33,9 @@ public class toMasterPubController {
     public ArrayList<String> privKeyList;
     public ListView privKeyListView;
     public Main.OverlayUI overlayUI;
+    public Label titleLabel;
+    public TextField inputAddressEdit;
+    public ListView addressListView;
     public Button nextBtn;
 
 

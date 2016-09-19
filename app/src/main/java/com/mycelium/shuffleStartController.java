@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.mycelium.fundsOut;
+package com.mycelium;
 
-import com.mycelium.Main;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
@@ -24,16 +23,14 @@ import javafx.scene.control.TextField;
 
 import java.util.ArrayList;
 
-public class toMasterPubController {
+public class shuffleStartController {
     public Button AddBtn;
     public Button cancelBtn;
-    public TextField inputPrivKEdit;
+    public TextField inputHashEdit;
     public TextField inputIndexEdit;
-    public ArrayList<String> privKeyList;
-    public ListView privKeyListView;
+    public ArrayList<String> inputList;
+    public ListView inputListView;
     public Main.OverlayUI overlayUI;
-    public Button nextBtn;
-
 
     // Called by FXMLLoader
     public void initialize() {
@@ -45,8 +42,8 @@ public class toMasterPubController {
 
     public void addInput(ActionEvent event) {
         // add Input, could be invalid still
-            String newInput = inputPrivKEdit.getText();
-            privKeyList.add(newInput);
+            String newInput = inputHashEdit.getText()+":"+inputIndexEdit.getText();
+            inputList.add(newInput);
 
 
 
@@ -84,24 +81,9 @@ public class toMasterPubController {
 
     }
 
-    private void askForPasswordAndRetry() {
-        /**Main.OverlayUI<WalletPasswordController> pwd = Main.instance.overlayUI("wallet_password.fxml");
-        final String addressStr = address.getText();
-        final String amountStr = amountEdit.getText();
-        pwd.controller.aesKeyProperty().addListener((observable, old, cur) -> {
-            // We only get here if the user found the right password. If they don't or they cancel, we end up back on
-            // the main UI screen. By now the send money screen is history so we must recreate it.
-            checkGuiThread();
-            Main.OverlayUI<addUTXOController> screen = Main.instance.overlayUI("send_money.fxml");
-            screen.controller.aesKey = cur;
-            screen.controller.address.setText(addressStr);
-            screen.controller.amountEdit.setText(amountStr);
-            screen.controller.send(null);
-        });**/
-    }
-
 
     public void next(ActionEvent actionEvent) {
 
+        Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
     }
 }
