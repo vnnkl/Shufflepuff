@@ -212,12 +212,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
      * Make this stateful.
      */
 
-    private class OtrSendA implements Send<Bytestring> {
+    private class OtrSendAlice implements Send<Bytestring> {
         private final Send<Bytestring> z;
         private boolean encrypted = false;
         private int messageCount = 0;
 
-        private OtrSendA(Send<Bytestring> z) {
+        private OtrSendAlice(Send<Bytestring> z) {
             this.z = z;
         }
 
@@ -234,6 +234,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                     }
                 }
             } catch (OtrException | InterruptedException e) {
+                z.close();
                 return false;
             }
 
@@ -266,14 +267,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    private class OtrSendB implements Send<Bytestring> {
+    private class OtrSendBob implements Send<Bytestring> {
         private final Listener<Address, Bytestring> l;
         private final Session<Address, Bytestring> s;
         private boolean encrypted = false;
         private int messageCount = 0;
         private Send<Bytestring> z;
 
-        private OtrSendB(Listener<Address, Bytestring> l, Session<Address, Bytestring> s) {
+        private OtrSendBob(Listener<Address, Bytestring> l, Session<Address, Bytestring> s) {
             this.l = l;
             this.s = s;
         }
@@ -329,7 +330,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
             }
 
-            return new OtrSendB(this.l, session);
+            return new OtrSendBob(this.l, session);
         }
 
     }
@@ -345,8 +346,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
             if (send == null) throw new NullPointerException();
-            Session<Address, Bytestring> session = peer.openSession(new OtrSendA(send));
-            if (session == null) throw new NullPointerException();
+            Session<Address, Bytestring> session = peer.openSession(new OtrSendAlice(send));
 
             if (sessionImpl == null) {
                 final SessionID sessionID = new SessionID("", "", "");
