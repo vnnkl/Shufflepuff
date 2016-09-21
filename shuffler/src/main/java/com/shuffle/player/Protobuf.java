@@ -396,11 +396,12 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
 
     public final Marshaller<Packet<VerificationKey, P>> packetMarshaller;
     public final Marshaller<Message.Atom> atomMarshaller;
+    public final Marshaller<Signed<Packet<VerificationKey, P>>> signedMarshaller;
 
     public Protobuf() {
         packetMarshaller = new PacketMarshaller();
         atomMarshaller = new AtomMarshaller();
-
+        signedMarshaller = new SignedMarshaller();
     }
 
     @Override
@@ -411,6 +412,11 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
     @Override
     public Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> packetMarshaller() {
         return packetMarshaller;
+    }
+
+    @Override
+    public Marshaller<Signed<Packet<VerificationKey, P>>> signedMarshaller() {
+        return signedMarshaller;
     }
 
     class AtomMarshaller implements Marshaller<Message.Atom> {
@@ -445,6 +451,23 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         public com.shuffle.chan.packet.Packet<VerificationKey, P> unmarshall(Bytestring string) throws FormatException {
             try {
                 return unmarshallPacket(Proto.Packet.parseFrom(string.bytes));
+            } catch (InvalidProtocolBufferException e) {
+                throw new FormatException("Could not read " + string + " as Packet.");
+            }
+        }
+    }
+
+    private class SignedMarshaller implements Marshaller<Signed<Packet<VerificationKey, P>>> {
+
+        @Override
+        public Bytestring marshall(Signed<Packet<VerificationKey, P>> signed) throws IOException {
+            return new Bytestring(marshallSignedPacket(signed).build().toByteArray());
+        }
+
+        @Override
+        public Signed<Packet<VerificationKey, P>> unmarshall(Bytestring string) throws FormatException {
+            try {
+                return unmarshallSignedPacket(Proto.Signed.parseFrom(string.bytes));
             } catch (InvalidProtocolBufferException e) {
                 throw new FormatException("Could not read " + string + " as Packet.");
             }
