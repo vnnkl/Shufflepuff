@@ -183,6 +183,7 @@ public class BitcoinCryptoTest {
    */
 
 
+
    @Test
    public void testSend() throws Exception {
       WalletAppKit nomKit = bitcoinCryptoNoP.getKit();
