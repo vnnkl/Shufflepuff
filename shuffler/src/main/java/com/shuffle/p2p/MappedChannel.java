@@ -124,7 +124,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         @Override
         public Send<X> newSession(Session<Address, X> session) throws InterruptedException {
             Identity you = inverse.get(session.peer().identity());
-            if (you == null) return null;
+            if (you == null) throw new NullPointerException();
             return inner.newSession(new MappedSession(session, you));
         }
     }

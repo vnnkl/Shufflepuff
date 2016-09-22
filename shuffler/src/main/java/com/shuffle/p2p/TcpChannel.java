@@ -4,6 +4,7 @@ import com.shuffle.chan.Send;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -287,13 +288,25 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
         public void run() {
             while (true) {
                 try {
+                    // Read in the message header, which tells us
+                    // the size of the total message.
                     byte[] head = new byte[header.headerLength()];
-                    in.read(head);
+                    if (in.read(head) < header.headerLength()) {
+                        session.close();
+                        break;
+                    }
 
-                    byte[] msg = new byte[header.payloadLength(head)];
-                    int total = in.read(msg);
+                    // If the message length is zero, just send
+                    // an empty message and continue.
+                    int msgLength = header.payloadLength(head);
+                    if (msgLength == 0) {
+                        send.send(new Bytestring(new byte[]{}));
+                        continue;
+                    }
 
-                    if (total < msg.length) {
+                    // Otherwise, read in the message and send that.
+                    byte[] msg = new byte[msgLength];
+                    if (in.read(msg) < msg.length) {
                         session.close();
                         break;
                     }
@@ -418,7 +431,11 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
             if (running) return null;
 
             if (server == null) {
-                server = new ServerSocket(port);
+                try {
+                    server = new ServerSocket(port);
+                } catch (BindException e) {
+                    throw new IOException(e);
+                }
             }
 
             running = true;

@@ -15,6 +15,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Tests for the tcp connection
@@ -25,7 +27,7 @@ public class TestTcpChannel {
 
     // The three channels we will use to test with.
     // This is a vector.
-    Channel<Integer, Integer>[] channels;
+    Channel<Integer, LinkedList<Integer>>[] channels;
 
     // The three connections we would like to open.
     // This is also a vector.
@@ -33,38 +35,20 @@ public class TestTcpChannel {
 
     // The peers that represent the programs' view of one anothers
     // This is an assymmetric 2-tensor.
-    Peer<Integer, Integer>[][] peer;
+    Peer<Integer, LinkedList<Integer>>[][] peer;
 
     // The session from A to B and the session from B to A.
     // Also an assymmetric 2-tensor.
-    Session<Integer, Integer>[][] session;
+    Session<Integer, LinkedList<Integer>>[][] session;
 
     // Channels for receiving messages.
-    // another assymmetrit 2-tensor.
-    Receive<Integer> rec[][];
+    // another assymmetric 2-tensor.
+    Receive<LinkedList<Integer>> rec[][];
 
     // The connection listeners. A vector.
     TestListener listen[];
 
-    private static class TcpTestHeader implements TcpChannel.Header {
-
-        @Override
-        public int headerLength() {
-            return 0;
-        }
-
-        @Override
-        public int payloadLength(byte[] header) throws IOException {
-            return 4;
-        }
-
-        @Override
-        public Bytestring makeHeader(int payloadLength) throws IOException {
-            return new Bytestring(new byte[]{});
-        }
-    }
-
-    private static class TcpTestChannel implements Channel<Integer, Integer> {
+    private static class TcpTestChannel implements Channel<Integer, LinkedList<Integer>> {
         private final TcpChannel tcp;
         private final Integer me;
         private final int[] ports;
@@ -74,39 +58,46 @@ public class TestTcpChannel {
 
             this.me = me;
             this.ports = ports;
-            tcp = new TcpChannel(
-                    new TcpTestHeader(),
-                    new InetSocketAddress(InetAddress.getLocalHost(), ports[me]));
+            tcp = new TcpChannel(new InetSocketAddress(InetAddress.getLocalHost(), ports[me]));
 
         }
 
-        private class TcpTestPeer implements Peer<Integer, Integer> {
+        private class TcpTestPeer implements Peer<Integer, LinkedList<Integer>> {
             private final Peer<InetSocketAddress, Bytestring> peer;
+            private final int identity;
 
-            private TcpTestPeer(Peer<InetSocketAddress, Bytestring> peer) {
+            private TcpTestPeer(Peer<InetSocketAddress, Bytestring> peer, int identity) {
                 this.peer = peer;
+                this.identity = identity;
             }
 
             @Override
             public Integer identity() {
-                return peer.identity().getPort();
+                return identity;
             }
 
             @Override
-            public Session<Integer, Integer> openSession(Send<Integer> send)
+            public Session<Integer, LinkedList<Integer>> openSession(Send<LinkedList<Integer>> send)
                     throws InterruptedException, IOException {
 
-                Session<InetSocketAddress, Bytestring> p = peer.openSession(new TcpTestReceiver(send));
+                TcpTestReceiver tr = new TcpTestReceiver(send, identity);
+
+                Session<InetSocketAddress, Bytestring> p = peer.openSession(tr);
 
                 if (p == null) {
                     return null;
                 }
 
-                Session<Integer, Integer> session =
-                        new TcpTestSession(p);
+                Session<Integer, LinkedList<Integer>> session =
+                        new TcpTestSession(p, identity);
 
                 // Tell them who we are.
-                session.send(me);
+                LinkedList<Integer> identity = new LinkedList<>();
+                identity.add(me);
+                session.send(identity);
+
+                // Wait for the response.
+                tr.chan.receive();
 
                 return session;
             }
@@ -117,11 +108,13 @@ public class TestTcpChannel {
             }
         }
 
-        private class TcpTestSession implements Session<Integer, Integer> {
+        private class TcpTestSession implements Session<Integer, LinkedList<Integer>> {
             private final Session<InetSocketAddress, Bytestring> session;
+            private final int identity;
 
-            private TcpTestSession(Session<InetSocketAddress, Bytestring> session) {
+            private TcpTestSession(Session<InetSocketAddress, Bytestring> session, int identity) {
                 this.session = session;
+                this.identity = identity;
             }
 
             @Override
@@ -130,14 +123,17 @@ public class TestTcpChannel {
             }
 
             @Override
-            public Peer<Integer, Integer> peer() {
-                return new TcpTestPeer(session.peer());
+            public Peer<Integer, LinkedList<Integer>> peer() {
+                return new TcpTestPeer(session.peer(), identity);
             }
 
             @Override
-            public boolean send(Integer integer) throws InterruptedException, IOException {
-
-                return session.send(new Bytestring(ByteBuffer.allocate(4).putInt(integer).array()));
+            public boolean send(LinkedList<Integer> msg) throws InterruptedException, IOException {
+                ByteBuffer buf = ByteBuffer.allocate(4 * msg.size());
+                for (Integer i : msg) {
+                    buf.putInt(i);
+                }
+                return session.send(new Bytestring(buf.array()));
             }
 
             @Override
@@ -147,10 +143,10 @@ public class TestTcpChannel {
         }
 
         private class TcpTestListener implements Listener<InetSocketAddress, Bytestring> {
-            private final Listener<Integer, Integer> inner;
+            private final Listener<Integer, LinkedList<Integer>> inner;
 
             private TcpTestListener(
-                    Listener<Integer, Integer> inner) {
+                    Listener<Integer, LinkedList<Integer>> inner) {
 
                 this.inner = inner;
             }
@@ -159,7 +155,7 @@ public class TestTcpChannel {
             public Send<Bytestring> newSession(Session<InetSocketAddress, Bytestring> session)
                     throws InterruptedException {
 
-                return new TcpTestReceiver(inner.newSession(new TcpTestSession(session)));
+                return new TcpTestReceiver(inner, session);
             }
         }
 
@@ -182,7 +178,7 @@ public class TestTcpChannel {
         }
 
         @Override
-        public Peer<Integer, Integer> getPeer(Integer you) {
+        public Peer<Integer, LinkedList<Integer>> getPeer(Integer you) {
             try {
                 int port = ports[you];
 
@@ -190,7 +186,7 @@ public class TestTcpChannel {
                         tcp.getPeer(new InetSocketAddress(InetAddress.getLocalHost(), port));
 
                 if (p == null) return null;
-                return new TcpTestPeer(p);
+                return new TcpTestPeer(p, you);
 
             } catch (UnknownHostException e) {
                 return null;
@@ -198,116 +194,119 @@ public class TestTcpChannel {
         }
 
         @Override
-        public Connection<Integer> open(Listener<Integer, Integer> listener) throws IOException {
+        public Connection<Integer> open(Listener<Integer, LinkedList<Integer>> listener) throws IOException {
             return new TcpTestConnection(tcp.open(new TcpTestListener(listener)));
         }
-    }
 
-    private static class TcpTestReceiver implements Send<Bytestring> {
-        private final Send<Integer> inner;
-        int last = 0;
-        int i = 0;
-        boolean closed = false;
+        private class TcpTestReceiver implements Send<Bytestring> {
+            private Send<LinkedList<Integer>> inner = null;
+            private Listener<Integer, LinkedList<Integer>> listener = null;
+            private Session<InetSocketAddress, Bytestring> session = null;
+            private Chan<Void> chan = new BasicChan<>();
+            int last = 0;
+            int i = 0;
+            boolean closed = false;
+            boolean firstMessage = true;
+            int you = -1;
 
-        private TcpTestReceiver(Send<Integer> inner) {
-            this.inner = inner;
-        }
+            // Constructor for Alice.
+            private TcpTestReceiver(Send<LinkedList<Integer>> inner, int you) {
+                this.inner = inner;
+                this.you = you;
+            }
 
-        @Override
-        public boolean send(Bytestring bytestring) throws InterruptedException, IOException {
-            if (closed) return false;
+            // Constructor for Bob.
+            TcpTestReceiver(Listener<Integer, LinkedList<Integer>> listener,
+                            Session<InetSocketAddress, Bytestring> session) {
+                this.listener = listener;
+                this.session = session;
+            }
 
-            byte[] bytes = bytestring.bytes;
+            @Override
+            public boolean send(Bytestring bytestring) throws InterruptedException, IOException {
+                if (closed) return false;
 
-            for (byte b : bytes) {
-                last = (last << 8) + b;
-                i ++;
-                if (i == 4) {
-                    i = 0;
-                    if (!inner.send(last)) {
+                byte[] bytes = bytestring.bytes;
+                LinkedList<Integer> msg = new LinkedList<>();
+
+                for (byte b : bytes) {
+                    last = (last << 8) + b;
+                    i ++;
+                    if (i == 4) {
+                        i = 0;
+                        msg.add(last);
+                        last = 0;
+                    }
+                }
+
+                // The first message informs us of the other person's identity.
+                if (firstMessage) {
+                    firstMessage = false;
+
+                    if (msg.size() != 1) {
                         closed = true;
+                        chan.close();
                         return false;
                     }
-                    last = 0;
+
+                    // If we are Bob, then we have to send a response.
+                    if (inner == null) {
+                        you = msg.getFirst();
+                        TcpTestSession tcpSession = new TcpTestSession(session, you);
+
+                        // Now tell the other person who we are.
+                        LinkedList<Integer> init = new LinkedList<>();
+                        init.add(me);
+                        tcpSession.send(init);
+
+                        inner = listener.newSession(tcpSession);
+                    } else if(you != msg.getFirst()) {
+                        System.out.println("    " + me + "; " + you + " != " + msg.getFirst());
+                        closed = true;
+                        chan.close();
+                        return false;
+                    }
+
+                    chan.close();
+
+                } else if (!inner.send(msg)) {
+                    closed = true;
+                    return false;
                 }
+
+                return true;
             }
 
-            return true;
-        }
-
-        @Override
-        public void close() {
-            inner.close();
-            closed = true;
+            @Override
+            public void close() {
+                inner.close();
+                closed = true;
+            }
         }
     }
 
-    private static class IntegerTestReceiver implements Send<Integer> {
-        private final Send<Integer>[] send;
-        private final Chan<Session<Integer, Integer>> sch;
-        private final Session<Integer, Integer> s;
-        private final int to;
-        private int from = -1;
-        private boolean closed = false;
+    private static class TestListener implements Listener<Integer, LinkedList<Integer>> {
+        private final Send<LinkedList<Integer>>[] senders;
+        private final Chan<Session<Integer, LinkedList<Integer>>> chan;
 
-        private IntegerTestReceiver(Integer to, Send<Integer>[] send, Chan<Session<Integer, Integer>> sch, Session<Integer, Integer> s) {
-            this.to = to;
-            this.send = send;
-            this.sch = sch;
-            this.s = s;
-        }
+        private TestListener(Send<LinkedList<Integer>>[] senders,
+                             Chan<Session<Integer, LinkedList<Integer>>> chan) {
 
-        private IntegerTestReceiver(Integer to, int from, Send<Integer>[] send) {
-            this.to = to;
-            this.send = send;
-            this.from = from;
-            sch = null;
-            s = null;
-        }
-
-        @Override
-        public boolean send(Integer i) throws InterruptedException, IOException {
-            if (closed) return false;
-
-            if (from == -1) {
-                if (!(i >= 0 && i < 4)) {
-                    throw new InterruptedException();
-                }
-                from = i;
-                return sch.send(s);
-            } else {
-                Assert.assertNotNull(send[i]);
-
-                return send[i].send(i);
-            }
-        }
-
-        @Override
-        public void close() {
-            closed = true;
-        }
-    }
-
-    private static class TestListener implements Listener<Integer, Integer> {
-        private final Send<Integer>[] senders;
-        private final Chan<Session<Integer, Integer>> sch;
-        private final int me;
-
-        private TestListener(
-                Integer me,
-                Send<Integer>[] senders,
-                Chan<Session<Integer, Integer>> sch) {
-
-            this.me = me;
-            this.sch = sch;
             this.senders = senders;
+            this.chan = chan;
         }
 
         @Override
-        public Send<Integer> newSession(Session<Integer, Integer> session)
-                throws InterruptedException {
+        public synchronized Send<LinkedList<Integer>> newSession(
+                Session<Integer, LinkedList<Integer>> session) throws InterruptedException {
 
-            return new IntegerTestReceiver(me, senders, sch, session);
+            try {
+                chan.send(session);
+            } catch (IOException e) {
+                // Ignore.
+            }
+
+            return senders[session.peer().identity()];
         }
     }
 
@@ -324,15 +323,15 @@ public class TestTcpChannel {
         channels = new TcpTestChannel[3];
         listen = new TestListener[3];
         conn = (Connection<Integer>[]) new Connection[3];
-        peer = (Peer<Integer, Integer>[][]) new Peer[3][3];
-        session = (Session<Integer, Integer>[][]) new Session[3][3];
-        rec = (Receive<Integer>[][]) new Receive[3][3];
+        peer = (Peer<Integer, LinkedList<Integer>>[][]) new Peer[3][3];
+        session = (Session<Integer, LinkedList<Integer>>[][]) new Session[3][3];
+        rec = (Receive<LinkedList<Integer>>[][]) new Receive[3][3];
 
         // Channels for receiving messages [from][to]
-        Chan<Integer> chan[][] = (Chan<Integer>[][]) new Chan[3][3];
+        Chan<LinkedList<Integer>> chan[][] = (Chan<LinkedList<Integer>>[][]) new Chan[3][3];
 
         // Channel for sending new sessions made my remote peers. A vector.
-        Chan<Session<Integer, Integer>>[] sch = new Chan[3];
+        Chan<Session<Integer, LinkedList<Integer>>>[] sch = new Chan[3];
 
         // Create objects.
         for (int i : numbers) {
@@ -354,7 +353,7 @@ public class TestTcpChannel {
             sch[i] = new BasicChan<>();
 
             // create listeners.
-            listen[i] = new TestListener(i, chan[i], sch[i]);
+            listen[i] = new TestListener(chan[i], sch[i]);
 
             channels[i] = new TcpTestChannel(i, port);
         }
@@ -388,7 +387,7 @@ public class TestTcpChannel {
         for (int j : numbers) {
             int k = (j + 1)%3;
 
-            session[j][k] = peer[j][k].openSession(new IntegerTestReceiver(k, j, chan[k]));
+            session[j][k] = peer[j][k].openSession(chan[j][k]);
 
             Assert.assertNotNull(session[j][k]);
             Assert.assertTrue(!session[j][k].closed());
@@ -397,8 +396,6 @@ public class TestTcpChannel {
             Assert.assertNotNull(session[k][j]);
             Assert.assertTrue(!session[k][j].closed());
         }
-
-
     }
 
     @After
@@ -422,7 +419,36 @@ public class TestTcpChannel {
     }
 
     @Test
-    public void testOnAndOff() {
+    // Send messages back and forth from 1 to 2.
+    public void testSendMessages() throws IOException, InterruptedException {
 
+        LinkedList<Integer> msgA = new LinkedList<>();
+        msgA.add(2032);
+
+        LinkedList<Integer> msgB = new LinkedList<>();
+        msgB.add(98);
+        msgB.add(888);
+        msgB.add(6057);
+
+        // Send the first message.
+        session[1][2].send(msgA);
+
+        // Now check the message.
+        LinkedList<Integer> recA = rec[2][1].receive();
+        Assert.assertEquals(recA.size(), msgA.size());
+
+        // Send a reply.
+        session[2][1].send(msgB);
+
+        // Check for the reply.
+        LinkedList<Integer> recB = rec[1][2].receive();
+        Assert.assertEquals(recB.size(), msgB.size());
+
+        // Try sending an empty message.
+        session[1][2].send(new LinkedList<>());
+
+        // Now check the message.
+        LinkedList<Integer> recC = rec[2][1].receive();
+        Assert.assertEquals(recC.size(), 0);
     }
 }
