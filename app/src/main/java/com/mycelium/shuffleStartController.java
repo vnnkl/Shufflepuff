@@ -29,23 +29,27 @@ public class shuffleStartController {
     public ArrayList<String> inputList;
     public ListView inputListView;
     public Main.OverlayUI overlayUI;
-
+    public RadioButton fundsInReceiveAddress;
+    final ToggleGroup shuffleInOptions = new ToggleGroup();
     // Called by FXMLLoader
     public void initialize() {
         // create Group for FundsIn
-        final ToggleGroup fundsInGroup = new ToggleGroup();
 
-        RadioButton fundsInReceiveAddress = new RadioButton("Send to ShufflePuff");
-        fundsInReceiveAddress.setToggleGroup(fundsInGroup);
+
+        fundsInReceiveAddress = new RadioButton("Send to ShufflePuff");
+        fundsInReceiveAddress.setToggleGroup(shuffleInOptions);
+        fundsInReceiveAddress.setUserData("addMasterPriv");
+        fundsInReceiveAddress.setSelected(true);
+
 
         RadioButton fundsInPrivKeyWIF = new RadioButton("Private Keys (WIF)");
-        fundsInPrivKeyWIF.setToggleGroup(fundsInGroup);
+        fundsInPrivKeyWIF.setToggleGroup(shuffleInOptions);
 
         RadioButton fundsInMasterPrivKey = new RadioButton("Master PrivKey");
-        fundsInMasterPrivKey.setToggleGroup(fundsInGroup);
+        fundsInMasterPrivKey.setToggleGroup(shuffleInOptions);
 
         RadioButton fundsInUTXOs = new RadioButton("UTXOs");
-        fundsInUTXOs.setToggleGroup(fundsInGroup);
+        fundsInUTXOs.setToggleGroup(shuffleInOptions);
 
         // create Group for FundsOut
         final ToggleGroup fundsOutGroup = new ToggleGroup();
@@ -58,6 +62,10 @@ public class shuffleStartController {
 
         RadioButton fundsOutXPub = new RadioButton("xPub");
         fundsOutXPub.setToggleGroup(fundsOutGroup);
+        shuffleInOptions.getSelectedToggle().toString();
+
+        final ToggleGroup connectOptions = new ToggleGroup();
+
 
     }
 
@@ -69,6 +77,6 @@ public class shuffleStartController {
     public void next(ActionEvent actionEvent) {
         // if next is clicked
 
-        Main.OverlayUI<com.mycelium.fundsIn.addMasterPrivController> screen = Main.instance.overlayUI("fundsIn/shuffle_addMasterPriv.fxml");
+        Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_addReceiveAddress.fxml");
     }
 }

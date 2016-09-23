@@ -16,11 +16,15 @@
 
 package com.mycelium.fundsIn;
 
+import com.google.zxing.qrcode.QRCodeWriter;
+import com.google.zxing.qrcode.encoder.QRCode;
 import com.mycelium.Main;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 import java.util.ArrayList;
 
@@ -32,10 +36,12 @@ public class addReceiveAddressController {
     public ArrayList<String> privKeyList;
     public ListView privKeyListView;
     public Main.OverlayUI overlayUI;
+    public ImageView QRCodeImage;
 
 
     // Called by FXMLLoader
     public void initialize() {
+        QRCodeImage.setImage(new Image("LOL"));
     }
 
     public void cancel(ActionEvent event) {
