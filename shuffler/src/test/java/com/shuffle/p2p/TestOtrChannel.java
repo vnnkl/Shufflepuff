@@ -131,7 +131,7 @@ public class TestOtrChannel {
                  */
                 charlieToAliceSession = session;
                 System.out.println("charlie listener caught: " + session);
-                return bobSend;
+                return charlieSend;
             }
         };
         charlieConnection = otrCharlie.open(charlieListener);
@@ -170,11 +170,11 @@ public class TestOtrChannel {
         aliceToBobSession.send(new Bytestring("Bob, Do Not Buy OneCoin".getBytes()));
         bobToAliceSession.send(new Bytestring("CryptoCurrency OneCoin is a Virus".getBytes()));
 
-        System.out.println("\n \n \n \n");
         aliceToCharlie = otrAlice.getPeer("charlie");
         charlieToAlice = otrCharlie.getPeer("alice");
         aliceToCharlieSession = aliceToCharlie.openSession(aliceSend);
         aliceToCharlieSession.send(new Bytestring("CHARLIE DONT BUY ONECOIN".getBytes()));
+        charlieToAliceSession.send(new Bytestring("THE NSA HAS OUR BACK".getBytes()));
 
     }
 

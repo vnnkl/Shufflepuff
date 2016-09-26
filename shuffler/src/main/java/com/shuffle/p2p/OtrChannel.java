@@ -10,7 +10,6 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Send;
-import com.shuffle.player.P;
 
 import net.java.otr4j.OtrEngineHost;
 import net.java.otr4j.OtrException;
@@ -53,9 +52,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public void injectMessage(SessionID sessionID, String msg) {
             try {
                 session.send(new Bytestring(msg.getBytes()));
-            } catch (IOException e) {
-
-            } catch (InterruptedException er) {
+            } catch (IOException | InterruptedException e) {
 
             }
         }
