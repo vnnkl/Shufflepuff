@@ -9,6 +9,7 @@
 package com.shuffle.p2p;
 
 import com.shuffle.chan.BasicChan;
+import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
 
 import net.java.otr4j.OtrEngineHost;
@@ -206,38 +207,32 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
-    /**
-     * Filter init string / key exchange / termination messages
-     * (accept passed-in session object from newSession)
-     * Make this stateful.
-     */
-
     private class OtrSendAlice implements Send<Bytestring> {
         private final Send<Bytestring> z;
         private boolean encrypted = false;
         private int messageCount = 0;
-        private BasicChan<Bytestring> chan;
+        private Send<Boolean> chan;
         private SessionImpl sessionImpl;
 
-        private OtrSendAlice(Send<Bytestring> z, BasicChan<Bytestring> chan) {
+        private OtrSendAlice(Send<Bytestring> z, Send<Boolean> chan) {
             this.z = z;
             this.chan = chan;
         }
 
         @Override
-        public boolean send(Bytestring message) throws InterruptedException {
+        public boolean send(Bytestring message) throws InterruptedException, IOException {
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
                 if (!encrypted) {
                     messageCount++;
                     if (messageCount == 2) {
-                        chan.send(new Bytestring("true".getBytes()));
+                        chan.send(true);
                         encrypted = true;
                     }
                 }
             } catch (OtrException e) {
-                chan.send(new Bytestring("false".getBytes()));
+                chan.send(false);
                 this.close();
                 return false;
             }
@@ -255,9 +250,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
              *
              */
 
-            if (!chan.closed()) {
-                chan.close();
-            }
+            chan.close();
 
             try {
                 return z.send(new Bytestring(receivedMessage.getBytes()));
@@ -333,12 +326,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
-            //if (sessionImpl == null) {
-                final SessionID sessionID = new SessionID("", "", "");
-                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
-                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
-                SessionImpl sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
-            //}
+            final SessionID sessionID = new SessionID("", "", "");
+            OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
+                    | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
+            SessionImpl sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
 
             return new OtrSendBob(this.l, session, sessionImpl);
         }
@@ -356,17 +347,15 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
             if (send == null) throw new NullPointerException();
-            BasicChan<Bytestring> chan = new BasicChan<>(1);
+            Chan<Boolean> chan = new BasicChan<>(1);
 
             OtrSendAlice alice = new OtrSendAlice(send, chan);
             Session<Address, Bytestring> session = peer.openSession(alice);
 
-            //if (sessionImpl == null) {
-                final SessionID sessionID = new SessionID("", "", "");
-                OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
-                        | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
-                SessionImpl sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
-            //}
+            final SessionID sessionID = new SessionID("", "", "");
+            OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
+                    | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
+            SessionImpl sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
             alice.sessionImpl = sessionImpl;
 
             // This string depends on the version / type of OTR encryption that the user wants.
@@ -377,11 +366,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
              * Waiting for the final OTR initialization message from Bob.
              */
 
-            Bytestring result = chan.receive();
-            if (result.equals(new Bytestring("true".getBytes()))) {
+            Boolean result = chan.receive();
+            if (result) {
 
-            } else if (result.equals(new Bytestring("false".getBytes()))) {
-                // throw an Exception here?
+            } else {
                 chan.close();
                 session.close();
                 //sessionImpl = null;
