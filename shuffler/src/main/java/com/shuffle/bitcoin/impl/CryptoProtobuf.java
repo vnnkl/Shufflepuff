@@ -7,7 +7,10 @@ import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
 import com.shuffle.chan.packet.Marshaller;
+import com.shuffle.chan.packet.Packet;
+import com.shuffle.chan.packet.Signed;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.P;
 import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.FormatException;
 

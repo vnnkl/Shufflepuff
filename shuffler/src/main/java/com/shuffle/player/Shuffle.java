@@ -645,7 +645,7 @@ public class Shuffle {
         }
 
         keys.add(vk);
-        peers.put(vk, new Either<InetSocketAddress, Integer>(null, id));
+        peers.put(vk, new Either<>(null, id));
 
         Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
             new MappedChannel<>(
@@ -653,7 +653,7 @@ public class Shuffle {
                     new MarshallChannel<>(
                         new TcpChannel(
                             new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
-                            new JavaMarshaller<Signed<Packet<VerificationKey, P>>>()),
+                            m.signedMarshaller()),
                         mock.node(id)),
                     peers);
 

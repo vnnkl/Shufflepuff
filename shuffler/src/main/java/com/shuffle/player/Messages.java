@@ -45,6 +45,7 @@ public class Messages implements MessageFactory {
         Marshaller<Message.Atom> atomMarshaller();
         Marshaller<Address> addressMarshaller();
         Marshaller<Packet<VerificationKey, P>> packetMarshaller();
+        Marshaller<Signed<Packet<VerificationKey, P>>> signedMarshaller();
     }
 
     /**

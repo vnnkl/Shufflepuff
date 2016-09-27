@@ -109,7 +109,7 @@ Once you have downloaded the jce_policy-8.zip file, move it (still zipped) to th
 directory. Then, simply run the jcepolicy.sh script in the ShufflePuff directory.
 
 **Manual Installation**
-Once you have downloaded the jce_policy-8.zip file, unzip the file.  
+Once you have downloaded the jce_policy-8.zip file, unzip the file.
 Then, move the three policy files (README.txt, local_policy.jar, and
 US_export_policy.jar) to the $JAVA_HOME/jre/lib/security directory.  Now you should be
 able to run ShufflePuff's cryptographic functions smoothly.

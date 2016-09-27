@@ -139,9 +139,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
 
         @Override
         public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
-            Send<X> z = l.newSession(new MarshallSession(session));
-            if (z == null) return null;
-            return new UnmarshallSend(z);
+            return new UnmarshallSend(l.newSession(new MarshallSession(session)));
         }
     }
 

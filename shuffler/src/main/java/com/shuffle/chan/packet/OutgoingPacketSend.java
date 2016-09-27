@@ -33,7 +33,7 @@ public class OutgoingPacketSend<Address extends Serializable, X extends Serializ
     public boolean send(X x) throws InterruptedException, IOException {
         if (closed) return false;
 
-        boolean sent = send.send(new Packet<Address, X>(session, from, to, sequenceNumber, x));
+        boolean sent = send.send(new Packet<>(session, from, to, sequenceNumber, x));
 
         if (sent) {
             sequenceNumber++;
