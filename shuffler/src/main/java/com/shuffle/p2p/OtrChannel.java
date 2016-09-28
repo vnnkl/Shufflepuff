@@ -354,12 +354,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     /**
      * This class is identical to OtrSendAlice except for 2 things:
      *
-     * 1.  The messageCount variable must reach 3 before the Send<> "z" object is set and
-     *     newSession is called with a new OtrSession as the parameter.  This is because
-     *     Bob will receive 2 messages from Alice, whereas Alice receives only 2 from Bob.
+     * 1.  The send() messageCount variable must reach 3 before the Send<> "z" object is
+     *     set and newSession is called with a new OtrSession as the parameter.  This is because
+     *     Bob will receive 3 messages from Alice, whereas Alice receives only 2 from Bob.
      *
      * 2.  There is a Listener<> "l" member variable that is used to call newSession() when
-     *     the encrypted session is fully established.
+     *     the encrypted session is fully established in send().
      */
 
     private class OtrSendBob implements Send<Bytestring> {
@@ -411,6 +411,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
+    /**
+     * The OtrListener class is a wrapper for a normal Listener object.  When newSession()
+     * is called, we first make a new SessionImpl object with the passed in Session object
+     * as a parameter.  Note: The OtrPolicy variable allows OTRv2 and OTRv3.  This can be
+     * changed if the user desires different versions of OTR.  Finally, we return an OtrSendBob
+     * object with our Listener, Session, and SessionImpl objects as parameters.
+     */
+
     private class OtrListener implements Listener<Address, Bytestring> {
         private final Listener<Address, Bytestring> l;
 
@@ -431,7 +439,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     }
 
     /**
-     * OtrPeer
+     * The OtrPeer class is a wrapper for a normal Peer object.  When openSession() is called,
+     * the OTR initialization process is started.  Only Alice calls openSession().
      */
 
     private class OtrPeer implements Peer<Address, Bytestring> {
@@ -441,6 +450,22 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public OtrPeer(Peer<Address, Bytestring> peer) {
             this.peer = peer;
         }
+
+        /**
+         * The openSession() method starts the OTR protocol.  It creates a BasicChan object
+         * that is passed into OtrSendAlice and when the key exchange is complete, this Chan
+         * "chan" is notified and an OtrSession object is returned.  We also create a SessionImpl
+         * object for handling messages and pass that into both our OtrSendAlice object and the
+         * returned OtrSession object.  To start the actual protocol, a specific string needs to
+         * be crafted.  In our implementation, we used "?OTRv23?" which means we are initializing
+         * OTR version 3, with version 2 as a backup if version 3 is not available.  Other protocol
+         * strings are possible.  We then call chan.receive(), and when the key exchange in
+         * OtrSendAlice returns, we check to see if the key exchange was successful or not.
+         * If it is, we return a new OtrSession object.  Else, we shut everything down.
+         *
+         * Note: The OtrPolicy variable allows OTRv2 and OTRv3.  This can be changed if the user
+         * desires different versions of OTR.
+         */
 
         @Override
         public synchronized OtrSession openSession(Send<Bytestring> send) throws InterruptedException, IOException {
@@ -470,7 +495,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             } else {
                 chan.close();
                 session.close();
-                //sessionImpl = null;
                 return null;
             }
 
@@ -488,6 +512,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
     }
+
+    /**
+     * The OtrConnection class is a wrapper of a normal Connection object.  There is no
+     * difference whatsoever in functionality... yet.
+     */
 
     private class OtrConnection implements Connection<Address> {
 
@@ -513,7 +542,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     private Channel<Address, Bytestring> channel;
     private boolean running = false;
     private final Address me;
-    private HashMap<Integer, SessionImpl> sessionMap = new HashMap<>();
 
     public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
         if (me == null) {
@@ -523,6 +551,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         this.channel = channel;
         this.me = me;
     }
+
+    /**
+     * Here we simply pass on a new OtrListener object to the open inner channel.
+     * An OtrConnection is returned.
+     */
 
     @Override
     public OtrConnection open(Listener<Address, Bytestring> listener) throws InterruptedException, IOException {
