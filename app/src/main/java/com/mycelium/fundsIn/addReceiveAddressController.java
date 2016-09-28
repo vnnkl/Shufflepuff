@@ -18,45 +18,51 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import net.glxn.qrgen.image.ImageType;
 
 import java.io.ByteArrayInputStream;
-import java.util.ArrayList;
 
 
 public class addReceiveAddressController {
-    public Button AddBtn;
-    public Button cancelBtn;
-    public TextField inputPrivKEdit;
-    public TextField inputIndexEdit;
-    public ArrayList<String> privKeyList;
-    public ListView privKeyListView;
+    @FXML private Button AddBtn;
+    @FXML private Button cancelBtn;
     public Main.OverlayUI overlayUI;
-    public ImageView qrReceiveCode;
-    public Label recAddressLabel;
+    @FXML private ImageView qrReceiveCode;
+    @FXML private Label qrReceiveCodeLabel;
+    @FXML private ImageView qrReceiveCode1;
+    @FXML private Label qrReceiveCode1Label;
+    @FXML private ImageView qrReceiveCode2;
+    @FXML private Label qrReceiveCode2Label;
+    @FXML private ImageView qrReceiveCode3;
+    @FXML private Label qrReceiveCode3Label;
+
 
 
     // Called by FXMLLoader
     public void initialize() {
 
-
+        String address = "1BitcoinEaterAddressDontSendf59kuE";
 
         final byte[] imageBytes = net.glxn.qrgen.QRCode
-                .from("1BitcoinEaterAddressDontSendf59kuE")
+                .from(address)
                 .withSize(200, 200)
                 .to(ImageType.PNG)
                 .stream()
                 .toByteArray();
         Image qrImage = new Image(new ByteArrayInputStream(imageBytes));
-        ImageView qrImageView = new ImageView(qrImage);
         this.qrReceiveCode.setImage(qrImage);
-        this.recAddressLabel.setText("");
+        this.qrReceiveCodeLabel.setText(address);
+        this.qrReceiveCode1.setImage(qrImage);
+        this.qrReceiveCode1Label.setText(address);
+        this.qrReceiveCode2.setImage(qrImage);
+        this.qrReceiveCode2Label.setText(address);
+        this.qrReceiveCode3.setImage(qrImage);
+        this.qrReceiveCode3Label.setText(address);
     }
 
     public void cancel(ActionEvent event) {

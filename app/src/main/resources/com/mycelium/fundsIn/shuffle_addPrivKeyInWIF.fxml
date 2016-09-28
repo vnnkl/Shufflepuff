@@ -32,7 +32,7 @@
                                            <Font size="15.0" />
                                        </font>
                                    </Label>
-                                   <TextField fx:id="inputPrivKEdit" prefHeight="27.0" prefWidth="392.0" text="L4jHPh9qxfyZuXYRC2pm15jFJpsvwqTmFAhbwRerA9gZRB5Aszj1" />
+                                   <TextField fx:id="inputPrivKEdit" prefHeight="27.0" prefWidth="392.0" promptText="L4jHPh9qxfyZuXYRC2pm15jFJpsvwqTmFAhbwRerA9gZRB5Aszj1" />
                                </children>
                             </VBox>
                             <VBox alignment="CENTER" prefHeight="65.0" prefWidth="54.0">
@@ -53,7 +53,7 @@
                  <children>
                      <VBox prefHeight="108.0" prefWidth="439.0">
                         <children>
-                            <Label fx:id="privKListLabel" text="the private Keys funds will be shuffled:" />
+                            <Label fx:id="privKListLabel" text="these private keys funds will be shuffled:" />
                             <ListView fx:id="privKeyListView" prefHeight="84.0" prefWidth="217.0" />
                         </children>
                      </VBox>

@@ -17,6 +17,9 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
@@ -24,18 +27,20 @@ import javafx.scene.control.TextField;
 
 import java.util.ArrayList;
 
+
 public class addPrivKeyinWIFController {
     public Button AddBtn;
     public Button cancelBtn;
     public TextField inputPrivKEdit;
-    public TextField inputIndexEdit;
-    public ArrayList<String> privKeyList;
+    public ArrayList<String> privKeyList = new ArrayList<String>();
+    ListProperty<String> listProperty = new SimpleListProperty<>();
     public ListView privKeyListView;
     public Main.OverlayUI overlayUI;
 
 
     // Called by FXMLLoader
     public void initialize() {
+        privKeyListView.itemsProperty().bind(listProperty);
     }
 
     public void cancel(ActionEvent event) {
@@ -44,61 +49,13 @@ public class addPrivKeyinWIFController {
 
     public void addInput(ActionEvent event) {
         // add Input, could be invalid still
+        // todo: check input for being valid privKey in WIF
             String newInput = inputPrivKEdit.getText();
-            privKeyList.add(newInput);
-
-
-
-            /**SendRequest req;
-            if (amount.equals(Main.bitcoin.wallet().getBalance()))
-                req = SendRequest.emptyWallet(destination);
-
-            else
-                req = SendRequest.to(destination, amount);
-            req.aesKey = aesKey;
-            sendResult = Main.bitcoin.wallet().sendCoins(req);
-            Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<Transaction>() {
-                @Override
-                public void onSuccess(@Nullable Transaction result) {
-                    checkGuiThread();
-                    overlayUI.done();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    // We died trying to empty the wallet.
-                    crashAlert(t);
-                }
-            });
-            sendResult.tx.getConfidence().addEventListener((tx, reason) -> {
-                if (reason == TransactionConfidence.Listener.ChangeReason.SEEN_PEERS)
-                    updateTitleForBroadcast();
-            });
-            AddBtn.setDisable(true);
-            address.setDisable(true);
-            ((HBox)amountEdit.getParent()).getChildren().remove(amountEdit);
-            ((HBox)btcLabel.getParent()).getChildren().remove(btcLabel);
-            updateTitleForBroadcast();
-             **/
-
+            if (!privKeyList.contains(newInput)){
+                privKeyList.add(newInput);
+            }
+            listProperty.set(FXCollections.observableArrayList(privKeyList));
     }
-
-    private void askForPasswordAndRetry() {
-        /**Main.OverlayUI<WalletPasswordController> pwd = Main.instance.overlayUI("wallet_password.fxml");
-        final String addressStr = address.getText();
-        final String amountStr = amountEdit.getText();
-        pwd.controller.aesKeyProperty().addListener((observable, old, cur) -> {
-            // We only get here if the user found the right password. If they don't or they cancel, we end up back on
-            // the main UI screen. By now the send money screen is history so we must recreate it.
-            checkGuiThread();
-            Main.OverlayUI<addUTXOController> screen = Main.instance.overlayUI("send_money.fxml");
-            screen.controller.aesKey = cur;
-            screen.controller.address.setText(addressStr);
-            screen.controller.amountEdit.setText(amountStr);
-            screen.controller.send(null);
-        });**/
-    }
-
 
     public void next(ActionEvent actionEvent) {
 

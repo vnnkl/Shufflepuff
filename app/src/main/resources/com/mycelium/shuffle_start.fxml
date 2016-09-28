@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import java.lang.*?>
-<?import javafx.geometry.*?>
-<?import javafx.scene.effect.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-
 <AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycelium.shuffleStartController">
   <children>
     <VBox alignment="CENTER" layoutY="19.0" prefHeight="359.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
@@ -82,16 +78,12 @@
                         </Label>
                         <HBox>
                            <children>
-                              <RadioButton mnemonicParsing="false" text="provide IPs manually">
+                              <RadioButton fx:id="connectByIP" mnemonicParsing="false" text="provide IPs manually">
                                  <toggleGroup>
                                     <ToggleGroup fx:id="shuffleConnectOptions" />
                                  </toggleGroup>
                               </RadioButton>
-                              <RadioButton mnemonicParsing="false" text="fetch from Mycelium">
-                                 <toggleGroup>
-                                    <ToggleGroup fx:id="shuffleConnect" />
-                                 </toggleGroup>
-                              </RadioButton>
+                              <RadioButton fx:id="connectByFetch" mnemonicParsing="false" text="fetch from Mycelium" toggleGroup="$shuffleConnectOptions" />
                            </children>
                         </HBox>
                      </children>
