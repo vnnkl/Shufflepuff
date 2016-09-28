@@ -218,6 +218,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     /**
      * The OtrSession class is a wrapper for a plaintext Session (TcpSession / WebsocketSession).
      * OtrSession encrypts messages and then sends them via the inner Session object.
+     *
+     * The OtrSession object is a fully encrypted Session object.  No initialization occurs here.
      */
 
     private class OtrSession implements Session<Address, Bytestring> {
@@ -235,18 +237,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
         /**
-         * This method will take a Bytestring message and pass it into SessionImpl's
-         * transformSending() method.  If we are in the initialization phase, transformSending()
-         * will start the OTR protocol.  transformSending() will create Diffie Hellman keys
-         * and exchange them with the peer.
-         *
-         * In the exchange process, transformSending() will exchange messages with the peer
-         * via the member variable SendOtrEngineHost's injectMessage() method.  SessionImpl will
-         * wait for a response and handle it, all in transformSending().  If the key exchange
-         * process fails, an OtrException is caught and send() returns false.  If the process
-         * succeeds, a final message is sent via the "s" Session object and send() returns true.
-         *
-         * After the exchange process, transformSending() will encrypt all messages passed into it.
+         * This method will take a Bytestring message and encrypt it via the member variable
+         * SessionImpl's transformSending() method.  Since we are using chunks of unlimited size,
+         * outgoingMessage will only contain one chunk that contains the entire encrypted message.
+         * After the message is encrypted, it is then sent to the inner Session object.
          */
 
         @Override
@@ -282,7 +276,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
     }
 
     /**
-     *
+     * The OtrSendAlice class is a wrapper for a normal Send object.  Its purpose is to
+     * send decrypted messages to the inner Send object "z".
      */
 
     private class OtrSendAlice implements Send<Bytestring> {
@@ -296,6 +291,25 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.z = z;
             this.chan = chan;
         }
+
+        /**
+         * This method will take a Bytestring message and pass it into SessionImpl's
+         * transformReceiving() method.  If we are in the initialization phase, transformReceiving()
+         * will create Diffie Hellman keys and exchange them with the peer.
+         *
+         * In the exchange process, SessionImpl's transformReceiving() will exchange messages with
+         * the peer via the member variable SendOtrEngineHost's injectMessage() method. For just the
+         * exchange process, receivedMessage will be null.  Thus, send() will return true, barring
+         * any errors.  When the peer replies, OtrSendAlice is notified, and transformReceiving()
+         * is called again.  This ping/pong happens three times.  If the key exchange process fails
+         * anywhere, an OtrException is caught, the Send<Boolean> chan and Send<> z objects are
+         * closed, and send() returns false.  If the process succeeds, the Send<Boolean> chan
+         * object sends "true" (this notifies openSession() to return an OtrSession object) and
+         * send() returns true.
+         *
+         * After the exchange process, transformReceiving() will decrypt all messages passed into it.
+         * It will then pass messages to the inner Send object.
+         */
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
@@ -319,15 +333,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return true;
             }
 
-            /**
-             * If uncommented, the below line will throw a NullPointerException with the
-             * Jitsi Session Status ("ENCRYPTED" if all goes well), the ciphertext of the message,
-             * and the deciphered plaintext message.
-             *
-             * if (true) throw new NullPointerException(sessionImpl.getSessionStatus() + "\n" + new String(message.bytes) + "\n" + receivedMessage);
-             *
-             */
-
             chan.close();
 
             try {
@@ -345,6 +350,17 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
     }
+
+    /**
+     * This class is identical to OtrSendAlice except for 2 things:
+     *
+     * 1.  The messageCount variable must reach 3 before the Send<> "z" object is set and
+     *     newSession is called with a new OtrSession as the parameter.  This is because
+     *     Bob will receive 2 messages from Alice, whereas Alice receives only 2 from Bob.
+     *
+     * 2.  There is a Listener<> "l" member variable that is used to call newSession() when
+     *     the encrypted session is fully established.
+     */
 
     private class OtrSendBob implements Send<Bytestring> {
         private final Listener<Address, Bytestring> l;
@@ -413,6 +429,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
     }
+
+    /**
+     * OtrPeer
+     */
 
     private class OtrPeer implements Peer<Address, Bytestring> {
 
