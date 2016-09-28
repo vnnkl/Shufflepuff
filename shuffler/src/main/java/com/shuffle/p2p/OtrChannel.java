@@ -58,10 +58,20 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private final OtrPolicy policy;
         private final Session<Address, Bytestring> session;
 
+        /**
+         * @param policy -- Tells SessionImpl which version of OTR to use
+         * @param session -- Tells SendOtrEngineHost where to send messages
+         */
+
         private SendOtrEngineHost(OtrPolicy policy, Session<Address, Bytestring> session) {
             this.policy = policy;
             this.session = session;
         }
+
+        /**
+         * @param sessionID -- Identifies the SessionID of the SessionImpl we are using
+         * @param msg -- Contains a message we wish to pass along to our Session object.
+         */
 
         @Override
         public void injectMessage(SessionID sessionID, String msg) {
@@ -108,6 +118,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             return;
         }
 
+        /**
+         * @param paramSessionID
+         * @return -- Given a SessionID, return the local key pair
+         */
+
         @Override
         public KeyPair getLocalKeyPair(SessionID paramSessionID) {
             KeyPairGenerator kg;
@@ -124,6 +139,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public OtrPolicy getSessionPolicy(SessionID ctx) {
             return policy;
         }
+
+        /**
+         * @param sessionID
+         * @return -- Given a SessionID, return the local fingerprint
+         */
 
         @Override
         public byte[] getLocalFingerprintRaw(SessionID sessionID) {
@@ -162,6 +182,11 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             return null;
         }
 
+        /**
+         * @param sessionID -- If we receive a message from another SessionImpl instance,
+         *                     throw a NullPointerException.
+         */
+
         @Override
         public void messageFromAnotherInstanceReceived(SessionID sessionID) {
             throw new NullPointerException("Message from another instance received: " + sessionID.toString());
@@ -172,6 +197,16 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             return;
         }
 
+        /**
+         * @param sessionID
+         * @return -- Given a SessionID, return FragmenterInstructions for UNLIMITED fragment sizes.
+         *            SessionImpl will try to split up (fragment) sent and received messages into
+         *            set chunks specified by the user.  This function tells the calling SessionImpl
+         *            instance that it can use an unlimited number of fragments, and that each
+         *            fragment has an unlimited size.  For our current implementation, this means
+         *            that SessionImpl will send a message in one fragment, rather than multiple.
+         */
+
         @Override
         public FragmenterInstructions getFragmenterInstructions(SessionID sessionID) {
             return new FragmenterInstructions(FragmenterInstructions.UNLIMITED,
@@ -180,14 +215,39 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     }
 
+    /**
+     * The OtrSession class is a wrapper for a plaintext Session (TcpSession / WebsocketSession).
+     * OtrSession encrypts messages and then sends them via the inner Session object.
+     */
+
     private class OtrSession implements Session<Address, Bytestring> {
         private final Session<Address, Bytestring> s;
         private final SessionImpl sessionImpl;
+
+        /**
+         * @param s -- Tells OtrSession which inner Session to use.
+         * @param sessionImpl -- Tells OtrSession which SessionImpl to use in the send() message.
+         */
 
         private OtrSession(Session<Address, Bytestring> s, SessionImpl sessionImpl) {
             this.s = s;
             this.sessionImpl = sessionImpl;
         }
+
+        /**
+         * This method will take a Bytestring message and pass it into SessionImpl's
+         * transformSending() method.  If we are in the initialization phase, transformSending()
+         * will start the OTR protocol.  transformSending() will create Diffie Hellman keys
+         * and exchange them with the peer.
+         *
+         * In the exchange process, transformSending() will exchange messages with the peer
+         * via the member variable SendOtrEngineHost's injectMessage() method.  SessionImpl will
+         * wait for a response and handle it, all in transformSending().  If the key exchange
+         * process fails, an OtrException is caught and send() returns false.  If the process
+         * succeeds, a final message is sent via the "s" Session object and send() returns true.
+         *
+         * After the exchange process, transformSending() will encrypt all messages passed into it.
+         */
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
@@ -220,6 +280,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         }
 
     }
+
+    /**
+     *
+     */
 
     private class OtrSendAlice implements Send<Bytestring> {
         private final Send<Bytestring> z;
