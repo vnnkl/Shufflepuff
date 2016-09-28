@@ -32,7 +32,7 @@
                                            <Font size="15.0" />
                                        </font>
                                    </Label>
-                                   <TextField fx:id="inputPrivKEdit" prefHeight="37.0" prefWidth="439.0" promptText="xprvA2QFT KUdLecc7 1yq2YkKY M3pwwk5L 4WRvLwZK &#10;&#10;3gkGkkiS Q1uc4z52 ELbdZ8zM JybRspPg NY8v6W9J &#10;&#10;azzmJ4yL YCkZJkRk AZqvUYD3 oH3dtj" />
+                                   <TextField fx:id="inputMasterPrivEdit" prefHeight="37.0" prefWidth="439.0" promptText="xprvA2QFT KUdLecc7 1yq2YkKY M3pwwk5L 4WRvLwZK &#10;&#10;3gkGkkiS Q1uc4z52 ELbdZ8zM JybRspPg NY8v6W9J &#10;&#10;azzmJ4yL YCkZJkRk AZqvUYD3 oH3dtj" />
                                </children>
                             </VBox>
                             <VBox alignment="CENTER" prefHeight="65.0" prefWidth="54.0">
