@@ -16,42 +16,64 @@ import java.io.IOException;
 
 public class TestOtrChannel {
 
+    /**
+     * These are variables for establishing two-way encrypted communication
+     * between Alice <-> Bob and Alice <-> Charlie.
+     */
+
     MockNetwork<String, Bytestring> network;
 
     Channel<String, Bytestring> aliceNode;
     Channel<String, Bytestring> bobNode;
+    Channel<String, Bytestring> charlieNode;
 
     OtrChannel<String> otrAlice;
     OtrChannel<String> otrBob;
+    OtrChannel<String> otrCharlie;
 
     Connection<String> aliceConnection;
     Connection<String> bobConnection;
+    Connection<String> charlieConnection;
 
     Send<Bytestring> aliceSend;
     Send<Bytestring> bobSend;
+    Send<Bytestring> charlieSend;
 
     Peer<String, Bytestring> aliceToBob;
     Peer<String, Bytestring> bobToAlice;
 
+    Peer<String, Bytestring> aliceToCharlie;
+    Peer<String, Bytestring> charlieToAlice;
+
     Session<String, Bytestring> aliceToBobSession;
     Session<String, Bytestring> bobToAliceSession;
 
-    Channel<String, Bytestring> charlieNode;
-    OtrChannel<String> otrCharlie;
-    Connection<String> charlieConnection;
-    Send<Bytestring> charlieSend;
-    Peer<String, Bytestring> charlieToAlice;
-    Peer<String, Bytestring> aliceToCharlie;
-    Session<String, Bytestring> charlieToAliceSession;
     Session<String, Bytestring> aliceToCharlieSession;
+    Session<String, Bytestring> charlieToAliceSession;
 
     @Before
     public void setup() throws InterruptedException, IOException {
         network = new MockNetwork<>();
+
+        /**
+         * Alice, Bob, and Charlie as nodes in the MockNetwork.
+         */
+
         aliceNode = network.node("alice");
         bobNode = network.node("bob");
+        charlieNode = network.node("charlie");
+
+        /**
+         * Alice, Bob, and Charlie -- each with their own OtrChannel objects.
+         */
+
         otrAlice = new OtrChannel<>(aliceNode, "alice");
         otrBob = new OtrChannel<>(bobNode, "bob");
+        otrCharlie = new OtrChannel<>(charlieNode, "charlie");
+
+        /**
+         * Setting up Alice, Bob, and Charlie's Send<> and Listener<> objects.
+         */
 
         aliceSend = new Send<Bytestring>() {
             @Override
@@ -69,7 +91,7 @@ public class TestOtrChannel {
         Listener<String, Bytestring> aliceListener = new Listener<String, Bytestring>() {
             @Override
             public Send<Bytestring> newSession(Session<String, Bytestring> session) throws InterruptedException {
-                System.out.println("alice listener caught: " + session);
+                System.out.println("Alice's listener caught: " + session);
                 return aliceSend;
             }
         };
@@ -93,21 +115,15 @@ public class TestOtrChannel {
 
                 /**
                  * This Session object is an OtrSession object because of how we constructed
-                 * OtrListener's newSession method.
+                 * OtrListener's newSession() method.
                  */
+
                 bobToAliceSession = session;
-                System.out.println("bob listener caught: " + session);
+                System.out.println("Bob's listener caught: " + session);
                 return bobSend;
             }
         };
 
-        // Open both Channels and start listening
-        aliceConnection = otrAlice.open(aliceListener);
-        bobConnection = otrBob.open(bobListener);
-
-
-        charlieNode = network.node("charlie");
-        otrCharlie = new OtrChannel<>(charlieNode, "charlie");
         charlieSend = new Send<Bytestring>() {
             @Override
             public boolean send(Bytestring message) throws InterruptedException {
@@ -127,13 +143,18 @@ public class TestOtrChannel {
 
                 /**
                  * This Session object is an OtrSession object because of how we constructed
-                 * OtrListener's newSession method.
+                 * OtrListener's newSession() method.
                  */
+
                 charlieToAliceSession = session;
-                System.out.println("charlie listener caught: " + session);
+                System.out.println("Charlie's listener caught: " + session);
                 return charlieSend;
             }
         };
+
+        // Open all Channels and start listening
+        aliceConnection = otrAlice.open(aliceListener);
+        bobConnection = otrBob.open(bobListener);
         charlieConnection = otrCharlie.open(charlieListener);
 
     }
@@ -141,18 +162,27 @@ public class TestOtrChannel {
     @Test
     public void encryptedChat() throws InterruptedException, IOException {
 
-        /**
-         * close aliceToBobSession, see if closing aliceToBob closes aliceToBobSession
-         */
-
         // Alice to Bob
         aliceToBob = otrAlice.getPeer("bob");
 
         // Bob to Alice
         bobToAlice = otrBob.getPeer("alice");
 
-        // Alice opens the session
+        // Alice to Charlie
+        aliceToCharlie = otrAlice.getPeer("charlie");
+
+        // Charlie to Alice
+        charlieToAlice = otrCharlie.getPeer("alice");
+
+        // Alice opens the session to Bob
         aliceToBobSession = aliceToBob.openSession(aliceSend);
+
+        // bobToAliceSession is created in bobListener.newSession()
+
+        // Alice opens the session to Charlie
+        aliceToCharlieSession = aliceToCharlie.openSession(aliceSend);
+
+        // charlieToAliceSession is created in charlieListener.newSession()
 
         // ASCII because why not.
         System.out.println("");
@@ -167,28 +197,42 @@ public class TestOtrChannel {
         System.out.println("         *~------------------------------------------~* ");
         System.out.println("");
 
+        // Alice sends Bob a message
         aliceToBobSession.send(new Bytestring("Bob, Do Not Buy OneCoin".getBytes()));
+
+        // Bob sends Alice a message
         bobToAliceSession.send(new Bytestring("CryptoCurrency OneCoin is a Virus".getBytes()));
 
-        aliceToCharlie = otrAlice.getPeer("charlie");
-        charlieToAlice = otrCharlie.getPeer("alice");
-        aliceToCharlieSession = aliceToCharlie.openSession(aliceSend);
+        // Alice sends Charlie a message
         aliceToCharlieSession.send(new Bytestring("CHARLIE DONT BUY ONECOIN".getBytes()));
+
+        // Charlie sends Alice a message
         charlieToAliceSession.send(new Bytestring("THE NSA HAS OUR BACK".getBytes()));
 
     }
 
     @After
     public void shutdown() throws InterruptedException, IOException {
+
         aliceToBobSession.close();
         bobToAliceSession.close();
+
+        aliceToCharlieSession.close();
+        charlieToAliceSession.close();
+
         aliceConnection.close();
         bobConnection.close();
+        charlieConnection.close();
 
         Assert.assertTrue(aliceToBobSession.closed());
         Assert.assertTrue(bobToAliceSession.closed());
+
+        Assert.assertTrue(aliceToCharlieSession.closed());
+        Assert.assertTrue(charlieToAliceSession.closed());
+
         Assert.assertTrue(aliceConnection.closed());
         Assert.assertTrue(bobConnection.closed());
+        Assert.assertTrue(charlieConnection.closed());
     }
 
 }
