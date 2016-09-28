@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.scene.*?>
 <?import java.lang.*?>
 <?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
@@ -31,17 +32,26 @@
             </HBox>
             <HBox layoutX="40.0" layoutY="114.0" prefHeight="102.0" prefWidth="540.0">
                <children>
-                  <ImageView fx:id="QRCodeImage" fitHeight="150.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
+                  <ImageView fx:id="qrReceiveCode" fitHeight="200.0" fitWidth="200.0" pickOnBounds="true" preserveRatio="true">
 
                      <HBox.margin>
                         <Insets right="5.0" />
                      </HBox.margin>
+                     <image>
+                        <Image url="@../shuffle_logo.jpg" />
+                     </image>
                   </ImageView>
-                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="I am a lengthy explanation of how my internal wallet is used, &#10;what privacy implications this has and what not.">
-                     <HBox.margin>
-                        <Insets left="5.0" />
-                     </HBox.margin>
-                  </Text>
+                  <VBox prefHeight="150.0" prefWidth="339.0">
+                     <children>
+                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="I am a lengthy explanation of how my internal wallet is used, &#10;what privacy implications this has and what not." wrappingWidth="352.1982421875">
+                           <HBox.margin>
+                              <Insets left="5.0" />
+                           </HBox.margin>
+                        </Text>
+                        <Text layoutX="220.0" layoutY="23.0" strokeType="OUTSIDE" strokeWidth="0.0" text="I am a lengthy explanation of how my internal wallet is used, &#10;what privacy implications this has and what not." wrappingWidth="355.1982421875" />
+                        <Label fx:id="recAddressLabel" alignment="CENTER" text="1BitcoinEaterAddressDontSendf59kuE" />
+                     </children>
+                  </VBox>
                </children>
             </HBox>
         <HBox alignment="CENTER_RIGHT" fillHeight="true" prefHeight="30.0" prefWidth="600.0" spacing="15.0" VBox.vgrow="NEVER">

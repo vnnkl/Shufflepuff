@@ -33,14 +33,14 @@
                         </Label>
                         <HBox>
                            <children>
-                              <RadioButton fx:id="fundsInReceiveAddress" mnemonicParsing="false" text="Send to ShufflePuff">
+                              <RadioButton fx:id="fundsInReceiveAddress" mnemonicParsing="false" selected="true" text="Send to ShufflePuff">
                                  <toggleGroup>
-                                    <ToggleGroup fx:id="ShuffleInOptions" />
+                                    <ToggleGroup fx:id="shuffleInOptions" />
                                  </toggleGroup>
                               </RadioButton>
-                              <RadioButton mnemonicParsing="false" text="Private Keys (WIF)" toggleGroup="$ShuffleInOptions" />
-                              <RadioButton mnemonicParsing="false" text="Master PrivKey" toggleGroup="$ShuffleInOptions" />
-                              <RadioButton mnemonicParsing="false" text="UTXOs" toggleGroup="$ShuffleInOptions" />
+                              <RadioButton fx:id="fundsInPrivKeyWIF" mnemonicParsing="false" text="Private Keys (WIF)" toggleGroup="$shuffleInOptions" />
+                              <RadioButton fx:id="fundsInMasterPrivKey" mnemonicParsing="false" text="Master PrivKey" toggleGroup="$shuffleInOptions" />
+                              <RadioButton fx:id="fundsInUTXOs" mnemonicParsing="false" text="UTXOs" toggleGroup="$shuffleInOptions" />
                            </children>
                         </HBox>
                      </children>
@@ -58,13 +58,13 @@
                         </Label>
                         <HBox>
                            <children>
-                              <RadioButton mnemonicParsing="false" text="ShufflePuffWallet (HD Seed)">
+                              <RadioButton fx:id="fundsOutInternalHD" mnemonicParsing="false" text="ShufflePuffWallet (HD Seed)">
                                  <toggleGroup>
                                     <ToggleGroup fx:id="shuffleOutOptions" />
                                  </toggleGroup>
                               </RadioButton>
-                              <RadioButton mnemonicParsing="false" text="external address(es)" toggleGroup="$shuffleOutOptions" />
-                              <RadioButton mnemonicParsing="false" text="xPub" toggleGroup="$shuffleOutOptions" />
+                              <RadioButton fx:id="fundsOutExtAddresses" mnemonicParsing="false" text="external address(es)" toggleGroup="$shuffleOutOptions" />
+                              <RadioButton fx:id="fundsOutXPub" mnemonicParsing="false" text="xPub" toggleGroup="$shuffleOutOptions" />
                            </children>
                         </HBox>
                      </children>

@@ -17,57 +17,48 @@
 package com.mycelium;
 
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
-import java.util.ArrayList;
-
 public class shuffleStartController {
-    public Button AddBtn;
-    public Button cancelBtn;
-    public TextField inputHashEdit;
-    public TextField inputIndexEdit;
-    public ArrayList<String> inputList;
-    public ListView inputListView;
+    @FXML private Button AddBtn;
+    @FXML private Button cancelBtn;
     public Main.OverlayUI overlayUI;
-    public RadioButton fundsInReceiveAddress;
-    final ToggleGroup shuffleInOptions = new ToggleGroup();
+    @FXML private RadioButton fundsInReceiveAddress;
+    @FXML private RadioButton fundsInPrivKeyWIF;
+    @FXML private RadioButton fundsInMasterPrivKey;
+    @FXML private RadioButton fundsInUTXOs;
+    @FXML private RadioButton fundsOutInternalHD;
+    @FXML private RadioButton fundsOutExtAddresses;
+    @FXML private RadioButton fundsOutXPub;
+    @FXML private RadioButton connectByIP;
+    @FXML private RadioButton connectByFetch;
+    @FXML private ToggleGroup shuffleInOptions;
+    @FXML private ToggleGroup shuffleOutOptions;
+    @FXML private ToggleGroup shuffleConnectOptions;
     // Called by FXMLLoader
+
+
     public void initialize() {
-        // create Group for FundsIn
+        // most is injected by fxml already
+        // setUserData for button selection FundsIn
+        fundsInReceiveAddress.setUserData("addReceiveAddress");
+        fundsInPrivKeyWIF.setUserData("addPrivKeyInWIF");
+        fundsInMasterPrivKey.setUserData("addMasterPriv");
+        fundsInUTXOs.setUserData("addUTXO");
 
+        // setUserData for button selection FundsOut
+        fundsOutInternalHD.setUserData("toHDAddresses");
+        fundsOutExtAddresses.setUserData("toExtAddress");
+        fundsOutXPub.setUserData("toMasterPub");
 
-        fundsInReceiveAddress = new RadioButton("Send to ShufflePuff");
-        fundsInReceiveAddress.setToggleGroup(shuffleInOptions);
-        fundsInReceiveAddress.setUserData("addMasterPriv");
-        fundsInReceiveAddress.setSelected(true);
-
-
-        RadioButton fundsInPrivKeyWIF = new RadioButton("Private Keys (WIF)");
-        fundsInPrivKeyWIF.setToggleGroup(shuffleInOptions);
-
-        RadioButton fundsInMasterPrivKey = new RadioButton("Master PrivKey");
-        fundsInMasterPrivKey.setToggleGroup(shuffleInOptions);
-
-        RadioButton fundsInUTXOs = new RadioButton("UTXOs");
-        fundsInUTXOs.setToggleGroup(shuffleInOptions);
-
-        // create Group for FundsOut
-        final ToggleGroup fundsOutGroup = new ToggleGroup();
-
-        RadioButton fundsOutInternalHD = new RadioButton("ShufflePuffWallet (HD Seed)");
-        fundsOutInternalHD.setToggleGroup(fundsOutGroup);
-
-        RadioButton fundsOutExtAddresses = new RadioButton("external address(es)");
-        fundsOutExtAddresses.setToggleGroup(fundsOutGroup);
-
-        RadioButton fundsOutXPub = new RadioButton("xPub");
-        fundsOutXPub.setToggleGroup(fundsOutGroup);
-        shuffleInOptions.getSelectedToggle().toString();
-
-        final ToggleGroup connectOptions = new ToggleGroup();
+        // setUserData for button selection connectOptions
+        connectByIP.setUserData("connectByIP");
+        connectByFetch.setUserData("connectByFetch");
 
 
     }
+
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
@@ -76,7 +67,8 @@ public class shuffleStartController {
 
     public void next(ActionEvent actionEvent) {
         // if next is clicked
-
-        Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_addReceiveAddress.fxml");
+        System.out.println(shuffleInOptions.getSelectedToggle().getUserData().toString());
+        String selectedToggle = new String(shuffleInOptions.getSelectedToggle().getUserData().toString());
+        Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
     }
 }

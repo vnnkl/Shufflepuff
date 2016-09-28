@@ -16,17 +16,19 @@
 
 package com.mycelium.fundsIn;
 
-import com.google.zxing.qrcode.QRCodeWriter;
-import com.google.zxing.qrcode.encoder.QRCode;
 import com.mycelium.Main;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import net.glxn.qrgen.image.ImageType;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+
 
 public class addReceiveAddressController {
     public Button AddBtn;
@@ -36,12 +38,25 @@ public class addReceiveAddressController {
     public ArrayList<String> privKeyList;
     public ListView privKeyListView;
     public Main.OverlayUI overlayUI;
-    public ImageView QRCodeImage;
+    public ImageView qrReceiveCode;
+    public Label recAddressLabel;
 
 
     // Called by FXMLLoader
     public void initialize() {
-        QRCodeImage.setImage(new Image("LOL"));
+
+
+
+        final byte[] imageBytes = net.glxn.qrgen.QRCode
+                .from("1BitcoinEaterAddressDontSendf59kuE")
+                .withSize(200, 200)
+                .to(ImageType.PNG)
+                .stream()
+                .toByteArray();
+        Image qrImage = new Image(new ByteArrayInputStream(imageBytes));
+        ImageView qrImageView = new ImageView(qrImage);
+        this.qrReceiveCode.setImage(qrImage);
+        this.recAddressLabel.setText("");
     }
 
     public void cancel(ActionEvent event) {
@@ -50,8 +65,8 @@ public class addReceiveAddressController {
 
     public void addInput(ActionEvent event) {
         // add Input, could be invalid still
-            String newInput = inputPrivKEdit.getText();
-            privKeyList.add(newInput);
+
+
 
 
 
@@ -109,4 +124,5 @@ public class addReceiveAddressController {
     public void next(ActionEvent actionEvent) {
 
     }
+
 }
