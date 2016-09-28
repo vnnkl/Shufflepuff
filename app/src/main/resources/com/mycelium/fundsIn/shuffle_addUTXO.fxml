@@ -7,7 +7,7 @@
 <?import javafx.scene.text.*?>
 <AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycelium.fundsIn.addUTXOController">
   <children>
-    <VBox alignment="CENTER_LEFT" layoutY="100.0" prefHeight="200.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+    <VBox alignment="CENTER_LEFT" layoutY="49.0" prefHeight="303.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
       <children>
         <Label fx:id="titleLabel" alignment="TOP_LEFT" text="Add UTXOs to be shuffled">
           <font>
@@ -23,7 +23,7 @@
                               <Font size="15.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="321.0" text="1347ae4bcc50d22070e649a5031f1c05f3b117534c85fd2a9b45cca0044bfa6d" />
+                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="321.0" promptText="1347ae4bcc50d22070e649a5031f1c05f3b117534c85fd2a9b45cca0044bfa6d" />
                      </children>
                   </VBox>
                   <VBox alignment="CENTER" prefHeight="46.0" prefWidth="42.0">
@@ -33,7 +33,7 @@
                               <Font size="15.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="inputIndexEdit" alignment="TOP_CENTER" maxWidth="25.0" minWidth="10.0" prefHeight="27.0" prefWidth="25.0" text="0" />
+                        <TextField fx:id="inputIndexEdit" alignment="TOP_CENTER" maxWidth="39.0" minWidth="10.0" prefHeight="27.0" prefWidth="39.0" promptText="0" />
                      </children>
                   </VBox>
                   <VBox alignment="CENTER" prefHeight="65.0" prefWidth="54.0">
@@ -50,7 +50,7 @@
             </HBox>
             <HBox alignment="CENTER_LEFT" spacing="15.0">
                <children>
-                  <ListView fx:id="inputListView" prefHeight="200.0" prefWidth="200.0" />
+                  <ListView fx:id="inputListView" prefHeight="140.0" prefWidth="414.0" />
                </children>
             </HBox>
         <HBox alignment="CENTER_RIGHT" fillHeight="true" prefHeight="30.0" prefWidth="600.0" spacing="15.0" VBox.vgrow="NEVER">

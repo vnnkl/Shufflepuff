@@ -17,11 +17,17 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import javafx.beans.property.ListProperty;
+import javafx.beans.property.SimpleListProperty;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
 
+import java.text.DecimalFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 
 public class addUTXOController {
@@ -29,12 +35,31 @@ public class addUTXOController {
     public Button cancelBtn;
     public TextField inputHashEdit;
     public TextField inputIndexEdit;
-    public ArrayList<String> inputList;
+    ListProperty<String> listProperty = new SimpleListProperty<>();
+    public ArrayList<String> inputList = new ArrayList<String>();
     public ListView inputListView;
     public Main.OverlayUI overlayUI;
 
     // Called by FXMLLoader
     public void initialize() {
+        inputListView.itemsProperty().bind(listProperty);
+        //allow index to have up to 3 numbers
+        DecimalFormat format = new DecimalFormat("###");
+        inputIndexEdit.setTextFormatter(new TextFormatter<>(c ->
+        {
+            if (c.getControlNewText().isEmpty()) {
+                return c;
+            }
+
+            ParsePosition parsePosition = new ParsePosition(0);
+            Object object = format.parse(c.getControlNewText(), parsePosition);
+
+            if (object == null || parsePosition.getIndex() < c.getControlNewText().length()) {
+                return null;
+            } else {
+                return c;
+            }
+        }));
     }
 
     public void cancel(ActionEvent event) {
@@ -43,59 +68,16 @@ public class addUTXOController {
 
     public void addInput(ActionEvent event) {
         // add Input, could be invalid still
-            String newInput = inputHashEdit.getText()+":"+inputIndexEdit.getText();
-            inputList.add(newInput);
+        String newInput = inputHashEdit.getText() + ":" + inputIndexEdit.getText();
+        String betterInput = newInput.replaceAll(" ", "");
+        // todo: if one of fields is empty do not paste
+            if (!inputList.contains(betterInput)) {
+                inputList.add(betterInput);
+            }
+
+        listProperty.set(FXCollections.observableArrayList(inputList));
 
 
-
-            /**SendRequest req;
-            if (amount.equals(Main.bitcoin.wallet().getBalance()))
-                req = SendRequest.emptyWallet(destination);
-
-            else
-                req = SendRequest.to(destination, amount);
-            req.aesKey = aesKey;
-            sendResult = Main.bitcoin.wallet().sendCoins(req);
-            Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<Transaction>() {
-                @Override
-                public void onSuccess(@Nullable Transaction result) {
-                    checkGuiThread();
-                    overlayUI.done();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    // We died trying to empty the wallet.
-                    crashAlert(t);
-                }
-            });
-            sendResult.tx.getConfidence().addEventListener((tx, reason) -> {
-                if (reason == TransactionConfidence.Listener.ChangeReason.SEEN_PEERS)
-                    updateTitleForBroadcast();
-            });
-            AddBtn.setDisable(true);
-            address.setDisable(true);
-            ((HBox)amountEdit.getParent()).getChildren().remove(amountEdit);
-            ((HBox)btcLabel.getParent()).getChildren().remove(btcLabel);
-            updateTitleForBroadcast();
-             **/
-
-    }
-
-    private void askForPasswordAndRetry() {
-        /**Main.OverlayUI<WalletPasswordController> pwd = Main.instance.overlayUI("wallet_password.fxml");
-        final String addressStr = address.getText();
-        final String amountStr = amountEdit.getText();
-        pwd.controller.aesKeyProperty().addListener((observable, old, cur) -> {
-            // We only get here if the user found the right password. If they don't or they cancel, we end up back on
-            // the main UI screen. By now the send money screen is history so we must recreate it.
-            checkGuiThread();
-            Main.OverlayUI<addUTXOController> screen = Main.instance.overlayUI("send_money.fxml");
-            screen.controller.aesKey = cur;
-            screen.controller.address.setText(addressStr);
-            screen.controller.amountEdit.setText(amountStr);
-            screen.controller.send(null);
-        });**/
     }
 
 
