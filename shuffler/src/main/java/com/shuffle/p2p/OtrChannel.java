@@ -33,11 +33,25 @@ import java.util.HashMap;
  * Created by Eugene Siegel on 5/10/16.
  */
 
+/**
+ * The OtrChannel class allows OTR ("Off-The-Record") encrypted communications. OtrChannel is a
+ * wrapper for a plaintext Channel like TcpChannel or WebsocketClientChannel / WebsocketServerChannel.
+ * After an initialization phase, it ensures messages over the input Channel are encrypted
+ * first via Jitsi's OTR library. OtrChannel then passes these encrypted messages to the inner
+ * input Channel.
+ */
+
 public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
+
+
     /**
+     * The SendOtrEngineHost class implements OtrEngineHost, a Jitsi interface.
+     * This class processes messages sent / received by the SessionImpl Jitsi object.
+     *
      * Most of the methods for SendOtrEngineHost are not filled out, but it does not matter
-     * here.  If you need other jitsi/otr functionality, feel free to change the methods.
+     * for this particular implementation.  If you need other jitsi/otr functionality,
+     * feel free to change the methods.
      */
 
     private class SendOtrEngineHost implements OtrEngineHost {
@@ -54,7 +68,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             try {
                 session.send(new Bytestring(msg.getBytes()));
             } catch (IOException | InterruptedException e) {
-
+                session.close();
             }
         }
 
@@ -238,7 +252,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             if (receivedMessage == null) {
-                return false;
+                return true;
             }
 
             /**
@@ -299,7 +313,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             if (receivedMessage == null) {
-                return false;
+                return true;
             }
 
             try {
