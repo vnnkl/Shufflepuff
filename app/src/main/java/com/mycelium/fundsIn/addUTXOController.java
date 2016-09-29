@@ -44,7 +44,7 @@ public class addUTXOController {
     public void initialize() {
         inputListView.itemsProperty().bind(listProperty);
         //allow index to have up to 3 numbers
-        DecimalFormat format = new DecimalFormat("###");
+        DecimalFormat format = new DecimalFormat("#");
         inputIndexEdit.setTextFormatter(new TextFormatter<>(c ->
         {
             if (c.getControlNewText().isEmpty()) {
