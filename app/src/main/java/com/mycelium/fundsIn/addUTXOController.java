@@ -74,10 +74,7 @@ public class addUTXOController {
             if (!inputList.contains(betterInput)) {
                 inputList.add(betterInput);
             }
-
         listProperty.set(FXCollections.observableArrayList(inputList));
-
-
     }
 
 

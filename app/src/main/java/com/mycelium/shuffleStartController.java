@@ -18,7 +18,9 @@ package com.mycelium;
 
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.ToggleGroup;
 
 public class shuffleStartController {
     @FXML private Button AddBtn;
@@ -66,9 +68,11 @@ public class shuffleStartController {
 
 
     public void next(ActionEvent actionEvent) {
-        // if next is clicked
+        // if next is clicked and every group has a selection made
+        //todo: setter method for each group
         System.out.println(shuffleInOptions.getSelectedToggle().getUserData().toString());
         String selectedToggle = new String(shuffleInOptions.getSelectedToggle().getUserData().toString());
-        Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
+        Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toHDAddresses.fxml");
+        // Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
     }
 }

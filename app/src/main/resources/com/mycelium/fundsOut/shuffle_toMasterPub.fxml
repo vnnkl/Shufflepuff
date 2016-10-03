@@ -4,8 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
-<?import javafx.scene.text.Font?>
-<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.*?>
 <AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.mycelium.fundsOut.toMasterPubController">
    <children>
        <VBox alignment="CENTER_LEFT" layoutY="26.0" prefHeight="348.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
@@ -27,12 +26,12 @@
                         <children>
                             <VBox alignment="CENTER" prefHeight="68.0" prefWidth="439.0">
                                <children>
-                                   <Label fx:id="privKLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="507.0" text="(112 characters base58, starts with a 'xpub')">
+                                   <Label fx:id="MasterPubLabel" alignment="CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="507.0" text="(112 characters base58, starts with a 'xpub')">
                                        <font>
                                            <Font size="15.0" />
                                        </font>
                                    </Label>
-                                   <TextField fx:id="inputPrivKEdit" prefHeight="37.0" prefWidth="439.0" promptText="xpub6FPb rq1XB2Au KW4J8aHK uUzZVyaZ jXEHHZsA &#10;7S6Mq6Hh KCM49cJKa 2f5Ur2TxA 6TpzQ6KJ 1peWuFXE&#10;NsEQobtU hCuddn2N xztVSt24 YqsQi" />
+                                   <TextField fx:id="inputMasterPubEdit" prefHeight="37.0" prefWidth="439.0" promptText="xpub6FPb rq1XB2Au KW4J8aHK uUzZVyaZ jXEHHZsA &#10;7S6Mq6Hh KCM49cJKa 2f5Ur2TxA 6TpzQ6KJ 1peWuFXE&#10;NsEQobtU hCuddn2N xztVSt24 YqsQi" />
                                </children>
                             </VBox>
                             <VBox alignment="CENTER" prefHeight="65.0" prefWidth="54.0">
@@ -42,9 +41,19 @@
                                            <Font size="15.0" />
                                        </font>
                                    </Label>
-                                   <Button fx:id="AddBtn" alignment="CENTER" mnemonicParsing="false" onAction="#addInput" prefHeight="27.0" prefWidth="44.0" text="Add" />
+                                   <Button fx:id="AddBtn" alignment="CENTER" mnemonicParsing="false" onAction="#addFromPub" prefHeight="27.0" prefWidth="45.0" text="Find" />
                                </children>
                             </VBox>
+                        <VBox>
+                           <children>
+                              <Label fx:id="btcLabel111" alignment="CENTER" contentDisplay="CENTER" visible="false" wrapText="true">
+                                 <font>
+                                    <Font size="15.0" />
+                                 </font>
+                              </Label>
+                              <ProgressIndicator fx:id="progressIndicator" prefHeight="40.0" prefWidth="20.0" />
+                           </children>
+                        </VBox>
                         </children>
                      </HBox>
                  </children>
@@ -54,7 +63,7 @@
                      <VBox prefHeight="114.0" prefWidth="439.0">
                         <children>
                             <Label fx:id="privKListLabel" text="the following addresses have been found:" />
-                            <ListView fx:id="privKeyListView" prefHeight="84.0" prefWidth="217.0" />
+                            <ListView fx:id="pubKeyListView" prefHeight="84.0" prefWidth="217.0" />
                         </children>
                      </VBox>
                  </children>
