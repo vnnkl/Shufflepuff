@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 
 /**
  * Created by Eugene Siegel on 5/10/16.
@@ -42,8 +41,6 @@ import java.util.HashMap;
  */
 
 public class OtrChannel<Address> implements Channel<Address, Bytestring> {
-
-
 
     /**
      * The SendOtrEngineHost class implements OtrEngineHost, a Jitsi interface.
@@ -234,6 +231,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private OtrSession(Session<Address, Bytestring> s, SessionImpl sessionImpl) {
             this.s = s;
             this.sessionImpl = sessionImpl;
+            System.out.println("STATUS--" + sessionImpl.getSessionStatus().toString());
+            System.out.println("encrypted :)");
         }
 
         /**
@@ -474,6 +473,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             OtrSendAlice alice = new OtrSendAlice(send, chan);
             Session<Address, Bytestring> session = peer.openSession(alice);
+            if (session == null) return null;
 
             final SessionID sessionID = new SessionID("", "", "");
             OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
@@ -541,15 +541,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     private Channel<Address, Bytestring> channel;
     private boolean running = false;
-    private final Address me;
 
-    public OtrChannel(Channel<Address, Bytestring> channel, Address me) {
-        if (me == null) {
-            throw new NullPointerException();
-        }
-
+    public OtrChannel(Channel<Address, Bytestring> channel) {
         this.channel = channel;
-        this.me = me;
     }
 
     /**
@@ -574,7 +568,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     @Override
     public Peer<Address, Bytestring> getPeer(Address you) {
-        if (you.equals(me)) return null;
         Peer<Address, Bytestring> p = channel.getPeer(you);
         if (p == null) return null;
         return new OtrPeer(p);

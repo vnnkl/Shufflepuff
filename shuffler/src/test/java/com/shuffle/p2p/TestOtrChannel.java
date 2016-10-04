@@ -67,9 +67,9 @@ public class TestOtrChannel {
          * Alice, Bob, and Charlie -- each with their own OtrChannel objects.
          */
 
-        otrAlice = new OtrChannel<>(aliceNode, "alice");
-        otrBob = new OtrChannel<>(bobNode, "bob");
-        otrCharlie = new OtrChannel<>(charlieNode, "charlie");
+        otrAlice = new OtrChannel<>(aliceNode);
+        otrBob = new OtrChannel<>(bobNode);
+        otrCharlie = new OtrChannel<>(charlieNode);
 
         /**
          * Setting up Alice, Bob, and Charlie's Send<> and Listener<> objects.

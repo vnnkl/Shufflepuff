@@ -15,7 +15,6 @@ import com.shuffle.bitcoin.impl.AddressImpl;
 import com.shuffle.bitcoin.impl.CryptoProtobuf;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.bitcoin.impl.VerificationKeyImpl;
-import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
@@ -36,6 +35,7 @@ import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.Multiplexer;
+import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
@@ -82,7 +82,7 @@ import joptsimple.OptionSpecBuilder;
  */
 public class Shuffle {
     // Turn this on to enable test mode options.
-    private static boolean TEST_MODE = false;
+    private static boolean TEST_MODE = true;
 
     // 1 / 100 of a bitcoin.
     private static long MIN_AMOUNT = 1000000;
@@ -210,7 +210,7 @@ public class Shuffle {
 
     public final ExecutorService executor;
 
-    private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
+    private final MockNetwork<Integer, Bytestring> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
             throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception {
@@ -651,10 +651,11 @@ public class Shuffle {
             new MappedChannel<>(
                 new Multiplexer<>(
                     new MarshallChannel<>(
-                        new TcpChannel(
-                            new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
-                            m.signedMarshaller()),
-                        mock.node(id)),
+                        //new OtrChannel<>(
+                            new TcpChannel(
+                                new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
+                                m.signedMarshaller()),
+                        new MarshallChannel<>(new OtrChannel<>(mock.node(id)),m.signedMarshaller())),
                     peers);
 
         return new Player(
