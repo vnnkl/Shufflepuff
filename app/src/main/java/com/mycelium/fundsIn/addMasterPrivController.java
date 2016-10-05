@@ -17,14 +17,17 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import com.mycelium.ShuffleStartController;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class addMasterPrivController {
@@ -59,10 +62,20 @@ public class addMasterPrivController {
             }
         }
         listProperty.set(FXCollections.observableArrayList(privKeyList));
+
+        FXMLLoader loader = new FXMLLoader(getClass().getResource("../shuffle_start.fxml"));
+        try {
+            loader.load();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        ShuffleStartController controller = loader.getController();
+        controller.setFundsInList(privKeyList);
     }
 
 
     public void next(ActionEvent actionEvent) {
+
 
     }
 }

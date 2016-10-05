@@ -22,7 +22,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 
-public class shuffleStartController {
+import java.util.ArrayList;
+
+public class ShuffleStartController {
     @FXML private Button AddBtn;
     @FXML private Button cancelBtn;
     public Main.OverlayUI overlayUI;
@@ -40,7 +42,11 @@ public class shuffleStartController {
     @FXML private ToggleGroup shuffleConnectOptions;
     // Called by FXMLLoader
 
+    ArrayList<String> fundsInList = new ArrayList<>();
 
+    public void setFundsInList(ArrayList<String> fundsInList){
+        this.fundsInList.addAll(fundsInList);
+    }
     public void initialize() {
         // most is injected by fxml already
         // setUserData for button selection FundsIn
@@ -59,6 +65,7 @@ public class shuffleStartController {
         connectByFetch.setUserData("connectByFetch");
 
 
+
     }
 
 
@@ -72,7 +79,7 @@ public class shuffleStartController {
         //todo: setter method for each group
         System.out.println(shuffleInOptions.getSelectedToggle().getUserData().toString());
         String selectedToggle = new String(shuffleInOptions.getSelectedToggle().getUserData().toString());
-        Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toHDAddresses.fxml");
-        // Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
+        //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
+         Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
     }
 }
