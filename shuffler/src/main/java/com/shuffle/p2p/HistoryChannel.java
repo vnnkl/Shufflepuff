@@ -154,8 +154,10 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
                 HistorySession hs = new HistorySession(session, h);
 
-                HistoryPeer p = (HistoryPeer)getPeer(session.peer().identity());
-                p.history().add(hs);
+                HistoryPeer p = getHistoryPeer(session.peer().identity());
+                if (p == null) return null;
+
+                p.sessions.add(hs);
 
                 return hs;
             }
