@@ -72,7 +72,7 @@ public class Mailbox {
         if (!players.contains(to)) {
             return;
         }
-
+        
         Packet packet = m.send(phase, to);
 
         // If this is a message to myself, don't send it. Just pretend we received it.

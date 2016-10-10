@@ -1069,7 +1069,7 @@ public final class Proto {
   /**
    * Protobuf type {@code Packet}
    */
-  public  static final class Packet extends
+  public static final class Packet extends
       com.google.protobuf.GeneratedMessage implements
       // @@protoc_insertion_point(message_implements:Packet)
       PacketOrBuilder {

@@ -649,23 +649,24 @@ public class Shuffle {
 
         /*
         Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
-            new MappedChannel<>(
-                new Multiplexer<>(
-                    new MarshallChannel<>(
-                        //new OtrChannel<>(
-                            new TcpChannel(
-                                new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
-                                m.signedMarshaller()),
-                        new OtrChannel<Integer>(mock.node(id))),
-                    peers);*/
+                new MappedChannel<>(
+                        new Multiplexer<>(
+                                new MarshallChannel<>(
+                                        new TcpChannel(
+                                                new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
+                                        m.signedMarshaller()),
+                                mock.node(id)),
+                        peers);*/
+
+
         Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
                 new MappedChannel<>(
                         new Multiplexer<>(
                                 new MarshallChannel<>(
-                                    new TcpChannel(
-                                           new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
-                                    m.signedMarshaller()),
-                                mock.node(id)),
+                                        new TcpChannel(
+                                                new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
+                                        m.signedMarshaller()),
+                                new MarshallChannel<>(new OtrChannel<>(mock.node(id)),m.signedMarshaller())),
                         peers);
 
         return new Player(
