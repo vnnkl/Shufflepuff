@@ -13,11 +13,8 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.chan.packet.JavaMarshaller;
-import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.player.P;
 import com.shuffle.player.Protobuf;
@@ -28,7 +25,10 @@ import com.shuffle.protocol.blame.Evidence;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.protocol.blame.Reason;
 import com.shuffle.protocol.message.MessageFactory;
+import com.shuffle.sim.init.Initializer;
+import com.shuffle.sim.init.Communication;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -383,10 +383,10 @@ public class InitialState {
 
     public Map<SigningKey, Adversary> getPlayers(
             Initializer<Packet<VerificationKey, P>> initializer)
-            throws ExecutionException, InterruptedException {
+            throws ExecutionException, InterruptedException, IOException {
 
         Map<SigningKey, Adversary> p = new HashMap<>();
-        Map<SigningKey, Initializer.Connections<Packet<VerificationKey, P>>> connections = new HashMap<>();
+        Map<SigningKey, Communication<Packet<VerificationKey, P>>> connections = new HashMap<>();
 
         for (final PlayerInitialState player : players) {
             if (player.sk == null) {
@@ -398,7 +398,7 @@ public class InitialState {
 
         for (final PlayerInitialState player : players) {
 
-            Initializer.Connections<Packet<VerificationKey, P>> c = connections.get(player.sk);
+            Communication<Packet<VerificationKey, P>> c = connections.get(player.sk);
 
             try {
                 p.put(player.sk,

@@ -13,6 +13,7 @@ import com.shuffle.sim.InitialState;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
@@ -28,7 +29,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
     private void EquivocateAnnouncement(
             int numPlayers,
             InitialState.Equivocation[] equivocators
-    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
+    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception, IOException {
         String description = "case " + caseNo + "; announcement equivocation test case.";
         check(newTestCase(description).equivocateAnnouncementTestCase(
                 numPlayers, equivocators
@@ -37,7 +38,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
 
     @Test
     public void testEquivocationAnnounce()
-            throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
+            throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception, IOException {
 
         // A player sends different encryption keys to different players.
         EquivocateAnnouncement(3,

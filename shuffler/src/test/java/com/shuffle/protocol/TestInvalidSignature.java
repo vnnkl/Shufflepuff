@@ -12,6 +12,7 @@ import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
@@ -29,7 +30,7 @@ public class TestInvalidSignature extends TestShuffleMachine{
 
     private void InvalidTransactionSignature(int numPlayers, int[] mutants)
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
 
         String description = "case " + caseNo + "; invalid transaction signature test case.";
         check(newTestCase(description).invalidSignatureTestCase(numPlayers, mutants));
@@ -38,7 +39,7 @@ public class TestInvalidSignature extends TestShuffleMachine{
     @Test
     public void testInvalidSignature()
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
 
         // Player generates a different transaction signature to everyone else.
         InvalidTransactionSignature(2, new int[]{2});

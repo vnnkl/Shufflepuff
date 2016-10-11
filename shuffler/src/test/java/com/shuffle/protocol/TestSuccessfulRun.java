@@ -26,6 +26,7 @@ import com.shuffle.sim.Simulator;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -43,7 +44,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     // Create a test case representing a successful run.
     private void SuccessfulRun(int numPlayer)
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
 
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
         check(newTestCase(description).successfulTestCase(numPlayer));
@@ -53,7 +54,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     // Tests for successful runs of the protocol.
     public void testSuccess()
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
 
         // Tests for successful runs.
         int minPlayers = 2;
@@ -65,8 +66,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     }
 
     private static class ChangeTestInput {
-        public final int amount;
-        public final boolean change;
+        final int amount;
+        final boolean change;
 
         private ChangeTestInput(int amount, boolean change) {
             this.amount = amount;
@@ -75,9 +76,9 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     }
 
     private static class ChangeTestCase {
-        public final int amount;
-        public final int fee;
-        public final ChangeTestInput[] inputs;
+        final int amount;
+        final int fee;
+        final ChangeTestInput[] inputs;
 
         private ChangeTestCase(int amount, int fee, ChangeTestInput... inputs) {
             for (ChangeTestInput input : inputs) {
@@ -91,8 +92,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     }
 
     private static class ChangeTestExpected {
-        public final Address address;
-        public final int expected;
+        final Address address;
+        final int expected;
 
         private ChangeTestExpected(Address address, int expected) {
             this.address = address;
@@ -102,7 +103,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
     @Test
     // Test that the resulting transaction has the correct outputs.
-    public void testOutputs() throws ExecutionException, InterruptedException {
+    public void testOutputs() throws ExecutionException, InterruptedException, IOException {
         ChangeTestCase[] tests = new ChangeTestCase[]{
                 new ChangeTestCase(37, 1,
                         new ChangeTestInput(45, true), new ChangeTestInput(78, true)),

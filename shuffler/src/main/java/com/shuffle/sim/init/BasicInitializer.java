@@ -1,33 +1,31 @@
-package com.shuffle.sim;
+package com.shuffle.sim.init;
 
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Inbox;
-import com.shuffle.chan.Receive;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.p2p.Bytestring;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A class that creates connections between players in a simulation.
- *
- * Created by Daniel Krawisz on 5/21/16.
+ * Created by Daniel Krawisz on 10/11/16.
  */
-class Initializer<X> {
 
+public class BasicInitializer<X> implements Initializer<X> {
     // The set of incoming mailboxes for each player.
-    public final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
+    final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
 
     // The set of channels that player use to send to other players.
-    public final Map<SigningKey, Map<VerificationKey, Send<Signed<X>>>> networks = new HashMap<>();
+    final Map<SigningKey, Map<VerificationKey, Send<Signed<X>>>> networks = new HashMap<>();
 
-    public final Bytestring session;
-    public final int capacity;
+    final Bytestring session;
+    final int capacity;
 
-    Initializer(Bytestring session, int capacity) {
+    public BasicInitializer(Bytestring session, int capacity) {
 
         if (session == null || capacity == 0) throw new IllegalArgumentException();
 
@@ -35,37 +33,18 @@ class Initializer<X> {
         this.capacity = capacity;
     }
 
-
-    public static class Connections<X> {
-        public final VerificationKey identity;
-        public final Map<VerificationKey, Send<Signed<X>>> send;
-        public final Receive<Inbox.Envelope<VerificationKey, Signed<X>>> receive;
-
-        public Connections(
-                VerificationKey identity,
-                Map<VerificationKey, Send<Signed<X>>> send,
-                Receive<Inbox.Envelope<VerificationKey, Signed<X>>> receive) {
-
-            if (identity == null || send == null || receive == null)
-                throw new NullPointerException();
-
-            this.identity = identity;
-            this.send = send;
-            this.receive = receive;
-        }
-    }
-
     // This function is called every time a new player is created in a simulation.
-    public Connections<X> connect(SigningKey sk) {
+    public Communication<X> connect(SigningKey sk)
+            throws IOException, InterruptedException {
 
         VerificationKey vk = sk.VerificationKey();
 
         // Create a new map. This will contain the channels from this mailbox to the others.
-        Map<VerificationKey, Send<Signed<X>>> inputs = new HashMap<>();
+        final Map<VerificationKey, Send<Signed<X>>> inputs = new HashMap<>();
         networks.put(sk, inputs);
 
         // Ceate a new mailbox.
-        Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
+        final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create input channels for this new mailbox that lead to all other mailboxes
         // and create input channels for all the other mailboxes for this new one.
@@ -84,6 +63,11 @@ class Initializer<X> {
         // Put the mailbox in the set.
         mailboxes.put(sk, inbox);
 
-        return new Connections<>(vk, inputs, inbox);
+        return new Communication<>(vk, inputs, inbox);
+    }
+
+    @Override
+    public void clear() {
+        networks.clear();
     }
 }

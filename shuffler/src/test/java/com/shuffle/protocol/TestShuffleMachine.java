@@ -28,6 +28,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
@@ -141,7 +142,7 @@ public class TestShuffleMachine {
         return new MockTestCase(session);
     }
 
-    void check(InitialState init) throws ExecutionException, InterruptedException {
+    void check(InitialState init) throws ExecutionException, InterruptedException, IOException {
         int fail = 0;
         int success = 0;
         caseNo++;
