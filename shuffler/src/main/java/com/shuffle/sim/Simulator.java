@@ -11,6 +11,7 @@ package com.shuffle.sim;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
@@ -21,6 +22,7 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.P;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.init.BasicInitializer;
+import com.shuffle.sim.init.ChannelInitializer;
 import com.shuffle.sim.init.Initializer;
 
 import org.apache.logging.log4j.Logger;
@@ -30,8 +32,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static com.shuffle.sim.init.Initializer.make;
-
 /**
  * A simulator for running integration tests on the protocol.
  *
@@ -40,15 +40,49 @@ import static com.shuffle.sim.init.Initializer.make;
 public final class Simulator {
     private static final Logger log = LogManager.getLogger(Simulator.class);
 
-    // Cannot be instantiated. Everything here is static!
-    private Simulator() {}
+    public final Initializer.Type type;
+    public final Marshaller<Packet<VerificationKey, P>> marshaller;
 
-    public static Map<SigningKey, Either<Transaction, Matrix>> run(
-            InitialState init, Initializer.Type comType)
+    public Simulator() {
+        type = Initializer.Type.Basic;
+        marshaller = null;
+    }
+
+    public Simulator(Initializer.Type type) {
+        if (type == null) throw new NullPointerException();
+
+        if (type == Initializer.Type.OTR) throw new IllegalArgumentException();
+
+        this.type = type;
+        this.marshaller = null;
+    }
+
+    public Simulator(Initializer.Type type, Marshaller<Packet<VerificationKey, P>> marshaller) {
+        if (type == null || marshaller == null) throw new NullPointerException();
+
+        this.type = type;
+        this.marshaller = marshaller;
+    }
+
+    private Initializer<Packet<VerificationKey, P>> makeInitializer(Bytestring session, int capacity) {
+        switch (type) {
+            case Basic:
+                return new BasicInitializer<>(session, capacity);
+            case Mock:
+                return new ChannelInitializer<>(session, capacity);
+            case OTR:
+                throw new IllegalArgumentException();
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
+
+    public Map<SigningKey, Either<Transaction, Matrix>> run(
+            InitialState init)
             throws ExecutionException, InterruptedException, IOException {
 
         final Initializer<Packet<VerificationKey, P>> initializer =
-                Initializer.make(comType, init.session, 3 * (1 + init.size() ));
+                makeInitializer(init.session(), 3 * (1 + init.size()));
 
         final Map<SigningKey, Adversary> machines = init.getPlayers(initializer);
 
