@@ -4,12 +4,15 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Send;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Connection;
 import com.shuffle.p2p.Listener;
+import com.shuffle.p2p.MarshallChannel;
+import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.Session;
 
 import java.io.IOException;

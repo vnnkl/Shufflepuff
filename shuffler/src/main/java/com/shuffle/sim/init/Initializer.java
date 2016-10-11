@@ -1,6 +1,7 @@
 package com.shuffle.sim.init;
 
 import com.shuffle.bitcoin.SigningKey;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.p2p.Bytestring;
 
 import java.io.IOException;
