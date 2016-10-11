@@ -9,7 +9,7 @@
 package com.shuffle.protocol;
 
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
-import com.shuffle.sim.InitialState;
+import com.shuffle.sim.TestCase;
 
 import org.junit.Test;
 
@@ -28,7 +28,7 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
     // Run a test case for equivocation during phase 1.
     private void EquivocateAnnouncement(
             int numPlayers,
-            InitialState.Equivocation[] equivocators
+            TestCase.Equivocation[] equivocators
     ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception, IOException {
         String description = "case " + caseNo + "; announcement equivocation test case.";
         check(newTestCase(description).equivocateAnnouncementTestCase(
@@ -42,19 +42,19 @@ public class TestEquivocateAnnouncement extends TestShuffleMachine{
 
         // A player sends different encryption keys to different players.
         EquivocateAnnouncement(3,
-                new InitialState.Equivocation[]{
-                        new InitialState.Equivocation(2, new int[]{3})});
+                new TestCase.Equivocation[]{
+                        new TestCase.Equivocation(2, new int[]{3})});
         EquivocateAnnouncement(5,
-                new InitialState.Equivocation[]{
-                        new InitialState.Equivocation(2, new int[]{4, 5})});
+                new TestCase.Equivocation[]{
+                        new TestCase.Equivocation(2, new int[]{4, 5})});
         EquivocateAnnouncement(10,
-                new InitialState.Equivocation[]{
-                        new InitialState.Equivocation(2, new int[]{4, 10}),
-                        new InitialState.Equivocation(5, new int[]{7, 8})});
+                new TestCase.Equivocation[]{
+                        new TestCase.Equivocation(2, new int[]{4, 10}),
+                        new TestCase.Equivocation(5, new int[]{7, 8})});
         EquivocateAnnouncement(10,
-                new InitialState.Equivocation[]{
-                        new InitialState.Equivocation(2, new int[]{3}),
-                        new InitialState.Equivocation(4, new int[]{5, 6}),
-                        new InitialState.Equivocation(8, new int[]{9})});
+                new TestCase.Equivocation[]{
+                        new TestCase.Equivocation(2, new int[]{3}),
+                        new TestCase.Equivocation(4, new int[]{5, 6}),
+                        new TestCase.Equivocation(8, new int[]{9})});
     }
 }

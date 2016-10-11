@@ -22,6 +22,8 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.Simulator;
+import com.shuffle.sim.TestCase;
+import com.shuffle.sim.init.Initializer;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -120,8 +122,10 @@ public class TestSuccessfulRun extends TestShuffleMachine {
         int i = 0;
         for (ChangeTestCase test : tests) {
             i ++;
-            Bytestring session = new Bytestring(("change test case " + i).getBytes());
-            InitialState init = new InitialState(session, test.amount, test.fee, mc, new MockProtobuf());
+            String session = "change test case " + i;
+
+            InitialState init = new InitialState(
+                    new MockTestCase(session, Initializer.Type.Basic, test.amount, test.fee));
 
             // First create the bitcoin mock network.
             List<ChangeTestExpected> expected = new LinkedList<>();
@@ -136,7 +140,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
             }
 
             // Run the simulation.
-            Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init, type);
+            Map<SigningKey, Either<Transaction, Matrix>> results = new Simulator().run(init);
 
             Assert.assertNotNull(results);
 
@@ -151,6 +155,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
                 Assert.assertNotNull(t);
             }
+
+            if (t == null) Assert.fail();
 
             List<MockCoin.Output> outputs = t.outputs;
 
