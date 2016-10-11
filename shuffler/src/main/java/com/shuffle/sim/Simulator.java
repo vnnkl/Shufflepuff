@@ -8,7 +8,6 @@
 
 package com.shuffle.sim;
 
-import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
@@ -18,14 +17,20 @@ import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
+import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.P;
 import com.shuffle.protocol.blame.Matrix;
+import com.shuffle.sim.init.BasicInitializer;
+import com.shuffle.sim.init.Initializer;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+
+import static com.shuffle.sim.init.Initializer.make;
 
 /**
  * A simulator for running integration tests on the protocol.
@@ -36,18 +41,20 @@ public final class Simulator {
     private static final Logger log = LogManager.getLogger(Simulator.class);
 
     // Cannot be instantiated. Everything here is static!
-    private Simulator() {
-    }
+    private Simulator() {}
 
-    public static Map<SigningKey, Either<Transaction, Matrix>> run(InitialState init)
-            throws ExecutionException, InterruptedException {
+    public static Map<SigningKey, Either<Transaction, Matrix>> run(
+            InitialState init, Initializer.Type comType)
+            throws ExecutionException, InterruptedException, IOException {
 
-        final Initializer<Packet<VerificationKey, P>> initializer = new Initializer<>(init.session, 3 * (1 + init.size() ));
+        final Initializer<Packet<VerificationKey, P>> initializer =
+                Initializer.make(comType, init.session, 3 * (1 + init.size() ));
+
         final Map<SigningKey, Adversary> machines = init.getPlayers(initializer);
 
         Map<SigningKey, Either<Transaction, Matrix>> results = runSimulation(machines);
 
-        initializer.networks.clear(); // Avoid memory leak.
+        initializer.clear(); // Avoid memory leak.
         return results;
     }
 

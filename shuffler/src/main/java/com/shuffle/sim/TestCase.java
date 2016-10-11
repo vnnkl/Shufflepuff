@@ -17,10 +17,12 @@ import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.blame.Matrix;
+import com.shuffle.sim.init.Initializer;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
@@ -51,11 +53,11 @@ public abstract class TestCase {
 
     // Returns a map containing the set of results which did not match expectations. An empty map
     // represents a successful test.
-    public static Map<SigningKey, Mismatch> test(InitialState init)
-            throws ExecutionException, InterruptedException {
+    public static Map<SigningKey, Mismatch> test(InitialState init, Initializer.Type comType)
+            throws ExecutionException, InterruptedException, IOException {
 
         // Run the simulation.
-        Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init);
+        Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init, comType);
 
         if (results == null) {
             return null;

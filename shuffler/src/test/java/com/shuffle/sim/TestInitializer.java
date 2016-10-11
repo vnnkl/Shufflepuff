@@ -8,6 +8,10 @@ import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.packet.SigningSend;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.sim.init.BasicInitializer;
+import com.shuffle.sim.init.ChannelInitializer;
+import com.shuffle.sim.init.Communication;
+import com.shuffle.sim.init.Initializer;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,6 +19,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -47,42 +53,53 @@ public class TestInitializer {
         int players = 88;
         IntMarshaller im = new IntMarshaller();
 
-        Initializer<Integer> initializer = new Initializer<Integer>(
-                new Bytestring(("test initializer " + players).getBytes()), 2 * (1 + players ));
+        List<Initializer<Integer>> initializers = new LinkedList<>();
 
-        Map<SigningKey, Initializer.Connections<Integer>> connections = new HashMap<>();
+        // The types of initializers to be tested.
+        initializers.add(new BasicInitializer<>(
+                new Bytestring(("test basic initializer " + players).getBytes()), 2 * (1 + players)));
+        initializers.add(new ChannelInitializer<>(
+                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players)));
 
-        for (int player = 1; player <= players; player ++) {
-            SigningKey alice = new MockSigningKey(player);
+        // Test each one in turn.
+        for (Initializer<Integer> initializer : initializers) {
 
-            // Add new player.
-            Initializer.Connections<Integer> c = initializer.connect(alice);
-            int message = 0;
+            Map<SigningKey, Communication<Integer>> connections = new HashMap<>();
 
-            // Should be able to receive from and send to every previous player.
-            for (Map.Entry<SigningKey, Initializer.Connections<Integer>> prev : connections.entrySet()) {
-                Initializer.Connections<Integer> con = prev.getValue();
-                SigningKey bob = prev.getKey();
+            for (int player = 1; player <= players; player++) {
+                SigningKey alice = new MockSigningKey(player);
 
-                // Send a message from bob to alice.
-                new SigningSend<>(con.send.get(alice.VerificationKey()), im, bob).send(message);
-                Inbox.Envelope<VerificationKey, Signed<Integer>> r
-                        = c.receive.receive(10, TimeUnit.MILLISECONDS);
+                // Add new player.
+                Communication<Integer> c = initializer.connect(alice);
+                int message = 0;
 
-                Assert.assertTrue(r.payload.message.equals(message));
-                message++;
+                // Should be able to receive from and send to every previous player.
+                for (Map.Entry<SigningKey, Communication<Integer>> prev : connections.entrySet()) {
+                    Communication<Integer> com = prev.getValue();
+                    SigningKey bob = prev.getKey();
 
-                // Send a message from alice to bob.
-                new SigningSend<>(c.send.get(bob.VerificationKey()), im, alice).send(message);
-                Inbox.Envelope<VerificationKey, Signed<Integer>> re =
-                        con.receive.receive();
+                    // Send a message from bob to alice.
+                    new SigningSend<>(com.send.get(alice.VerificationKey()), im, bob).send(message);
+                    Inbox.Envelope<VerificationKey, Signed<Integer>> r
+                            = c.receive.receive(10, TimeUnit.MILLISECONDS);
 
-                Assert.assertTrue(re.payload.message.equals(message));
-                message++;
+                    Assert.assertTrue(r.payload.message.equals(message));
+                    message++;
+
+                    // Send a message from alice to bob.
+                    new SigningSend<>(c.send.get(bob.VerificationKey()), im, alice).send(message);
+                    Inbox.Envelope<VerificationKey, Signed<Integer>> re =
+                            com.receive.receive();
+
+                    Assert.assertTrue(re.payload.message.equals(message));
+                    message++;
+                }
+
+                // Add connections to map of previous players.
+                connections.put(alice, c);
             }
 
-            // Add connections to map of previous players.
-            connections.put(alice, c);
+            initializer.clear();
         }
     }
 }
