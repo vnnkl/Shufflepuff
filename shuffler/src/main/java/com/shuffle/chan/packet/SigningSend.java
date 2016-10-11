@@ -34,10 +34,13 @@ public class SigningSend<X> implements Send<X> {
     @Override
     public boolean send(X x) throws InterruptedException, IOException {
         Bytestring b;
-        b = marshaller.marshall(x);
-        if (b == null) return false;
-        Bytestring s = key.sign(b);
-        return s != null && session.send(new Signed<>(x, s));
+        Signed<X> signed;
+        try {
+            signed = new Signed<X>(x, key, marshaller);
+        } catch (NullPointerException e) {
+            return false;
+        }
+        return session.send(signed);
 
     }
 
