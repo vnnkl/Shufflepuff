@@ -161,6 +161,7 @@ class Player {
             } catch (Matrix m) {
                 return Report.failure(m, addrs);
             } catch (TimeoutException e) {
+                e.printStackTrace();
                 return Report.timeout(e);
             } catch (CoinNetworkException
                     | IOException

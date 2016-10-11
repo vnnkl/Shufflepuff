@@ -23,6 +23,7 @@ import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.packet.SigningSend;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.chan.Inbox;
+import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Phase;
 

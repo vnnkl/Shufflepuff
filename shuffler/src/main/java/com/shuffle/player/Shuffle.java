@@ -204,7 +204,8 @@ public class Shuffle {
     public final Bytestring session;
     public final Crypto crypto;
     Set<Player> local = new HashSet<>();
-    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
+    //Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
+    Map<VerificationKey, Integer> peers = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
@@ -486,7 +487,8 @@ public class Shuffle {
             if (peers.containsKey(vk)) {
                 throw new IllegalArgumentException("Duplicate key " + key);
             }
-            peers.put(vk, address);
+            //peers.put(vk, address);
+            peers.put(vk, null);
             keys.add(vk);
         }
 
@@ -645,7 +647,8 @@ public class Shuffle {
         }
 
         keys.add(vk);
-        peers.put(vk, new Either<>(null, id));
+        //peers.put(vk, new Either<>(null, id));
+        peers.put(vk, id);
 
         /*
         Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
@@ -659,14 +662,16 @@ public class Shuffle {
                         peers);*/
 
 
-        Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
+        /*Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
                 new MappedChannel<>(
                         new Multiplexer<>(
-                                new MarshallChannel<>(
-                                        new TcpChannel(
-                                                new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
-                                        m.signedMarshaller()),
-                                new MarshallChannel<>(new OtrChannel<>(mock.node(id)),m.signedMarshaller())),
+                                null,
+                                new MarshallChannel<Integer, Signed<Packet<VerificationKey, P>>>(new OtrChannel<Integer>(mock.node(id)),m.signedMarshaller())),
+                        peers);*/
+
+        Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
+                new MappedChannel<VerificationKey, Integer, Signed<Packet<VerificationKey, P>>>(
+                                new MarshallChannel<Integer, Signed<Packet<VerificationKey, P>>>(new OtrChannel<Integer>(mock.node(id)),m.signedMarshaller()),
                         peers);
 
         return new Player(

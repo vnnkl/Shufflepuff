@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentMap;
  * Created by Daniel Krawisz on 5/30/16.
  */
 public class Collector<Address, X extends Serializable> implements Listener<Address, X> {
-    // The set of connected peers. This member and the next are ipublic but ultimately
+    // The set of connected peers. This member and the next are public but ultimately
     // the program should be refactored so that they don't need to be public.
     public final ConcurrentMap<Address, Send<X>> connected = new ConcurrentHashMap<>();
 
