@@ -20,6 +20,7 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Protobuf;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.TestCase;
+import com.shuffle.sim.init.Initializer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,6 +48,7 @@ public class TestShuffleMachine {
     private static final boolean override = false;
     private static final long defaultAmount = 17;
     private static final long defaultFee = 1;
+    static final Initializer.Type type = Initializer.Type.Basic;
 
     private int seed = 99;
 
@@ -153,7 +155,7 @@ public class TestShuffleMachine {
             }
 
             Map<SigningKey, TestCase.Mismatch> mismatch
-                    = com.shuffle.sim.TestCase.test(init);
+                    = com.shuffle.sim.TestCase.test(init, type);
 
             if (mismatch != null && mismatch.isEmpty() ) {
                 success ++;
@@ -187,7 +189,7 @@ public class TestShuffleMachine {
             i ++;
         }
 
-            Assert.assertTrue(success);
+        Assert.assertTrue(success);
     }
 
     /*@Test

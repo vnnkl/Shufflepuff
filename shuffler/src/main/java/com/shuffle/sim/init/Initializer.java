@@ -1,6 +1,7 @@
 package com.shuffle.sim.init;
 
 import com.shuffle.bitcoin.SigningKey;
+import com.shuffle.p2p.Bytestring;
 
 import java.io.IOException;
 
@@ -15,4 +16,27 @@ public interface Initializer<X> {
     Communication<X> connect(SigningKey sk) throws IOException, InterruptedException;
 
     void clear();
+
+    public enum Type {
+        Basic,
+        Mock,
+        OTR,
+    }
+
+    static <X> Initializer<X> make(Type type, Bytestring session, int capacity) {
+        switch (type) {
+            case Basic: {
+                return new BasicInitializer(session, capacity);
+            }
+            case Mock: {
+                return new ChannelInitializer(session, capacity);
+            }
+            case OTR: {
+                throw new IllegalArgumentException();
+            }
+            default: {
+                throw new IllegalArgumentException();
+            }
+        }
+    }
 }

@@ -136,7 +136,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
             }
 
             // Run the simulation.
-            Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init);
+            Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init, type);
 
             Assert.assertNotNull(results);
 
