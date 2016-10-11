@@ -42,8 +42,10 @@ import java.util.concurrent.ExecutionException;
 public class TestShuffleMachine {
     static final Logger log = LogManager.getLogger(TestShuffleMachine.class);
     private static final int defaultSeed = 99;
-    private static final int defaultTrials = 10;
+    private static final int defaultTrials = 1;
     private static final boolean override = false;
+    private static final long defaultAmount = 17;
+    private static final long defaultFee = 1;
 
     private int seed = 99;
 
@@ -83,7 +85,8 @@ public class TestShuffleMachine {
     public class RealTestCase extends TestCase {
 
         RealTestCase(String session) {
-            super(17, new Bytestring(("CoinShuffle Shufflepuff " + session).getBytes()));
+            super(defaultAmount, defaultFee,
+                    new Bytestring(("CoinShuffle Shufflepuff " + session).getBytes()));
         }
 
         @Override
@@ -100,7 +103,8 @@ public class TestShuffleMachine {
     public class MockTestCase extends TestCase {
 
         MockTestCase(String session) {
-            super(17, new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()));
+            super(defaultAmount, defaultFee,
+                    new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()));
         }
 
         @Override
@@ -117,7 +121,8 @@ public class TestShuffleMachine {
     public class NoShuffleTestCase extends TestCase {
 
         NoShuffleTestCase(String session) {
-            super(17, new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()));
+            super(defaultAmount, defaultFee,
+                    new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()));
         }
 
         @Override
