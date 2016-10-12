@@ -568,7 +568,7 @@ public class InitialState {
         // Create the simulator.
         Simulator sim;
         if (testCase.type == Initializer.Type.OTR) {
-            sim = new Simulator(testCase.type, testCase.proto().packetMarshaller);
+            sim = new Simulator(testCase.type, testCase.proto().signedMarshaller);
         } else {
             sim = new Simulator(testCase.type);
         }

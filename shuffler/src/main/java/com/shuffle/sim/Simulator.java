@@ -14,6 +14,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
@@ -21,6 +22,7 @@ import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.P;
+import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.init.BasicInitializer;
 import com.shuffle.sim.init.ChannelInitializer;
@@ -47,7 +49,8 @@ public final class Simulator {
 
     public Simulator() {
         type = Initializer.Type.Basic;
-        marshaller = null;
+        MockProtobuf x = new MockProtobuf();
+        this.marshaller = x.signedMarshaller();
     }
 
     public Simulator(Initializer.Type type) {
@@ -56,7 +59,8 @@ public final class Simulator {
         if (type == Initializer.Type.OTR) throw new IllegalArgumentException();
 
         this.type = type;
-        this.marshaller = null;
+        MockProtobuf x = new MockProtobuf();
+        this.marshaller = x.signedMarshaller();
     }
 
     public Simulator(Initializer.Type type, Marshaller<Signed<Packet<VerificationKey, P>>> marshaller) {
@@ -73,7 +77,7 @@ public final class Simulator {
             case Mock:
                 return new ChannelInitializer<>(session, capacity);
             case OTR:
-                return new OtrInitializer<>(session, capacity, marshaller);
+                return new OtrInitializer<>(session, capacity, this.marshaller);
             default:
                 throw new IllegalArgumentException();
         }

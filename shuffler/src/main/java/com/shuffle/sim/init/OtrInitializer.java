@@ -38,13 +38,13 @@ public class OtrInitializer<X> implements Initializer<X> {
 
     final Bytestring session;
     final int capacity;
-    final Marshaller<Signed<Packet<VerificationKey, P>>> marshaller;
+    final Marshaller<Signed<X>> marshaller;
 
     private final MockNetwork<VerificationKey, Bytestring> mockNetwork = new MockNetwork<>();
 
     private final List<Connection<VerificationKey>> connections = new LinkedList<>();
 
-    public OtrInitializer(Bytestring session, int capacity, Marshaller<Signed<Packet<VerificationKey, P>>> marshaller) {
+    public OtrInitializer(Bytestring session, int capacity, Marshaller<Signed<X>> marshaller) {
 
         if (session == null || capacity == 0) throw new IllegalArgumentException();
 
