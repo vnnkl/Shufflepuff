@@ -51,7 +51,7 @@ public class TestShuffleMachine {
     private static final boolean override = false;
     private static final long defaultAmount = 17;
     private static final long defaultFee = 1;
-    static final Initializer.Type defaultType = Initializer.Type.Basic;
+    static final Initializer.Type defaultType = Initializer.Type.OTR;
 
     private int seed = 99;
 
