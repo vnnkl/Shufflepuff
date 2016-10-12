@@ -54,6 +54,7 @@ public class toMasterPubController {
             String newInput = inputMasterPubEdit.getText();
         // todo: find next unused addresses
         outputList.add(newInput);
+        progressIndicator.visibleProperty().setValue(true);
 
 
 

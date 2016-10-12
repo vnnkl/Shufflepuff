@@ -16,6 +16,10 @@
 
 package com.mycelium;
 
+import io.datafx.controller.flow.FlowException;
+import io.datafx.controller.flow.context.ActionHandler;
+import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.util.VetoException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -40,17 +44,27 @@ public class ShuffleStartController {
     @FXML private ToggleGroup shuffleInOptions;
     @FXML private ToggleGroup shuffleOutOptions;
     @FXML private ToggleGroup shuffleConnectOptions;
+
     // Called by FXMLLoader
 
+    @ActionHandler
+    FlowActionHandler flowActionHandler;
+
+
     ArrayList<String> fundsInList = new ArrayList<>();
+    ArrayList<String> fundsOutList = new ArrayList<>();
+    ArrayList<String> connectionList = new ArrayList<>();
 
     public void setFundsInList(ArrayList<String> fundsInList){
         this.fundsInList.addAll(fundsInList);
     }
+
+
     public void initialize() {
         // most is injected by fxml already
         // setUserData for button selection FundsIn
         fundsInReceiveAddress.setUserData("addReceiveAddress");
+        fundsInReceiveAddress.setUserData(com.mycelium.fundsIn.addReceiveAddressController.class);
         fundsInPrivKeyWIF.setUserData("addPrivKeyInWIF");
         fundsInMasterPrivKey.setUserData("addMasterPriv");
         fundsInUTXOs.setUserData("addUTXO");
@@ -79,7 +93,15 @@ public class ShuffleStartController {
         //todo: setter method for each group
         System.out.println(shuffleInOptions.getSelectedToggle().getUserData().toString());
         String selectedToggle = new String(shuffleInOptions.getSelectedToggle().getUserData().toString());
+
+        try {
+            flowActionHandler.navigate((Class<?>)shuffleInOptions.getSelectedToggle().getUserData());
+        } catch (VetoException e) {
+            e.printStackTrace();
+        } catch (FlowException e) {
+            e.printStackTrace();
+        }
         //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
-         Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
+        //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
     }
 }
