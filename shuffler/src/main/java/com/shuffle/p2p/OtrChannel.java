@@ -312,6 +312,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
+            System.out.println("Alice : " + new String(message.bytes));
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
@@ -333,6 +334,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             chan.close();
+
+            System.out.println("Alice : " + receivedMessage);
 
             try {
                 return z.send(new Bytestring(receivedMessage.getBytes()));
@@ -377,6 +380,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) {
+            System.out.println("Bob : " + new String(message.bytes));
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
@@ -394,6 +398,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             if (receivedMessage == null) {
                 return true;
             }
+
+            System.out.println("Bob : " + receivedMessage);
 
             try {
                 return z.send(new Bytestring(receivedMessage.getBytes()));

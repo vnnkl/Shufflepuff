@@ -16,13 +16,10 @@ import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
-import com.shuffle.mock.MockProtobuf;
 import com.shuffle.monad.Either;
-import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.Simulator;
-import com.shuffle.sim.TestCase;
 import com.shuffle.sim.init.Initializer;
 
 import org.junit.Assert;
@@ -60,7 +57,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
         // Tests for successful runs.
         int minPlayers = 2;
-        int maxPlayers = 13;
+        int maxPlayers = 2;
         for (int numPlayer = minPlayers; numPlayer <= maxPlayers; numPlayer++) {
             log.info("Protocol successful run with " + numPlayer + " players.");
             SuccessfulRun(numPlayer);

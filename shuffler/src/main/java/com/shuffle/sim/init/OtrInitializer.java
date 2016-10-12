@@ -62,7 +62,7 @@ public class OtrInitializer<X> implements Initializer<X> {
         final Map<VerificationKey, Send<Signed<X>>> inputs = new HashMap<>();
         networks.put(sk, inputs);
 
-        // Ceate a new mailbox.
+        // Create a new mailbox.
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create a new channel.

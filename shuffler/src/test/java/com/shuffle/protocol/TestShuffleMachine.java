@@ -19,7 +19,6 @@ import com.shuffle.mock.MockProtobuf;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Protobuf;
 import com.shuffle.sim.InitialState;
-import com.shuffle.sim.Simulator;
 import com.shuffle.sim.TestCase;
 import com.shuffle.sim.init.Initializer;
 
@@ -169,7 +168,6 @@ public class TestShuffleMachine {
             if (i % 10 == 0) {
                 System.out.println("Trial " + i + " in progress. ");
             }
-
 
             Map<SigningKey, TestCase.Mismatch> mismatch = init.run();
 

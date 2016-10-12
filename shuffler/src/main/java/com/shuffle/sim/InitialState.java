@@ -404,7 +404,7 @@ public class InitialState {
         for (final PlayerInitialState player : players) {
 
             Communication<Packet<VerificationKey, P>> c = connections.get(player.sk);
-
+            
             try {
                 p.put(player.sk,
                         player.adversary(new Messages(testCase.session, player.sk, c.send, c.receive,

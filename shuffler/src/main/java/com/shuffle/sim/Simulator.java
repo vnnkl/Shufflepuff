@@ -22,7 +22,6 @@ import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.P;
-import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.init.BasicInitializer;
 import com.shuffle.sim.init.ChannelInitializer;
