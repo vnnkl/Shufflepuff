@@ -5,6 +5,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.Marshaller;
+import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
@@ -14,6 +15,7 @@ import com.shuffle.p2p.Listener;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.Session;
+import com.shuffle.player.P;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -36,17 +38,19 @@ public class OtrInitializer<X> implements Initializer<X> {
 
     final Bytestring session;
     final int capacity;
+    final Marshaller<Signed<Packet<VerificationKey, P>>> marshaller;
 
-    private final MockNetwork<VerificationKey, Signed<X>> mockNetwork = new MockNetwork<>();
+    private final MockNetwork<VerificationKey, Bytestring> mockNetwork = new MockNetwork<>();
 
     private final List<Connection<VerificationKey>> connections = new LinkedList<>();
 
-    public OtrInitializer(Bytestring session, int capacity) {
+    public OtrInitializer(Bytestring session, int capacity, Marshaller<Signed<Packet<VerificationKey, P>>> marshaller) {
 
         if (session == null || capacity == 0) throw new IllegalArgumentException();
 
         this.session = session;
         this.capacity = capacity;
+        this.marshaller = marshaller;
     }
 
     // This function is called every time a new player is created in a simulation.
@@ -62,7 +66,7 @@ public class OtrInitializer<X> implements Initializer<X> {
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create a new channel.
-        Channel<VerificationKey, Signed<X>> channel = mockNetwork.node(sk.VerificationKey());
+        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<VerificationKey, Signed<X>>(new OtrChannel<VerificationKey>(mockNetwork.node(sk.VerificationKey())), this.marshaller);
 
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {

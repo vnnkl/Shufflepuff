@@ -13,6 +13,7 @@ import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
+import com.shuffle.chan.packet.Signed;
 import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
@@ -24,6 +25,7 @@ import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.init.BasicInitializer;
 import com.shuffle.sim.init.ChannelInitializer;
 import com.shuffle.sim.init.Initializer;
+import com.shuffle.sim.init.OtrInitializer;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -41,7 +43,7 @@ public final class Simulator {
     private static final Logger log = LogManager.getLogger(Simulator.class);
 
     public final Initializer.Type type;
-    public final Marshaller<Packet<VerificationKey, P>> marshaller;
+    public final Marshaller<Signed<Packet<VerificationKey, P>>> marshaller;
 
     public Simulator() {
         type = Initializer.Type.Basic;
@@ -57,7 +59,7 @@ public final class Simulator {
         this.marshaller = null;
     }
 
-    public Simulator(Initializer.Type type, Marshaller<Packet<VerificationKey, P>> marshaller) {
+    public Simulator(Initializer.Type type, Marshaller<Signed<Packet<VerificationKey, P>>> marshaller) {
         if (type == null || marshaller == null) throw new NullPointerException();
 
         this.type = type;
@@ -71,7 +73,7 @@ public final class Simulator {
             case Mock:
                 return new ChannelInitializer<>(session, capacity);
             case OTR:
-                throw new IllegalArgumentException();
+                return new OtrInitializer<>(session, capacity, marshaller);
             default:
                 throw new IllegalArgumentException();
         }
