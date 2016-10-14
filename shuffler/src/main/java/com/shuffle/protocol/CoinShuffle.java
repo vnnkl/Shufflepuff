@@ -422,7 +422,7 @@ public class CoinShuffle {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             mailbox.broadcast(equivocationCheck, phase.get());
-
+            
             // Wait for a similar message from everyone else and check that the result is the name.
             Map<VerificationKey, Message> hashes = null;
             hashes = mailbox.receiveFromMultipleBlameless(playerSet(1, players.size()),
@@ -829,6 +829,7 @@ public class CoinShuffle {
             // Put all temporary encryption keys into a list and hash the result.
             Message check = messages.make();
             for (int i = 1; i <= players.size(); i++) {
+                System.out.println("E      " + encryptionKeys.get(players.get(i)));
                 check = check.attach(encryptionKeys.get(players.get(i)));
             }
 

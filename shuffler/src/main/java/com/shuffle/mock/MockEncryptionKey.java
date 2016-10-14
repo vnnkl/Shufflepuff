@@ -26,8 +26,7 @@ public class MockEncryptionKey implements EncryptionKey, Serializable {
     }
 
     public MockEncryptionKey(String str) throws NumberFormatException {
-        System.out.println("MEK " + str);
-
+        // TODO regex
         str = str.substring(3);
         str = str.substring(0, str.length() - 1);
 

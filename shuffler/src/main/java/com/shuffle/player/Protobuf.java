@@ -85,9 +85,9 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         }
 
         Proto.Message.Builder mb = Proto.Message.newBuilder();
-        Object msg = p.payload.message;
+        Message msg = p.payload.message;
 
-        if (msg == null || !(msg instanceof Message)) {
+        if (msg == null) {
            throw new IllegalArgumentException("Null or unknown Message format.");
         }
 
@@ -101,7 +101,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
                 .setPhase(phase)
                 .setMessage(mb);
 
-        Message.Atom atom = ((Message)msg).atoms;
+        Message.Atom atom = (msg).atoms;
         if (atom != null) {
             pb.setMessage(marshallAtom(atom));
         }
@@ -342,8 +342,6 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
             throw new FormatException("All entries in Signed must be filled:" + sp);
         }
 
-        System.out.println("signed " + sp.getPacket().getFrom());
-
         return new Signed<>(
                 new Bytestring(sp.getPacket().toByteArray()),
                 new Bytestring(sp.getSignature().getSignature().toByteArray()),
@@ -392,7 +390,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
                 unmarshallVerificationKey(p.getFrom().getKey()),
                 unmarshallVerificationKey(p.getTo().getKey()),
                 p.getNumber(),
-                new P(phase, new Message(unmarshallAtom(p.getMessage()), null)));
+                new P(phase, new Message(unmarshallAtom(p.getMessage()), addressMarshaller(), null)));
 
     }
 
