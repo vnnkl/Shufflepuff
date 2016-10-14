@@ -23,6 +23,8 @@ import net.java.otr4j.session.InstanceTag;
 import net.java.otr4j.session.SessionID;
 import net.java.otr4j.session.SessionImpl;
 
+import org.apache.commons.codec.binary.Hex;
+
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -232,7 +234,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             this.s = s;
             this.sessionImpl = sessionImpl;
             System.out.println("STATUS--" + sessionImpl.getSessionStatus().toString());
-            System.out.println("encrypted :)");
         }
 
         /**
@@ -246,7 +247,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public boolean send(Bytestring message) throws InterruptedException, IOException {
             String[] outgoingMessage;
             try {
-                outgoingMessage = sessionImpl.transformSending(new String(message.bytes), null);
+                outgoingMessage = sessionImpl.transformSending(org.bouncycastle.util.encoders.Hex.toHexString(message.bytes), null);
             } catch (OtrException e) {
                 return false;
             }
@@ -335,10 +336,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             chan.close();
 
-            System.out.println("Alice : " + receivedMessage);
-
             try {
-                return z.send(new Bytestring(receivedMessage.getBytes()));
+                return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
             } catch (IOException e) {
                 this.close();
                 return false;
@@ -399,10 +398,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return true;
             }
 
-            System.out.println("Bob : " + receivedMessage);
-
             try {
-                return z.send(new Bytestring(receivedMessage.getBytes()));
+                return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
             } catch (IOException | InterruptedException e) {
                 return false;
             }

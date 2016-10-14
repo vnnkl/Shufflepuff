@@ -24,10 +24,14 @@ public class MockVerificationKey implements VerificationKey, Serializable {
     public final int index;
 
     public MockVerificationKey(int index) {
+        System.out.println(index);
         this.index = index;
     }
 
     public MockVerificationKey(String str) throws NumberFormatException {
+        System.out.println("MVK " + str);
+        str = str.substring(3);
+        str = str.substring(0, str.length() - 1);
         index = Integer.parseInt(str);
     }
 

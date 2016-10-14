@@ -19,13 +19,18 @@ import java.util.regex.Pattern;
  * Created by Daniel Krawisz on 12/8/15.
  */
 public class MockEncryptionKey implements EncryptionKey, Serializable {
-    public final int index;
+    public  int index;
 
     public MockEncryptionKey(int index) {
         this.index = index;
     }
 
     public MockEncryptionKey(String str) throws NumberFormatException {
+        System.out.println("MEK " + str);
+
+        str = str.substring(3);
+        str = str.substring(0, str.length() - 1);
+
         index = Integer.parseInt(str);
     }
 

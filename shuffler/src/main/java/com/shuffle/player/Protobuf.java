@@ -342,6 +342,8 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
             throw new FormatException("All entries in Signed must be filled:" + sp);
         }
 
+        System.out.println("signed " + sp.getPacket().getFrom());
+
         return new Signed<>(
                 new Bytestring(sp.getPacket().toByteArray()),
                 new Bytestring(sp.getSignature().getSignature().toByteArray()),

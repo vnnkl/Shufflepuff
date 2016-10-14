@@ -295,8 +295,8 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
         if (atoms == null) throw new FormatException("Address not found");
         if (atoms.addr != null) return atoms.addr;
         else if (atoms.string == null) throw new FormatException("Address not found.");
-
         // Attempt to read string as an address.
+        System.out.println("SS " + atoms.string);
         return messages.addressMarshaller.unmarshall(new Bytestring(atoms.string.getBytes()));
     }
 
