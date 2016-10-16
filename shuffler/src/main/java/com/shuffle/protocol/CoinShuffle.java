@@ -150,6 +150,7 @@ public class CoinShuffle {
             // Everyone has the incentive to insert their own address at a random location, which
             // is sufficient to ensure that the result appears random to everybody.
             phase.set(Phase.Shuffling);
+            System.out.println("Player " + me + " reaches phase 2: " + encryptionKeys);
 
             try {
                 // Player one begins the cycle and encrypts its new address with everyone's
@@ -215,6 +216,7 @@ public class CoinShuffle {
             // In this phase, participants check whether any player has history different
             // encryption keys to different players.
             phase.set(Phase.EquivocationCheck);
+            System.out.println("Player " + me + " reaches phase 4: ");
 
             equivocationCheck(encryptionKeys, newAddresses, false);
 
@@ -222,6 +224,7 @@ public class CoinShuffle {
             // Everyone creates a Bitcoin transaction and signs it, then broadcasts the signature.
             // If all signatures check out, then the transaction is history into the net.
             phase.set(Phase.VerificationAndSubmission);
+            System.out.println("Player " + me + " reaches phase 5. ");
 
             List<VerificationKey> inputs = new LinkedList<>();
             for (int i = 1; i <= N; i++) {
@@ -422,13 +425,15 @@ public class CoinShuffle {
 
             Message equivocationCheck = equivocationCheckHash(players, encryptonKeys, newAddresses);
             mailbox.broadcast(equivocationCheck, phase.get());
-            
+            System.out.println("Player " + me + " equivocation message " + equivocationCheck);
+
             // Wait for a similar message from everyone else and check that the result is the name.
             Map<VerificationKey, Message> hashes = null;
             hashes = mailbox.receiveFromMultipleBlameless(playerSet(1, players.size()),
                     phase.get());
 
             hashes.put(vk, equivocationCheck);
+            System.out.println("Player " + me + "'s hashes: " + hashes.values());
 
             if (areEqual(hashes.values())) {
                 // We may have got this far as part of a normal part of the protocol or as a part
@@ -826,10 +831,13 @@ public class CoinShuffle {
                 Map<VerificationKey, EncryptionKey> encryptionKeys,
                 Queue<Address> newAddresses) throws FormatException, IOException {
 
+            System.out.println("Player " + me + "'s equivocation check hash");
+
             // Put all temporary encryption keys into a list and hash the result.
             Message check = messages.make();
+            System.out.println("  Player " + me + "'s encryption keys: " + encryptionKeys);
+            System.out.println("  Player " + me + "'s players: " + players);
             for (int i = 1; i <= players.size(); i++) {
-                System.out.println("E      " + encryptionKeys.get(players.get(i)));
                 check = check.attach(encryptionKeys.get(players.get(i)));
             }
 

@@ -20,17 +20,20 @@ import java.util.regex.Pattern;
  */
 public class MockEncryptionKey implements EncryptionKey, Serializable {
     public  int index;
+    private static Pattern pattern = Pattern.compile("^ek\\[[0-9]+\\]$");
 
     public MockEncryptionKey(int index) {
         this.index = index;
     }
 
     public MockEncryptionKey(String str) throws NumberFormatException {
-        // TODO regex
-        str = str.substring(3);
-        str = str.substring(0, str.length() - 1);
 
-        index = Integer.parseInt(str);
+        if (!pattern.matcher(str).matches()) {
+            throw new IllegalArgumentException();
+        }
+
+        index = Integer.parseInt(str.substring(3, str.length() - 1));
+
     }
 
     @Override
