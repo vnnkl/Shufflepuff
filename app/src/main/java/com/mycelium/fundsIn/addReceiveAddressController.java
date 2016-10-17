@@ -17,6 +17,7 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import io.datafx.controller.ViewController;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -27,7 +28,7 @@ import net.glxn.qrgen.image.ImageType;
 
 import java.io.ByteArrayInputStream;
 
-
+@ViewController("com.mycelium.fundsIn.shuffle_addReceiveAddress.fxml")
 public class addReceiveAddressController {
     @FXML private Button AddBtn;
     @FXML private Button cancelBtn;

@@ -23,6 +23,8 @@ import com.mycelium.utils.easing.EasingMode;
 import com.mycelium.utils.easing.ElasticInterpolator;
 import com.subgraph.orchid.TorClient;
 import com.subgraph.orchid.TorInitializationListener;
+import io.datafx.controller.flow.Flow;
+import io.datafx.controller.flow.FlowException;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.TranslateTransition;
@@ -171,7 +173,8 @@ public class MainController {
         return model.getDownloadProgressTracker();
     }
 
-    public void shuffleClicked(ActionEvent actionEvent) {
-        Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_start.fxml");
+    public void shuffleClicked(ActionEvent actionEvent) throws FlowException {
+        new Flow(ShuffleStartController.class).withLink(ShuffleStartController.class,"toReceiveIn",com.mycelium.fundsIn.addReceiveAddressController.class).startInStage(Main.instance.mainWindow);
+        // Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_start.fxml");
     }
 }
