@@ -38,7 +38,6 @@ public class MockProtobuf extends Protobuf {
     @Override
     // Unmarshall a verification key.
     public VerificationKey unmarshallVerificationKey(String str) {
-        System.out.println("S " + str);
         return new MockVerificationKey(str);
     }
 

@@ -72,7 +72,7 @@ public class Mailbox {
         if (!players.contains(to)) {
             return;
         }
-        
+
         Packet packet = m.send(phase, to);
 
         // If this is a message to myself, don't send it. Just pretend we received it.
@@ -212,8 +212,6 @@ public class Mailbox {
 
         while (from.size() > 0) {
             Packet packet = receiveNextPacket(expectedPhase);
-            System.out.println("PP : " + packet.toString());
-            System.out.println("VV : " + me);
             if (packet == null) throw new TimeoutException(from);
 
             if (expectedPhase != Phase.Blame && packet.phase() == Phase.Blame) {

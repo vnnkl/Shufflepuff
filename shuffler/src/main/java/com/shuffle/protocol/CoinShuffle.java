@@ -433,7 +433,6 @@ public class CoinShuffle {
                     phase.get());
 
             hashes.put(vk, equivocationCheck);
-            System.out.println("Player " + me + "'s hashes: " + hashes.values());
 
             if (areEqual(hashes.values())) {
                 // We may have got this far as part of a normal part of the protocol or as a part

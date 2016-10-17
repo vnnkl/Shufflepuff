@@ -35,7 +35,6 @@ public class Signed<X> implements Serializable {
         if (!key.verify(message, signature)) {
             throw new IllegalArgumentException();
         }
-        System.out.println("Verified : " + key.toString());
 
         this.signature = signature;
         this.message = m.unmarshall(message);
