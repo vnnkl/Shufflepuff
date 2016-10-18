@@ -16,16 +16,16 @@ import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
-import com.shuffle.mock.MockProtobuf;
 import com.shuffle.monad.Either;
-import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.Simulator;
+import com.shuffle.sim.init.Initializer;
 
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -43,7 +43,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     // Create a test case representing a successful run.
     private void SuccessfulRun(int numPlayer)
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
 
         String description = "case " + caseNo + "; successful run with " + numPlayer + " players.";
         check(newTestCase(description).successfulTestCase(numPlayer));
@@ -53,11 +53,11 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     // Tests for successful runs of the protocol.
     public void testSuccess()
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
 
         // Tests for successful runs.
         int minPlayers = 2;
-        int maxPlayers = 13;
+        int maxPlayers = 3;
         for (int numPlayer = minPlayers; numPlayer <= maxPlayers; numPlayer++) {
             log.info("Protocol successful run with " + numPlayer + " players.");
             SuccessfulRun(numPlayer);
@@ -65,8 +65,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     }
 
     private static class ChangeTestInput {
-        public final int amount;
-        public final boolean change;
+        final int amount;
+        final boolean change;
 
         private ChangeTestInput(int amount, boolean change) {
             this.amount = amount;
@@ -75,22 +75,24 @@ public class TestSuccessfulRun extends TestShuffleMachine {
     }
 
     private static class ChangeTestCase {
-        public final int amount;
-        public final ChangeTestInput[] inputs;
+        final int amount;
+        final int fee;
+        final ChangeTestInput[] inputs;
 
-        private ChangeTestCase(int amount, ChangeTestInput... inputs) {
+        private ChangeTestCase(int amount, int fee, ChangeTestInput... inputs) {
             for (ChangeTestInput input : inputs) {
                 if (input == null || input.amount < amount) throw new IllegalArgumentException();
             }
 
             this.amount = amount;
+            this.fee = fee;
             this.inputs = inputs;
         }
     }
 
     private static class ChangeTestExpected {
-        public final Address address;
-        public final int expected;
+        final Address address;
+        final int expected;
 
         private ChangeTestExpected(Address address, int expected) {
             this.address = address;
@@ -100,13 +102,13 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
     @Test
     // Test that the resulting transaction has the correct outputs.
-    public void testOutputs() throws ExecutionException, InterruptedException {
+    public void testOutputs() throws ExecutionException, InterruptedException, IOException {
         ChangeTestCase[] tests = new ChangeTestCase[]{
-                new ChangeTestCase(37,
+                new ChangeTestCase(37, 1,
                         new ChangeTestInput(45, true), new ChangeTestInput(78, true)),
-                new ChangeTestCase(37,
+                new ChangeTestCase(37, 1,
                         new ChangeTestInput(45, true), new ChangeTestInput(78, false)),
-                new ChangeTestCase(37,
+                new ChangeTestCase(37, 1,
                         new ChangeTestInput(45, false),
                         new ChangeTestInput(78, true),
                         new ChangeTestInput(99, true)),
@@ -117,9 +119,10 @@ public class TestSuccessfulRun extends TestShuffleMachine {
         int i = 0;
         for (ChangeTestCase test : tests) {
             i ++;
-            Bytestring session = new Bytestring(("change test case " + i).getBytes());
-            final long testFee = 5000L;
-            InitialState init = new InitialState(session, test.amount, testFee, mc, new MockProtobuf());
+            String session = "change test case " + i;
+
+            InitialState init = new InitialState(
+                    new MockTestCase(session, Initializer.Type.Basic, test.amount, test.fee));
 
             // First create the bitcoin mock network.
             List<ChangeTestExpected> expected = new LinkedList<>();
@@ -127,16 +130,14 @@ public class TestSuccessfulRun extends TestShuffleMachine {
                 init.player().initialFunds(input.amount);
                 if (input.change) {
                     Address addr = mc.makeSigningKey().VerificationKey().address();
-                    expected.add(new ChangeTestExpected(addr, input.amount - test.amount));
+                    expected.add(new ChangeTestExpected(addr, input.amount - test.amount - test.fee));
 
                     init.change(addr);
                 }
             }
 
-            // Now run the simulation.
-
             // Run the simulation.
-            Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init);
+            Map<SigningKey, Either<Transaction, Matrix>> results = new Simulator().run(init);
 
             Assert.assertNotNull(results);
 
@@ -151,6 +152,8 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
                 Assert.assertNotNull(t);
             }
+
+            if (t == null) Assert.fail();
 
             List<MockCoin.Output> outputs = t.outputs;
 

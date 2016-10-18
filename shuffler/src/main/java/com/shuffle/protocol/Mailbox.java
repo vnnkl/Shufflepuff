@@ -203,7 +203,7 @@ public class Mailbox {
             Phase expectedPhase,
             boolean ignoreBlame // Whether to stop if a blame message is received.
     ) throws InterruptedException, IOException, TimeoutException, BlameException {
-
+        System.out.println(expectedPhase);
         // Collect the messages in here.
         Map<VerificationKey, Packet> broadcasts = new HashMap<>();
 

@@ -1,6 +1,8 @@
 package com.shuffle.chan;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
@@ -39,7 +41,6 @@ public class Inbox<Address, X extends Serializable> implements Receive<Inbox.Env
         }
     }
 
-
     private static class Transit<Address, X> {
         public final Envelope<Address, X> m;
 
@@ -66,6 +67,7 @@ public class Inbox<Address, X extends Serializable> implements Receive<Inbox.Env
 
     private boolean closed = false;
     private boolean closeSent = false;
+    private final Set<Address> receiving = new HashSet<Address>();
 
     private class Receiver implements Send<X> {
         private final Address from;
@@ -73,6 +75,7 @@ public class Inbox<Address, X extends Serializable> implements Receive<Inbox.Env
 
         private Receiver(Address from) {
             this.from = from;
+            receiving.add(from);
         }
 
         @Override
@@ -141,6 +144,6 @@ public class Inbox<Address, X extends Serializable> implements Receive<Inbox.Env
 
     @Override
     public String toString() {
-        return "Inbox[]";
+        return "Inbox"+receiving;
     }
 }

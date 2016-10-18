@@ -20,6 +20,7 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Protobuf;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.TestCase;
+import com.shuffle.sim.init.Initializer;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,6 +29,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,8 +44,11 @@ import java.util.concurrent.ExecutionException;
 public class TestShuffleMachine {
     static final Logger log = LogManager.getLogger(TestShuffleMachine.class);
     private static final int defaultSeed = 99;
-    private static final int defaultTrials = 10;
+    private static final int defaultTrials = 1;
     private static final boolean override = false;
+    private static final long defaultAmount = 17;
+    private static final long defaultFee = 1;
+    static final Initializer.Type defaultType = Initializer.Type.OTR;
 
     private int seed = 99;
 
@@ -81,14 +86,18 @@ public class TestShuffleMachine {
     private final List<Report> reports = new LinkedList<>();
 
     public class RealTestCase extends TestCase {
+        public final Crypto crypto;
 
-        RealTestCase(String session) {
-            super(17, new Bytestring(("CoinShuffle Shufflepuff " + session).getBytes()));
+        RealTestCase(String session) throws BitcoinCrypto.Exception, NoSuchAlgorithmException {
+            super(new Bytestring(("CoinShuffle Shufflepuff " + session).getBytes()),
+                    defaultType, defaultAmount, defaultFee);
+
+            crypto = new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
         }
 
         @Override
-        protected Crypto crypto() throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-            return new BitcoinCrypto(NetworkParameters.fromID(NetworkParameters.ID_TESTNET));
+        protected Crypto crypto() {
+            return crypto;
         }
 
         @Override
@@ -98,14 +107,25 @@ public class TestShuffleMachine {
     }
 
     public class MockTestCase extends TestCase {
+        private final Crypto crypto;
 
         MockTestCase(String session) {
-            super(17, new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()));
+            super(new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()),
+                    defaultType, defaultAmount, defaultFee);
+
+            crypto = new MockCrypto(new InsecureRandom(seed++));
+        }
+
+        MockTestCase(String session, Initializer.Type type, long amount, long fee) {
+            super(new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()),
+                    type, amount, fee);
+
+            crypto = new MockCrypto(new InsecureRandom(seed++));
         }
 
         @Override
         protected Crypto crypto() {
-            return new MockCrypto(new InsecureRandom(seed++));
+            return crypto;
         }
 
         @Override
@@ -117,7 +137,8 @@ public class TestShuffleMachine {
     public class NoShuffleTestCase extends TestCase {
 
         NoShuffleTestCase(String session) {
-            super(17, new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()));
+            super(new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()),
+                    defaultType, defaultAmount, defaultFee);
         }
 
         @Override
@@ -136,7 +157,7 @@ public class TestShuffleMachine {
         return new MockTestCase(session);
     }
 
-    void check(InitialState init) throws ExecutionException, InterruptedException {
+    void check(InitialState init) throws ExecutionException, InterruptedException, IOException {
         int fail = 0;
         int success = 0;
         caseNo++;
@@ -146,8 +167,7 @@ public class TestShuffleMachine {
                 System.out.println("Trial " + i + " in progress. ");
             }
 
-            Map<SigningKey, TestCase.Mismatch> mismatch
-                    = com.shuffle.sim.TestCase.test(init);
+            Map<SigningKey, TestCase.Mismatch> mismatch = init.run();
 
             if (mismatch != null && mismatch.isEmpty() ) {
                 success ++;
@@ -181,7 +201,7 @@ public class TestShuffleMachine {
             i ++;
         }
 
-            Assert.assertTrue(success);
+        Assert.assertTrue(success);
     }
 
     /*@Test

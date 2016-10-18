@@ -12,6 +12,7 @@ import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ExecutionException;
 
@@ -27,7 +28,7 @@ public class TestEquivocateBroadcast extends TestShuffleMachine {
     // Run a test case for equivocation during phase 3.
     private void EquivocateOutput(int numPlayers, int[] equivocation)
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
         String description = "case " + caseNo + "; broadcast equivocation test case.";
         check(newTestCase(description).equivocateBroadcastTestCase(numPlayers, equivocation));
     }
@@ -36,7 +37,7 @@ public class TestEquivocateBroadcast extends TestShuffleMachine {
     // Tests for malicious players who send different output vectors to different players.
     public void testEquivocationBroadcast()
             throws NoSuchAlgorithmException, ExecutionException,
-            InterruptedException, BitcoinCrypto.Exception {
+            InterruptedException, BitcoinCrypto.Exception, IOException {
 
         // A player sends different output vectors to different players.
         EquivocateOutput(3, new int[]{1});

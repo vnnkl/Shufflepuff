@@ -68,7 +68,7 @@ class Player {
 
     private final Crypto crypto;
 
-    private final Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel;
+    private final Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel;
 
     private final SortedSet<VerificationKey> addrs;
 
@@ -96,7 +96,7 @@ class Player {
          long fee,
          Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
          Crypto crypto,
-         Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel,
+         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
          PrintStream stream
     ) {
@@ -128,9 +128,9 @@ class Player {
     public class Running {
 
         // Wait until the appointed time.
-        final Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> connect;
+        final Connect<VerificationKey, Signed<Packet<VerificationKey, Payload>>> connect;
 
-        Running(Connect<VerificationKey, Signed<Packet<VerificationKey, P>>> connect) {
+        Running(Connect<VerificationKey, Signed<Packet<VerificationKey, Payload>>> connect) {
             this.connect = connect;
         }
 
@@ -148,7 +148,7 @@ class Player {
                 Thread.sleep(wait);
 
                 // Begin connecting to all peers.
-                final Collector<VerificationKey, Signed<Packet<VerificationKey, P>>> collector
+                final Collector<VerificationKey, Signed<Packet<VerificationKey, Payload>>> collector
                         = connect.connect(connectTo, 3);
 
                 if (collector == null) return Report.invalidInitialState("Could not connect to peers.");
@@ -161,6 +161,7 @@ class Player {
             } catch (Matrix m) {
                 return Report.failure(m, addrs);
             } catch (TimeoutException e) {
+                e.printStackTrace();
                 return Report.timeout(e);
             } catch (CoinNetworkException
                     | IOException

@@ -14,6 +14,8 @@ import com.shuffle.p2p.Bytestring;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * A mock implementation of a VerificationKey.
@@ -22,13 +24,20 @@ import java.util.Arrays;
  */
 public class MockVerificationKey implements VerificationKey, Serializable {
     public final int index;
+    private static Pattern pattern = Pattern.compile("^vk\\[[0-9]+\\]$");
 
     public MockVerificationKey(int index) {
         this.index = index;
     }
 
     public MockVerificationKey(String str) throws NumberFormatException {
-        index = Integer.parseInt(str);
+
+        if (!pattern.matcher(str).matches()) {
+            throw new IllegalArgumentException();
+        }
+
+        index = Integer.parseInt(str.substring(3, str.length() - 1));
+
     }
 
     @Override

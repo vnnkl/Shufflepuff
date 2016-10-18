@@ -44,8 +44,8 @@ public class Messages implements MessageFactory {
     public interface ShuffleMarshaller {
         Marshaller<Message.Atom> atomMarshaller();
         Marshaller<Address> addressMarshaller();
-        Marshaller<Packet<VerificationKey, P>> packetMarshaller();
-        Marshaller<Signed<Packet<VerificationKey, P>>> signedMarshaller();
+        Marshaller<Packet<VerificationKey, Payload>> packetMarshaller();
+        Marshaller<Signed<Packet<VerificationKey, Payload>>> signedMarshaller();
     }
 
     /**
@@ -55,10 +55,10 @@ public class Messages implements MessageFactory {
      */
     public static class SignedPacket implements com.shuffle.protocol.message.Packet, Serializable {
 
-        public final Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> packet;
+        public final Signed<com.shuffle.chan.packet.Packet<VerificationKey, Payload>> packet;
 
         public SignedPacket(
-                Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> packet) {
+                Signed<com.shuffle.chan.packet.Packet<VerificationKey, Payload>> packet) {
 
             if (packet == null) {
                 throw new NullPointerException();
@@ -120,10 +120,10 @@ public class Messages implements MessageFactory {
     }
 
     private class Outgoing {
-        public final Send<P> out;
-        private final HistorySend<Signed<Packet<VerificationKey, P>>> h;
+        public final Send<Payload> out;
+        private final HistorySend<Signed<Packet<VerificationKey, Payload>>> h;
 
-        Outgoing(Send<P> out, HistorySend<Signed<Packet<VerificationKey, P>>> h, VerificationKey k) {
+        Outgoing(Send<Payload> out, HistorySend<Signed<Packet<VerificationKey, Payload>>> h, VerificationKey k) {
 
             if (k == null || out == null || h == null) throw new NullPointerException();
 
@@ -131,11 +131,11 @@ public class Messages implements MessageFactory {
             this.h = h;
         }
 
-        public List<Signed<Packet<VerificationKey, P>>> history() {
+        public List<Signed<Packet<VerificationKey, Payload>>> history() {
             return h.history();
         }
 
-        public Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> last() {
+        public Signed<com.shuffle.chan.packet.Packet<VerificationKey, Payload>> last() {
             return h.last();
         }
     }
@@ -146,7 +146,7 @@ public class Messages implements MessageFactory {
     // Where new messages come in. All messages are logged and have their signature
     // checked as they come in.
     private final Receive<Inbox.Envelope<VerificationKey,
-            Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>>>> receive;
+            Signed<com.shuffle.chan.packet.Packet<VerificationKey, Payload>>>> receive;
 
     final Bytestring session;
     final SigningKey me;
@@ -158,9 +158,9 @@ public class Messages implements MessageFactory {
     public Messages(Bytestring session,
                     SigningKey me,
                     Map<VerificationKey,
-                            Send<Signed<Packet<VerificationKey, P>>>> net,
+                            Send<Signed<Packet<VerificationKey, Payload>>>> net,
                     Receive<Inbox.Envelope<VerificationKey,
-                            Signed<Packet<VerificationKey, P>>>> receive,
+                            Signed<Packet<VerificationKey, Payload>>>> receive,
                     ShuffleMarshaller m) throws NoSuchAlgorithmException {
 
         if (session == null || me == null || net == null || receive == null)
@@ -173,27 +173,27 @@ public class Messages implements MessageFactory {
         sha256 = MessageDigest.getInstance("SHA-256");
         this.atomMarshaller = m.atomMarshaller();
         this.addressMarshaller = m.addressMarshaller();
-        Marshaller<Packet<VerificationKey, P>> pm = m.packetMarshaller();
+        Marshaller<Packet<VerificationKey, Payload>> pm = m.packetMarshaller();
 
         VerificationKey vk = me.VerificationKey();
 
-        for (Map.Entry<VerificationKey, Send<Signed<Packet<VerificationKey, P>>>> z : net.entrySet()) {
+        for (Map.Entry<VerificationKey, Send<Signed<Packet<VerificationKey, Payload>>>> z : net.entrySet()) {
 
             VerificationKey k = z.getKey();
             if (vk.equals(k)) continue;
 
-            HistorySend<Signed<Packet<VerificationKey, P>>> h = new HistorySend<>(z.getValue());
-            Send<Packet<VerificationKey, P>> signer = new SigningSend<>(h, pm, me);
-            Send<P> p = new OutgoingPacketSend<>(signer, session, vk, k);
+            HistorySend<Signed<Packet<VerificationKey, Payload>>> h = new HistorySend<>(z.getValue());
+            Send<Packet<VerificationKey, Payload>> signer = new SigningSend<>(h, pm, me);
+            Send<Payload> p = new OutgoingPacketSend<>(signer, session, vk, k);
 
             this.net.put(k, new Outgoing(p, h, vk));
         }
 
         // We have a special channel for sending messages to ourselves.
-        HistorySend<Signed<Packet<VerificationKey, P>>> h = new HistorySend<>(
-                new IgnoreSend<Signed<Packet<VerificationKey, P>>>());
+        HistorySend<Signed<Packet<VerificationKey, Payload>>> h = new HistorySend<>(
+                new IgnoreSend<Signed<Packet<VerificationKey, Payload>>>());
 
-        Send<P> p = new OutgoingPacketSend<>(new SigningSend<>(h, pm, me), session, vk, vk);
+        Send<Payload> p = new OutgoingPacketSend<>(new SigningSend<>(h, pm, me), session, vk, vk);
         this.net.put(vk, new Outgoing(p, h, vk));
     }
 
@@ -207,7 +207,7 @@ public class Messages implements MessageFactory {
 
         // TODO make this a parameter.
         Inbox.Envelope<VerificationKey,
-                Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>>> e
+                Signed<com.shuffle.chan.packet.Packet<VerificationKey, Payload>>> e
                 = receive.receive(1000, TimeUnit.MILLISECONDS);
 
         if (e == null) return null;
@@ -235,7 +235,7 @@ public class Messages implements MessageFactory {
         if (x == null) return null;
 
         // About to send message.
-        if (!x.out.send(new P(phase, m))) {
+        if (!x.out.send(new Payload(phase, m))) {
             return null;
         }
 

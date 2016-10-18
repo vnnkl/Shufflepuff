@@ -52,7 +52,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         return marshallSignedPacket(((Messages.SignedPacket) p).packet);
     }
 
-    public static Proto.Packet.Builder marshallPacket(com.shuffle.chan.packet.Packet<VerificationKey, P> p) {
+    public static Proto.Packet.Builder marshallPacket(com.shuffle.chan.packet.Packet<VerificationKey, Payload> p) {
         Proto.Phase phase;
         switch(p.payload.phase) {
             case Announcement: {
@@ -85,9 +85,9 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         }
 
         Proto.Message.Builder mb = Proto.Message.newBuilder();
-        Object msg = p.payload.message;
+        Message msg = p.payload.message;
 
-        if (msg == null || !(msg instanceof Message)) {
+        if (msg == null) {
            throw new IllegalArgumentException("Null or unknown Message format.");
         }
 
@@ -101,7 +101,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
                 .setPhase(phase)
                 .setMessage(mb);
 
-        Message.Atom atom = ((Message)msg).atoms;
+        Message.Atom atom = (msg).atoms;
         if (atom != null) {
             pb.setMessage(marshallAtom(atom));
         }
@@ -118,7 +118,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
             ab.setKey(Proto.EncryptionKey.newBuilder().setKey(atom.ek.toString()));
         } else if (atom.secureHash != null) {
             ab.setHash(Proto.Hash.newBuilder().setHash(
-                    ByteString.copyFrom(atom.secureHash.toString().getBytes())));
+                    ByteString.copyFrom(atom.secureHash.hashed.bytes)));
         } else if (atom.sig != null) {
             ab.setSignature(Proto.Signature.newBuilder().setSignature(
                     ByteString.copyFrom(atom.sig.bytes)));
@@ -137,7 +137,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         return ab;
     }
 
-    public static Proto.Signed.Builder marshallSignedPacket(Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> p) {
+    public static Proto.Signed.Builder marshallSignedPacket(Signed<com.shuffle.chan.packet.Packet<VerificationKey, Payload>> p) {
         return Proto.Signed.newBuilder().setPacket(marshallPacket(p.message)).setSignature(
                 Proto.Signature.newBuilder().setSignature(ByteString.copyFrom(p.signature.bytes)));
     }
@@ -337,7 +337,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         return packets;
     }
 
-    public final Signed<com.shuffle.chan.packet.Packet<VerificationKey, P>> unmarshallSignedPacket(Proto.Signed sp) throws FormatException {
+    public final Signed<com.shuffle.chan.packet.Packet<VerificationKey, Payload>> unmarshallSignedPacket(Proto.Signed sp) throws FormatException {
         if (!(sp.hasSignature() && sp.hasPacket() && sp.getPacket().hasFrom())) {
             throw new FormatException("All entries in Signed must be filled:" + sp);
         }
@@ -349,7 +349,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
                 packetMarshaller);
     }
 
-    public final com.shuffle.chan.packet.Packet<VerificationKey, P> unmarshallPacket(Proto.Packet p) throws FormatException {
+    public final com.shuffle.chan.packet.Packet<VerificationKey, Payload> unmarshallPacket(Proto.Packet p) throws FormatException {
         if (!(p.hasFrom() && p.hasTo() && p.hasMessage())) {
             throw new FormatException("All entries in Packet must be filled: " + p);
         }
@@ -390,13 +390,13 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
                 unmarshallVerificationKey(p.getFrom().getKey()),
                 unmarshallVerificationKey(p.getTo().getKey()),
                 p.getNumber(),
-                new P(phase, new Message(unmarshallAtom(p.getMessage()), null)));
+                new Payload(phase, new Message(unmarshallAtom(p.getMessage()), addressMarshaller(), null)));
 
     }
 
-    public final Marshaller<Packet<VerificationKey, P>> packetMarshaller;
+    public final Marshaller<Packet<VerificationKey, Payload>> packetMarshaller;
     public final Marshaller<Message.Atom> atomMarshaller;
-    public final Marshaller<Signed<Packet<VerificationKey, P>>> signedMarshaller;
+    public final Marshaller<Signed<Packet<VerificationKey, Payload>>> signedMarshaller;
 
     public Protobuf() {
         packetMarshaller = new PacketMarshaller();
@@ -410,12 +410,12 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
     }
 
     @Override
-    public Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, P>> packetMarshaller() {
+    public Marshaller<com.shuffle.chan.packet.Packet<VerificationKey, Payload>> packetMarshaller() {
         return packetMarshaller;
     }
 
     @Override
-    public Marshaller<Signed<Packet<VerificationKey, P>>> signedMarshaller() {
+    public Marshaller<Signed<Packet<VerificationKey, Payload>>> signedMarshaller() {
         return signedMarshaller;
     }
 
@@ -440,15 +440,15 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         }
     }
 
-    class PacketMarshaller implements Marshaller<Packet<VerificationKey, P>> {
+    class PacketMarshaller implements Marshaller<Packet<VerificationKey, Payload>> {
 
         @Override
-        public Bytestring marshall(com.shuffle.chan.packet.Packet<VerificationKey, P> p) throws IOException {
+        public Bytestring marshall(com.shuffle.chan.packet.Packet<VerificationKey, Payload> p) throws IOException {
             return new Bytestring(marshallPacket(p).build().toByteArray());
         }
 
         @Override
-        public com.shuffle.chan.packet.Packet<VerificationKey, P> unmarshall(Bytestring string) throws FormatException {
+        public com.shuffle.chan.packet.Packet<VerificationKey, Payload> unmarshall(Bytestring string) throws FormatException {
             try {
                 return unmarshallPacket(Proto.Packet.parseFrom(string.bytes));
             } catch (InvalidProtocolBufferException e) {
@@ -457,15 +457,15 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         }
     }
 
-    private class SignedMarshaller implements Marshaller<Signed<Packet<VerificationKey, P>>> {
+    private class SignedMarshaller implements Marshaller<Signed<Packet<VerificationKey, Payload>>> {
 
         @Override
-        public Bytestring marshall(Signed<Packet<VerificationKey, P>> signed) throws IOException {
+        public Bytestring marshall(Signed<Packet<VerificationKey, Payload>> signed) throws IOException {
             return new Bytestring(marshallSignedPacket(signed).build().toByteArray());
         }
 
         @Override
-        public Signed<Packet<VerificationKey, P>> unmarshall(Bytestring string) throws FormatException {
+        public Signed<Packet<VerificationKey, Payload>> unmarshall(Bytestring string) throws FormatException {
             try {
                 return unmarshallSignedPacket(Proto.Signed.parseFrom(string.bytes));
             } catch (InvalidProtocolBufferException e) {

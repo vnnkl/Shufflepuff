@@ -224,17 +224,22 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
     // If this message can be sent, then this is the network by
     // which it is sent. Otherwise, it's null.
     final transient Messages messages;
+    final transient Marshaller<Address> addressMarshaller;
 
     public Message(Messages messages) {
+        if (messages == null) throw new NullPointerException();
 
         atoms = null;
         this.messages = messages;
+        this.addressMarshaller = messages.addressMarshaller;
     }
 
-    public Message(Atom atom, Messages messages) {
+    public Message(Atom atom, Marshaller<Address> addressMarshaller, Messages messages) {
+        if (addressMarshaller == null) throw new NullPointerException();
 
         atoms = atom;
         this.messages = messages;
+        this.addressMarshaller = addressMarshaller;
     }
 
     @Override
@@ -246,41 +251,42 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
     public com.shuffle.protocol.message.Message attach(EncryptionKey ek) {
         if (ek == null) throw new NullPointerException();
 
-        return new Message(Atom.attach(atoms, Atom.make(ek)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(ek)), addressMarshaller, messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Message attach(Address addr) {
         if (addr == null) throw new NullPointerException();
 
-        return new Message(Atom.attach(atoms, Atom.make(addr)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(addr)), addressMarshaller, messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Message attach(String str) {
         if (str == null) throw new NullPointerException();
 
-        return new Message(Atom.attach(atoms, Atom.make(str)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(str)), addressMarshaller, messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Message attach(Bytestring sig) {
         if (sig == null) throw new NullPointerException();
 
-        return new Message(Atom.attach(atoms, Atom.make(sig)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(sig)), addressMarshaller, messages);
     }
 
     @Override
     public com.shuffle.protocol.message.Message attach(Blame blame) {
         if (blame == null) throw new NullPointerException();
 
-        return new Message(Atom.attach(atoms, Atom.make(blame)), messages);
+        return new Message(Atom.attach(atoms, Atom.make(blame)), addressMarshaller, messages);
     }
 
     public com.shuffle.protocol.message.Message hashed() throws FormatException, IOException {
 
         return new Message(Atom.make(
-                new SecureHash(messages.sha256, messages.atomMarshaller, this.atoms)), messages);
+                new SecureHash(messages.sha256, messages.atomMarshaller, this.atoms)),
+                addressMarshaller, messages);
     }
 
     @Override
@@ -295,9 +301,8 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
         if (atoms == null) throw new FormatException("Address not found");
         if (atoms.addr != null) return atoms.addr;
         else if (atoms.string == null) throw new FormatException("Address not found.");
-
         // Attempt to read string as an address.
-        return messages.addressMarshaller.unmarshall(new Bytestring(atoms.string.getBytes()));
+        return addressMarshaller.unmarshall(new Bytestring(atoms.string.getBytes()));
     }
 
     @Override
@@ -327,7 +332,7 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
 
         if (atoms == null) throw new FormatException("Rest called on last element.");
 
-        return new Message(atoms.next, messages);
+        return new Message(atoms.next, addressMarshaller, messages);
     }
 
     @Override

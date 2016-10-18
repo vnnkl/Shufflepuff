@@ -30,6 +30,7 @@ public class MockDecryptionKey implements DecryptionKey, Serializable {
     }
 
     public MockDecryptionKey(String str) throws NumberFormatException {
+        // TODO regex
         index = Integer.parseInt(str);
         key = new MockEncryptionKey(index);
     }

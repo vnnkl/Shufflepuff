@@ -12,15 +12,13 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
+import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.chan.packet.JavaMarshaller;
-import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
+import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
-import com.shuffle.player.P;
-import com.shuffle.player.Protobuf;
+import com.shuffle.player.Payload;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.MaliciousMachine;
@@ -28,11 +26,15 @@ import com.shuffle.protocol.blame.Evidence;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.protocol.blame.Reason;
 import com.shuffle.protocol.message.MessageFactory;
+import com.shuffle.sim.init.Initializer;
+import com.shuffle.sim.init.Communication;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,7 @@ import java.util.concurrent.ExecutionException;
  * Created by Simulator on 2/8/16.
  */
 public class InitialState {
+    private static final Logger log = LogManager.getLogger(TestCase.class);
 
     // An expected return state that matches any blame matrix, even a null one.
     // Used for ensuring a test can't fail no matter what value
@@ -137,10 +140,7 @@ public class InitialState {
     private static final ExpectedPatternAny anyMatrix = new ExpectedPatternAny();
     private static final ExpectedPatternNull nullMatrix = new ExpectedPatternNull();
 
-    public final Bytestring session;
-    private final long amount;
-    private final long fee;
-    private final Crypto crypto;
+    private final TestCase testCase;
     private final LinkedList<PlayerInitialState> players = new LinkedList<>();
     private MockCoin mockCoin = null;
 
@@ -180,19 +180,19 @@ public class InitialState {
         }
 
         public Bytestring getSession() {
-            return InitialState.this.session;
+            return InitialState.this.testCase.session;
         }
 
         public long getAmount() {
-            return InitialState.this.amount;
+            return InitialState.this.testCase.amount;
         }
 
         public long getFee() {
-            return InitialState.this.fee;
+            return InitialState.this.testCase.fee;
         }
 
         public Crypto crypto() {
-            return InitialState.this.crypto;
+            return InitialState.this.testCase.crypto();
         }
 
         public MockCoin coin() throws InterruptedException, ExecutionException, CoinNetworkException, FormatException {
@@ -214,7 +214,7 @@ public class InitialState {
                     if (player.initialAmount > 0) {
                         Address address = player.sk.VerificationKey().address();
 
-                        SigningKey previous = crypto.makeSigningKey();
+                        SigningKey previous = testCase.crypto().makeSigningKey();
 
                         mockCoin.put(previous.VerificationKey().address(), player.initialAmount);
                         mockCoin.makeSpendingTransaction(
@@ -225,7 +225,7 @@ public class InitialState {
                         if (player.spend > 0) {
                             mockCoin.makeSpendingTransaction(
                                     player.sk,
-                                    crypto.makeSigningKey().VerificationKey().address(),
+                                    testCase.crypto().makeSigningKey().VerificationKey().address(),
                                     player.spend
                             ).send();
                         }
@@ -253,35 +253,35 @@ public class InitialState {
 
             if (equivocateAnnouncement != null && equivocateAnnouncement.length > 0) {
                 shuffle = MaliciousMachine.announcementEquivocator(
-                        messages, crypto, coin, fromSet(keys, equivocateAnnouncement)
+                        messages, testCase.crypto(), coin, fromSet(keys, equivocateAnnouncement)
                 );
             } else if (equivocateOutputVector != null && equivocateOutputVector.length > 0) {
                 shuffle = MaliciousMachine.broadcastEquivocator(
-                        messages, crypto, coin, fromSet(keys, equivocateOutputVector)
+                        messages, testCase.crypto(), coin, fromSet(keys, equivocateOutputVector)
                 );
             } else if (replace && drop != 0) {
-                shuffle = MaliciousMachine.addressReplacer(messages, crypto, coin, drop);
+                shuffle = MaliciousMachine.addressReplacer(messages, testCase.crypto(), coin, drop);
             } else if (duplicate != 0 && drop != 0) {
                 shuffle = MaliciousMachine.addressDropperDuplicator(
-                        messages, crypto, coin, drop, duplicate
+                        messages, testCase.crypto(), coin, drop, duplicate
                 );
             } else if (drop != 0) {
-                shuffle = MaliciousMachine.addressDropper(messages, crypto, coin, drop);
+                shuffle = MaliciousMachine.addressDropper(messages, testCase.crypto(), coin, drop);
             } else if (doubleSpend > 0) {
                 // is he going to double spend? If so, make a new transaction for him.
-                shuffle = MaliciousMachine.doubleSpender(messages, crypto, coin,
+                shuffle = MaliciousMachine.doubleSpender(messages, testCase.crypto(), coin,
                         coin.makeSpendingTransaction(sk,
-                                crypto.makeSigningKey().VerificationKey().address(),
+                                testCase.crypto().makeSigningKey().VerificationKey().address(),
                                 doubleSpend
                         )
                 );
             } else if (mutate) {
-                shuffle = new CoinShuffle(messages, crypto, coin.mutated());
+                shuffle = new CoinShuffle(messages, testCase.crypto(), coin.mutated());
             } else {
-                shuffle = new CoinShuffle(messages, crypto, coin);
+                shuffle = new CoinShuffle(messages, testCase.crypto(), coin);
             }
 
-            return new Adversary(amount, fee, sk, keys, addr, change, shuffle);
+            return new Adversary(testCase.amount, testCase.fee, sk, keys, addr, change, shuffle);
         }
 
         // The sort of malicious behavior to be performed by this player, if any.
@@ -291,7 +291,7 @@ public class InitialState {
                 return Reason.InsufficientFunds;
             }
 
-            if (initialAmount < amount || initialAmount - spend < amount) {
+            if (initialAmount < testCase.amount || initialAmount - spend < testCase.amount) {
                 return Reason.InsufficientFunds;
             }
 
@@ -379,14 +379,18 @@ public class InitialState {
 
             return (bm.isEmpty() ? nullMatrix : bm);
         }
+
+        public String toString() {
+            return "init["+sk+"]";
+        }
     }
 
     public Map<SigningKey, Adversary> getPlayers(
-            Initializer<Packet<VerificationKey, P>> initializer)
-            throws ExecutionException, InterruptedException {
+            Initializer<Packet<VerificationKey, Payload>> initializer)
+            throws ExecutionException, InterruptedException, IOException {
 
         Map<SigningKey, Adversary> p = new HashMap<>();
-        Map<SigningKey, Initializer.Connections<Packet<VerificationKey, P>>> connections = new HashMap<>();
+        Map<SigningKey, Communication<Packet<VerificationKey, Payload>>> connections = new HashMap<>();
 
         for (final PlayerInitialState player : players) {
             if (player.sk == null) {
@@ -398,12 +402,12 @@ public class InitialState {
 
         for (final PlayerInitialState player : players) {
 
-            Initializer.Connections<Packet<VerificationKey, P>> c = connections.get(player.sk);
-
+            Communication<Packet<VerificationKey, Payload>> c = connections.get(player.sk);
+            
             try {
                 p.put(player.sk,
-                        player.adversary(new Messages(session, player.sk, c.send, c.receive,
-                                m)));
+                        player.adversary(new Messages(testCase.session, player.sk, c.send, c.receive,
+                                testCase.proto())));
 
             } catch (FormatException | CoinNetworkException | NoSuchAlgorithmException e) {
                 e.printStackTrace();
@@ -432,20 +436,14 @@ public class InitialState {
 
     private Map<Integer, MockCoin> networkPoints = null;
 
-    private final Messages.ShuffleMarshaller m;
+    public InitialState(TestCase testCase) {
 
-    public InitialState(Bytestring session, long amount, long fee, Crypto crypto, Messages.ShuffleMarshaller m) {
-
-        this.session = session;
-        this.amount = amount;
-        this.fee = fee;
-        this.crypto = crypto;
-        this.m = m;
+        this.testCase = testCase;
     }
 
     public InitialState player() {
-        SigningKey key = crypto.makeSigningKey();
-        Address addr = crypto.makeSigningKey().VerificationKey().address();
+        SigningKey key = testCase.crypto().makeSigningKey();
+        Address addr = testCase.crypto().makeSigningKey().VerificationKey().address();
 
         PlayerInitialState next = new PlayerInitialState(key, addr);
         PlayerInitialState last = players.peekLast();
@@ -553,252 +551,59 @@ public class InitialState {
         return others;
     }
 
-    // An initial state containing no malicious players.
-    public static InitialState successful(
-            final Bytestring session,
-            final long amount,
-            final long fee,
-            final Crypto crypto,
-            final Protobuf proto,
-            final int numPlayers
-    ) {
-        InitialState init = new InitialState(session, amount, fee, crypto, proto);
-
-        for (int i = 1; i <= numPlayers; i++) {
-            init.player().initialFunds(20);
-        }
-
-        return init;
-    }
-
-    // Initial state for cases in which players cannot afford to engage in the round, for
-    // one reason or another.
-    public static InitialState insufficientFunds(
-            final Bytestring session,
-            final long amount,
-            final long fee,
-            final Crypto crypto,
-            final Protobuf proto,
-            final int numPlayers,
-            final int[] deadbeats, // Players who put no money in their address.
-            final int[] poor, // Players who didn't put enough in their address.
-            final int[] spenders // Players who don't have enough because they spent it.
-    ) {
-        InitialState init = new InitialState(session, amount, fee, crypto, proto);
-
-        pit : for (int i = 1; i <= numPlayers; i++) {
-            init.player().initialFunds(20);
-            for (int deadbeat : deadbeats) {
-                if (deadbeat == i) {
-                    init.initialFunds(0);
-                    continue pit;
-                }
-            }
-            for (int aPoor : poor) {
-                if (aPoor == i) {
-                    init.initialFunds(10);
-                    continue pit;
-                }
-            }
-            for (int spender : spenders) {
-                if (spender == i) {
-                    init.spend(16);
-                }
-            }
-        }
-
-        return init;
-    }
-
-    // Initial state for players who spend their funds while the protocol is running.
-    public static InitialState doubleSpend(
-            final Bytestring session,
-            final long amount,
-            final long fee,
-            final Crypto crypto,
-            final Protobuf proto,
-            final int[] views, // Each player may have a different view of the network; ie,
-            // some players may be able to observe that the double spend has
-            // occurred but others may not.
-            final int[] spenders  // The set of players who attempt to double spend.
-    ) {
-        final Set<Integer> doubleSpenders = new HashSet<>();
-
-        for (int d : spenders) {
-            doubleSpenders.add(d);
-        }
-
-        InitialState init = new InitialState(session, amount, fee, crypto, proto);
-        for (int i = 0; i < views.length; i ++) {
-            init.player().initialFunds(20).networkPoint(views[i]);
-
-            if (doubleSpenders.contains(i + 1)) {
-                init.doubleSpend(13);
-            }
-        }
-        return init;
-    }
-
-    // A class used to define certain kinds of initial states.
-    public static class Equivocation {
-        final int equivocator;
-        final int[] equivocation;
-
-        public Equivocation(int equivocator, int[] equivocation) {
-            // Testing the case where the first player is the equivocator is too hard for now.
-            // It would require basically writing a whole new version of protocolDefinition()
-            // to be a test function. It is unlikely that testing case will find a bug in the code.
-            if (equivocator == 1) {
-                throw new IllegalArgumentException();
-            }
-
-            for (int eq : equivocation) {
-                if (eq <= equivocator) {
-                    throw new IllegalArgumentException();
-                }
-            }
-
-            this.equivocator = equivocator;
-            this.equivocation = equivocation;
-        }
-
-        @Override
-        public String toString() {
-            return "equivocation[" + equivocator + ", " + Arrays.toString(equivocation) + "]";
-        }
-    }
-
-    // Initial state for malicious players who equivocate during the announcement phase.
-    public static InitialState equivocateAnnouncement(
-            final Bytestring session,
-            final long amount,
-            final long fee,
-            final Crypto crypto,
-            final Protobuf proto,
-            final int numPlayers,
-            final Equivocation[] equivocators
-    ) {
-        InitialState init = new InitialState(session, amount, fee, crypto, proto);
-
-        int eq = 0;
-        for (int i = 1; i <= numPlayers; i ++) {
-            init.player().initialFunds(20);
-
-            while (eq < equivocators.length && equivocators[eq].equivocator < i) {
-                eq++;
-            }
-
-            if (eq < equivocators.length && equivocators[eq].equivocator == i) {
-                init.equivocateAnnouncement(equivocators[eq].equivocation);
-            }
-        }
-
-        return init;
-    }
-
-    // Initial state for a player who equivocates during the broadcast phase.
-    public static InitialState equivocateBroadcast(
-            final Bytestring session,
-            final long amount,
-            final long fee,
-            final Crypto crypto,
-            final Protobuf proto,
-            final int numPlayers,
-            final int[] equivocation
-    ) {
-
-        InitialState init = new InitialState(session, amount, fee, crypto, proto);
-
-        // Only the last player can equivocate.
-        for (int i = 1; i < numPlayers; i ++) {
-            init.player().initialFunds(20);
-        }
-
-        // Add the malicious equivocator.
-        init.player().initialFunds(20).equivocateOutputVector(equivocation);
-
-        return init;
-    }
-
-    // Initial state for players who shuffle their addresses incorrectly.
-    public static InitialState dropAddress(
-            final Bytestring session,
-            final long amount,
-            final long fee,
-            final Crypto crypto,
-            final Protobuf proto,
-            final int numPlayers,
-            final Map<Integer, Integer> drop,
-            final int[][] replaceNew,
-            final int[][] replaceDuplicate
-    ) {
-
-        final Map<Integer, Integer> replaceNewMap = new HashMap<>();
-        final Map<Integer, Integer[]> replaceDuplicateMap = new HashMap<>();
-
-        if (replaceDuplicate != null) {
-            for (int[] d : replaceDuplicate) {
-                if (d.length == 2 && d[1] < d[0]) {
-                    replaceDuplicateMap.put(d[0], new Integer[]{d[1], d[2]});
-                }
-            }
-        }
-
-        if (replaceNew != null) {
-            for (int[] d : replaceNew) {
-                if (d.length == 2 && d[1] < d[0]) {
-                    replaceNewMap.put(d[0], d[1]);
-                }
-            }
-        }
-
-        InitialState init = new InitialState(session, amount, fee, crypto, proto);
-
-        for (int i = 1; i <= numPlayers; i ++) {
-
-            init.player().initialFunds(20);
-
-            if (drop.containsKey(i)) {
-                init.drop(drop.get(i));
-            } else if (replaceDuplicateMap.containsKey(i)) {
-                Integer[] dup = replaceDuplicateMap.get(i);
-                init.replace(dup[0], dup[1]);
-            } else if (replaceNewMap.containsKey(i)) {
-                init.replace(replaceNewMap.get(i));
-            }
-        }
-
-        return init;
-    }
-
-    public static InitialState invalidSignature(
-            final Bytestring session,
-            final long amount,
-            final long fee,
-            final Crypto crypto,
-            final Protobuf proto,
-            final int numPlayers,
-            final int[] mutants) {
-        final Set<Integer> mutantsSet = new HashSet<>();
-
-        for (int mutant : mutants) {
-            mutantsSet.add(mutant);
-        }
-
-        InitialState init = new InitialState(session, amount, fee, crypto, proto);
-
-        for (int i = 1; i <= numPlayers; i ++) {
-            init.player().initialFunds(20);
-
-            if (mutantsSet.contains(i)) {
-                init.mutateTransaction();
-            }
-        }
-
-        return init;
+    public Bytestring session() {
+        return testCase.session;
     }
 
     public int size() {
         return players.size();
+    }
+
+    // Returns a map containing the set of results which did not match expectations. An empty map
+    // represents a successful test.
+    public Map<SigningKey, TestCase.Mismatch> run()
+            throws ExecutionException, InterruptedException, IOException {
+
+        // Create the simulator.
+        Simulator sim;
+        if (testCase.type == Initializer.Type.OTR) {
+            sim = new Simulator(testCase.type, testCase.proto().signedMarshaller);
+        } else {
+            sim = new Simulator(testCase.type);
+        }
+
+        // Run the simulation.
+        Map<SigningKey, Either<Transaction, Matrix>> results = sim.run(this);
+
+        if (results == null) {
+            return null;
+        }
+
+        // Get the expected values.
+        Map<SigningKey, Matrix> expected = expected();
+
+        // The result to be returned.
+        Map<SigningKey, TestCase.Mismatch> mismatch = new HashMap<>();
+
+        // Check that the map of error states returned matches that which was expected.
+        for (Map.Entry<SigningKey, Matrix> ex : expected.entrySet()) {
+            SigningKey key = ex.getKey();
+            Either<Transaction, Matrix> er = results.get(key);
+
+            if (er == null) {
+                return null;
+            }
+
+            Matrix result = er.second;
+            Matrix expect = ex.getValue();
+
+            if (!expect.match(result)) {
+                log.error("  expected " + expect);
+                log.error("  result   " + result);
+                mismatch.put(key, new TestCase.Mismatch(key, expect, result));
+            }
+        }
+
+        return mismatch;
     }
 }

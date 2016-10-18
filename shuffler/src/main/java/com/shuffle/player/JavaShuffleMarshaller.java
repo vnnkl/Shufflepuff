@@ -22,12 +22,12 @@ public class JavaShuffleMarshaller implements Messages.ShuffleMarshaller {
     }
 
     @Override
-    public Marshaller<Packet<VerificationKey, P>> packetMarshaller() {
+    public Marshaller<Packet<VerificationKey, Payload>> packetMarshaller() {
         return new JavaMarshaller<>();
     }
 
     @Override
-    public Marshaller<Signed<Packet<VerificationKey, P>>> signedMarshaller() {
+    public Marshaller<Signed<Packet<VerificationKey, Payload>>> signedMarshaller() {
         return new JavaMarshaller<>();
     }
 }

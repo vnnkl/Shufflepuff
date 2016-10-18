@@ -8,22 +8,30 @@
 
 package com.shuffle.sim;
 
-import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
+import com.shuffle.chan.packet.Signed;
+import com.shuffle.mock.MockProtobuf;
 import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
-import com.shuffle.player.P;
+import com.shuffle.p2p.Bytestring;
+import com.shuffle.player.Payload;
 import com.shuffle.protocol.blame.Matrix;
+import com.shuffle.sim.init.BasicInitializer;
+import com.shuffle.sim.init.MarshallInitializer;
+import com.shuffle.sim.init.Initializer;
+import com.shuffle.sim.init.OtrInitializer;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -35,19 +43,55 @@ import java.util.concurrent.ExecutionException;
 public final class Simulator {
     private static final Logger log = LogManager.getLogger(Simulator.class);
 
-    // Cannot be instantiated. Everything here is static!
-    private Simulator() {
+    public final Initializer.Type type;
+    public final Marshaller<Signed<Packet<VerificationKey, Payload>>> marshaller;
+
+    public Simulator() {
+        type = Initializer.Type.Basic;
+        this.marshaller = new MockProtobuf().signedMarshaller();
     }
 
-    public static Map<SigningKey, Either<Transaction, Matrix>> run(InitialState init)
-            throws ExecutionException, InterruptedException {
+    public Simulator(Initializer.Type type) {
+        if (type == null) throw new NullPointerException();
 
-        final Initializer<Packet<VerificationKey, P>> initializer = new Initializer<>(init.session, 3 * (1 + init.size() ));
+        if (type == Initializer.Type.OTR) throw new IllegalArgumentException();
+
+        this.type = type;
+        this.marshaller = new MockProtobuf().signedMarshaller();
+    }
+
+    public Simulator(Initializer.Type type, Marshaller<Signed<Packet<VerificationKey, Payload>>> marshaller) {
+        if (type == null || marshaller == null) throw new NullPointerException();
+
+        this.type = type;
+        this.marshaller = marshaller;
+    }
+
+    private Initializer<Packet<VerificationKey, Payload>> makeInitializer(Bytestring session, int capacity) {
+        switch (type) {
+            case Basic:
+                return new BasicInitializer<>(session, capacity);
+            case Mock:
+                return new MarshallInitializer<>(session, capacity, marshaller);
+            case OTR:
+                return new OtrInitializer<>(session, capacity, marshaller);
+            default:
+                throw new IllegalArgumentException();
+        }
+    }
+
+    public Map<SigningKey, Either<Transaction, Matrix>> run(
+            InitialState init)
+            throws ExecutionException, InterruptedException, IOException {
+
+        final Initializer<Packet<VerificationKey, Payload>> initializer =
+                makeInitializer(init.session(), 3 * (1 + init.size()));
+
         final Map<SigningKey, Adversary> machines = init.getPlayers(initializer);
 
         Map<SigningKey, Either<Transaction, Matrix>> results = runSimulation(machines);
 
-        initializer.networks.clear(); // Avoid memory leak.
+        initializer.clear(); // Avoid memory leak.
         return results;
     }
 

@@ -12,15 +12,13 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Send;
-import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.Inbox;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.JavaShuffleMarshaller;
-import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
-import com.shuffle.player.P;
+import com.shuffle.player.Payload;
 
 import org.junit.Assert;
 
@@ -41,9 +39,9 @@ public class MockNetwork  {
     // Haha yes it's silly to call an Inbox outbox. Normally you wouldn't use an Inbox
     // this way but for testing purposes it works fine because I just need to collect all
     // outgoing messages.
-    private final Inbox<VerificationKey, Signed<Packet<VerificationKey, P>>> outbox;
+    private final Inbox<VerificationKey, Signed<Packet<VerificationKey, Payload>>> outbox;
 
-    private final Map<VerificationKey, Send<Signed<Packet<VerificationKey, P>>>> out = new HashMap<>();
+    private final Map<VerificationKey, Send<Signed<Packet<VerificationKey, Payload>>>> out = new HashMap<>();
 
     private final Map<VerificationKey, Messages> messages = new HashMap<>();
 
@@ -53,7 +51,7 @@ public class MockNetwork  {
         // First create the inbox and outbox.
         outbox = new Inbox<>(cap);
 
-        Inbox<VerificationKey, Signed<Packet<VerificationKey, P>>> inbox
+        Inbox<VerificationKey, Signed<Packet<VerificationKey, Payload>>> inbox
                 = new Inbox<>(cap);
 
         VerificationKey vk = me.VerificationKey();
@@ -66,14 +64,14 @@ public class MockNetwork  {
             // Create a spot in the outbox for messages sent to this peer.
             out.put(vkp, outbox.receivesFrom(vkp));
 
-            Send<Signed<Packet<VerificationKey, P>>> incoming = inbox.receivesFrom(vkp);
+            Send<Signed<Packet<VerificationKey, Payload>>> incoming = inbox.receivesFrom(vkp);
             Assert.assertTrue(incoming != null);
 
-            HashMap<VerificationKey, Send<Signed<Packet<VerificationKey, P>>>> outFrom = new HashMap<>();
+            HashMap<VerificationKey, Send<Signed<Packet<VerificationKey, Payload>>>> outFrom = new HashMap<>();
             outFrom.put(vk, incoming);
 
             messages.put(vkp, new Messages(session, skp, outFrom,
-                    new BasicChan<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>>(),
+                    new BasicChan<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, Payload>>>>(),
                     new JavaShuffleMarshaller()));
 
         }
@@ -87,9 +85,9 @@ public class MockNetwork  {
 
     // This means we want to end the simulation and drain all messages sent by the
     // test mailbox.
-    public List<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>> getResponses() throws InterruptedException {
+    public List<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, Payload>>>> getResponses() throws InterruptedException {
         // First close all channels.
-        for (Send<Signed<Packet<VerificationKey, P>>> p : out.values()) {
+        for (Send<Signed<Packet<VerificationKey, Payload>>> p : out.values()) {
             p.close();
         }
 
@@ -97,10 +95,10 @@ public class MockNetwork  {
         outbox.close();
 
         // Then drain messages from outbox.
-        List<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>> r = new LinkedList<>();
+        List<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, Payload>>>> r = new LinkedList<>();
 
         while (true) {
-            Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>> x = outbox.receive();
+            Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, Payload>>> x = outbox.receive();
 
             if (x == null) return r;
 

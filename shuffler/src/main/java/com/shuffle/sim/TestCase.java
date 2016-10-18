@@ -8,23 +8,20 @@
 
 package com.shuffle.sim;
 
-import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
-import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
-import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Protobuf;
 import com.shuffle.protocol.blame.Matrix;
-
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
+import com.shuffle.sim.init.Initializer;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.Set;
 
 /**
  * TestCase attempts to provide a unified way of constructing test cases for different
@@ -33,14 +30,13 @@ import java.util.concurrent.ExecutionException;
  * Created by Daniel Krawisz on 3/15/16.
  */
 public abstract class TestCase {
-    private static final Logger log = LogManager.getLogger(TestCase.class);
 
     public static final class Mismatch {
         public final SigningKey player;
         public final Matrix expected; // Can be null.
         public final Matrix result;   // Can be null.
 
-        public Mismatch(SigningKey player, Matrix expected, Matrix result) {
+        Mismatch(SigningKey player, Matrix expected, Matrix result) {
             if (player == null) throw new NullPointerException();
 
             this.player = player;
@@ -49,111 +45,232 @@ public abstract class TestCase {
         }
     }
 
-    // Returns a map containing the set of results which did not match expectations. An empty map
-    // represents a successful test.
-    public static Map<SigningKey, Mismatch> test(InitialState init)
-            throws ExecutionException, InterruptedException {
+    public final long amount;
+    public final long fee;
 
-        // Run the simulation.
-        Map<SigningKey, Either<Transaction, Matrix>> results = Simulator.run(init);
+    public final Bytestring session;
 
-        if (results == null) {
-            return null;
-        }
+    public final Initializer.Type type;
 
-        // Get the expected values.
-        Map<SigningKey, Matrix> expected = init.expected();
-
-        // The result to be returned.
-        Map<SigningKey, Mismatch> mismatch = new HashMap<>();
-
-        // Check that the map of error states returned matches that which was expected.
-        for (Map.Entry<SigningKey, Matrix> ex : expected.entrySet()) {
-            SigningKey key = ex.getKey();
-            Either<Transaction, Matrix> er = results.get(key);
-
-            if (er == null) {
-                return null;
-            }
-
-            Matrix result = er.second;
-            Matrix expect = ex.getValue();
-
-            if (!expect.match(result)) {
-                log.error("  expected " + expect);
-                log.error("  result   " + result);
-                mismatch.put(key, new Mismatch(key, expect, result));
-            }
-        }
-
-        return mismatch;
-    }
-
-    private final long amount;
-
-    private final Bytestring session;
-
-    protected TestCase(long amount, Bytestring session) {
+    protected TestCase(Bytestring session, Initializer.Type type, long amount, long fee) {
         this.amount = amount;
+        this.fee = fee;
         this.session = session;
+        this.type = type;
     }
 
     // Get the cryptography service for this test case (could be mock crypto or real, depending
     // on what we're testing.)
-    protected abstract Crypto crypto() throws NoSuchAlgorithmException, BitcoinCrypto.Exception;
+    protected abstract Crypto crypto();
     protected abstract Protobuf proto();
 
-    public static final long TEST_FEE = 5000L;
-
+    // An initial state containing no malicious players.
     public final InitialState successfulTestCase(final int numPlayers)
             throws BitcoinCrypto.Exception, NoSuchAlgorithmException {
-        return InitialState.successful(session, amount, TEST_FEE, crypto(), proto(), numPlayers);
+
+        InitialState init = new InitialState(this);
+
+        for (int i = 1; i <= numPlayers; i++) {
+            init.player().initialFunds(20);
+        }
+
+        return init;
     }
 
+    // Initial state for cases in which players cannot afford to engage in the round, for
+    // one reason or another.
     public final InitialState insufficientFundsTestCase(
             final int numPlayers,
             final int[] deadbeats,
             final int[] poor,
             final int[] spenders) throws BitcoinCrypto.Exception, NoSuchAlgorithmException {
-        return InitialState.insufficientFunds(
-                session, amount, TEST_FEE, crypto(), proto(), numPlayers, deadbeats, poor, spenders);
+
+        InitialState init = new InitialState(this);
+
+        pit : for (int i = 1; i <= numPlayers; i++) {
+            init.player().initialFunds(20);
+            for (int deadbeat : deadbeats) {
+                if (deadbeat == i) {
+                    init.initialFunds(0);
+                    continue pit;
+                }
+            }
+            for (int aPoor : poor) {
+                if (aPoor == i) {
+                    init.initialFunds(10);
+                    continue pit;
+                }
+            }
+            for (int spender : spenders) {
+                if (spender == i) {
+                    init.spend(16);
+                }
+            }
+        }
+
+        return init;
     }
 
+    // Initial state for players who spend their funds while the protocol is running.
     public final InitialState doubleSpendTestCase(
             final int[] views,
             final int[] spenders
     ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-        return InitialState.doubleSpend(session, amount, TEST_FEE, crypto(), proto(), views, spenders);
+
+        final Set<Integer> doubleSpenders = new HashSet<>();
+
+        for (int d : spenders) {
+            doubleSpenders.add(d);
+        }
+
+        InitialState init = new InitialState(this);
+        for (int i = 0; i < views.length; i ++) {
+            init.player().initialFunds(20).networkPoint(views[i]);
+
+            if (doubleSpenders.contains(i + 1)) {
+                init.doubleSpend(13);
+            }
+        }
+        return init;
     }
 
+    // Initial state for malicious players who equivocate during the announcement phase.
     public final InitialState equivocateAnnouncementTestCase(
             final int numPlayers,
-            final InitialState.Equivocation[] equivocators
+            final Equivocation[] equivocators
     ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-        return InitialState.equivocateAnnouncement(
-                session, amount, TEST_FEE, crypto(), proto(), numPlayers, equivocators);
+
+        InitialState init = new InitialState(this);
+
+        int eq = 0;
+        for (int i = 1; i <= numPlayers; i ++) {
+            init.player().initialFunds(20);
+
+            while (eq < equivocators.length && equivocators[eq].equivocator < i) {
+                eq++;
+            }
+
+            if (eq < equivocators.length && equivocators[eq].equivocator == i) {
+                init.equivocateAnnouncement(equivocators[eq].equivocation);
+            }
+        }
+
+        return init;
     }
 
+    // Initial state for a player who equivocates during the broadcast phase.
     public final InitialState equivocateBroadcastTestCase(
             final int numPlayers,
             final int[] equivocation) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-        return InitialState.equivocateBroadcast(
-                session, amount, TEST_FEE, crypto(), proto(), numPlayers, equivocation);
+
+        InitialState init = new InitialState(this);
+
+        // Only the last player can equivocate.
+        for (int i = 1; i < numPlayers; i ++) {
+            init.player().initialFunds(20);
+        }
+
+        // Add the malicious equivocator.
+        init.player().initialFunds(20).equivocateOutputVector(equivocation);
+
+        return init;
     }
 
+    // Initial state for players who shuffle their addresses incorrectly.
     public final InitialState dropAddressTestCase(
             final int numPlayers,
             final Map<Integer, Integer> drop,
             final int[][] replaceNew,
             final int[][] replaceDuplicate) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-        return InitialState.dropAddress(
-                session, amount, TEST_FEE, crypto(), proto(), numPlayers, drop, replaceNew, replaceDuplicate);
+
+        final Map<Integer, Integer> replaceNewMap = new HashMap<>();
+        final Map<Integer, Integer[]> replaceDuplicateMap = new HashMap<>();
+
+        if (replaceDuplicate != null) {
+            for (int[] d : replaceDuplicate) {
+                if (d.length == 2 && d[1] < d[0]) {
+                    replaceDuplicateMap.put(d[0], new Integer[]{d[1], d[2]});
+                }
+            }
+        }
+
+        if (replaceNew != null) {
+            for (int[] d : replaceNew) {
+                if (d.length == 2 && d[1] < d[0]) {
+                    replaceNewMap.put(d[0], d[1]);
+                }
+            }
+        }
+
+        InitialState init = new InitialState(this);
+
+        for (int i = 1; i <= numPlayers; i ++) {
+
+            init.player().initialFunds(20);
+
+            if (drop.containsKey(i)) {
+                init.drop(drop.get(i));
+            } else if (replaceDuplicateMap.containsKey(i)) {
+                Integer[] dup = replaceDuplicateMap.get(i);
+                init.replace(dup[0], dup[1]);
+            } else if (replaceNewMap.containsKey(i)) {
+                init.replace(replaceNewMap.get(i));
+            }
+        }
+
+        return init;
     }
 
+    // Initial state for players who make invalid signatures.
     public final InitialState invalidSignatureTestCase(
             final int numPlayers,
             final int[] mutants
     ) throws NoSuchAlgorithmException, BitcoinCrypto.Exception {
-        return InitialState.invalidSignature(session, amount, TEST_FEE, crypto(), proto(), numPlayers, mutants);
+        final Set<Integer> mutantsSet = new HashSet<>();
+
+        for (int mutant : mutants) {
+            mutantsSet.add(mutant);
+        }
+
+        InitialState init = new InitialState(this);
+
+        for (int i = 1; i <= numPlayers; i ++) {
+            init.player().initialFunds(20);
+
+            if (mutantsSet.contains(i)) {
+                init.mutateTransaction();
+            }
+        }
+
+        return init;
+    }
+
+    // A class used to define certain kinds of initial states.
+    public static class Equivocation {
+        final int equivocator;
+        final int[] equivocation;
+
+        public Equivocation(int equivocator, int[] equivocation) {
+            // Testing the case where the first player is the equivocator is too hard for now.
+            // It would require basically writing a whole new version of protocolDefinition()
+            // to be a test function. It is unlikely that testing case will find a bug in the code.
+            if (equivocator == 1) {
+                throw new IllegalArgumentException();
+            }
+
+            for (int eq : equivocation) {
+                if (eq <= equivocator) {
+                    throw new IllegalArgumentException();
+                }
+            }
+
+            this.equivocator = equivocator;
+            this.equivocation = equivocation;
+        }
+
+        @Override
+        public String toString() {
+            return "equivocation[" + equivocator + ", " + Arrays.toString(equivocation) + "]";
+        }
     }
 }

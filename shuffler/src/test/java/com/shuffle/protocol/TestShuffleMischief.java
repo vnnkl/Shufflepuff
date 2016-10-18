@@ -13,6 +13,7 @@ import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
 import org.junit.Test;
 
+import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -36,7 +37,7 @@ public class TestShuffleMischief extends TestShuffleMachine {
             Map<Integer, Integer> drop,
             int[][] replaceNew,
             int[][] replaceDuplicate
-    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception {
+    ) throws NoSuchAlgorithmException, ExecutionException, InterruptedException, BitcoinCrypto.Exception, IOException {
         if (drop == null) {
             drop = ImmutableMap.of();
         }
@@ -49,7 +50,7 @@ public class TestShuffleMischief extends TestShuffleMachine {
 
     @Test
     public void testDropAddress() throws NoSuchAlgorithmException,
-            ExecutionException, InterruptedException, BitcoinCrypto.Exception {
+            ExecutionException, InterruptedException, BitcoinCrypto.Exception, IOException {
         DropAddress(2, ImmutableMap.of(1, 1), null, null);
         DropAddress(2, ImmutableMap.of(2, 1), null, null);
         DropAddress(2, ImmutableMap.of(2, 2), null, null);
@@ -64,7 +65,7 @@ public class TestShuffleMischief extends TestShuffleMachine {
 
     @Test
     public void testDropAddressReplaceNew() throws NoSuchAlgorithmException,
-            InterruptedException, ExecutionException, BitcoinCrypto.Exception {
+            InterruptedException, ExecutionException, BitcoinCrypto.Exception, IOException {
         DropAddress(3, null, new int[][]{new int[]{2, 1}}, null);
         DropAddress(3, null, new int[][]{new int[]{3, 2}}, null);
         DropAddress(4, null, new int[][]{new int[]{3, 2}}, null);
@@ -72,7 +73,7 @@ public class TestShuffleMischief extends TestShuffleMachine {
 
     @Test
     public void testDropAddressDuplicate() throws NoSuchAlgorithmException,
-            InterruptedException, ExecutionException, BitcoinCrypto.Exception {
+            InterruptedException, ExecutionException, BitcoinCrypto.Exception, IOException {
 
         // A player drops an address and adds a duplicate in phase 2.
         DropAddress(4, null, null, new int[][]{new int[]{3, 1, 2}});
