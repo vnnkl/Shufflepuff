@@ -233,7 +233,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private OtrSession(Session<Address, Bytestring> s, SessionImpl sessionImpl) {
             this.s = s;
             this.sessionImpl = sessionImpl;
-            System.out.println("STATUS--" + sessionImpl.getSessionStatus().toString());
         }
 
         /**

@@ -21,10 +21,10 @@ import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.player.P;
+import com.shuffle.player.Payload;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.init.BasicInitializer;
-import com.shuffle.sim.init.ChannelInitializer;
+import com.shuffle.sim.init.MarshallInitializer;
 import com.shuffle.sim.init.Initializer;
 import com.shuffle.sim.init.OtrInitializer;
 
@@ -44,12 +44,11 @@ public final class Simulator {
     private static final Logger log = LogManager.getLogger(Simulator.class);
 
     public final Initializer.Type type;
-    public final Marshaller<Signed<Packet<VerificationKey, P>>> marshaller;
+    public final Marshaller<Signed<Packet<VerificationKey, Payload>>> marshaller;
 
     public Simulator() {
         type = Initializer.Type.Basic;
-        MockProtobuf x = new MockProtobuf();
-        this.marshaller = x.signedMarshaller();
+        this.marshaller = new MockProtobuf().signedMarshaller();
     }
 
     public Simulator(Initializer.Type type) {
@@ -58,25 +57,24 @@ public final class Simulator {
         if (type == Initializer.Type.OTR) throw new IllegalArgumentException();
 
         this.type = type;
-        MockProtobuf x = new MockProtobuf();
-        this.marshaller = x.signedMarshaller();
+        this.marshaller = new MockProtobuf().signedMarshaller();
     }
 
-    public Simulator(Initializer.Type type, Marshaller<Signed<Packet<VerificationKey, P>>> marshaller) {
+    public Simulator(Initializer.Type type, Marshaller<Signed<Packet<VerificationKey, Payload>>> marshaller) {
         if (type == null || marshaller == null) throw new NullPointerException();
 
         this.type = type;
         this.marshaller = marshaller;
     }
 
-    private Initializer<Packet<VerificationKey, P>> makeInitializer(Bytestring session, int capacity) {
+    private Initializer<Packet<VerificationKey, Payload>> makeInitializer(Bytestring session, int capacity) {
         switch (type) {
             case Basic:
                 return new BasicInitializer<>(session, capacity);
             case Mock:
-                return new ChannelInitializer<>(session, capacity);
+                return new MarshallInitializer<>(session, capacity, marshaller);
             case OTR:
-                return new OtrInitializer<>(session, capacity, this.marshaller);
+                return new OtrInitializer<>(session, capacity, marshaller);
             default:
                 throw new IllegalArgumentException();
         }
@@ -86,7 +84,7 @@ public final class Simulator {
             InitialState init)
             throws ExecutionException, InterruptedException, IOException {
 
-        final Initializer<Packet<VerificationKey, P>> initializer =
+        final Initializer<Packet<VerificationKey, Payload>> initializer =
                 makeInitializer(init.session(), 3 * (1 + init.size()));
 
         final Map<SigningKey, Adversary> machines = init.getPlayers(initializer);

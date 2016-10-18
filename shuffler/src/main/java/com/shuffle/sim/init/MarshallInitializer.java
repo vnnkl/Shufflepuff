@@ -4,12 +4,15 @@ import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Send;
+import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Connection;
 import com.shuffle.p2p.Listener;
+import com.shuffle.p2p.MarshallChannel;
+import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.Session;
 
 import java.io.IOException;
@@ -24,7 +27,7 @@ import java.util.Map;
  * Created by Daniel Krawisz on 10/11/16.
  */
 
-public class ChannelInitializer<X> implements Initializer<X> {
+public class MarshallInitializer<X> implements Initializer<X> {
     // The set of incoming mailboxes for each player.
     final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
 
@@ -33,17 +36,19 @@ public class ChannelInitializer<X> implements Initializer<X> {
 
     final Bytestring session;
     final int capacity;
+    final Marshaller<Signed<X>> marshaller;
 
-    private final MockNetwork<VerificationKey, Signed<X>> mockNetwork = new MockNetwork<>();
+    private final MockNetwork<VerificationKey, Bytestring> mockNetwork = new MockNetwork<>();
 
     private final List<Connection<VerificationKey>> connections = new LinkedList<>();
 
-    public ChannelInitializer(Bytestring session, int capacity) {
+    public MarshallInitializer(Bytestring session, int capacity, Marshaller<Signed<X>> marshaller) {
 
-        if (session == null || capacity == 0) throw new IllegalArgumentException();
+        if (session == null || capacity == 0 || marshaller == null) throw new IllegalArgumentException();
 
         this.session = session;
         this.capacity = capacity;
+        this.marshaller = marshaller;
     }
 
     // This function is called every time a new player is created in a simulation.
@@ -55,11 +60,11 @@ public class ChannelInitializer<X> implements Initializer<X> {
         final Map<VerificationKey, Send<Signed<X>>> inputs = new HashMap<>();
         networks.put(sk, inputs);
 
-        // Ceate a new mailbox.
+        // Create a new mailbox.
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create a new channel.
-        Channel<VerificationKey, Signed<X>> channel = mockNetwork.node(sk.VerificationKey());
+        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<VerificationKey, Signed<X>>(new OtrChannel<VerificationKey>(mockNetwork.node(sk.VerificationKey())), this.marshaller);
 
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {

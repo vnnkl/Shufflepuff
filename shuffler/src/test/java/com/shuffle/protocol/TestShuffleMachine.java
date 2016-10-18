@@ -36,8 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
-import static com.shuffle.sim.init.Initializer.Type.OTR;
-
 /**
  * Integration tests for the protocol.
  *

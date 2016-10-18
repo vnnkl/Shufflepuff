@@ -18,7 +18,7 @@ import com.shuffle.chan.packet.Packet;
 import com.shuffle.monad.Either;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.player.Messages;
-import com.shuffle.player.P;
+import com.shuffle.player.Payload;
 import com.shuffle.protocol.CoinShuffle;
 import com.shuffle.protocol.FormatException;
 import com.shuffle.protocol.MaliciousMachine;
@@ -34,7 +34,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -387,11 +386,11 @@ public class InitialState {
     }
 
     public Map<SigningKey, Adversary> getPlayers(
-            Initializer<Packet<VerificationKey, P>> initializer)
+            Initializer<Packet<VerificationKey, Payload>> initializer)
             throws ExecutionException, InterruptedException, IOException {
 
         Map<SigningKey, Adversary> p = new HashMap<>();
-        Map<SigningKey, Communication<Packet<VerificationKey, P>>> connections = new HashMap<>();
+        Map<SigningKey, Communication<Packet<VerificationKey, Payload>>> connections = new HashMap<>();
 
         for (final PlayerInitialState player : players) {
             if (player.sk == null) {
@@ -403,7 +402,7 @@ public class InitialState {
 
         for (final PlayerInitialState player : players) {
 
-            Communication<Packet<VerificationKey, P>> c = connections.get(player.sk);
+            Communication<Packet<VerificationKey, Payload>> c = connections.get(player.sk);
             
             try {
                 p.put(player.sk,

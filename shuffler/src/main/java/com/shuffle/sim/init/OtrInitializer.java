@@ -5,7 +5,6 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.Marshaller;
-import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
@@ -15,7 +14,6 @@ import com.shuffle.p2p.Listener;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.Session;
-import com.shuffle.player.P;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -46,7 +44,7 @@ public class OtrInitializer<X> implements Initializer<X> {
 
     public OtrInitializer(Bytestring session, int capacity, Marshaller<Signed<X>> marshaller) {
 
-        if (session == null || capacity == 0) throw new IllegalArgumentException();
+        if (session == null || capacity == 0 || marshaller == null) throw new IllegalArgumentException();
 
         this.session = session;
         this.capacity = capacity;

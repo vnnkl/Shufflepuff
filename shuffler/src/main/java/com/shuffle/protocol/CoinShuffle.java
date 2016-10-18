@@ -830,8 +830,6 @@ public class CoinShuffle {
                 Map<VerificationKey, EncryptionKey> encryptionKeys,
                 Queue<Address> newAddresses) throws FormatException, IOException {
 
-            System.out.println("Player " + me + "'s equivocation check hash");
-
             // Put all temporary encryption keys into a list and hash the result.
             Message check = messages.make();
             System.out.println("  Player " + me + "'s encryption keys: " + encryptionKeys);
@@ -849,6 +847,7 @@ public class CoinShuffle {
                     check = check.attach(address);
                 }
             }
+            System.out.println("  Player " + me + "'s equivocation check hash " + check);
 
             return check.hashed();
         }

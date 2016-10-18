@@ -7,12 +7,12 @@ import java.io.Serializable;
 /**
  * Created by Daniel Krawisz on 5/26/16.
  */
-public class P implements Serializable {
+public class Payload implements Serializable {
 
     public final Message message;
     public final Phase phase;
 
-    public P(
+    public Payload(
             Phase phase,
             Message message
     ) {
@@ -27,11 +27,11 @@ public class P implements Serializable {
             return false;
         }
 
-        if (!(o instanceof P)) {
+        if (!(o instanceof Payload)) {
             return false;
         }
 
-        P p = ((P) o);
+        Payload p = ((Payload) o);
 
         return phase == p.phase
                 && message.equals(p.message);

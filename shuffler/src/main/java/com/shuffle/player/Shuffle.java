@@ -15,7 +15,6 @@ import com.shuffle.bitcoin.impl.AddressImpl;
 import com.shuffle.bitcoin.impl.CryptoProtobuf;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.bitcoin.impl.VerificationKeyImpl;
-import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
@@ -210,7 +209,7 @@ public class Shuffle {
 
     public final ExecutorService executor;
 
-    private final MockNetwork<Integer, Signed<Packet<VerificationKey, P>>> mock = new MockNetwork<>();
+    private final MockNetwork<Integer, Signed<Packet<VerificationKey, Payload>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
             throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception {
@@ -647,7 +646,7 @@ public class Shuffle {
         keys.add(vk);
         peers.put(vk, new Either<>(null, id));
 
-        Channel<VerificationKey, Signed<Packet<VerificationKey, P>>> channel =
+        Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
                 new MappedChannel<>(
                         new Multiplexer<>(
                                 new MarshallChannel<>(

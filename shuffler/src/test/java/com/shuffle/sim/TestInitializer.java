@@ -3,15 +3,17 @@ package com.shuffle.sim;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Inbox;
+import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.chan.packet.SigningSend;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.sim.init.BasicInitializer;
-import com.shuffle.sim.init.ChannelInitializer;
+import com.shuffle.sim.init.MarshallInitializer;
 import com.shuffle.sim.init.Communication;
 import com.shuffle.sim.init.Initializer;
+import com.shuffle.sim.init.OtrInitializer;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -50,16 +52,20 @@ public class TestInitializer {
 
     @Test
     public void testInitializer() throws InterruptedException, IOException {
-        int players = 88;
+        int players = 11;
         IntMarshaller im = new IntMarshaller();
+
+        Marshaller<Signed<Integer>> sm = new JavaMarshaller<>();
 
         List<Initializer<Integer>> initializers = new LinkedList<>();
 
         // The types of initializers to be tested.
         initializers.add(new BasicInitializer<>(
                 new Bytestring(("test basic initializer " + players).getBytes()), 2 * (1 + players)));
-        initializers.add(new ChannelInitializer<>(
-                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players)));
+        initializers.add(new MarshallInitializer<>(
+                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players), sm));
+        initializers.add(new OtrInitializer<>(
+                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players), sm));
 
         // Test each one in turn.
         for (Initializer<Integer> initializer : initializers) {
@@ -68,6 +74,8 @@ public class TestInitializer {
 
             for (int player = 1; player <= players; player++) {
                 SigningKey alice = new MockSigningKey(player);
+
+                System.out.println("Adding player " + player);
 
                 // Add new player.
                 Communication<Integer> c = initializer.connect(alice);

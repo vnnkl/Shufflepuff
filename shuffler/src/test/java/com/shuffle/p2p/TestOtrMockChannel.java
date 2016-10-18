@@ -13,14 +13,11 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockProtobuf;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.player.Messages;
-import com.shuffle.player.P;
-import com.shuffle.player.Protobuf;
+import com.shuffle.player.Payload;
 import com.shuffle.protocol.FormatException;
-import com.shuffle.protocol.message.Message;
 import com.shuffle.protocol.message.Phase;
 
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -41,16 +38,16 @@ public class TestOtrMockChannel {
     private Channel<Integer, Bytestring> m;
     private OtrChannel<Integer> o_n;
     private OtrChannel<Integer> o_m;
-    private Channel<Integer, Packet<VerificationKey, P>> m_n;
-    private Channel<Integer, Packet<VerificationKey, P>> m_m;
-    private Send<Packet<VerificationKey, P>> s_n;
-    private Send<Packet<VerificationKey, P>> s_m;
-    private Listener<Integer,Packet<VerificationKey, P>> l_n;
-    private Listener<Integer,Packet<VerificationKey, P>> l_m;
-    private Peer<Integer,Packet<VerificationKey, P>> p_n;
-    private Peer<Integer,Packet<VerificationKey, P>> p_m;
-    private Session<Integer,Packet<VerificationKey, P>> z_n;
-    private Session<Integer,Packet<VerificationKey, P>> z_m;
+    private Channel<Integer, Packet<VerificationKey, Payload>> m_n;
+    private Channel<Integer, Packet<VerificationKey, Payload>> m_m;
+    private Send<Packet<VerificationKey, Payload>> s_n;
+    private Send<Packet<VerificationKey, Payload>> s_m;
+    private Listener<Integer,Packet<VerificationKey, Payload>> l_n;
+    private Listener<Integer,Packet<VerificationKey, Payload>> l_m;
+    private Peer<Integer,Packet<VerificationKey, Payload>> p_n;
+    private Peer<Integer,Packet<VerificationKey, Payload>> p_m;
+    private Session<Integer,Packet<VerificationKey, Payload>> z_n;
+    private Session<Integer,Packet<VerificationKey, Payload>> z_m;
 
     @Before
     public void setup() throws InterruptedException, IOException {
@@ -62,9 +59,9 @@ public class TestOtrMockChannel {
         m_n = new MarshallChannel<>(o_n,new MockProtobuf().packetMarshaller());
         m_m = new MarshallChannel<>(o_m,new MockProtobuf().packetMarshaller());
 
-        s_n = new Send<Packet<VerificationKey, P>>() {
+        s_n = new Send<Packet<VerificationKey, Payload>>() {
             @Override
-            public boolean send(Packet<VerificationKey, P> packetSigned) throws InterruptedException, IOException {
+            public boolean send(Packet<VerificationKey, Payload> packetSigned) throws InterruptedException, IOException {
                 System.out.println("n: received");
                 return true;
             }
@@ -75,17 +72,17 @@ public class TestOtrMockChannel {
             }
         };
 
-        l_n = new Listener<Integer, Packet<VerificationKey, P>>() {
+        l_n = new Listener<Integer, Packet<VerificationKey, Payload>>() {
             @Override
-            public Send<Packet<VerificationKey, P>> newSession(Session<Integer, Packet<VerificationKey, P>> session) throws InterruptedException {
+            public Send<Packet<VerificationKey, Payload>> newSession(Session<Integer, Packet<VerificationKey, Payload>> session) throws InterruptedException {
                 System.out.println("n: caught");
                 return s_n;
             }
         };
 
-        s_m = new Send<Packet<VerificationKey, P>>() {
+        s_m = new Send<Packet<VerificationKey, Payload>>() {
             @Override
-            public boolean send(Packet<VerificationKey, P> packetSigned) throws InterruptedException, IOException {
+            public boolean send(Packet<VerificationKey, Payload> packetSigned) throws InterruptedException, IOException {
                 System.out.println("m: received");
                 return true;
             }
@@ -96,9 +93,9 @@ public class TestOtrMockChannel {
             }
         };
 
-        l_m = new Listener<Integer, Packet<VerificationKey, P>>() {
+        l_m = new Listener<Integer, Packet<VerificationKey, Payload>>() {
             @Override
-            public Send<Packet<VerificationKey, P>> newSession(Session<Integer, Packet<VerificationKey, P>> session) throws InterruptedException {
+            public Send<Packet<VerificationKey, Payload>> newSession(Session<Integer, Packet<VerificationKey, Payload>> session) throws InterruptedException {
                 System.out.println("m: caught");
                 z_m = session;
                 return s_m;
@@ -124,23 +121,23 @@ public class TestOtrMockChannel {
         SigningKey sk = new MockSigningKey(0);
         SigningKey sk2 = new MockSigningKey(1);
         // PacketMarshaller
-        Marshaller<Packet<VerificationKey, P>> y = z.packetMarshaller();
+        Marshaller<Packet<VerificationKey, Payload>> y = z.packetMarshaller();
 
         Bytestring message;
         Bytestring signature;
         VerificationKey vk = sk.VerificationKey();
-        Marshaller<Signed<Packet<VerificationKey, P>>> x = z.signedMarshaller();
+        Marshaller<Signed<Packet<VerificationKey, Payload>>> x = z.signedMarshaller();
 
         Bytestring session = new Bytestring("s".getBytes());
-        Map<VerificationKey,Send<Signed<Packet<VerificationKey, P>>>> net = new HashMap<>();
-        Receive<Inbox.Envelope<VerificationKey,Signed<Packet<VerificationKey, P>>>> rec = new Receive<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>>>() {
+        Map<VerificationKey,Send<Signed<Packet<VerificationKey, Payload>>>> net = new HashMap<>();
+        Receive<Inbox.Envelope<VerificationKey,Signed<Packet<VerificationKey, Payload>>>> rec = new Receive<Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, Payload>>>>() {
             @Override
-            public Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>> receive() throws InterruptedException {
+            public Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, Payload>>> receive() throws InterruptedException {
                 return null;
             }
 
             @Override
-            public Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, P>>> receive(long l, TimeUnit u) throws InterruptedException {
+            public Inbox.Envelope<VerificationKey, Signed<Packet<VerificationKey, Payload>>> receive(long l, TimeUnit u) throws InterruptedException {
                 return null;
             }
 
@@ -149,11 +146,11 @@ public class TestOtrMockChannel {
                 return false;
             }
         };
-        Receive<Inbox.Envelope<VerificationKey,Signed<Packet<VerificationKey, P>>>> rr = new HistoryReceive<>(rec);
+        Receive<Inbox.Envelope<VerificationKey,Signed<Packet<VerificationKey, Payload>>>> rr = new HistoryReceive<>(rec);
         Messages mm = new Messages(session,sk,net, rr, z);
         com.shuffle.player.Message mmm = new com.shuffle.player.Message(mm);
-        P pp = new P(Phase.Announcement,mmm);
-        Packet<VerificationKey, P> mu = new Packet<>(session,sk.VerificationKey(),sk2.VerificationKey(),0,pp);
+        Payload pp = new Payload(Phase.Announcement,mmm);
+        Packet<VerificationKey, Payload> mu = new Packet<>(session,sk.VerificationKey(),sk2.VerificationKey(),0,pp);
 
         message = y.marshall(mu);
         //signature = sk.sign(message);
