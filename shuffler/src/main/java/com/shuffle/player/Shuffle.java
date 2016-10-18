@@ -35,6 +35,7 @@ import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.Multiplexer;
+import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
@@ -655,6 +656,13 @@ public class Shuffle {
                                         m.signedMarshaller()),
                                 mock.node(id)),
                         peers);
+
+
+        /*
+        Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
+                new MappedChannel<>(
+                  new MarshallChannel<>(new OtrChannel<>(mock.node(id)),m.signedMarshaller()),peers
+                );*/
 
         return new Player(
                 sk, session, anonAddress,
