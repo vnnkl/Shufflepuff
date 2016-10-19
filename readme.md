@@ -38,7 +38,7 @@ Shufflepuff needs to look up address balances in order to run the protocol.
 For lite applications there is an option for querying blockcypher.com. For
 players with full nodes, an option is provided to look up balances using btcd.
 (We couldn't use bitcoin-core because it does not provide the option to index
-all addresses in the blockchain.
+all addresses in the blockchain.)
 
 Usage:
 
