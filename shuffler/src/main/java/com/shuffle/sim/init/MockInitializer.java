@@ -16,18 +16,17 @@ import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.Session;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Used to run simulations through channel objects.
- *
- * Created by Daniel Krawisz on 10/11/16.
+ * Created by Daniel on 10/18/16.
  */
 
-public class OtrInitializer<X> implements Initializer<X> {
+public class MockInitializer<X extends Serializable> implements Initializer<X> {
     // The set of incoming mailboxes for each player.
     final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
 
@@ -36,19 +35,17 @@ public class OtrInitializer<X> implements Initializer<X> {
 
     final Bytestring session;
     final int capacity;
-    final Marshaller<Signed<X>> marshaller;
 
-    private final MockNetwork<VerificationKey, Bytestring> mockNetwork = new MockNetwork<>();
+    private final MockNetwork<VerificationKey, Signed<X>> mockNetwork = new MockNetwork<>();
 
     private final List<Connection<VerificationKey>> connections = new LinkedList<>();
 
-    public OtrInitializer(Bytestring session, int capacity, Marshaller<Signed<X>> marshaller) {
+    public MockInitializer(Bytestring session, int capacity) {
 
-        if (session == null || capacity == 0 || marshaller == null) throw new IllegalArgumentException();
+        if (session == null || capacity == 0) throw new IllegalArgumentException();
 
         this.session = session;
         this.capacity = capacity;
-        this.marshaller = marshaller;
     }
 
     // This function is called every time a new player is created in a simulation.
@@ -64,8 +61,7 @@ public class OtrInitializer<X> implements Initializer<X> {
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create a new channel.
-        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<VerificationKey, Signed<X>>(
-                new OtrChannel<>(mockNetwork.node(sk.VerificationKey())), this.marshaller);
+        Channel<VerificationKey, Signed<X>> channel = mockNetwork.node(sk.VerificationKey());
 
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {

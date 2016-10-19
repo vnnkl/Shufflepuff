@@ -21,6 +21,7 @@ public interface Initializer<X> {
     public enum Type {
         Basic,
         Mock,
+        Marshall,
         OTR,
     }
 }

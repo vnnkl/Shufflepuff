@@ -64,7 +64,7 @@ public class MarshallInitializer<X> implements Initializer<X> {
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create a new channel.
-        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<VerificationKey, Signed<X>>(new OtrChannel<VerificationKey>(mockNetwork.node(sk.VerificationKey())), this.marshaller);
+        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<VerificationKey, Signed<X>>(mockNetwork.node(sk.VerificationKey()), this.marshaller);
 
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {

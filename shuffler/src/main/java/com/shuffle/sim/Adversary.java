@@ -97,12 +97,12 @@ public class Adversary {
 
                 try {
                     try {
-                        q.send(new Either<Transaction, Matrix>(shuffle.runProtocol(
+                        q.send(new Either<>(shuffle.runProtocol(
                                 amount, fee, sk, players, anon, change, null
                         ), null));
 
                     } catch (Matrix m) {
-                        q.send(new Either<Transaction, Matrix>(null, m));
+                        q.send(new Either<>(null, m));
                     } catch (ExecutionException
                             | TimeoutException
                             | FormatException

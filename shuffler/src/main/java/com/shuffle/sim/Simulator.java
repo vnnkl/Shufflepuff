@@ -26,6 +26,7 @@ import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.init.BasicInitializer;
 import com.shuffle.sim.init.MarshallInitializer;
 import com.shuffle.sim.init.Initializer;
+import com.shuffle.sim.init.MockInitializer;
 import com.shuffle.sim.init.OtrInitializer;
 
 import org.apache.logging.log4j.Logger;
@@ -54,7 +55,7 @@ public final class Simulator {
     public Simulator(Initializer.Type type) {
         if (type == null) throw new NullPointerException();
 
-        if (type == Initializer.Type.OTR) throw new IllegalArgumentException();
+        if (type == Initializer.Type.OTR || type == Initializer.Type.Marshall) throw new IllegalArgumentException();
 
         this.type = type;
         this.marshaller = new MockProtobuf().signedMarshaller();
@@ -67,11 +68,16 @@ public final class Simulator {
         this.marshaller = marshaller;
     }
 
-    private Initializer<Packet<VerificationKey, Payload>> makeInitializer(Bytestring session, int capacity) {
+    private Initializer<Packet<VerificationKey, Payload>> makeInitializer(Bytestring session, int numPlayers) {
+        // An appropriate value for the capacity of the channels between the players.
+        int capacity = 3 * (1 + numPlayers);
+
         switch (type) {
             case Basic:
                 return new BasicInitializer<>(session, capacity);
             case Mock:
+                return new MockInitializer<>(session, capacity);
+            case Marshall:
                 return new MarshallInitializer<>(session, capacity, marshaller);
             case OTR:
                 return new OtrInitializer<>(session, capacity, marshaller);
@@ -85,7 +91,7 @@ public final class Simulator {
             throws ExecutionException, InterruptedException, IOException {
 
         final Initializer<Packet<VerificationKey, Payload>> initializer =
-                makeInitializer(init.session(), 3 * (1 + init.size()));
+                makeInitializer(init.session(), init.size());
 
         final Map<SigningKey, Adversary> machines = init.getPlayers(initializer);
 

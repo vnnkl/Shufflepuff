@@ -16,7 +16,7 @@ public class HistorySend<X> implements Send<X> {
     }
 
     @Override
-    public boolean send(X x) throws InterruptedException, IOException {
+    public synchronized boolean send(X x) throws InterruptedException, IOException {
         boolean sent = chan.send(x);
 
         if (sent) {
@@ -31,13 +31,13 @@ public class HistorySend<X> implements Send<X> {
         chan.close();
     }
 
-    public List<X> history() {
+    public synchronized List<X> history() {
         List<X> h = new LinkedList<X>();
         h.addAll(history);
         return h;
     }
 
-    public X last() {
+    public synchronized X last() {
         return history.getLast();
     }
 }

@@ -115,12 +115,14 @@ public class CoinShuffle {
             // In the announcement phase, participants distribute temporary encryption keys.
             phase.set(Phase.Announcement);
             log.info("Player " + me + " begins CoinShuffle protocol " + " with " + N + " players.");
+            System.out.println("Player " + me + " begins CoinShuffle protocol " + " with " + N + " players.");
 
             // Check for sufficient funds.
             // There was a problem with the wording of the original paper which would have meant
             // that player 1's funds never would have been checked, but it's necessary to check
             // everybody.
             blameInsufficientFunds();
+            System.out.println("Player " + me + " finds sufficient funds");
 
             // This will contain the change addresses.
             Map<VerificationKey, Address> changeAddresses = new HashMap<>();
@@ -131,6 +133,7 @@ public class CoinShuffle {
             // have a change address. Therefore he just follows the same procedure as
             // everyone else.
             dk = broadcastNewKey(changeAddresses);
+            System.out.println("Player " + me + " has broadcasted the new encryption key.");
 
             // Now we wait to receive similar key from everyone else.
             Map<VerificationKey, Message> announcement;
@@ -141,6 +144,7 @@ public class CoinShuffle {
                 phase.set(Phase.Blame);
                 throw fillBlameMatrix();
             }
+            System.out.println("Player " + me + " is about to read announcements.");
 
             readAnnouncements(announcement, encryptionKeys, changeAddresses);
 
@@ -179,6 +183,7 @@ public class CoinShuffle {
                 // Phase 3: broadcast outputs.
                 // In this phase, the last player just broadcasts the transaction to everyone else.
                 phase.set(Phase.BroadcastOutput);
+                System.out.println("Player " + me + " reaches phase 3 ");
 
                 newAddresses = readAndBroadcastNewAddresses(shuffled);
 
@@ -241,6 +246,7 @@ public class CoinShuffle {
             // Generate the input script using our signing key.
             Message inputScript = messages.make().attach(t.sign(sk));
 
+            System.out.println("Player " + me + " broadcasts signature ");
             mailbox.broadcast(inputScript, phase.get());
 
             // Send signature messages around and receive them from other players.
@@ -251,6 +257,7 @@ public class CoinShuffle {
             try {
                 signatureMessages = mailbox.receiveFromMultiple(playerSet(1, N), phase.get());
                 signatureMessages.put(vk, inputScript);
+                System.out.println("Player " + me + " receives signatures ");
             } catch (BlameException e) {
                 switch (e.packet.payload().readBlame().reason) {
                     case InvalidSignature: {
