@@ -18,10 +18,12 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.action.BackAction;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -30,12 +32,12 @@ import java.util.ArrayList;
 
 @ViewController("shuffle_addPrivKeyInWIF.fxml")
 public class addPrivKeyinWIFController {
-    public Button AddBtn;
-    public Button cancelBtn;
-    public TextField inputPrivKEdit;
+    @FXML private Button AddBtn;
+    @FXML @BackAction private Button cancelBtn;
+    @FXML private TextField inputPrivKEdit;
     public ArrayList<String> privKeyList = new ArrayList<String>();
     ListProperty<String> listProperty = new SimpleListProperty<>();
-    public ListView privKeyListView;
+    @FXML private ListView privKeyListView;
     public Main.OverlayUI overlayUI;
 
 

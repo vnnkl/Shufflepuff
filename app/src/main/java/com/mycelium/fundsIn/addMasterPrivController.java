@@ -19,10 +19,12 @@ package com.mycelium.fundsIn;
 import com.mycelium.Main;
 import com.mycelium.ShuffleStartController;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.action.BackAction;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
@@ -32,12 +34,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 @ViewController("shuffle_addMasterPriv.fxml")
 public class addMasterPrivController {
-    public Button AddBtn;
-    public Button cancelBtn;
-    public TextField inputMasterPrivEdit;
-    public ArrayList<String> privKeyList = new ArrayList<String>(1);
+    @FXML private Button AddBtn;
+    @FXML @BackAction private Button cancelBtn;
+    @FXML private TextField inputMasterPrivEdit;
+    @FXML private ArrayList<String> privKeyList = new ArrayList<String>(1);
     ListProperty<String> listProperty = new SimpleListProperty<>();
-    public ListView privKeyListView;
+    @FXML private ListView privKeyListView;
     public Main.OverlayUI overlayUI;
 
 

@@ -18,10 +18,12 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.action.BackAction;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
@@ -32,13 +34,13 @@ import java.text.ParsePosition;
 import java.util.ArrayList;
 @ViewController("shuffle_addUTXO.fxml")
 public class addUTXOController {
-    public Button AddBtn;
-    public Button cancelBtn;
-    public TextField inputHashEdit;
-    public TextField inputIndexEdit;
+    @FXML private Button AddBtn;
+    @FXML @BackAction private Button cancelBtn;
+    @FXML private TextField inputHashEdit;
+    @FXML private TextField inputIndexEdit;
     ListProperty<String> listProperty = new SimpleListProperty<>();
     public ArrayList<String> inputList = new ArrayList<String>();
-    public ListView inputListView;
+    @FXML private ListView inputListView;
     public Main.OverlayUI overlayUI;
 
     // Called by FXMLLoader

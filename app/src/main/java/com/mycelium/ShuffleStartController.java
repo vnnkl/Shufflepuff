@@ -70,10 +70,10 @@ public class ShuffleStartController {
     public void initialize() {
         // most is injected by fxml already
         // setUserData for button selection FundsIn
-        fundsInReceiveAddress.setUserData("addReceiveAddress");
-        fundsInPrivKeyWIF.setUserData("addPrivKeyInWIF");
-        fundsInMasterPrivKey.setUserData("addMasterPriv");
-        fundsInUTXOs.setUserData("addUTXO");
+        fundsInReceiveAddress.setUserData(com.mycelium.fundsIn.addReceiveAddressController.class);
+        fundsInPrivKeyWIF.setUserData(com.mycelium.fundsIn.addPrivKeyinWIFController.class);
+        fundsInMasterPrivKey.setUserData(com.mycelium.fundsIn.addMasterPrivController.class);
+        fundsInUTXOs.setUserData(com.mycelium.fundsIn.addUTXOController.class);
 
         // setUserData for button selection FundsOut
         fundsOutInternalHD.setUserData("toHDAddresses");
@@ -111,7 +111,7 @@ public class ShuffleStartController {
         // Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
         try {
             //flowActionHandler.handle("toReceiveIn");
-            flowActionHandler.navigate(com.mycelium.fundsIn.addReceiveAddressController.class);
+            flowActionHandler.navigate((Class<? extends Object>) shuffleInOptions.getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
