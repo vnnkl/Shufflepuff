@@ -18,6 +18,7 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.action.BackAction;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -25,13 +26,15 @@ import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import net.glxn.qrgen.image.ImageType;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.wallet.KeyChain;
 
 import java.io.ByteArrayInputStream;
 
 @ViewController("shuffle_addReceiveAddress.fxml")
 public class addReceiveAddressController {
     @FXML private Button AddBtn;
-    @FXML private Button cancelBtn;
+    @FXML @BackAction private Button cancelBtn;
     public Main.OverlayUI overlayUI;
     @FXML private ImageView qrReceiveCode;
     @FXML private Label qrReceiveCodeLabel;
@@ -42,13 +45,7 @@ public class addReceiveAddressController {
     @FXML private ImageView qrReceiveCode3;
     @FXML private Label qrReceiveCode3Label;
 
-
-
-    // Called by FXMLLoader
-    public void initialize() {
-
-        String address = "1BitcoinEaterAddressDontSendf59kuE";
-
+    public Image stringToQR(String address){
         final byte[] imageBytes = net.glxn.qrgen.QRCode
                 .from(address)
                 .withSize(200, 200)
@@ -56,14 +53,28 @@ public class addReceiveAddressController {
                 .stream()
                 .toByteArray();
         Image qrImage = new Image(new ByteArrayInputStream(imageBytes));
-        this.qrReceiveCode.setImage(qrImage);
-        this.qrReceiveCodeLabel.setText(address);
-        this.qrReceiveCode1.setImage(qrImage);
-        this.qrReceiveCode1Label.setText(address);
-        this.qrReceiveCode2.setImage(qrImage);
-        this.qrReceiveCode2Label.setText(address);
-        this.qrReceiveCode3.setImage(qrImage);
-        this.qrReceiveCode3Label.setText(address);
+        return qrImage;
+    }
+
+    // Called by FXMLLoader
+    public void initialize() {
+
+        Address address1 = Main.bitcoin.wallet().freshReceiveAddress();//(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
+        Address address2 = Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
+        Address address3 = Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
+        Address address4 = Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
+
+
+        String address = "1BitcoinEaterAddressDontSendf59kuE";
+
+        this.qrReceiveCode.setImage(stringToQR(address1.toBase58()));
+        this.qrReceiveCodeLabel.setText(address1.toBase58());
+        this.qrReceiveCode1.setImage(stringToQR(address2.toBase58()));
+        this.qrReceiveCode1Label.setText(address2.toBase58());
+        this.qrReceiveCode2.setImage(stringToQR(address3.toBase58()));
+        this.qrReceiveCode2Label.setText(address3.toBase58());
+        this.qrReceiveCode3.setImage(stringToQR(address4.toBase58()));
+        this.qrReceiveCode3Label.setText(address4.toBase58());
     }
 
     public void cancel(ActionEvent event) {

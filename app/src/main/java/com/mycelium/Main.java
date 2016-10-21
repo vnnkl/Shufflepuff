@@ -31,6 +31,7 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.kits.WalletAppKit;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.RegTestParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.utils.BriefLogFormatter;
@@ -45,7 +46,7 @@ import java.net.URL;
 import static com.mycelium.utils.GuiUtils.*;
 
 public class Main extends Application {
-    public static NetworkParameters params = TestNet3Params.get();
+    public static NetworkParameters params = MainNetParams.get();
     public static final String APP_NAME = "ShufflePuff";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
