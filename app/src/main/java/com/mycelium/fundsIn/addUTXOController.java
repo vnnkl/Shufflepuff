@@ -17,6 +17,7 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import io.datafx.controller.ViewController;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -29,7 +30,7 @@ import javafx.scene.control.TextFormatter;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.util.ArrayList;
-
+@ViewController("shuffle_addUTXO.fxml")
 public class addUTXOController {
     public Button AddBtn;
     public Button cancelBtn;

@@ -17,6 +17,7 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import io.datafx.controller.ViewController;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -27,7 +28,7 @@ import javafx.scene.control.TextField;
 
 import java.util.ArrayList;
 
-
+@ViewController("shuffle_addPrivKeyInWIF.fxml")
 public class addPrivKeyinWIFController {
     public Button AddBtn;
     public Button cancelBtn;

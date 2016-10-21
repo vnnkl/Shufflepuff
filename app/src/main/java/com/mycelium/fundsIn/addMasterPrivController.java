@@ -18,6 +18,7 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import com.mycelium.ShuffleStartController;
+import io.datafx.controller.ViewController;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -29,7 +30,7 @@ import javafx.scene.control.TextField;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
+@ViewController("shuffle_addMasterPriv.fxml")
 public class addMasterPrivController {
     public Button AddBtn;
     public Button cancelBtn;

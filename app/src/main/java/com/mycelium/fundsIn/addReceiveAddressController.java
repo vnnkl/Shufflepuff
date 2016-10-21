@@ -28,7 +28,7 @@ import net.glxn.qrgen.image.ImageType;
 
 import java.io.ByteArrayInputStream;
 
-@ViewController("com.mycelium.fundsIn.shuffle_addReceiveAddress.fxml")
+@ViewController("shuffle_addReceiveAddress.fxml")
 public class addReceiveAddressController {
     @FXML private Button AddBtn;
     @FXML private Button cancelBtn;
