@@ -59,10 +59,10 @@ public class addReceiveAddressController {
     // Called by FXMLLoader
     public void initialize() {
 
-        Address address1 = Main.bitcoin.wallet().freshReceiveAddress();//(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
-        Address address2 = Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
-        Address address3 = Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
-        Address address4 = Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.wallet().getParams());
+        Address address1 = Main.bitcoin.wallet().freshReceiveAddress();
+        Address address2 = Main.bitcoin.wallet().freshReceiveAddress();
+        Address address3 = Main.bitcoin.wallet().freshReceiveAddress();
+        Address address4 = Main.bitcoin.wallet().freshReceiveAddress();
 
 
         String address = "1BitcoinEaterAddressDontSendf59kuE";
@@ -81,62 +81,6 @@ public class addReceiveAddressController {
         overlayUI.done();
     }
 
-    public void addInput(ActionEvent event) {
-        // add Input, could be invalid still
-
-
-
-
-
-            /**SendRequest req;
-            if (amount.equals(Main.bitcoin.wallet().getBalance()))
-                req = SendRequest.emptyWallet(destination);
-
-            else
-                req = SendRequest.to(destination, amount);
-            req.aesKey = aesKey;
-            sendResult = Main.bitcoin.wallet().sendCoins(req);
-            Futures.addCallback(sendResult.broadcastComplete, new FutureCallback<Transaction>() {
-                @Override
-                public void onSuccess(@Nullable Transaction result) {
-                    checkGuiThread();
-                    overlayUI.done();
-                }
-
-                @Override
-                public void onFailure(Throwable t) {
-                    // We died trying to empty the wallet.
-                    crashAlert(t);
-                }
-            });
-            sendResult.tx.getConfidence().addEventListener((tx, reason) -> {
-                if (reason == TransactionConfidence.Listener.ChangeReason.SEEN_PEERS)
-                    updateTitleForBroadcast();
-            });
-            AddBtn.setDisable(true);
-            address.setDisable(true);
-            ((HBox)amountEdit.getParent()).getChildren().remove(amountEdit);
-            ((HBox)btcLabel.getParent()).getChildren().remove(btcLabel);
-            updateTitleForBroadcast();
-             **/
-
-    }
-
-    private void askForPasswordAndRetry() {
-        /**Main.OverlayUI<WalletPasswordController> pwd = Main.instance.overlayUI("wallet_password.fxml");
-        final String addressStr = address.getText();
-        final String amountStr = amountEdit.getText();
-        pwd.controller.aesKeyProperty().addListener((observable, old, cur) -> {
-            // We only get here if the user found the right password. If they don't or they cancel, we end up back on
-            // the main UI screen. By now the send money screen is history so we must recreate it.
-            checkGuiThread();
-            Main.OverlayUI<addUTXOController> screen = Main.instance.overlayUI("send_money.fxml");
-            screen.controller.aesKey = cur;
-            screen.controller.address.setText(addressStr);
-            screen.controller.amountEdit.setText(amountStr);
-            screen.controller.send(null);
-        });**/
-    }
 
 
     public void next(ActionEvent actionEvent) {
