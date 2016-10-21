@@ -54,7 +54,7 @@
                         </Label>
                         <HBox>
                            <children>
-                              <RadioButton fx:id="fundsOutInternalHD" mnemonicParsing="false" text="ShufflePuffWallet (HD Seed)">
+                              <RadioButton fx:id="fundsOutInternalHD" mnemonicParsing="false" selected="true" text="ShufflePuffWallet (HD Seed)">
                                  <toggleGroup>
                                     <ToggleGroup fx:id="shuffleOutOptions" />
                                  </toggleGroup>
@@ -78,7 +78,7 @@
                         </Label>
                         <HBox>
                            <children>
-                              <RadioButton fx:id="connectByIP" mnemonicParsing="false" text="provide IPs manually">
+                              <RadioButton fx:id="connectByIP" mnemonicParsing="false" selected="true" text="provide IPs manually">
                                  <toggleGroup>
                                     <ToggleGroup fx:id="shuffleConnectOptions" />
                                  </toggleGroup>

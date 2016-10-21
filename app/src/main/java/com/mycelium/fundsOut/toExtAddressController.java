@@ -17,6 +17,7 @@
 package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
+import com.mycelium.controls.BitcoinAddressValidator;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -25,6 +26,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import org.bitcoinj.core.Address;
 
 import java.util.ArrayList;
 
@@ -52,8 +54,10 @@ public class toExtAddressController {
 
     public void addOutput(ActionEvent event) {
         // add Output, could be invalid still
-        // todo: check input for being valid MasterPrivKey
+        // todo: check input for being valid address
+
         String newInput = inputAddressEdit.getText();
+        Address address = Address.fromBase58(Main.params,newInput);
             if (!extAddressList.contains(newInput)) {
                 extAddressList.add(newInput);
             }

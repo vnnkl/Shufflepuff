@@ -174,7 +174,7 @@ public class MainController {
     }
 
     public void shuffleClicked(ActionEvent actionEvent) throws FlowException {
-        new Flow(ShuffleStartController.class).withLink(ShuffleStartController.class,"toReceiveIn",com.mycelium.fundsIn.addReceiveAddressController.class).startInStage(Main.instance.mainWindow);
+        new Flow(ShuffleStartController.class).startInStage(Main.instance.mainWindow);
         // Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_start.fxml");
     }
 }
