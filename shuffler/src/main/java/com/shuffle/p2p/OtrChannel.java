@@ -24,6 +24,7 @@ import net.java.otr4j.session.SessionID;
 import net.java.otr4j.session.SessionImpl;
 
 import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.util.encoders.DecoderException;
 
 import java.io.IOException;
 import java.security.KeyPair;

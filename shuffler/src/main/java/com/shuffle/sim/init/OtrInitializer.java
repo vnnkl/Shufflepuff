@@ -10,6 +10,7 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Connection;
+import com.shuffle.p2p.HistoryChannel;
 import com.shuffle.p2p.Listener;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.OtrChannel;
@@ -64,8 +65,8 @@ public class OtrInitializer<X> implements Initializer<X> {
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create a new channel.
-        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<VerificationKey, Signed<X>>(
-                new OtrChannel<>(mockNetwork.node(sk.VerificationKey())), this.marshaller);
+        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<>(
+                new HistoryChannel<>(new OtrChannel<>(mockNetwork.node(sk.VerificationKey()))), this.marshaller);
 
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {
