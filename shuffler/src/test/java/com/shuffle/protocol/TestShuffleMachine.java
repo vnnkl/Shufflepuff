@@ -180,6 +180,8 @@ public class TestShuffleMachine {
         System.out.println("of " + trials + " trials, "
                 + success + " successes and " + fail + " failures. ");
 
+        System.out.println();
+
         reports.add(new Report(trials, fail, success));
     }
 
