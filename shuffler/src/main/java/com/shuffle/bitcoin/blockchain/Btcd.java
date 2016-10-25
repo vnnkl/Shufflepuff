@@ -56,6 +56,9 @@ import org.json.JSONObject;
  * "./btcd --addrindex --notls"
  *
  */
+
+// TODO TLS
+
 public class Btcd extends Bitcoin {
 
     private final String rpcuser;
