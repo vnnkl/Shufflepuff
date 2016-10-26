@@ -16,6 +16,13 @@
 
 package com.mycelium;
 
+import com.mycelium.fundsIn.AddMasterPrivController;
+import com.mycelium.fundsIn.AddPrivKeyinWIFController;
+import com.mycelium.fundsIn.AddReceiveAddressController;
+import com.mycelium.fundsIn.AddUTXOController;
+import com.mycelium.fundsOut.ToExtAddressController;
+import com.mycelium.fundsOut.ToHDAddressesController;
+import com.mycelium.fundsOut.ToMasterPubController;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.ViewNode;
 import io.datafx.controller.flow.FlowException;
@@ -23,7 +30,6 @@ import io.datafx.controller.flow.action.ActionMethod;
 import io.datafx.controller.flow.action.ActionTrigger;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
-import io.datafx.controller.injection.scopes.ApplicationScoped;
 import io.datafx.controller.injection.scopes.FlowScoped;
 import io.datafx.controller.util.VetoException;
 import javafx.event.ActionEvent;
@@ -33,8 +39,6 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.ArrayList;
 
 @FlowScoped
 @ViewController("shuffle_start.fxml")
@@ -66,15 +70,15 @@ public class ShuffleStartController {
     public void initialize() {
         // most is injected by fxml already
         // setUserData for button selection FundsIn
-        fundsInReceiveAddress.setUserData(com.mycelium.fundsIn.addReceiveAddressController.class);
-        fundsInPrivKeyWIF.setUserData(com.mycelium.fundsIn.addPrivKeyinWIFController.class);
-        fundsInMasterPrivKey.setUserData(com.mycelium.fundsIn.addMasterPrivController.class);
-        fundsInUTXOs.setUserData(com.mycelium.fundsIn.addUTXOController.class);
+        fundsInReceiveAddress.setUserData(AddReceiveAddressController.class);
+        fundsInPrivKeyWIF.setUserData(AddPrivKeyinWIFController.class);
+        fundsInMasterPrivKey.setUserData(AddMasterPrivController.class);
+        fundsInUTXOs.setUserData(AddUTXOController.class);
 
         // setUserData for button selection FundsOut
-        fundsOutInternalHD.setUserData(com.mycelium.fundsOut.toHDAddressesController.class);
-        fundsOutExtAddresses.setUserData(com.mycelium.fundsOut.toExtAddressController.class);
-        fundsOutXPub.setUserData(com.mycelium.fundsOut.toMasterPubController.class);
+        fundsOutInternalHD.setUserData(ToHDAddressesController.class);
+        fundsOutExtAddresses.setUserData(ToExtAddressController.class);
+        fundsOutXPub.setUserData(ToMasterPubController.class);
 
         // setUserData for button selection connectOptions
         connectByIP.setUserData("connectByIP");
@@ -132,8 +136,8 @@ public class ShuffleStartController {
         } catch (FlowException e) {
             e.printStackTrace();
         }**/
-        //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
-        //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
+        //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
+        //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
         try {
             flowActionHandler.navigate((Class<? extends Object>) shuffleInOptions.getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {

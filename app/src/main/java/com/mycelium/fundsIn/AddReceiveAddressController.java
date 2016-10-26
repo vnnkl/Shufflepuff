@@ -32,7 +32,7 @@ import org.bitcoinj.wallet.KeyChain;
 import java.io.ByteArrayInputStream;
 
 @ViewController("shuffle_addReceiveAddress.fxml")
-public class addReceiveAddressController {
+public class AddReceiveAddressController {
     @FXML private Button AddBtn;
     @FXML @BackAction private Button cancelBtn;
     public Main.OverlayUI overlayUI;

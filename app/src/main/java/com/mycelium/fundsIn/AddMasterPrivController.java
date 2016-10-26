@@ -19,6 +19,7 @@ package com.mycelium.fundsIn;
 import com.mycelium.Main;
 import com.mycelium.ShuffleStartController;
 import com.mycelium.ShuffleStartModel;
+import com.mycelium.fundsOut.ToMasterPubController;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.BackAction;
@@ -30,18 +31,16 @@ import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
 import javax.inject.Inject;
-import java.io.IOException;
 import java.util.ArrayList;
 import static com.mycelium.MainController.shuffleFlow;
 
 @ViewController("shuffle_addMasterPriv.fxml")
-public class addMasterPrivController {
+public class AddMasterPrivController {
     @FXML private Button AddBtn;
     @FXML @BackAction private Button cancelBtn;
     @FXML private TextField inputMasterPrivEdit;
@@ -88,7 +87,7 @@ public class addMasterPrivController {
     public void next(ActionEvent actionEvent) {
         shuffleStartModel.setFundsInList(privKeyList);
         try {
-            flowActionHandler.navigate((Class<? extends Object>) com.mycelium.fundsOut.toMasterPubController.class);
+            flowActionHandler.navigate((Class<? extends Object>) ToMasterPubController.class);
             //flowActionHandler.navigate((Class<? extends Object>) shuffleStartController.getFundsOutGroup().getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
