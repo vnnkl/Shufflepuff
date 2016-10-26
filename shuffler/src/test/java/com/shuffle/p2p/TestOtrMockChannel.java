@@ -115,6 +115,9 @@ public class TestOtrMockChannel {
 
         aliceToBobSession.send(new Bytestring("test1".getBytes()));
 
+        System.out.println(new String(aHist.peers.get("b").history().get(0).sent().get(0).bytes));
+        //System.out.println(aHist.peers.get("b").history().get(0).received().get(0));
+
     }
 
     @After

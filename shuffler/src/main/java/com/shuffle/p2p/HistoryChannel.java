@@ -59,9 +59,9 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
             peer.close();
         }
 
-        public synchronized List<Session<Q, X>> history() {
+        public synchronized List<HistorySession> history() {
 
-            List<Session<Q, X>> h = new LinkedList<>();
+            List<HistorySession> h = new LinkedList<>();
             h.addAll(sessions);
             return h;
         }
@@ -73,7 +73,6 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
     public HistoryChannel(Channel<Q, X> channel) {
         this.channel = channel;
     }
-
 
     private HistoryPeer getHistoryPeer(Q you) {
         HistoryPeer peer = peers.get(you);

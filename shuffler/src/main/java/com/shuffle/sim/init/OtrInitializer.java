@@ -66,7 +66,7 @@ public class OtrInitializer<X> implements Initializer<X> {
 
         // Create a new channel.
         Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<>(
-                new OtrChannel<>(mockNetwork.node(sk.VerificationKey())), this.marshaller);
+                new HistoryChannel<>(new OtrChannel<>(mockNetwork.node(sk.VerificationKey()))), this.marshaller);
 
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {
