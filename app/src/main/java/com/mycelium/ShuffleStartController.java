@@ -48,18 +48,18 @@ public class ShuffleStartController {
     @ViewNode
     private Button nextBtn;
     public Main.OverlayUI overlayUI;
-    @FXML @ViewNode private RadioButton fundsInReceiveAddress;
-    @FXML @ViewNode private RadioButton fundsInPrivKeyWIF;
-    @FXML @ViewNode private RadioButton fundsInMasterPrivKey;
-    @FXML @ViewNode private RadioButton fundsInUTXOs;
-    @FXML @ViewNode private RadioButton fundsOutInternalHD;
-    @FXML @ViewNode private RadioButton fundsOutExtAddresses;
-    @FXML @ViewNode private RadioButton fundsOutXPub;
-    @FXML @ViewNode private RadioButton connectByIP;
-    @FXML @ViewNode private RadioButton connectByFetch;
-    @FXML @ViewNode private ToggleGroup shuffleInOptions;
-    @FXML @ViewNode private ToggleGroup shuffleOutOptions;
-    @FXML @ViewNode private ToggleGroup shuffleConnectOptions;
+    @ViewNode private RadioButton fundsInReceiveAddress;
+    @ViewNode private RadioButton fundsInPrivKeyWIF;
+    @ViewNode private RadioButton fundsInMasterPrivKey;
+    @ViewNode private RadioButton fundsInUTXOs;
+    @ViewNode private RadioButton fundsOutInternalHD;
+    @ViewNode private RadioButton fundsOutExtAddresses;
+    @ViewNode private RadioButton fundsOutXPub;
+    @ViewNode private RadioButton connectByIP;
+    @ViewNode private RadioButton connectByFetch;
+    @ViewNode private ToggleGroup shuffleInOptions;
+    @ViewNode private ToggleGroup shuffleOutOptions;
+    @ViewNode private ToggleGroup shuffleConnectOptions;
 
     @ActionHandler
     FlowActionHandler flowActionHandler;
