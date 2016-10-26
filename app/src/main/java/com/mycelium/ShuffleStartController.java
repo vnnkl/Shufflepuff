@@ -96,9 +96,10 @@ public class ShuffleStartController {
         return (Class) shuffleInOptions.getSelectedToggle().getUserData();
     }
 
-    public Class getFundsOutClass(){
-        return (Class) shuffleOutOptions.getSelectedToggle().getUserData();
+    public ToggleGroup getFundsOutGroup(){
+        return shuffleOutOptions;
     }
+
 
     public void goToFundsOut(){
         try {

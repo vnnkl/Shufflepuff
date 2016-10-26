@@ -38,6 +38,8 @@ import javafx.scene.control.TextField;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
+import static com.mycelium.MainController.shuffleFlow;
+
 @ViewController("shuffle_addMasterPriv.fxml")
 public class addMasterPrivController {
     @FXML private Button AddBtn;
@@ -53,7 +55,7 @@ public class addMasterPrivController {
     @Inject
     ShuffleStartController shuffleStartController;
     @ActionHandler
-    FlowActionHandler flowActionHandler;
+    FlowActionHandler flowActionHandler = new FlowActionHandler(shuffleFlow.createHandler());
 
 
     // Called by FXMLLoader
@@ -86,7 +88,8 @@ public class addMasterPrivController {
     public void next(ActionEvent actionEvent) {
         shuffleStartModel.setFundsInList(privKeyList);
         try {
-            flowActionHandler.navigate(shuffleStartController.getFundsOutClass());
+            flowActionHandler.navigate((Class<? extends Object>) com.mycelium.fundsOut.toMasterPubController.class);
+            //flowActionHandler.navigate((Class<? extends Object>) shuffleStartController.getFundsOutGroup().getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }

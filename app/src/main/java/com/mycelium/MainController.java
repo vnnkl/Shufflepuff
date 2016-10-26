@@ -180,9 +180,11 @@ public class MainController {
         return model.getDownloadProgressTracker();
     }
 
+    public static Flow shuffleFlow;
+
     public void shuffleClicked(ActionEvent actionEvent) throws FlowException {
 
-        Flow shuffleFlow = new Flow(ShuffleStartController.class);
+        shuffleFlow = new Flow(ShuffleStartController.class);
         Scene shuffleScene = new Scene(shuffleFlow.start());
         Main.instance.mainWindow.setScene(shuffleScene);
         Main.instance.mainWindow.show();
