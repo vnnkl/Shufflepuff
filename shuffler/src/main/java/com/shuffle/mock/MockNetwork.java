@@ -147,7 +147,6 @@ public class MockNetwork<Q, X extends Serializable> {
                     return null;
                 }
                 if (r == null) return null;
-
                 MockSession session = this.new MockSession(r);
 
                 // If the session is not open, the connection didn't work for some reason.

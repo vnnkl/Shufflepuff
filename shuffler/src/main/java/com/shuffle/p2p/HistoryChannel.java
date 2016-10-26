@@ -47,6 +47,8 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
             if (session == null) return null;
 
+            sessions.add(session);
+
             return new HistorySession(session, history);
         }
 
@@ -72,12 +74,14 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
     @Override
     public synchronized Peer<Q, X> getPeer(Q you) {
-        Peer<Q, X> peer = peers.get(you);
+        //Peer<Q, X> peer = peers.get(you);
+        HistoryPeer peer = peers.get(you);
 
         if (peer == null) {
             Peer<Q, X> innerPeer = channel.getPeer(you);
             if (innerPeer == null) return null;
             peer = new HistoryPeer(innerPeer);
+            peers.put(you, peer);
         }
 
         return peer;

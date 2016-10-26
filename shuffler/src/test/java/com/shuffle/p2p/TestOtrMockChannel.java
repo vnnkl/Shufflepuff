@@ -24,8 +24,8 @@ public class TestOtrMockChannel {
     Channel<String, Bytestring> a;
     Channel<String, Bytestring> b;
 
-    Channel<String, Bytestring> aHist;
-    Channel<String, Bytestring> bHist;
+    HistoryChannel<String, Bytestring> aHist;
+    HistoryChannel<String, Bytestring> bHist;
 
     Send<Bytestring> aliceSend;
     Send<Bytestring> bobSend;
@@ -37,7 +37,7 @@ public class TestOtrMockChannel {
     Session<String, Bytestring> bobToAliceSession;
 
     @Before
-    public void setup() {
+    public void setup() throws IOException, InterruptedException {
         network = new MockNetwork<>();
 
         aNode = network.node("a");
@@ -98,6 +98,11 @@ public class TestOtrMockChannel {
             }
         };
 
+        //aHist.open(aliceListener);
+        //bHist.open(bobListener);
+        a.open(aliceListener);
+        b.open(bobListener);
+
     }
 
     @Test
@@ -107,8 +112,6 @@ public class TestOtrMockChannel {
         bobToAlice = bHist.getPeer("a");
 
         aliceToBobSession = aliceToBob.openSession(aliceSend);
-
-        if (aliceToBobSession == null) throw new NullPointerException("e");
 
         aliceToBobSession.send(new Bytestring("test1".getBytes()));
 
