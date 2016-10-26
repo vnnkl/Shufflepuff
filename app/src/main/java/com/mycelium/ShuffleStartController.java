@@ -20,8 +20,11 @@ import io.datafx.controller.ViewController;
 import io.datafx.controller.ViewNode;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.ActionMethod;
+import io.datafx.controller.flow.action.ActionTrigger;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.injection.scopes.ApplicationScoped;
+import io.datafx.controller.injection.scopes.FlowScoped;
 import io.datafx.controller.util.VetoException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -29,12 +32,15 @@ import javafx.scene.control.Button;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.util.ArrayList;
 
+@FlowScoped
 @ViewController("shuffle_start.fxml")
 public class ShuffleStartController {
     @FXML private Button AddBtn;
-    @FXML private Button cancelBtn;
+    @FXML @ActionTrigger("cancel") private Button cancelBtn;
     @ViewNode
     private Button nextBtn;
     public Main.OverlayUI overlayUI;
@@ -56,17 +62,7 @@ public class ShuffleStartController {
 
 
 
-
-
-    ArrayList<String> fundsInList = new ArrayList<>();
-    ArrayList<String> fundsOutList = new ArrayList<>();
-    ArrayList<String> connectionList = new ArrayList<>();
-
-    public void setFundsInList(ArrayList<String> fundsInList){
-        this.fundsInList.addAll(fundsInList);
-    }
-
-
+    @PostConstruct
     public void initialize() {
         // most is injected by fxml already
         // setUserData for button selection FundsIn
@@ -76,9 +72,9 @@ public class ShuffleStartController {
         fundsInUTXOs.setUserData(com.mycelium.fundsIn.addUTXOController.class);
 
         // setUserData for button selection FundsOut
-        fundsOutInternalHD.setUserData("toHDAddresses");
-        fundsOutExtAddresses.setUserData("toExtAddress");
-        fundsOutXPub.setUserData("toMasterPub");
+        fundsOutInternalHD.setUserData(com.mycelium.fundsOut.toHDAddressesController.class);
+        fundsOutExtAddresses.setUserData(com.mycelium.fundsOut.toExtAddressController.class);
+        fundsOutXPub.setUserData(com.mycelium.fundsOut.toMasterPubController.class);
 
         // setUserData for button selection connectOptions
         connectByIP.setUserData("connectByIP");
@@ -87,9 +83,37 @@ public class ShuffleStartController {
 
     }
 
-
+    @ActionMethod("cancel")
     public void cancel(ActionEvent event) {
-        overlayUI.done();
+        try {
+            flowActionHandler.navigate(MainController.class);
+        } catch (VetoException | FlowException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Class getFundsInClass(){
+        return (Class) shuffleInOptions.getSelectedToggle().getUserData();
+    }
+
+    public Class getFundsOutClass(){
+        return (Class) shuffleOutOptions.getSelectedToggle().getUserData();
+    }
+
+    public void goToFundsOut(){
+        try {
+            flowActionHandler.navigate((Class<? extends Object>) shuffleOutOptions.getSelectedToggle().getUserData());
+        } catch (VetoException | FlowException e) {
+            e.printStackTrace();
+        }
+    }
+    public boolean isConnectingManual(){
+        if (shuffleConnectOptions.getSelectedToggle().getUserData() == "connectByIP"){
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     @ActionMethod("next")
@@ -108,9 +132,8 @@ public class ShuffleStartController {
             e.printStackTrace();
         }**/
         //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
-        // Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
+        //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
         try {
-            //flowActionHandler.handle("toReceiveIn");
             flowActionHandler.navigate((Class<? extends Object>) shuffleInOptions.getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {
             e.printStackTrace();

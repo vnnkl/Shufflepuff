@@ -18,8 +18,13 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import com.mycelium.ShuffleStartController;
+import com.mycelium.ShuffleStartModel;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.BackAction;
+import io.datafx.controller.flow.context.ActionHandler;
+import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -30,6 +35,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
+import javax.inject.Inject;
 import java.io.IOException;
 import java.util.ArrayList;
 @ViewController("shuffle_addMasterPriv.fxml")
@@ -41,6 +47,13 @@ public class addMasterPrivController {
     ListProperty<String> listProperty = new SimpleListProperty<>();
     @FXML private ListView privKeyListView;
     public Main.OverlayUI overlayUI;
+
+    @Inject
+    ShuffleStartModel shuffleStartModel;
+    @Inject
+    ShuffleStartController shuffleStartController;
+    @ActionHandler
+    FlowActionHandler flowActionHandler;
 
 
     // Called by FXMLLoader
@@ -66,19 +79,16 @@ public class addMasterPrivController {
         }
         listProperty.set(FXCollections.observableArrayList(privKeyList));
 
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("../shuffle_start.fxml"));
-        try {
-            loader.load();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        ShuffleStartController controller = loader.getController();
-        controller.setFundsInList(privKeyList);
+
     }
 
 
     public void next(ActionEvent actionEvent) {
-
-
+        shuffleStartModel.setFundsInList(privKeyList);
+        try {
+            flowActionHandler.navigate(shuffleStartController.getFundsOutClass());
+        } catch (VetoException | FlowException e) {
+            e.printStackTrace();
+        }
     }
 }

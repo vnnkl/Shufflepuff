@@ -17,16 +17,19 @@
 package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
+import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.action.BackAction;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 import java.util.ArrayList;
-
+@ViewController("shuffle_toMasterPub.fxml")
 public class toMasterPubController {
     public Button AddBtn;
-    public Button cancelBtn;
+    @FXML @BackAction private Button cancelBtn;
     public TextField inputPrivKEdit;
     public TextField inputIndexEdit;
     public ArrayList<String> privKeyList;
@@ -55,10 +58,6 @@ public class toMasterPubController {
         // todo: find next unused addresses
         outputList.add(newInput);
         progressIndicator.visibleProperty().setValue(true);
-
-
-
-
     }
 
     public void next(ActionEvent actionEvent) {

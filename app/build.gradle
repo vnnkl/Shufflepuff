@@ -10,6 +10,7 @@ dependencies {
     compile 'org.bitcoinj:bitcoinj-core:0.14.3'
     compile group: 'io.datafx', name: 'core', version: '8.0.1'
     compile group: 'io.datafx', name: 'flow', version: '8.0.1'
+    compile group: 'io.datafx', name: 'injection', version: '8.0.1'
     compile 'com.google.guava:guava:18.0'
     compile 'com.aquafx-project:aquafx:0.1'
     compile 'org.fxmisc.easybind:easybind:1.0.2'

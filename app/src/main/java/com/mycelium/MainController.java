@@ -23,6 +23,7 @@ import com.mycelium.utils.easing.EasingMode;
 import com.mycelium.utils.easing.ElasticInterpolator;
 import com.subgraph.orchid.TorClient;
 import com.subgraph.orchid.TorInitializationListener;
+import io.datafx.controller.ViewController;
 import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import javafx.animation.FadeTransition;
@@ -32,11 +33,13 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.ActionEvent;
+import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
 import org.bitcoinj.core.Address;
@@ -46,12 +49,15 @@ import org.bitcoinj.core.listeners.DownloadProgressTracker;
 import org.bitcoinj.utils.MonetaryFormat;
 import org.fxmisc.easybind.EasyBind;
 
+import javax.annotation.PostConstruct;
+
 import static com.mycelium.Main.bitcoin;
 
 /**
  * Gets created auto-magically by FXMLLoader via reflection. The widget fields are set to the GUI controls they're named
  * after. This class handles all the updates and event handling for the main UI.
  */
+@ViewController("main.fxml")
 public class MainController {
     public HBox controlsBox;
     public Label balance;
@@ -63,6 +69,7 @@ public class MainController {
     private NotificationBarPane.Item syncItem;
 
     // Called by FXMLLoader.
+    @PostConstruct
     public void initialize() {
         addressControl.setOpacity(0.0);
     }
@@ -174,7 +181,13 @@ public class MainController {
     }
 
     public void shuffleClicked(ActionEvent actionEvent) throws FlowException {
-        new Flow(ShuffleStartController.class).startInStage(Main.instance.mainWindow);
+
+        Flow shuffleFlow = new Flow(ShuffleStartController.class);
+        Scene shuffleScene = new Scene(shuffleFlow.start());
+        Main.instance.mainWindow.setScene(shuffleScene);
+        Main.instance.mainWindow.show();
+
+        //new Flow(ShuffleStartController.class).startInStage(Main.instance.mainWindow);
         // Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_start.fxml");
     }
 }
