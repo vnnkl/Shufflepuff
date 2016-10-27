@@ -17,50 +17,56 @@
 package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
+import com.mycelium.controls.BitcoinAddressValidator;
 import io.datafx.controller.ViewController;
-import io.datafx.controller.flow.action.BackAction;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
-import javafx.fxml.FXML;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
+import org.bitcoinj.core.Address;
 
 import java.util.ArrayList;
-@ViewController("shuffle_toMasterPub.fxml")
-public class toMasterPubController {
+@ViewController("shuffle_toExtAddress.fxml")
+public class ToExtAddressController {
     public Button AddBtn;
-    @FXML @BackAction private Button cancelBtn;
+    public Button cancelBtn;
     public TextField inputPrivKEdit;
-    public TextField inputIndexEdit;
-    public ArrayList<String> privKeyList;
-    public ListView privKeyListView;
-    public Main.OverlayUI overlayUI;
-    public Button nextBtn;
-    public TextField inputMasterPubEdit;
-    public ListView pubKeyListView;
-    public Label pubAddressesListLabel;
-    public ProgressIndicator progressIndicator;
+    public ArrayList<String> extAddressList = new ArrayList<String>();
     ListProperty<String> listProperty = new SimpleListProperty<>();
-    public ArrayList<String> outputList = new ArrayList<String>();
+    public Main.OverlayUI overlayUI;
+    public Label titleLabel;
+    public TextField inputAddressEdit;
+    public ListView addressListView;
+    public Button nextBtn;
+
 
     // Called by FXMLLoader
     public void initialize() {
-        pubKeyListView.itemsProperty().bind(listProperty);
+        addressListView.itemsProperty().bind(listProperty);
     }
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
     }
 
-    public void addFromPub(ActionEvent event) {
-        // get MasterPub, could be invalid still
-            String newInput = inputMasterPubEdit.getText();
-        // todo: find next unused addresses
-        outputList.add(newInput);
-        progressIndicator.visibleProperty().setValue(true);
+    public void addOutput(ActionEvent event) {
+        // add Output, could be invalid still
+        // todo: check input for being valid address
+
+        String newInput = inputAddressEdit.getText();
+        Address address = Address.fromBase58(Main.params,newInput);
+            if (!extAddressList.contains(newInput)) {
+                extAddressList.add(newInput);
+            }
+
+        listProperty.set(FXCollections.observableArrayList(extAddressList));
     }
 
     public void next(ActionEvent actionEvent) {
-        progressIndicator.setProgress(13.37);
+
     }
 }

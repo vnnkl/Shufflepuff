@@ -103,7 +103,7 @@ public class ClickableBitcoinAddress extends AnchorPane {
     }
 
     @FXML
-    protected void copyAddress(ActionEvent event) {
+    protected void copyAddress() {
         // User clicked icon or menu item.
         Clipboard clipboard = Clipboard.getSystemClipboard();
         ClipboardContent content = new ClipboardContent();
@@ -128,12 +128,12 @@ public class ClickableBitcoinAddress extends AnchorPane {
     }
 
     @FXML
-    protected void copyWidgetClicked(MouseEvent event) {
-        copyAddress(null);
+    protected void copyWidgetClicked() {
+        copyAddress();
     }
 
     @FXML
-    protected void showQRCode(MouseEvent event) {
+    protected void showQRCode() {
         // Serialize to PNG and back into an image. Pretty lame but it's the shortest code to write and I'm feeling
         // lazy tonight.
         final byte[] imageBytes = QRCode

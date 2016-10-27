@@ -16,6 +16,13 @@
 
 package com.mycelium;
 
+import com.mycelium.fundsIn.AddMasterPrivController;
+import com.mycelium.fundsIn.AddPrivKeyinWIFController;
+import com.mycelium.fundsIn.AddReceiveAddressController;
+import com.mycelium.fundsIn.AddUTXOController;
+import com.mycelium.fundsOut.ToExtAddressController;
+import com.mycelium.fundsOut.ToHDAddressesController;
+import com.mycelium.fundsOut.ToMasterPubController;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.ViewNode;
 import io.datafx.controller.flow.FlowException;
@@ -23,7 +30,6 @@ import io.datafx.controller.flow.action.ActionMethod;
 import io.datafx.controller.flow.action.ActionTrigger;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
-import io.datafx.controller.injection.scopes.ApplicationScoped;
 import io.datafx.controller.injection.scopes.FlowScoped;
 import io.datafx.controller.util.VetoException;
 import javafx.event.ActionEvent;
@@ -33,58 +39,79 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.ArrayList;
 
 @FlowScoped
 @ViewController("shuffle_start.fxml")
 public class ShuffleStartController {
-    @FXML private Button AddBtn;
-    @FXML @ActionTrigger("cancel") private Button cancelBtn;
+    @FXML
+    private Button AddBtn;
+    @FXML
+    @ActionTrigger("cancel")
+    private Button cancelBtn;
     @ViewNode
     private Button nextBtn;
     public Main.OverlayUI overlayUI;
-    @FXML @ViewNode private RadioButton fundsInReceiveAddress;
-    @FXML @ViewNode private RadioButton fundsInPrivKeyWIF;
-    @FXML @ViewNode private RadioButton fundsInMasterPrivKey;
-    @FXML @ViewNode private RadioButton fundsInUTXOs;
-    @FXML @ViewNode private RadioButton fundsOutInternalHD;
-    @FXML @ViewNode private RadioButton fundsOutExtAddresses;
-    @FXML @ViewNode private RadioButton fundsOutXPub;
-    @FXML @ViewNode private RadioButton connectByIP;
-    @FXML @ViewNode private RadioButton connectByFetch;
-    @FXML @ViewNode private ToggleGroup shuffleInOptions;
-    @FXML @ViewNode private ToggleGroup shuffleOutOptions;
-    @FXML @ViewNode private ToggleGroup shuffleConnectOptions;
+    @FXML
+    @ViewNode
+    private RadioButton fundsInReceiveAddress;
+    @FXML
+    @ViewNode
+    private RadioButton fundsInPrivKeyWIF;
+    @FXML
+    @ViewNode
+    private RadioButton fundsInMasterPrivKey;
+    @FXML
+    @ViewNode
+    private RadioButton fundsInUTXOs;
+    @FXML
+    @ViewNode
+    private RadioButton fundsOutInternalHD;
+    @FXML
+    @ViewNode
+    private RadioButton fundsOutExtAddresses;
+    @FXML
+    @ViewNode
+    private RadioButton fundsOutXPub;
+    @FXML
+    @ViewNode
+    private RadioButton connectByIP;
+    @FXML
+    @ViewNode
+    private RadioButton connectByFetch;
+    @FXML
+    @ViewNode
+    private ToggleGroup shuffleInOptions;
+    @FXML
+    @ViewNode
+    private ToggleGroup shuffleOutOptions;
+    @FXML
+    @ViewNode
+    private ToggleGroup shuffleConnectOptions;
 
     @ActionHandler
     FlowActionHandler flowActionHandler;
-
-
 
     @PostConstruct
     public void initialize() {
         // most is injected by fxml already
         // setUserData for button selection FundsIn
-        fundsInReceiveAddress.setUserData(com.mycelium.fundsIn.addReceiveAddressController.class);
-        fundsInPrivKeyWIF.setUserData(com.mycelium.fundsIn.addPrivKeyinWIFController.class);
-        fundsInMasterPrivKey.setUserData(com.mycelium.fundsIn.addMasterPrivController.class);
-        fundsInUTXOs.setUserData(com.mycelium.fundsIn.addUTXOController.class);
+        fundsInReceiveAddress.setUserData(AddReceiveAddressController.class);
+        fundsInPrivKeyWIF.setUserData(AddPrivKeyinWIFController.class);
+        fundsInMasterPrivKey.setUserData(AddMasterPrivController.class);
+        fundsInUTXOs.setUserData(AddUTXOController.class);
 
         // setUserData for button selection FundsOut
-        fundsOutInternalHD.setUserData(com.mycelium.fundsOut.toHDAddressesController.class);
-        fundsOutExtAddresses.setUserData(com.mycelium.fundsOut.toExtAddressController.class);
-        fundsOutXPub.setUserData(com.mycelium.fundsOut.toMasterPubController.class);
+        fundsOutInternalHD.setUserData(ToHDAddressesController.class);
+        fundsOutExtAddresses.setUserData(ToExtAddressController.class);
+        fundsOutXPub.setUserData(ToMasterPubController.class);
 
         // setUserData for button selection connectOptions
         connectByIP.setUserData("connectByIP");
         connectByFetch.setUserData("connectByFetch");
-
-
     }
 
     @ActionMethod("cancel")
-    public void cancel(ActionEvent event) {
+    public void cancel() {
         try {
             flowActionHandler.navigate(MainController.class);
         } catch (VetoException | FlowException e) {
@@ -92,50 +119,44 @@ public class ShuffleStartController {
         }
     }
 
-    public Class getFundsInClass(){
+    public Class getFundsInClass() {
         return (Class) shuffleInOptions.getSelectedToggle().getUserData();
     }
 
-    public ToggleGroup getFundsOutGroup(){
+    public ToggleGroup getFundsOutGroup() {
         return shuffleOutOptions;
     }
 
-
-    public void goToFundsOut(){
+    public void goToFundsOut() {
         try {
-            flowActionHandler.navigate((Class<? extends Object>) shuffleOutOptions.getSelectedToggle().getUserData());
+            flowActionHandler.navigate((Class<?>) shuffleOutOptions.getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
     }
-    public boolean isConnectingManual(){
-        if (shuffleConnectOptions.getSelectedToggle().getUserData() == "connectByIP"){
-            return true;
-        }
-        else {
-            return false;
-        }
+
+    public boolean isConnectingManual() {
+        return "connectByIP".equals(shuffleConnectOptions.getSelectedToggle().getUserData());
     }
 
     @ActionMethod("next")
     public void next(ActionEvent actionEvent) {
         // if next is clicked and every group has a selection made
         //todo: setter method for each group
-        System.out.println(shuffleInOptions.getSelectedToggle().getUserData().toString());
-        String selectedToggle = new String(shuffleInOptions.getSelectedToggle().getUserData().toString());
-
+        String selectedToggle = "" + shuffleInOptions.getSelectedToggle().getUserData();
+        System.out.println(selectedToggle);
 
         /**try {
-            flowActionHandler.navigate((Class<?>)shuffleInOptions.getSelectedToggle().getUserData());
-        } catch (VetoException e) {
-            e.printStackTrace();
-        } catch (FlowException e) {
-            e.printStackTrace();
-        }**/
-        //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
-        //Main.OverlayUI<com.mycelium.fundsIn.addReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
+         flowActionHandler.navigate((Class<?>)shuffleInOptions.getSelectedToggle().getUserData());
+         } catch (VetoException e) {
+         e.printStackTrace();
+         } catch (FlowException e) {
+         e.printStackTrace();
+         }**/
+        //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
+        //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
         try {
-            flowActionHandler.navigate((Class<? extends Object>) shuffleInOptions.getSelectedToggle().getUserData());
+            flowActionHandler.navigate((Class<?>) shuffleInOptions.getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }

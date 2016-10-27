@@ -33,7 +33,7 @@ import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.util.ArrayList;
 @ViewController("shuffle_addUTXO.fxml")
-public class addUTXOController {
+public class AddUTXOController {
     @FXML private Button AddBtn;
     @FXML @BackAction private Button cancelBtn;
     @FXML private TextField inputHashEdit;
