@@ -132,6 +132,7 @@ public class CoinShuffle {
             // needs to send an announcement message at this point too because he might
             // have a change address. Therefore he just follows the same procedure as
             // everyone else.
+
             dk = broadcastNewKey(changeAddresses);
             System.out.println("Player " + me + " has broadcasted the new encryption key.");
 
@@ -315,7 +316,6 @@ public class CoinShuffle {
         // Everyone except player 1 creates a new keypair and sends it around to everyone else.
         DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
                 throws TimeoutException, InterruptedException, IOException, FormatException {
-
             DecryptionKey dk = null;
             dk = crypto.makeDecryptionKey();
 
