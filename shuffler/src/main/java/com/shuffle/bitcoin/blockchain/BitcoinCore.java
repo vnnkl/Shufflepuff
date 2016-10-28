@@ -53,7 +53,6 @@ public class BitcoinCore extends Bitcoin {
         } catch (IOException | BitcoindException | CommunicationException e) {
             e.printStackTrace();
         }
-
     }
 
     synchronized boolean isUtxo(String transactionHash) throws IOException {

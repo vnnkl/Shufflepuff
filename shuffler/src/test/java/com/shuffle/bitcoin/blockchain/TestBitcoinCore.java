@@ -2,7 +2,7 @@ package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.params.MainNetParams;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -15,7 +15,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  */
 public class TestBitcoinCore {
 
-    NetworkParameters netParams = TestNet3Params.get();
+    NetworkParameters netParams = MainNetParams.get();
     BitcoinCore testCase;
     HexBinaryAdapter adapter = new HexBinaryAdapter();
     Context context = Context.getOrCreate(netParams);
