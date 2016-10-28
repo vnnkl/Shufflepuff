@@ -40,6 +40,7 @@ public class SigningSend<X> implements Send<X> {
         } catch (NullPointerException e) {
             return false;
         }
+
         return session.send(signed);
 
     }

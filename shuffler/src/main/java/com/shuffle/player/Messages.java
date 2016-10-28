@@ -181,11 +181,10 @@ public class Messages implements MessageFactory {
 
             VerificationKey k = z.getKey();
             if (vk.equals(k)) continue;
-
+            
             HistorySend<Signed<Packet<VerificationKey, Payload>>> h = new HistorySend<>(z.getValue());
             Send<Packet<VerificationKey, Payload>> signer = new SigningSend<>(h, pm, me);
             Send<Payload> p = new OutgoingPacketSend<>(signer, session, vk, k);
-
             this.net.put(k, new Outgoing(p, h, vk));
         }
 

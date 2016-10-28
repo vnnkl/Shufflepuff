@@ -117,6 +117,7 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
         @Override
         public synchronized boolean send(X x) throws InterruptedException, IOException {
+            System.out.println(x);
             if (session.send(x)) {
                 sent.add(x);
                 return true;

@@ -245,6 +245,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
+            System.out.println(new String(message.bytes));
             String[] outgoingMessage;
             try {
                 outgoingMessage = sessionImpl.transformSending(org.bouncycastle.util.encoders.Hex.toHexString(message.bytes), null);
@@ -395,6 +396,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             if (receivedMessage == null) {
                 return true;
             }
+
+            System.out.println(receivedMessage);
 
             try {
                 return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
