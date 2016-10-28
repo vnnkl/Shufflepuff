@@ -1,23 +1,22 @@
 package com.shuffle.bitcoin.blockchain;
 
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
+import com.neemre.btcdcli4j.core.client.BtcdClient;
+import com.neemre.btcdcli4j.core.client.BtcdClientImpl;
 
-import java.io.BufferedReader;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
+import org.bitcoinj.core.NetworkParameters;
+
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.List;
-
-import org.apache.commons.codec.binary.Base64;
-import org.json.JSONObject;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+import java.util.Properties;
 
 /**
  * Created by nsa on 10/24/16.
@@ -34,85 +33,67 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 public class BitcoinCore extends Bitcoin {
 
-    private final String rpcuser;
-    private final String rpcpass;
-    private final URL url;
+    private BtcdClient client;
 
     public BitcoinCore(NetworkParameters netParams, String rpcuser, String rpcpass) throws MalformedURLException {
         super(netParams, 0);
-        this.rpcuser = rpcuser;
-        this.rpcpass = rpcpass;
-
-        if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
-            url = new URL("http://127.0.0.1:8332");
-        } else if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
-            url = new URL("http://127.0.0.1:18332");
-        } else {
-            throw new IllegalArgumentException("Invalid network parameters passed to Bitcoin Core. ");
+        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
+        CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(cm).build();
+        Properties nodeConfig = new Properties();
+        try {
+            InputStream is = new BufferedInputStream(new FileInputStream("config/node_config.properties"));
+            nodeConfig.load(is);
+            is.close();
+            if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+                nodeConfig.setProperty("node.bitcoind.rpc.port", "18332");
+            }
+            nodeConfig.setProperty("node.bitcoind.rpc.user", rpcuser);
+            nodeConfig.setProperty("node.bitcoind.rpc.password", rpcpass);
+            client = new BtcdClientImpl(httpClient, nodeConfig);
+        } catch (IOException | BitcoindException | CommunicationException e) {
+            e.printStackTrace();
         }
+
     }
 
     synchronized boolean isUtxo(String transactionHash) throws IOException {
-
         String requestBody = "{}";
-
-
-
         return false;
     }
 
     // TODO UTXO Set (check address and vout ?)
     synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
-
-        org.bitcoinj.core.Transaction tx = null;
-        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"gettxout\", \"params\":[\"" + transactionHash + "\"]}";
-
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "text/plain");
-        connection.setRequestProperty("Accept", "application/json");
-        Base64 b = new Base64();
-        String authString = rpcuser + ":" + rpcpass;
-        String encoding = b.encodeAsString(authString.getBytes());
-        connection.setRequestProperty("Authorization", "Basic " + encoding);
-        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
-        connection.setDoInput(true);
-        OutputStream out = connection.getOutputStream();
-        out.write(requestBody.getBytes());
-
-        if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            InputStream is = connection.getInputStream();
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-            String line;
-            StringBuffer response = new StringBuffer();
-            while ((line = rd.readLine()) != null) {
-                response.append(line);
-                response.append('\r');
-            }
-            rd.close();
-
-            JSONObject json = new JSONObject(response.toString());
-            String hexTx = (String) json.get("result");
-            /*
-            HexBinaryAdapter adapter = new HexBinaryAdapter();
-            byte[] bytearray = adapter.unmarshal(hexTx);
-            Context context = Context.getOrCreate(netParams);
-            tx = new org.bitcoinj.core.Transaction(netParams, bytearray);
-            */
-            throw new NullPointerException(hexTx);
-            //System.out.println(hexTx);
+        com.neemre.btcdcli4j.core.domain.Transaction transaction = null;
+        try {
+            transaction = client.getTransaction(transactionHash);
+        } catch (BitcoindException | CommunicationException e) {
+            e.printStackTrace();
         }
+        return null;
+    }
 
-        out.flush();
-        out.close();
-
-        return tx;
+    synchronized com.neemre.btcdcli4j.core.domain.Transaction getTransactionViaClient(String transactionHash) throws IOException {
+        com.neemre.btcdcli4j.core.domain.Transaction transaction = new com.neemre.btcdcli4j.core.domain.Transaction();
+        try {
+            System.out.println(client.getTransaction(transactionHash).getBlockHash());
+            transaction.setHex(client.getTransaction(transactionHash).getHex());
+            return transaction;
+        } catch (BitcoindException | CommunicationException e) {
+            e.printStackTrace();
+        }
+        return transaction;
     }
 
     // TODO ?
     public synchronized List<Transaction> getAddressTransactionsInner(String address) {
+        //get address
+
+        //get all txs of address
+
+        //check all tx if confirmed
+
         return null;
+
     }
 
     @Override
