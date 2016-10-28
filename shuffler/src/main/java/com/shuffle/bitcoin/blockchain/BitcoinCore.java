@@ -4,12 +4,14 @@ import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.client.BtcdClient;
 import com.neemre.btcdcli4j.core.client.BtcdClientImpl;
+import com.neemre.btcdcli4j.core.domain.Transaction;
 
 import org.bitcoinj.core.NetworkParameters;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
+import java.util.Properties;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -28,7 +30,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 public class BitcoinCore extends Bitcoin {
 
-    private BtcdClient client;
+    private BtcdQueryClient client;
 
     public BitcoinCore(NetworkParameters netParams, String rpcuser, String rpcpass) throws MalformedURLException {
         super(netParams, 0);
@@ -37,11 +39,26 @@ public class BitcoinCore extends Bitcoin {
             if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
                 rpcport = 18332;
             }
-            client = new BtcdClientImpl("127.0.0.1", rpcport, rpcuser, rpcpass);
+            client = new BtcdQueryClient("127.0.0.1", rpcport, rpcuser, rpcpass);
         } catch (BitcoindException | CommunicationException e) {
             e.printStackTrace();
         }
     }
+
+    synchronized void utxo() throws IOException, BitcoindException, CommunicationException {
+        client.getTxOut();
+    }
+    //
+
+    synchronized boolean getUtxo(String transactionHash) throws IOException, BitcoindException, CommunicationException {
+        HexBinaryAdapter adapter = new HexBinaryAdapter();
+        byte[] bytearray = adapter.unmarshal(client.getRawTransaction(transactionHash));
+        org.bitcoinj.core.Transaction transactionj = new org.bitcoinj.core.Transaction(netParams, bytearray);
+        System.out.println(transactionj.isAnyOutputSpent());
+        System.out.println(transactionj.getOutput(0).getSpentBy());
+        return false;
+    }
+    //
 
     synchronized boolean isUtxo(String transactionHash) throws IOException {
         org.bitcoinj.core.Transaction transactionj = getTransaction(transactionHash);
