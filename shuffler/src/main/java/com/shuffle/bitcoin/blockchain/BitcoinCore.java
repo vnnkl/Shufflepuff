@@ -5,18 +5,13 @@ import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.client.BtcdClient;
 import com.neemre.btcdcli4j.core.client.BtcdClientImpl;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.bitcoinj.core.NetworkParameters;
 
-import java.io.BufferedInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.List;
-import java.util.Properties;
+
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
  * Created by nsa on 10/24/16.
@@ -37,27 +32,20 @@ public class BitcoinCore extends Bitcoin {
 
     public BitcoinCore(NetworkParameters netParams, String rpcuser, String rpcpass) throws MalformedURLException {
         super(netParams, 0);
-        PoolingHttpClientConnectionManager cm = new PoolingHttpClientConnectionManager();
-        CloseableHttpClient httpClient = HttpClients.custom().setConnectionManager(cm).build();
-        Properties nodeConfig = new Properties();
         try {
-            InputStream is = new BufferedInputStream(new FileInputStream("config/node_config.properties"));
-            nodeConfig.load(is);
-            is.close();
+            Integer rpcport = 8332;
             if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
-                nodeConfig.setProperty("node.bitcoind.rpc.port", "18332");
+                rpcport = 18332;
             }
-            nodeConfig.setProperty("node.bitcoind.rpc.user", rpcuser);
-            nodeConfig.setProperty("node.bitcoind.rpc.password", rpcpass);
-            client = new BtcdClientImpl(httpClient, nodeConfig);
-        } catch (IOException | BitcoindException | CommunicationException e) {
+            client = new BtcdClientImpl("127.0.0.1", rpcport, rpcuser, rpcpass);
+        } catch (BitcoindException | CommunicationException e) {
             e.printStackTrace();
         }
     }
 
     synchronized boolean isUtxo(String transactionHash) throws IOException {
-        String requestBody = "{}";
-        return false;
+        org.bitcoinj.core.Transaction transactionj = getTransaction(transactionHash);
+        return transactionj.isAnyOutputSpent();
     }
 
     // TODO UTXO Set (check address and vout ?)
@@ -65,22 +53,14 @@ public class BitcoinCore extends Bitcoin {
         com.neemre.btcdcli4j.core.domain.Transaction transaction = null;
         try {
             transaction = client.getTransaction(transactionHash);
+            System.out.println(transaction.getAmount());
         } catch (BitcoindException | CommunicationException e) {
             e.printStackTrace();
         }
-        return null;
-    }
-
-    synchronized com.neemre.btcdcli4j.core.domain.Transaction getTransactionViaClient(String transactionHash) throws IOException {
-        com.neemre.btcdcli4j.core.domain.Transaction transaction = new com.neemre.btcdcli4j.core.domain.Transaction();
-        try {
-            System.out.println(client.getTransaction(transactionHash).getBlockHash());
-            transaction.setHex(client.getTransaction(transactionHash).getHex());
-            return transaction;
-        } catch (BitcoindException | CommunicationException e) {
-            e.printStackTrace();
-        }
-        return transaction;
+        HexBinaryAdapter adapter = new HexBinaryAdapter();
+        byte[] bytearray = adapter.unmarshal(transaction.getHex());
+        org.bitcoinj.core.Transaction transactionj = new org.bitcoinj.core.Transaction(netParams, bytearray);
+        return transactionj;
     }
 
     // TODO ?
