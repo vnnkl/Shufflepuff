@@ -23,7 +23,6 @@ import com.mycelium.utils.easing.EasingMode;
 import com.mycelium.utils.easing.ElasticInterpolator;
 import com.subgraph.orchid.TorClient;
 import com.subgraph.orchid.TorInitializationListener;
-import io.datafx.controller.ViewController;
 import io.datafx.controller.flow.Flow;
 import io.datafx.controller.flow.FlowException;
 import javafx.animation.FadeTransition;
@@ -39,7 +38,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.cell.TextFieldListCell;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import javafx.util.Duration;
 import javafx.util.StringConverter;
 import org.bitcoinj.core.Address;
@@ -57,7 +55,6 @@ import static com.mycelium.Main.bitcoin;
  * Gets created auto-magically by FXMLLoader via reflection. The widget fields are set to the GUI controls they're named
  * after. This class handles all the updates and event handling for the main UI.
  */
-@ViewController("main.fxml")
 public class MainController {
     public HBox controlsBox;
     public Label balance;
@@ -74,7 +71,7 @@ public class MainController {
         addressControl.setOpacity(0.0);
     }
 
-    public void onBitcoinSetup() {
+    void onBitcoinSetup() {
         model.setWallet(bitcoin.wallet());
         addressControl.addressProperty().bind(model.addressProperty());
         balance.textProperty().bind(EasyBind.map(model.balanceProperty(), coin -> MonetaryFormat.BTC.noCode().format(coin).toString()));
@@ -156,14 +153,14 @@ public class MainController {
         screen.controller.initialize(null);
     }
 
-    public void restoreFromSeedAnimation() {
+    void restoreFromSeedAnimation() {
         // Buttons slide out ...
         TranslateTransition leave = new TranslateTransition(Duration.millis(1200), controlsBox);
         leave.setByY(80.0);
         leave.play();
     }
 
-    public void readyToGoAnimation() {
+    private void readyToGoAnimation() {
         // Buttons slide in and clickable address appears simultaneously.
         TranslateTransition arrive = new TranslateTransition(Duration.millis(1200), controlsBox);
         arrive.setInterpolator(new ElasticInterpolator(EasingMode.EASE_OUT, 1, 2));
@@ -176,20 +173,19 @@ public class MainController {
         group.play();
     }
 
-    public DownloadProgressTracker progressBarUpdater() {
+    DownloadProgressTracker progressBarUpdater() {
         return model.getDownloadProgressTracker();
     }
 
     public static Flow shuffleFlow;
 
     public void shuffleClicked(ActionEvent actionEvent) throws FlowException {
-
         shuffleFlow = new Flow(ShuffleStartController.class);
         Scene shuffleScene = new Scene(shuffleFlow.start());
-        Main.instance.mainWindow.setScene(shuffleScene);
-        Main.instance.mainWindow.show();
+        Main.instance.mainStage.setScene(shuffleScene);
+        Main.instance.mainStage.show();
 
-        //new Flow(ShuffleStartController.class).startInStage(Main.instance.mainWindow);
+        //new Flow(ShuffleStartController.class).startInStage(Main.instance.mainStage);
         // Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_start.fxml");
     }
 }

@@ -17,53 +17,42 @@
 package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
-import com.mycelium.controls.BitcoinAddressValidator;
 import io.datafx.controller.ViewController;
-import javafx.beans.property.ListProperty;
-import javafx.beans.property.SimpleListProperty;
-import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import org.bitcoinj.core.Address;
 
 import java.util.ArrayList;
-@ViewController("shuffle_toExtAddress.fxml")
-public class toExtAddressController {
+@ViewController("shuffle_toHDAddresses.fxml")
+public class ToHDAddressesController {
     public Button AddBtn;
     public Button cancelBtn;
     public TextField inputPrivKEdit;
-    public ArrayList<String> extAddressList = new ArrayList<String>();
-    ListProperty<String> listProperty = new SimpleListProperty<>();
+    public TextField inputIndexEdit;
+    public ArrayList<String> privKeyList;
+    public ListView privKeyListView;
     public Main.OverlayUI overlayUI;
-    public Label titleLabel;
-    public TextField inputAddressEdit;
-    public ListView addressListView;
     public Button nextBtn;
+    public Label extAddressLabel1;
+    public Label extAddressLabel2;
+    public Label extAddressLabel3;
+    public Label extAddressLabel4;
 
 
     // Called by FXMLLoader
     public void initialize() {
-        addressListView.itemsProperty().bind(listProperty);
+        // fetch internal wallets next unused addresses here and display them to the user
+        this.extAddressLabel2.setText("This is the 2nd Address");
     }
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
     }
 
-    public void addOutput(ActionEvent event) {
-        // add Output, could be invalid still
-        // todo: check input for being valid address
+    public void addInput(ActionEvent event) {
 
-        String newInput = inputAddressEdit.getText();
-        Address address = Address.fromBase58(Main.params,newInput);
-            if (!extAddressList.contains(newInput)) {
-                extAddressList.add(newInput);
-            }
-
-        listProperty.set(FXCollections.observableArrayList(extAddressList));
     }
 
     public void next(ActionEvent actionEvent) {

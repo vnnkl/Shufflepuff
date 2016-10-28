@@ -14,53 +14,53 @@
  * limitations under the License.
  */
 
-package com.mycelium.fundsIn;
+package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.flow.action.BackAction;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
-import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 
 import java.util.ArrayList;
-
-@ViewController("shuffle_addPrivKeyInWIF.fxml")
-public class addPrivKeyinWIFController {
-    @FXML private Button AddBtn;
+@ViewController("shuffle_toMasterPub.fxml")
+public class ToMasterPubController {
+    public Button AddBtn;
     @FXML @BackAction private Button cancelBtn;
-    @FXML private TextField inputPrivKEdit;
-    public ArrayList<String> privKeyList = new ArrayList<String>();
-    ListProperty<String> listProperty = new SimpleListProperty<>();
-    @FXML private ListView privKeyListView;
+    public TextField inputPrivKEdit;
+    public TextField inputIndexEdit;
+    public ArrayList<String> privKeyList;
+    public ListView privKeyListView;
     public Main.OverlayUI overlayUI;
-
+    public Button nextBtn;
+    public TextField inputMasterPubEdit;
+    public ListView pubKeyListView;
+    public Label pubAddressesListLabel;
+    public ProgressIndicator progressIndicator;
+    ListProperty<String> listProperty = new SimpleListProperty<>();
+    public ArrayList<String> outputList = new ArrayList<String>();
 
     // Called by FXMLLoader
     public void initialize() {
-        privKeyListView.itemsProperty().bind(listProperty);
+        pubKeyListView.itemsProperty().bind(listProperty);
     }
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
     }
 
-    public void addInput(ActionEvent event) {
-        // add Input, could be invalid still
-        // todo: check input for being valid privKey in WIF
-            String newInput = inputPrivKEdit.getText();
-            if (!privKeyList.contains(newInput)){
-                privKeyList.add(newInput);
-            }
-            listProperty.set(FXCollections.observableArrayList(privKeyList));
+    public void addFromPub(ActionEvent event) {
+        // get MasterPub, could be invalid still
+            String newInput = inputMasterPubEdit.getText();
+        // todo: find next unused addresses
+        outputList.add(newInput);
+        progressIndicator.visibleProperty().setValue(true);
     }
 
     public void next(ActionEvent actionEvent) {
-
+        progressIndicator.setProgress(13.37);
     }
 }
