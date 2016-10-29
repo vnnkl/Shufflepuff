@@ -2,16 +2,14 @@ package com.shuffle.bitcoin.blockchain;
 
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
-import com.neemre.btcdcli4j.core.client.BtcdClient;
-import com.neemre.btcdcli4j.core.client.BtcdClientImpl;
-import com.neemre.btcdcli4j.core.domain.Transaction;
 
 import org.bitcoinj.core.NetworkParameters;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Properties;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -32,74 +30,60 @@ public class BitcoinCore extends Bitcoin {
 
     private BtcdQueryClient client;
 
-    public BitcoinCore(NetworkParameters netParams, String rpcuser, String rpcpass) throws MalformedURLException {
+    public BitcoinCore(NetworkParameters netParams, String rpcuser, String rpcpass) throws MalformedURLException, BitcoindException, CommunicationException {
+        // 0 because we connect to peers via BitcoinCore
         super(netParams, 0);
-        try {
-            Integer rpcport = 8332;
-            if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
-                rpcport = 18332;
-            }
-            client = new BtcdQueryClient("127.0.0.1", rpcport, rpcuser, rpcpass);
-        } catch (BitcoindException | CommunicationException e) {
-            e.printStackTrace();
+
+        Integer rpcport;
+
+        // regtest port?
+        if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+            rpcport = 8332;
+        } else if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+            rpcport = 18332;
+        } else {
+            throw new IllegalArgumentException("Invalid network parameters passed to Bitcoin Core. ");
         }
+
+        client = new BtcdQueryClient("127.0.0.1", rpcport, rpcuser, rpcpass);
     }
 
-    synchronized void utxo() throws IOException, BitcoindException, CommunicationException {
-        client.getTxOut();
-    }
-    //
-
-    synchronized boolean getUtxo(String transactionHash) throws IOException, BitcoindException, CommunicationException {
-        HexBinaryAdapter adapter = new HexBinaryAdapter();
-        byte[] bytearray = adapter.unmarshal(client.getRawTransaction(transactionHash));
-        org.bitcoinj.core.Transaction transactionj = new org.bitcoinj.core.Transaction(netParams, bytearray);
-        System.out.println(transactionj.isAnyOutputSpent());
-        System.out.println(transactionj.getOutput(0).getSpentBy());
+    // TODO -- VERIFY {address, vout, & mempool}
+    synchronized boolean isUtxo(String transactionHash, int vout, boolean mempool) throws IOException, BitcoindException, CommunicationException {
+        client.getTxOut(transactionHash, vout, mempool);
         return false;
     }
-    //
 
-    synchronized boolean isUtxo(String transactionHash) throws IOException {
-        org.bitcoinj.core.Transaction transactionj = getTransaction(transactionHash);
-        return transactionj.isAnyOutputSpent();
-    }
-
-    // TODO UTXO Set (check address and vout ?)
     synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
-        com.neemre.btcdcli4j.core.domain.Transaction transaction = null;
+        String rawTx;
         try {
-            transaction = client.getTransaction(transactionHash);
-            System.out.println(transaction.getAmount());
+            rawTx = client.getRawTransaction(transactionHash);
         } catch (BitcoindException | CommunicationException e) {
             e.printStackTrace();
+            return null;
         }
+
         HexBinaryAdapter adapter = new HexBinaryAdapter();
-        byte[] bytearray = adapter.unmarshal(transaction.getHex());
+        byte[] bytearray = adapter.unmarshal(rawTx);
         org.bitcoinj.core.Transaction transactionj = new org.bitcoinj.core.Transaction(netParams, bytearray);
         return transactionj;
     }
 
-    // TODO ?
+    // Don't need
     public synchronized List<Transaction> getAddressTransactionsInner(String address) {
-        //get address
-
-        //get all txs of address
-
-        //check all tx if confirmed
-
-        return null;
-
+        return new LinkedList<>();
     }
 
     @Override
     protected boolean send(Bitcoin.Transaction t) {
+        // send transaction with Bitcoin Core
         return false;
     }
 
+    // Don't need
     @Override
     protected synchronized List<Transaction> getAddressTransactions(String address) {
-        return getAddressTransactionsInner(address);
+        return getAddressTransactionsInner(null);
     }
 
 }
