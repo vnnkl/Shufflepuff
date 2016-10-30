@@ -226,6 +226,7 @@ public class CoinShuffle {
 
             equivocationCheck(encryptionKeys, newAddresses, false);
 
+
             // Phase 5: verification and submission.
             // Everyone creates a Bitcoin transaction and signs it, then broadcasts the signature.
             // If all signatures check out, then the transaction is history into the net.
