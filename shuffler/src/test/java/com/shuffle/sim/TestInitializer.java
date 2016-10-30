@@ -13,6 +13,7 @@ import com.shuffle.sim.init.BasicInitializer;
 import com.shuffle.sim.init.MarshallInitializer;
 import com.shuffle.sim.init.Communication;
 import com.shuffle.sim.init.Initializer;
+import com.shuffle.sim.init.MockInitializer;
 import com.shuffle.sim.init.OtrInitializer;
 
 import org.junit.Assert;
@@ -62,8 +63,10 @@ public class TestInitializer {
         // The types of initializers to be tested.
         initializers.add(new BasicInitializer<>(
                 new Bytestring(("test basic initializer " + players).getBytes()), 2 * (1 + players)));
+        initializers.add(new MockInitializer<>(
+                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players)));
         initializers.add(new MarshallInitializer<>(
-                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players), sm));
+                new Bytestring(("test marshall channel initializer " + players).getBytes()), 2 * (1 + players), sm));
         initializers.add(new OtrInitializer<>(
                 new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players), sm));
 

@@ -159,7 +159,7 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
                 p.sessions.add(hs);
 
-                return hs;
+                return h;
             }
         });
     }
