@@ -48,9 +48,9 @@ public class BitcoinCore extends Bitcoin {
         client = new BtcdQueryClient("127.0.0.1", rpcport, rpcuser, rpcpass);
     }
 
-    // TODO -- VERIFY {address, vout, & mempool}
+    // TODO -- VERIFY {address, vout, & don't need mempool}
     synchronized boolean isUtxo(String transactionHash, int vout, boolean mempool) throws IOException, BitcoindException, CommunicationException {
-        client.getTxOut(transactionHash, vout, mempool);
+        client.getTxOut(transactionHash, vout, mempool);// parse this
         return false;
     }
 
