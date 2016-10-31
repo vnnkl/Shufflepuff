@@ -253,7 +253,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             for (String part : outgoingMessage) {
-                System.out.println("s " + OtrChannel.this + " " + message);
+                System.out.println("s " + OtrChannel.this + " " + message + " " + part);
                 s.send(new Bytestring(part.getBytes()));
             }
             return true;
@@ -314,7 +314,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
-            System.out.println("k " + OtrChannel.this + " " + message);
+            System.out.println("k " + OtrChannel.this + " " + new String(message.bytes));
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
@@ -383,7 +383,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) {
-            System.out.println("k " + OtrChannel.this + " " + message);
+            System.out.println("k " + OtrChannel.this + " " + new String(message.bytes));
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
