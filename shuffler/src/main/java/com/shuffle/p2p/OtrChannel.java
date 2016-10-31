@@ -23,9 +23,6 @@ import net.java.otr4j.session.InstanceTag;
 import net.java.otr4j.session.SessionID;
 import net.java.otr4j.session.SessionImpl;
 
-import org.apache.commons.codec.binary.Hex;
-import org.bouncycastle.util.encoders.DecoderException;
-
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -254,6 +251,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             for (String part : outgoingMessage) {
                 System.out.println("s " + OtrChannel.this + " " + message + " " + part);
+                if (part.equals("?OTRv23?null")) throw new NullPointerException();
                 s.send(new Bytestring(part.getBytes()));
             }
             return true;
@@ -315,6 +313,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
             System.out.println("k " + OtrChannel.this + " " + new String(message.bytes));
+            if (new String(message.bytes).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
@@ -338,6 +337,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             chan.close();
 
+            if (receivedMessage.equals("?OTRv23?null")) throw new NullPointerException();
             System.out.println("r " + OtrChannel.this + " " + new Bytestring(receivedMessage.getBytes()));
 
             try {
@@ -384,6 +384,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         @Override
         public boolean send(Bytestring message) {
             System.out.println("k " + OtrChannel.this + " " + new String(message.bytes));
+            if (new String(message.bytes).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
@@ -403,6 +404,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return true;
             }
 
+            if (receivedMessage.equals("?OTRv23?null")) throw new NullPointerException();
             System.out.println("r " + OtrChannel.this + " " + new Bytestring(receivedMessage.getBytes()));
 
             try {
