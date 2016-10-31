@@ -24,7 +24,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  *
  */
 
-public final class Insight extends Bitcoin {
+public class Insight extends Bitcoin {
 
    private String insightMainnetURL = "insight.bitpay.com";
    private String insightTestnetURL = "test-insight.bitpay.com";
