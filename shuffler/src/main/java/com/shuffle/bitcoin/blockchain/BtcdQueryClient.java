@@ -3,16 +3,6 @@ package com.shuffle.bitcoin.blockchain;
 /**
  * Created by nsa on 10/28/16.
  */
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.Commands;
@@ -52,6 +42,17 @@ import com.neemre.btcdcli4j.core.jsonrpc.client.JsonRpcClient;
 import com.neemre.btcdcli4j.core.jsonrpc.client.JsonRpcClientImpl;
 import com.neemre.btcdcli4j.core.util.CollectionUtils;
 import com.neemre.btcdcli4j.core.util.NumberUtils;
+
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class BtcdQueryClient implements BtcdClient {
 
@@ -382,6 +383,11 @@ public class BtcdQueryClient implements BtcdClient {
         String isGenerateJson = rpcClient.execute(Commands.GET_GENERATE.getName());
         Boolean isGenerate = rpcClient.getParser().parseBoolean(isGenerateJson);
         return isGenerate;
+    }
+
+    @Override
+    public void setGenerate(Boolean isGenerate) throws BitcoindException, CommunicationException {
+        rpcClient.execute(Commands.SET_GENERATE.getName(), isGenerate);
     }
 
     @Override
@@ -1095,11 +1101,6 @@ public class BtcdQueryClient implements BtcdClient {
             CommunicationException {
         List<Object> params = CollectionUtils.asList(address, account);
         rpcClient.execute(Commands.SET_ACCOUNT.getName(), params);
-    }
-
-    @Override
-    public void setGenerate(Boolean isGenerate) throws BitcoindException, CommunicationException {
-        rpcClient.execute(Commands.SET_GENERATE.getName(), isGenerate);
     }
 
     @Override
