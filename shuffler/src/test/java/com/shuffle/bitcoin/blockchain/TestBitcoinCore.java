@@ -28,7 +28,8 @@ public class TestBitcoinCore {
 
     @Test
     public void isUtxo() throws IOException, BitcoindException, CommunicationException {
-        boolean testUtxo = testCase.isUtxo("8acc615b65c0d0c1ff255e3a316f69706a495aab426ee448506f99d5a2629598", 6);
+        //boolean testUtxo = testCase.isUtxo("8acc615b65c0d0c1ff255e3a316f69706a495aab426ee448506f99d5a2629598", 6);
+        boolean testUtxo = testCase.isUtxo("4b08898741a647183c878bd4018daa998f3019b42515cf23a70e0c89aefbab3a", 0);
         Assert.assertTrue(testUtxo);
     }
 
