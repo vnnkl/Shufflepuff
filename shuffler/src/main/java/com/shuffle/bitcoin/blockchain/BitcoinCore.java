@@ -49,9 +49,8 @@ public class BitcoinCore extends Bitcoin {
     }
 
     // TODO -- VERIFY {address, vout, & don't need mempool}
-    synchronized boolean isUtxo(String transactionHash, int vout, boolean mempool) throws IOException, BitcoindException, CommunicationException {
-        client.getTxOut(transactionHash, vout, mempool);// parse this
-        return false;
+    synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
+        return client.getTxOut(transactionHash, vout, false);
     }
 
     synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {

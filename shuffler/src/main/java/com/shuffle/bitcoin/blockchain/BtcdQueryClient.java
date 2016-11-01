@@ -585,10 +585,10 @@ public class BtcdQueryClient implements BtcdClient {
         return transaction;
     }
 
-    public void getTxOut(String transactionHash, int n, boolean mempool) throws BitcoindException, CommunicationException {
-        List<Object> params = CollectionUtils.asList(transactionHash, 6, mempool);
+    public boolean getTxOut(String transactionHash, int n, boolean mempool) throws BitcoindException, CommunicationException {
+        List<Object> params = CollectionUtils.asList(transactionHash, n, false);
         String getTxOut = rpcClient.execute("gettxout", params);
-        System.out.println(getTxOut);
+        return (getTxOut != null);
     }
 
     @Override
