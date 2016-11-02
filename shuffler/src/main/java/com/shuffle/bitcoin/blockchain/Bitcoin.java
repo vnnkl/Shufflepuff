@@ -26,7 +26,6 @@ import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.core.VerificationException;
@@ -37,7 +36,6 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -52,6 +50,7 @@ public abstract class Bitcoin implements Coin {
     final PeerGroup peerGroup;
     final int minPeers;
     final Context context;
+    protected Map<String, Cached> cache = new HashMap<>();
 
     /**
      *
@@ -75,108 +74,6 @@ public abstract class Bitcoin implements Coin {
         this.context = Context.getOrCreate(this.netParams);
     }
 
-    public class Transaction implements com.shuffle.bitcoin.Transaction {
-        final String hash;
-        private org.bitcoinj.core.Transaction bitcoinj;
-        final boolean canSend;
-        boolean confirmed;
-        boolean sent = false;
-
-        public Transaction(String hash, boolean canSend) {
-            this.hash = hash;
-            this.canSend = canSend;
-        }
-
-        public Transaction(String hash, org.bitcoinj.core.Transaction bitcoinj, boolean canSend) {
-            this.hash = hash;
-            this.bitcoinj = bitcoinj;
-            this.canSend = canSend;
-        }
-
-        public Transaction(String hash, boolean canSend, boolean confirmed) {
-            this.hash = hash;
-            this.canSend = canSend;
-            this.confirmed = confirmed;
-        }
-
-        public Transaction(String hash, org.bitcoinj.core.Transaction bitcoinj, boolean canSend, boolean confirmed) {
-            this.hash = hash;
-            this.bitcoinj = bitcoinj;
-            this.canSend = canSend;
-            this.confirmed = confirmed;
-        }
-
-        // Get the underlying bitcoinj representation of this transaction.
-        public org.bitcoinj.core.Transaction bitcoinj() throws BlockStoreException, IOException {
-            if (bitcoinj == null) {
-                bitcoinj = getTransaction(hash);
-            }
-
-            return bitcoinj;
-        }
-
-        /**
-         *
-         * The send() method broadcasts a transaction into the Bitcoin network.  The canSend boolean
-         * variable tells us if the transaction was created by us, or taken from the blockchain.
-         * If we created the transaction, then we are able to broadcast it.  Otherwise, we cannot.
-         *
-         */
-
-        @Override
-        public synchronized void send()
-                throws ExecutionException, InterruptedException, CoinNetworkException {
-
-            if (!Bitcoin.this.send(this)) {
-                throw new CoinNetworkException("Could not send transaction.");
-            }
-        }
-
-        @Override
-        public Bytestring serialize() {
-            return new Bytestring(bitcoinj.bitcoinSerialize());
-        }
-
-        @Override
-        public Bytestring sign(SigningKey sk) {
-            if (!(sk instanceof SigningKeyImpl)) {
-                return null;
-            }
-            return Bitcoin.this.getSignature(this.bitcoinj, ((SigningKeyImpl) sk).signingKey);
-        }
-
-        @Override
-        public boolean addInputScript(Bytestring b) throws FormatException {
-            List<Bytestring> programSignatures = new LinkedList<>();
-            programSignatures.add(b);
-            if (Bitcoin.this.signTransaction(this.bitcoinj, programSignatures) == null) {
-                return false;
-            }
-            return true;
-        }
-
-        @Override
-        public boolean isValid() {
-            for (TransactionInput input : this.bitcoinj.getInputs()) {
-                TransactionOutput output = input.getConnectedOutput();
-                if (input.getScriptSig() == null) {
-                    return false;
-                }
-                try {
-                    input.verify(output);
-                } catch (VerificationException e) {
-                    return false;
-                }
-            }
-            return true;
-        }
-
-        @Override
-        public String toString() {
-            return hash;
-        }
-    }
-
     public PeerGroup getPeerGroup(){
         return peerGroup;
     }
@@ -185,20 +82,6 @@ public abstract class Bitcoin implements Coin {
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(this.netParams, bytes);
         return new Transaction(tx.getHashAsString(), tx, false);
     }
-
-    protected class Cached {
-        public final String address;
-        public final List<Bitcoin.Transaction> txList;
-        public final long last;
-
-        private Cached(String address, List<Bitcoin.Transaction> txList, long last) {
-            this.address = address;
-            this.txList = txList;
-            this.last = last;
-        }
-    }
-
-    protected Map<String, Cached> cache = new HashMap<>();
 
     public NetworkParameters getNetParams(){
         return netParams;
@@ -290,7 +173,7 @@ public abstract class Bitcoin implements Coin {
     @Override
     public long valueHeld(String transactionHash, Long vout) throws CoinNetworkException, AddressFormatException {
         try {
-            return getAddressBalance(transactionHash, vout);
+            return getUtxoBalance(transactionHash, vout);
         } catch (IOException e) {
             throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
         }
@@ -303,16 +186,13 @@ public abstract class Bitcoin implements Coin {
      *
      */
 
-    protected synchronized long getAddressBalance(String transactionHash, Long vout) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
-
-        List<Bitcoin.Transaction> txList = getAddressTransactions(String transactionHash, Long vout);
-        org.bitcoinj.core.Transaction tx = txList.get(0).bitcoinj;
-        if (isUtxo(transactionHash, vout.intValue())) {
-            return tx.getOutput(vout).getValue().getValue();
+    protected synchronized long getUtxoBalance(String transactionHash, Integer vout) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
+        TransactionOutput tx = getTransaction(transactionHash).getOutput(vout);
+        if (isUtxo(transactionHash, vout)) {
+            return tx.getValue().getValue();
         } else {
             return 0;
         }
-
     }
 
     @Override
@@ -503,4 +383,113 @@ public abstract class Bitcoin implements Coin {
     // Should be synchronized.
     abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)
             throws IOException;
+
+    public class Transaction implements com.shuffle.bitcoin.Transaction {
+        final String hash;
+        final boolean canSend;
+        boolean confirmed;
+        boolean sent = false;
+        private org.bitcoinj.core.Transaction bitcoinj;
+
+        public Transaction(String hash, boolean canSend) {
+            this.hash = hash;
+            this.canSend = canSend;
+        }
+
+        public Transaction(String hash, org.bitcoinj.core.Transaction bitcoinj, boolean canSend) {
+            this.hash = hash;
+            this.bitcoinj = bitcoinj;
+            this.canSend = canSend;
+        }
+
+        public Transaction(String hash, boolean canSend, boolean confirmed) {
+            this.hash = hash;
+            this.canSend = canSend;
+            this.confirmed = confirmed;
+        }
+
+        public Transaction(String hash, org.bitcoinj.core.Transaction bitcoinj, boolean canSend, boolean confirmed) {
+            this.hash = hash;
+            this.bitcoinj = bitcoinj;
+            this.canSend = canSend;
+            this.confirmed = confirmed;
+        }
+
+        // Get the underlying bitcoinj representation of this transaction.
+        public org.bitcoinj.core.Transaction bitcoinj() throws BlockStoreException, IOException {
+            if (bitcoinj == null) {
+                bitcoinj = getTransaction(hash);
+            }
+
+            return bitcoinj;
+        }
+
+        /**
+         * The send() method broadcasts a transaction into the Bitcoin network.  The canSend boolean
+         * variable tells us if the transaction was created by us, or taken from the blockchain.
+         * If we created the transaction, then we are able to broadcast it.  Otherwise, we cannot.
+         */
+
+        @Override
+        public synchronized void send()
+              throws ExecutionException, InterruptedException, CoinNetworkException {
+
+            if (!Bitcoin.this.send(this)) {
+                throw new CoinNetworkException("Could not send transaction.");
+            }
+        }
+
+        @Override
+        public Bytestring serialize() {
+            return new Bytestring(bitcoinj.bitcoinSerialize());
+        }
+
+        @Override
+        public Bytestring sign(SigningKey sk) {
+            if (!(sk instanceof SigningKeyImpl)) {
+                return null;
+            }
+            return Bitcoin.this.getSignature(this.bitcoinj, ((SigningKeyImpl) sk).signingKey);
+        }
+
+        @Override
+        public boolean addInputScript(Bytestring b) throws FormatException {
+            List<Bytestring> programSignatures = new LinkedList<>();
+            programSignatures.add(b);
+            return Bitcoin.this.signTransaction(this.bitcoinj, programSignatures) != null;
+        }
+
+        @Override
+        public boolean isValid() {
+            for (TransactionInput input : this.bitcoinj.getInputs()) {
+                TransactionOutput output = input.getConnectedOutput();
+                if (input.getScriptSig() == null) {
+                    return false;
+                }
+                try {
+                    input.verify(output);
+                } catch (VerificationException e) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return hash;
+        }
+    }
+
+    protected class Cached {
+        public final String address;
+        public final List<Bitcoin.Transaction> txList;
+        public final long last;
+
+        private Cached(String address, List<Bitcoin.Transaction> txList, long last) {
+            this.address = address;
+            this.txList = txList;
+            this.last = last;
+        }
+    }
 }

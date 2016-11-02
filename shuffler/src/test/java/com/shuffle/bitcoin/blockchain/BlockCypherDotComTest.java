@@ -23,7 +23,7 @@ public class BlockCypherDotComTest {
       long balanceTest = blockCypherTest.getAddressBalance("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
       System.out.println("balance Test: " + balanceTest);
       // 1BitcoinEaterAddressDontSendf59kuE should always have a positive balance
-      // long balanceMain = blockCypherMain.getAddressBalance("1BitcoinEaterAddressDontSendf59kuE");
+      // long balanceMain = blockCypherMain.getUtxoBalance("1BitcoinEaterAddressDontSendf59kuE");
       // System.out.println("balance Main: "+balanceMain);
       BlockCypherDotCom blockCypher = new BlockCypherDotCom(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), 3);
       long balance = blockCypher.getAddressBalance("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
