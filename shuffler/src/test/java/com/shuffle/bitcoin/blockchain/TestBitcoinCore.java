@@ -5,6 +5,7 @@ import com.neemre.btcdcli4j.core.CommunicationException;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.params.MainNetParams;
 import org.junit.Assert;
 import org.junit.Test;
@@ -23,7 +24,7 @@ public class TestBitcoinCore {
     BitcoinCore testCase;
 
     public TestBitcoinCore() throws MalformedURLException, BitcoindException, CommunicationException {
-        testCase = new BitcoinCore(netParams, "admin", "pass");
+        //testCase = new BitcoinCore(netParams, "admin", "pass");
     }
 
     @Test

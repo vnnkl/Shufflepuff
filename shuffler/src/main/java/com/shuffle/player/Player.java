@@ -98,7 +98,9 @@ class Player {
          Crypto crypto,
          Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
-         PrintStream stream
+         PrintStream stream,
+         String transactionHash,
+         Long vout
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null) {

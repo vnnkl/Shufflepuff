@@ -1,8 +1,11 @@
 package com.shuffle.player;
 
 import com.google.common.primitives.Ints;
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.blockchain.BitcoinCore;
 import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
@@ -203,6 +206,8 @@ public class Shuffle {
     public final long timeout;
     public final Bytestring session;
     public final Crypto crypto;
+    public String transactionHash;
+    public Long vout;
     Set<Player> local = new HashSet<>();
     Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
@@ -213,7 +218,7 @@ public class Shuffle {
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, Payload>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
-            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception {
+            throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception, BitcoindException, CommunicationException {
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
@@ -296,6 +301,23 @@ public class Shuffle {
         }
 
         switch (query) {
+            case "bitcoin-core" : {
+                if (!options.has("blockchain")) {
+                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
+                } else if (options.has("minbitcoinnetworkpeers")) {
+                    throw new IllegalArgumentException("minbitcoinnetworkpeers not required for Bitcoin Core.");
+                } else if (!options.has("rpcuser")) {
+                    throw new IllegalArgumentException("Need to set rpcuser parameter (rpc server login)");
+                } else if (!options.has("rpcpass")) {
+                    throw new IllegalArgumentException("Need to set rpcpass parameter (rpc server login)");
+                }
+
+                String rpcuser = (String)options.valueOf("rpcuser");
+                String rpcpass = (String)options.valueOf("rpcpass");
+
+                coin = new BitcoinCore(netParams, rpcuser, rpcpass);
+                break;
+            }
             case "btcd" : {
 
                 if (!options.has("blockchain")) {
@@ -551,6 +573,16 @@ public class Shuffle {
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("port") + " as string.");
                 }
+                try {
+                    transactionHash = (String) o.get("transactionhash");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("transactionhash") + " as string.");
+                }
+                try {
+                    vout = (Long) o.get("vout");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("vout") + " as string");
+                }
 
                 if (key == null) {
                     throw new IllegalArgumentException("Player missing field \"key\".");
@@ -561,8 +593,14 @@ public class Shuffle {
                 if (port == null) {
                     throw new IllegalArgumentException("Player missing field \"port\".");
                 }
+                if (transactionHash == null) {
+                    throw new IllegalArgumentException("Player missing field \"transactionhash\".");
+                }
+                if (vout == null) {
+                    throw new IllegalArgumentException("Player missing field \"vout\".");
+                }
 
-                this.local.add(readPlayer(options, key, i, port, anon, change, m));
+                this.local.add(readPlayer(options, key, i, port, anon, change, m, transactionHash, vout));
             }
         } else {
             if (jsonPeers.size() == 0) {
@@ -583,9 +621,9 @@ public class Shuffle {
             String anon = (String)options.valueOf("anon");
             Long port = (Long)options.valueOf("port");
             if (!options.has("change")) {
-                this.local.add(readPlayer(options, key, 1, port, anon, null, m));
+                this.local.add(readPlayer(options, key, 1, port, anon, null, m, transactionHash, vout));
             } else {
-                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), m));
+                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), m, transactionHash, vout));
             }
         }
 
@@ -598,7 +636,9 @@ public class Shuffle {
             long port,
             String anon,
             String change,
-            Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException, AddressFormatException {
+            Messages.ShuffleMarshaller m,
+            String transactionHash,
+            Long vout) throws UnknownHostException, FormatException, AddressFormatException {
 
         SigningKey sk;
         Address anonAddress;
@@ -657,17 +697,10 @@ public class Shuffle {
                                 mock.node(id)),
                         peers);
 
-
-        /*
-        Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
-                new MappedChannel<>(
-                  new MarshallChannel<>(new OtrChannel<>(mock.node(id)),m.signedMarshaller()),peers
-                );*/
-
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, fee, coin, crypto, channel, m, System.out);
+                amount, fee, coin, crypto, channel, m, System.out, transactionHash, vout);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -732,7 +765,7 @@ public class Shuffle {
         executor.shutdownNow();
     }
 
-    public static void main(String[] opts) throws IOException {
+    public static void main(String[] opts) throws IOException, BitcoindException, CommunicationException {
 
         OptionParser parser = getShuffleOptionsParser();
         OptionSet options = null;

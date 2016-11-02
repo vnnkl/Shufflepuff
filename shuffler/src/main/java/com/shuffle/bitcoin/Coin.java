@@ -39,11 +39,11 @@ public interface Coin {
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException, AddressFormatException;
 
-    long valueHeld(Address addr) throws CoinNetworkException, AddressFormatException;
+    long valueHeld(String transactionHash, Long vout) throws CoinNetworkException, AddressFormatException;
 
     // Returns true if the address follows the correct format for CoinShuffle.
     // Returns false otherwise.
-    boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException;
+    boolean sufficientFunds(String transactionHash, Long vout, long amount) throws CoinNetworkException, AddressFormatException, IOException;
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.

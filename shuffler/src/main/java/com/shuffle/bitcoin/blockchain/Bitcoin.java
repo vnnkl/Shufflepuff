@@ -9,6 +9,8 @@
 package com.shuffle.bitcoin.blockchain;
 
 
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
@@ -286,9 +288,9 @@ public abstract class Bitcoin implements Coin {
      */
 
     @Override
-    public long valueHeld(Address addr) throws CoinNetworkException, AddressFormatException {
+    public long valueHeld(String transactionHash, Long vout) throws CoinNetworkException, AddressFormatException {
         try {
-            return getAddressBalance(addr.toString());
+            return getAddressBalance(transactionHash, vout);
         } catch (IOException e) {
             throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
         }
@@ -301,47 +303,20 @@ public abstract class Bitcoin implements Coin {
      *
      */
 
-    protected synchronized long getAddressBalance(String address) throws IOException, CoinNetworkException, AddressFormatException {
+    protected synchronized long getAddressBalance(String transactionHash, Long vout) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
 
-        List<Bitcoin.Transaction> txList = getAddressTransactions(address);
-
-        long sum = 0;
-        for (Bitcoin.Transaction tx : txList) {
-            org.bitcoinj.core.Transaction tx2 = tx.bitcoinj;
-            String txhash = tx.hash;
-            boolean usedInput = false;
-
-            // check that txhash hasn't been used as input in any transactions, if it has, we discard.
-            outerloop:
-            for (Bitcoin.Transaction checkTx : txList) {
-                org.bitcoinj.core.Transaction tempTx = checkTx.bitcoinj;
-                for (TransactionInput input : tempTx.getInputs()) {
-                    if (input.getOutpoint().getHash().toString().equals(txhash)) {
-                        usedInput = true;
-                        break outerloop;
-                    }
-                }
-            }
-
-            // else, we find the specific output in the transaction pertaining to our address, and add the value to sum.
-
-            if (!usedInput) {
-                for (TransactionOutput output : tx2.getOutputs()) {
-                    String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
-                    if (address.equals(addressP2pkh)) {
-                        sum += output.getValue().getValue();
-                        break;
-                    }
-                }
-            }
-
+        List<Bitcoin.Transaction> txList = getAddressTransactions(String transactionHash, Long vout);
+        org.bitcoinj.core.Transaction tx = txList.get(0).bitcoinj;
+        if (isUtxo(transactionHash, vout.intValue())) {
+            return tx.getOutput(vout).getValue().getValue();
+        } else {
+            return 0;
         }
 
-        return sum;
     }
 
     @Override
-    public final boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
+    public final boolean sufficientFunds(String transactionHash, Long vout, long amount) throws CoinNetworkException, AddressFormatException, IOException {
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
@@ -517,6 +492,9 @@ public abstract class Bitcoin implements Coin {
         t.sent = true;
         return true;
     }
+
+    // synchronized?
+    abstract boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException;
 
     // Should NOT be synchronized.
     abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(String address)
