@@ -36,6 +36,7 @@ import com.shuffle.protocol.message.Phase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Sha256Hash;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -99,8 +100,8 @@ class Player {
          Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
          PrintStream stream,
-         String transactionHash,
-         Long vout
+         Sha256Hash transactionHash,
+         int vout
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null) {

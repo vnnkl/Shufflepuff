@@ -44,6 +44,7 @@ import com.shuffle.protocol.FormatException;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.json.simple.JSONArray;
@@ -206,8 +207,8 @@ public class Shuffle {
     public final long timeout;
     public final Bytestring session;
     public final Crypto crypto;
-    public String transactionHash;
-    public Long vout;
+    public Sha256Hash transactionHash;
+    public int vout;
     Set<Player> local = new HashSet<>();
     Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
@@ -553,6 +554,7 @@ public class Shuffle {
 
                 String key, anon, change;
                 Long port;
+                Integer vout;
                 try {
                     key = (String) o.get("key");
                 } catch (ClassCastException e) {
@@ -574,12 +576,12 @@ public class Shuffle {
                     throw new IllegalArgumentException("Could not read option " + o.get("port") + " as string.");
                 }
                 try {
-                    transactionHash = (String) o.get("transactionhash");
+                    transactionHash = Sha256Hash.wrap((String) o.get("transactionhash"));
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("transactionhash") + " as string.");
                 }
                 try {
-                    vout = (Long) o.get("vout");
+                    vout = (Integer) o.get("vout");
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("vout") + " as string");
                 }
@@ -637,8 +639,8 @@ public class Shuffle {
             String anon,
             String change,
             Messages.ShuffleMarshaller m,
-            String transactionHash,
-            Long vout) throws UnknownHostException, FormatException, AddressFormatException {
+            Sha256Hash transactionHash,
+            int vout) throws UnknownHostException, FormatException, AddressFormatException {
 
         SigningKey sk;
         Address anonAddress;
