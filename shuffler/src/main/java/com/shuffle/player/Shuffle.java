@@ -45,6 +45,7 @@ import com.shuffle.protocol.FormatException;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.params.TestNet3Params;
 import org.json.simple.JSONArray;
@@ -602,7 +603,8 @@ public class Shuffle {
                     throw new IllegalArgumentException("Player missing field \"vout\".");
                 }
 
-                this.local.add(readPlayer(options, key, i, port, anon, change, m, transactionHash, vout));
+                TransactionOutPoint utxo = new TransactionOutPoint(netParams, vout, transactionHash);
+                this.local.add(readPlayer(options, key, i, port, anon, change, m, utxo));
             }
         } else {
             if (jsonPeers.size() == 0) {
@@ -622,10 +624,11 @@ public class Shuffle {
             String key = (String)options.valueOf("key");
             String anon = (String)options.valueOf("anon");
             Long port = (Long)options.valueOf("port");
+            TransactionOutPoint utxo = new TransactionOutPoint(netParams, vout, transactionHash);
             if (!options.has("change")) {
-                this.local.add(readPlayer(options, key, 1, port, anon, null, m, transactionHash, vout));
+                this.local.add(readPlayer(options, key, 1, port, anon, null, m, utxo));
             } else {
-                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), m, transactionHash, vout));
+                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), m, utxo));
             }
         }
 
@@ -639,8 +642,7 @@ public class Shuffle {
             String anon,
             String change,
             Messages.ShuffleMarshaller m,
-            Sha256Hash transactionHash,
-            int vout) throws UnknownHostException, FormatException, AddressFormatException {
+            TransactionOutPoint utxo) throws UnknownHostException, FormatException, AddressFormatException {
 
         SigningKey sk;
         Address anonAddress;
@@ -702,7 +704,7 @@ public class Shuffle {
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, fee, coin, crypto, channel, m, System.out, transactionHash, vout);
+                amount, fee, coin, crypto, channel, m, System.out, utxo);
     }
 
     private static JSONArray readJSONArray(String ar) {

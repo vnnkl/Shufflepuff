@@ -37,6 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -81,6 +82,7 @@ class Player {
     private final Address change;
     private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
+    private final TransactionOutPoint utxo;
 
     public Report report = null;
 
@@ -100,8 +102,7 @@ class Player {
          Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
          PrintStream stream,
-         Sha256Hash transactionHash,
-         int vout
+         TransactionOutPoint utxo
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null) {
@@ -120,6 +121,7 @@ class Player {
         this.addrs = addrs;
         this.m = m;
         this.stream = stream;
+        this.utxo = utxo;
     }
 
     public Running start() throws IOException, InterruptedException {
