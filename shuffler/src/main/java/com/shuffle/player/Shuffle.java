@@ -6,6 +6,7 @@ import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.TransactionOutPointKey;
 import com.shuffle.bitcoin.blockchain.BitcoinCore;
 import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
@@ -211,8 +212,15 @@ public class Shuffle {
     public final Bytestring session;
     public final Crypto crypto;
     Set<Player> local = new HashSet<>();
-    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
-    Set<TransactionOutPoint> utxoList = new HashSet<>();
+    // TODO
+    // One peer can have multiple TransactionOutPoints, so the <key,value> ordering is altered here.
+    Map<Either<InetSocketAddress, Integer>, Set<TransactionOutPoint>> peers = new HashMap<>();
+    // TODO
+    // TransactionOutPointKey contains {TransactionOutPoint, VerificationKey}
+    Set<TransactionOutPointKey> utxoList = new HashSet<>();
+    // TODO
+    // What's the point of this?
+    // If this is used, it should contain Either<InetSocketAddress, Integer>
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
@@ -518,9 +526,10 @@ public class Shuffle {
             InetSocketAddress tcp = new InetSocketAddress(parts[0], port);
             Either<InetSocketAddress, Integer> address = new Either<>(tcp, null);
 
-            if (peers.containsKey(vk)) {
-                throw new IllegalArgumentException("Duplicate key " + key);
+            if (peers.containsKey(address)) {
+                throw new IllegalArgumentException("Duplicate address " + address);
             }
+            // TODO
             peers.put(vk, address);
             keys.add(vk);
         }
@@ -684,6 +693,7 @@ public class Shuffle {
                 // Long because we compare to null
                 Long vout;
                 Sha256Hash transactionHash;
+                String key;
                 try {
                     vout = (Long) o.get("vout");
                 } catch (ClassCastException e) {
@@ -694,23 +704,37 @@ public class Shuffle {
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("transactionHash") + " as string");
                 }
+                try {
+                    key = (String) o.get("key");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("key") + " as string.");
+                }
+
                 if (vout == null) {
                     throw new IllegalArgumentException("Utxo missing field \"vout\".");
                 }
                 if (transactionHash == null) {
                     throw new IllegalArgumentException("Utxo missing field \"transactionHash\".");
                 }
+                if (key == null) {
+                    throw new IllegalArgumentException("Utxo missing field \"key\".");
+                }
                 // Error if vout / transactionHash not in correct format.
                 TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
+                // TODO
+                // Check this?
+                VerificationKey vk = new VerificationKeyImpl(key, netParams);
                 if (checkDuplicateUtxo.contains(t)) {
                     throw new IllegalArgumentException("Duplicate TransactionOutPoint.");
                 } else {
                     checkDuplicateUtxo.add(t);
                 }
-                if (utxoList.contains(t)) {
-                    throw new IllegalArgumentException("Duplicate TransactionOutPoint " + t);
+
+                TransactionOutPointKey tk = new TransactionOutPointKey(t, vk);
+                if (utxoList.contains(tk)) {
+                    throw new IllegalArgumentException("Duplicate TransactionOutPointKey " + tk);
                 }
-                utxoList.add(t);
+                utxoList.add(tk);
             }
 
             // TODO
