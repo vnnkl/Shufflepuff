@@ -218,10 +218,6 @@ public class Shuffle {
     // TODO
     // TransactionOutPointKey contains {TransactionOutPoint, VerificationKey}
     Set<TransactionOutPointKey> utxoList = new HashSet<>();
-    // TODO
-    // What's the point of this?
-    // If this is used, it should contain Either<InetSocketAddress, Integer>
-    SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
     public final ExecutorService executor;
@@ -581,9 +577,6 @@ public class Shuffle {
             // Is checkDuplicateUtxo safe to use as a Set<TransactionOutPoint>?
             // Probably...
             peers.put(address, checkDuplicateUtxo);
-            // TODO
-            // Get rid of keys? vk?
-            keys.add(vk);
         }
 
         executor = Executors.newFixedThreadPool(10);
@@ -619,7 +612,7 @@ public class Shuffle {
             }
 
             for (int i = 1; i <= local.size(); i ++) {
-                JSONObject o = null;
+                JSONObject o;
                 try {
                     o = (JSONObject) local.get(i - 1);
                 } catch (ClassCastException e) {
@@ -811,13 +804,11 @@ public class Shuffle {
             String change,
             Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException, AddressFormatException {
 
-        SigningKey sk;
         Address anonAddress;
         Address changeAddress;
         if (TEST_MODE) {
             switch ((String)options.valueOf("crypto")) {
                 case "mock" : {
-                    sk = new MockSigningKey(Integer.parseInt(key));
                     anonAddress = new MockAddress(anon);
                     if (change == null) {
                         changeAddress = null;
@@ -827,7 +818,6 @@ public class Shuffle {
                     break;
                 }
                 case "real" : {
-                    sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
                     anonAddress = new AddressImpl(anon);
                     if (change == null) {
                         changeAddress = null;
@@ -841,7 +831,6 @@ public class Shuffle {
                 }
             }
         } else {
-            sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
             anonAddress = new AddressImpl(anon);
             if (change == null) {
                 changeAddress = null;
@@ -850,14 +839,11 @@ public class Shuffle {
             }
         }
 
-        VerificationKey vk = sk.VerificationKey();
-        if (keys.contains(vk)) {
-            throw new IllegalArgumentException("Duplicate key.");
-        }
+        // TODO
+        // Parse keys? peers.put?
+        // peers.put(null, new Either<>(null, id));
 
-        keys.add(vk);
-        peers.put(vk, new Either<>(null, id));
-
+        // peers
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
                 new MappedChannel<>(
                         new Multiplexer<>(
@@ -866,11 +852,11 @@ public class Shuffle {
                                                 new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
                                         m.signedMarshaller()),
                                 mock.node(id)),
-                        peers);
+                        null);
 
         return new Player(
-                sk, session, anonAddress,
-                changeAddress, keys, time,
+                null, session, anonAddress,
+                changeAddress, null, time,
                 amount, fee, coin, crypto, channel, m, System.out, null);
     }
 
@@ -939,7 +925,7 @@ public class Shuffle {
     public static void main(String[] opts) throws IOException, BitcoindException, CommunicationException {
 
         OptionParser parser = getShuffleOptionsParser();
-        OptionSet options = null;
+        OptionSet options;
         try {
             options = parser.parse(opts);
         } catch (Exception e) {
