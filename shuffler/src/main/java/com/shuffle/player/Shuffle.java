@@ -1,10 +1,12 @@
 package com.shuffle.player;
 
 import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.TransactionOutPointKey;
 import com.shuffle.bitcoin.blockchain.BitcoinCore;
 import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
@@ -38,7 +40,6 @@ import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.Multiplexer;
-import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
@@ -123,6 +124,8 @@ public class Shuffle {
             query.defaultsTo("mock");
             blockchain.defaultsTo("test");
 
+            // TODO
+            // What does this do?
             parser.accepts("coin")
                     .withRequiredArg()
                     .ofType(String.class)
@@ -136,7 +139,7 @@ public class Shuffle {
                     .defaultsTo("protobuf");
 
             // Five seconds from now.
-            //time.defaultsTo(System.currentTimeMillis() + 5000L);
+            // time.defaultsTo(System.currentTimeMillis() + 5000L);
 
         } else {
             query.defaultsTo("blockcypher.com");
@@ -161,22 +164,22 @@ public class Shuffle {
                 .withRequiredArg()
                 .ofType(String.class);
 
-        OptionSpecBuilder key = parser.acceptsAll(Arrays.asList("k", "key"), "Your private key.");
         OptionSpecBuilder port = parser.accepts("port", "Port on which to listen for connections.");
         OptionSpecBuilder change = parser.accepts("change", "Your change address. Optional.");
         OptionSpecBuilder anon = parser.accepts("anon", "A Bitcoin address to which the anonymized coins are sent.");
+        OptionSpecBuilder utxos = parser.acceptsAll(Arrays.asList("u", "utxoList"), "The list of utxos we will spend from, formatted as a JSON array.");
 
         if (TEST_MODE) {
-            key.requiredUnless("local");
             port.requiredUnless("local");
             change.requiredUnless("local");
             anon.requiredUnless("local");
+            utxos.requiredUnless("local");
         }
 
-        key.withRequiredArg().ofType(String.class);
         port.withRequiredArg().ofType(Long.class);
         change.withRequiredArg().ofType(String.class);
         anon.withRequiredArg().ofType(String.class);
+        utxos.withRequiredArg().ofType(String.class);
 
         parser.accepts("timeout", "The time in milliseconds that Shufflepuff waits before disconnecting due to a timeout.")
                 .withRequiredArg()
@@ -208,11 +211,13 @@ public class Shuffle {
     public final long timeout;
     public final Bytestring session;
     public final Crypto crypto;
-    public Sha256Hash transactionHash;
-    public int vout;
     Set<Player> local = new HashSet<>();
-    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
-    SortedSet<VerificationKey> keys = new TreeSet<>();
+    // TODO
+    // One peer can have multiple TransactionOutPoints, so the <key,value> ordering is altered here.
+    Map<Either<InetSocketAddress, Integer>, Set<TransactionOutPoint>> peers = new HashMap<>();
+    // TODO
+    // TransactionOutPointKey contains {TransactionOutPoint, VerificationKey}
+    Set<TransactionOutPointKey> utxoList = new HashSet<>();
     public final String report; // Where to save the report.
 
     public final ExecutorService executor;
@@ -296,6 +301,9 @@ public class Shuffle {
                 netParams = TestNet3Params.get();
                 break;
             }
+
+            // TODO
+            // case "regtest"
 
             default : {
                 throw new IllegalArgumentException("Invalid value for blockchain.");
@@ -388,8 +396,8 @@ public class Shuffle {
                 // fallthrough.
             } default : {
                 throw new IllegalArgumentException(
-                        "Invalid option for 'blockchain' supplied. Available options are 'btcd', " +
-                                "'blockcypher.com', and 'blockchain.info'. 'btcd' allows for " +
+                        "Invalid option for 'blockchain' supplied. Available options are 'bitcoin-core', 'btcd', " +
+                                "'blockcypher.com', and 'blockchain.info'. 'bitcoin-core' & 'btcd' allow for " +
                                 "looking up options on a local instance of the blockchain. " +
                                 "'blockcypher.com' and 'blockchain.info' allow for querying the " +
                                 "blockchain over the web."
@@ -455,12 +463,18 @@ public class Shuffle {
             throw new IllegalArgumentException("Fee is too small. ");
         }
 
+
+        // TODO
+        // Can you specify --peers[] and --local[] ?
+
         // Finally, get the peers.
         JSONArray jsonPeers = readJSONArray((String)options.valueOf("peers"));
         if (jsonPeers == null) {
             throw new IllegalArgumentException("Could not read " + options.valueOf("peers") + " as json array.");
         }
 
+        // TODO
+        // Store each peer's utxoList in "peers"
         SortedSet<String> checkDuplicateAddress = new TreeSet<>();
         for (int i = 1; i <= jsonPeers.size(); i ++) {
             JSONObject o;
@@ -471,25 +485,30 @@ public class Shuffle {
                         + jsonPeers.get(i - 1) + " as json object.");
             }
 
-            String key = (String)o.get("key");
-            String addr = (String)o.get("address");
-            if (key == null) {
-                throw new IllegalArgumentException("Peer missing field \"key\".");
+            String addr, utxos;
+
+            try {
+                addr = (String) o.get("address");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read " + o.get("address") + " as string.");
             }
+            try {
+                utxos = (String) o.get("utxoList");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read " + o.get("utxoList") + " as string.");
+            }
+
             if (addr == null) {
                 throw new IllegalArgumentException("Peer missing field \"address\".");
             }
+            if (utxos == null) {
+                throw new IllegalArgumentException("Peer missing field \"utxoList\".");
+            }
+
             if (checkDuplicateAddress.contains(addr)) {
                 throw new IllegalArgumentException("Duplicate address.");
             } else {
                 checkDuplicateAddress.add(addr);
-            }
-
-            VerificationKey vk;
-            if (TEST_MODE && mockCrypto) {
-                vk = new MockVerificationKey(Integer.parseInt(key));
-            } else {
-                vk = new VerificationKeyImpl(key, netParams);
             }
 
             // Try to read address as host:port.
@@ -507,11 +526,57 @@ public class Shuffle {
             InetSocketAddress tcp = new InetSocketAddress(parts[0], port);
             Either<InetSocketAddress, Integer> address = new Either<>(tcp, null);
 
-            if (peers.containsKey(vk)) {
-                throw new IllegalArgumentException("Duplicate key " + key);
+            if (peers.containsKey(address)) {
+                throw new IllegalArgumentException("Duplicate address " + address);
             }
-            peers.put(vk, address);
-            keys.add(vk);
+
+            JSONArray jsonUtxos = readJSONArray(utxos);
+            if (jsonUtxos == null) {
+                throw new IllegalArgumentException("Could not read " + o.get("utxoList") + " as json array.");
+            }
+
+            SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
+            for (int j = 1; j <= jsonUtxos.size(); j++) {
+                JSONObject obj;
+                try {
+                    obj = (JSONObject) jsonUtxos.get(i - 1);
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read "
+                            + jsonUtxos.get(i - 1) + " as json object.");
+                }
+
+                // Long because we compare to null
+                Long vout;
+                Sha256Hash transactionHash;
+                try {
+                    vout = (Long) obj.get("vout");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + obj.get("vout") + " as Long");
+                }
+                try {
+                    transactionHash = Sha256Hash.wrap((String) obj.get("transactionHash"));
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + obj.get("transactionHash") + " as string");
+                }
+                if (vout == null) {
+                    throw new IllegalArgumentException("Utxo missing field \"vout\".");
+                }
+                if (transactionHash == null) {
+                    throw new IllegalArgumentException("Utxo missing field \"transactionHash\".");
+                }
+                // Error if vout / transactionHash not in correct format.
+                TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
+                if (checkDuplicateUtxo.contains(t)) {
+                    throw new IllegalArgumentException("Duplicate TransactionOutPoint.");
+                } else {
+                    checkDuplicateUtxo.add(t);
+                }
+            }
+
+            // TODO
+            // Is checkDuplicateUtxo safe to use as a Set<TransactionOutPoint>?
+            // Probably...
+            peers.put(address, checkDuplicateUtxo);
         }
 
         executor = Executors.newFixedThreadPool(10);
@@ -519,9 +584,6 @@ public class Shuffle {
         // Get information for this player. (In test mode, one node
         // may run more than one player.)
         if (TEST_MODE && options.has("local")) {
-            if (options.has("key")) {
-                throw new IllegalArgumentException("Option 'key' not needed when 'local' is defined.");
-            }
             if (options.has("change")) {
                 throw new IllegalArgumentException("Option 'change' not needed when 'local' is defined.");
             }
@@ -531,7 +593,12 @@ public class Shuffle {
             if (options.has("port")) {
                 throw new IllegalArgumentException("Option 'port' not needed when 'local' is defined.");
             }
+            if (options.has("utxoList")) {
+                throw new IllegalArgumentException("Option 'utxoList' not needed when 'local' is defined");
+            }
 
+            // TODO
+            // UtxoList
             JSONArray local = readJSONArray((String)options.valueOf("local"));
             if (local == null) {
                 throw new IllegalArgumentException("Could not read " + options.valueOf("local") + " as json array.");
@@ -545,7 +612,7 @@ public class Shuffle {
             }
 
             for (int i = 1; i <= local.size(); i ++) {
-                JSONObject o = null;
+                JSONObject o;
                 try {
                     o = (JSONObject) local.get(i - 1);
                 } catch (ClassCastException e) {
@@ -553,14 +620,8 @@ public class Shuffle {
                             + local.get(i - 1) + " as json object.");
                 }
 
-                String key, anon, change;
+                String anon, change, utxos;
                 Long port;
-                Integer vout;
-                try {
-                    key = (String) o.get("key");
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + o.get("key") + " as string.");
-                }
                 try {
                     anon = (String) o.get("anon");
                 } catch (ClassCastException e) {
@@ -577,80 +638,177 @@ public class Shuffle {
                     throw new IllegalArgumentException("Could not read option " + o.get("port") + " as string.");
                 }
                 try {
-                    transactionHash = Sha256Hash.wrap((String) o.get("transactionhash"));
+                    utxos = (String) o.get("utxoList");
                 } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + o.get("transactionhash") + " as string.");
-                }
-                try {
-                    vout = (Integer) o.get("vout");
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + o.get("vout") + " as string");
+                    throw new IllegalArgumentException("Could not read option " + o.get("utxoList") + " as string.");
                 }
 
-                if (key == null) {
-                    throw new IllegalArgumentException("Player missing field \"key\".");
-                }
+                JSONArray jsonUtxos = readJSONArray(utxos);
+
                 if (anon == null) {
                     throw new IllegalArgumentException("Player missing field \"anon\".");
                 }
                 if (port == null) {
                     throw new IllegalArgumentException("Player missing field \"port\".");
                 }
-                if (transactionHash == null) {
-                    throw new IllegalArgumentException("Player missing field \"transactionhash\".");
-                }
-                if (vout == null) {
-                    throw new IllegalArgumentException("Player missing field \"vout\".");
+                if (utxos == null) {
+                    throw new IllegalArgumentException("Player missing field \"utxoList\".");
                 }
 
-                TransactionOutPoint utxo = new TransactionOutPoint(netParams, vout, transactionHash);
-                this.local.add(readPlayer(options, key, i, port, anon, change, m, utxo));
+                if (jsonUtxos == null) {
+                    throw new IllegalArgumentException("Could not read " + o.get("utxoList") + " as json array.");
+                }
+
+                // TODO
+                // Parse local peer utxoList
+
+                SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
+                for (int j = 1; j <= jsonUtxos.size(); j++) {
+                    JSONObject obj;
+                    try {
+                        obj = (JSONObject) jsonUtxos.get(j - 1);
+                    } catch (ClassCastException e) {
+                        throw new IllegalArgumentException("Could not read "
+                                + jsonUtxos.get(j - 1) + " as json object.");
+                    }
+
+                    //Long because we compare to null
+                    Long vout;
+                    Sha256Hash transactionHash;
+                    try {
+                        vout = (Long) obj.get("vout");
+                    } catch (ClassCastException e) {
+                        throw new IllegalArgumentException("Could not read option " + obj.get("vout") + " as Long");
+                    }
+                    try {
+                        transactionHash = Sha256Hash.wrap((String) obj.get("transactionHash"));
+                    } catch (ClassCastException e) {
+                        throw new IllegalArgumentException("Could not read option " + obj.get("transactionHash") + " as string");
+                    }
+                    if (vout == null) {
+                        throw new IllegalArgumentException("Utxo missing field \"vout\".");
+                    }
+                    if (transactionHash == null) {
+                        throw new IllegalArgumentException("Utxo missing field \"transactionHash\".");
+                    }
+                    // Error if vout / transactionHash not in correct format.
+                    TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
+                    if (checkDuplicateUtxo.contains(t)) {
+                        throw new IllegalArgumentException("Duplicate TransactionOutPoint.");
+                    } else {
+                        checkDuplicateUtxo.add(t);
+                    }
+                    // TODO
+                    // store in some "local" list
+                }
+
+                this.local.add(readPlayer(options, i, port, anon, change, m));
             }
         } else {
             if (jsonPeers.size() == 0) {
                 throw new IllegalArgumentException("At least one other player must be specified.");
             }
 
-            if (!options.has("key")) {
-                throw new IllegalArgumentException("Missing option 'key'.");
-            }
             if (!options.has("anon")) {
                 throw new IllegalArgumentException("Missing option 'anon'.");
             }
             if (!options.has("port")) {
                 throw new IllegalArgumentException("Missing option 'port'.");
             }
+            if (!options.has("utxoList")) {
+                throw new IllegalArgumentException("Missing option 'utxoList'.");
+            }
 
-            String key = (String)options.valueOf("key");
+            // Get our UTXOs
+            JSONArray jsonUtxos = readJSONArray((String)options.valueOf("utxoList"));
+            if (jsonUtxos == null) {
+                throw new IllegalArgumentException("Could not read " + options.valueOf("utxoList") + " as json array.");
+            }
+
+            SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
+            for (int i = 1; i <= jsonUtxos.size(); i++) {
+                JSONObject o;
+                try {
+                    o = (JSONObject) jsonUtxos.get(i - 1);
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read "
+                            + jsonUtxos.get(i - 1) + " as json object.");
+                }
+
+                // Long because we compare to null
+                Long vout;
+                Sha256Hash transactionHash;
+                String key;
+                try {
+                    vout = (Long) o.get("vout");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("vout") + " as Long");
+                }
+                try {
+                    transactionHash = Sha256Hash.wrap((String) o.get("transactionHash"));
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("transactionHash") + " as string");
+                }
+                try {
+                    key = (String) o.get("key");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("key") + " as string.");
+                }
+
+                if (vout == null) {
+                    throw new IllegalArgumentException("Utxo missing field \"vout\".");
+                }
+                if (transactionHash == null) {
+                    throw new IllegalArgumentException("Utxo missing field \"transactionHash\".");
+                }
+                if (key == null) {
+                    throw new IllegalArgumentException("Utxo missing field \"key\".");
+                }
+                // Error if vout / transactionHash not in correct format.
+                TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
+                // The key that can sign the TransactionOutput specified by TransactionOutPoint
+                VerificationKey vk = new VerificationKeyImpl(key, netParams);
+                if (checkDuplicateUtxo.contains(t)) {
+                    throw new IllegalArgumentException("Duplicate TransactionOutPoint.");
+                } else {
+                    checkDuplicateUtxo.add(t);
+                }
+
+                TransactionOutPointKey tk = new TransactionOutPointKey(t, vk);
+                if (utxoList.contains(tk)) {
+                    throw new IllegalArgumentException("Duplicate TransactionOutPointKey " + tk);
+                }
+                utxoList.add(tk);
+            }
+
+            // TODO
+            // local utxoList
             String anon = (String)options.valueOf("anon");
             Long port = (Long)options.valueOf("port");
-            TransactionOutPoint utxo = new TransactionOutPoint(netParams, vout, transactionHash);
             if (!options.has("change")) {
-                this.local.add(readPlayer(options, key, 1, port, anon, null, m, utxo));
+                this.local.add(readPlayer(options, 1, port, anon, null, m));
             } else {
-                this.local.add(readPlayer(options, key, 1, port, anon, (String)options.valueOf("change"), m, utxo));
+                this.local.add(readPlayer(options, 1, port, anon, (String)options.valueOf("change"), m));
             }
         }
 
     }
 
+    // TODO
+    // use the UTXO list in here.
     private Player readPlayer(
             OptionSet options,
-            String key,
             int id,
             long port,
             String anon,
             String change,
-            Messages.ShuffleMarshaller m,
-            TransactionOutPoint utxo) throws UnknownHostException, FormatException, AddressFormatException {
+            Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException, AddressFormatException {
 
-        SigningKey sk;
         Address anonAddress;
         Address changeAddress;
         if (TEST_MODE) {
             switch ((String)options.valueOf("crypto")) {
                 case "mock" : {
-                    sk = new MockSigningKey(Integer.parseInt(key));
                     anonAddress = new MockAddress(anon);
                     if (change == null) {
                         changeAddress = null;
@@ -660,7 +818,6 @@ public class Shuffle {
                     break;
                 }
                 case "real" : {
-                    sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
                     anonAddress = new AddressImpl(anon);
                     if (change == null) {
                         changeAddress = null;
@@ -674,7 +831,6 @@ public class Shuffle {
                 }
             }
         } else {
-            sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
             anonAddress = new AddressImpl(anon);
             if (change == null) {
                 changeAddress = null;
@@ -683,14 +839,11 @@ public class Shuffle {
             }
         }
 
-        VerificationKey vk = sk.VerificationKey();
-        if (keys.contains(vk)) {
-            throw new IllegalArgumentException("Duplicate key.");
-        }
+        // TODO
+        // Parse keys? peers.put?
+        // peers.put(null, new Either<>(null, id));
 
-        keys.add(vk);
-        peers.put(vk, new Either<>(null, id));
-
+        // peers
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
                 new MappedChannel<>(
                         new Multiplexer<>(
@@ -699,12 +852,12 @@ public class Shuffle {
                                                 new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
                                         m.signedMarshaller()),
                                 mock.node(id)),
-                        peers);
+                        null);
 
         return new Player(
-                sk, session, anonAddress,
-                changeAddress, keys, time,
-                amount, fee, coin, crypto, channel, m, System.out, utxo);
+                null, session, anonAddress,
+                changeAddress, null, time,
+                amount, fee, coin, crypto, channel, m, System.out, null);
     }
 
     private static JSONArray readJSONArray(String ar) {
@@ -772,7 +925,7 @@ public class Shuffle {
     public static void main(String[] opts) throws IOException, BitcoindException, CommunicationException {
 
         OptionParser parser = getShuffleOptionsParser();
-        OptionSet options = null;
+        OptionSet options;
         try {
             options = parser.parse(opts);
         } catch (Exception e) {
