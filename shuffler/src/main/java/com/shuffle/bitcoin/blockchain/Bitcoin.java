@@ -17,6 +17,7 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
+import com.shuffle.bitcoin.impl.TransactionHash;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
@@ -120,9 +121,11 @@ public abstract class Bitcoin implements Coin {
         for (VerificationKey key : from) {
             try {
                 String address = key.address().toString();
-                List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
+                // todo change utxo
+                List<Bitcoin.Transaction> transactions = getAddressTransactions(null, null);
                 if (transactions.size() > 1) return null;
-                org.bitcoinj.core.Transaction tx2 = getTransaction(transactions.get(0).hash);
+                TransactionHash hash = new TransactionHash(transactions.get(0).hash);
+                org.bitcoinj.core.Transaction tx2 = getTransaction(hash);
                 for (TransactionOutput output : tx2.getOutputs()) {
                     String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
                     if (address.equals(addressP2pkh)) {
@@ -148,7 +151,8 @@ public abstract class Bitcoin implements Coin {
         for (Address sendto : to) {
             String address = sendto.toString();
             try {
-                List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
+                // todo change to utxoAddress, get from cache
+                List<Bitcoin.Transaction> transactions = getAddressTransactionsInner(null, null);
                 if (transactions.size() > 0) return null;
             } catch (IOException e) {
                 throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
@@ -169,15 +173,23 @@ public abstract class Bitcoin implements Coin {
      * The valueHeld method takes in an Address variable and returns the balance held using
      * satoshis as the unit.
      *
+     * @param transactionOutPoint
      */
 
     @Override
-    public long valueHeld(String transactionHash, Long vout) throws CoinNetworkException, AddressFormatException {
+    public long valueHeld(TransactionOutPoint transactionOutPoint) throws CoinNetworkException {
+
+        long value = 0;
         try {
-            return getUtxoBalance(transactionHash, vout);
+            Long vout = transactionOutPoint.getIndex();
+            TransactionHash transactionHash = new TransactionHash(transactionOutPoint.getHash());
+            value = getUtxoBalance(transactionOutPoint);
         } catch (IOException e) {
             throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
+        } catch (BitcoindException | CommunicationException e) {
+            e.printStackTrace();
         }
+        return value;
     }
 
     /**
@@ -187,54 +199,23 @@ public abstract class Bitcoin implements Coin {
      *
      */
 
-    protected synchronized long getUtxoBalance(String transactionHash, Integer vout) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
-        TransactionOutput tx = getTransaction(transactionHash).getOutput(vout);
-        if (isUtxo(transactionHash, vout)) {
-            return tx.getValue().getValue();
+    protected synchronized long getUtxoBalance(TransactionOutPoint transactionOutPoint) throws IOException, CoinNetworkException, BitcoindException, CommunicationException {
+        TransactionHash txHash = new TransactionHash(transactionOutPoint.getHash());
+        Long vout = transactionOutPoint.getIndex();
+        if (isUtxo(txHash.toString(), vout.intValue())) {
+            return getTransaction(txHash).getOutput(vout).getValue().getValue();
         } else {
             return 0;
         }
     }
 
     @Override
-    public final boolean sufficientFunds(String transactionHash, Long vout, long amount) throws CoinNetworkException, AddressFormatException, IOException {
+    public final boolean sufficientFunds(TransactionHash transactionHash, Integer vout, long amount) throws CoinNetworkException, IOException {
 
         //
+        TransactionOutput transaction = getTransaction(transactionHash).getOutput(vout.longValue());
+        return transaction.getValue().getValue() <= amount;
 
-        String address = addr.toString();
-
-        List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
-
-        if (transactions.size() == 1) {
-            Bitcoin.Transaction tx = transactions.get(0);
-            if (!tx.confirmed) {
-                return false;
-            }
-            long txAmount = 0;
-
-            if (tx.bitcoinj == null) {
-                try {
-                    tx.bitcoinj = getTransaction(tx.hash);
-                } catch (IOException e) {
-                    return false;
-                }
-            }
-
-            for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
-
-                /**
-                 * Every address in the outputs should be of type pay to public key hash, not pay to script hash
-                 */
-
-                String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
-                if (address.equals(addressP2pkh)) {
-                    txAmount += output.getValue().value;
-                }
-            }
-            return txAmount >= amount;
-        } else {
-            return false;
-        }
     }
 
     @Override
@@ -248,7 +229,12 @@ public abstract class Bitcoin implements Coin {
 
         List<Bitcoin.Transaction> transactions = null;
         try {
-            transactions = getAddressTransactions(address);
+            //todo change to utxoAddress
+            TransactionHash txHash = new TransactionHash(((Transaction) t).hash);
+            for (TransactionOutput output : getTransaction(txHash).getOutputs()) {
+                output.getAddressFromP2PKHScript(netParams);
+            }
+            //transactions = getAddressTransactions(txHash.toString(),(Transaction)((Transaction) t).bitcoinj.;
         } catch (IOException e) {
             // Can we return null here?
             return null;
@@ -258,7 +244,8 @@ public abstract class Bitcoin implements Coin {
         for (Bitcoin.Transaction tx : transactions) {
             if (tx.bitcoinj == null) {
                 try {
-                    tx.bitcoinj = getTransaction(tx.hash);
+                    TransactionHash txHash = new TransactionHash(tx.hash);
+                    tx.bitcoinj = getTransaction(txHash);
                 } catch (IOException e) {
                     // We should not have an IOException
                     return null;
@@ -345,21 +332,26 @@ public abstract class Bitcoin implements Coin {
 
     // Since we rely on 3rd party services to query the blockchain, by
     // default we cache the result.
-    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(String transactionHash, Long vout)
-            throws IOException, CoinNetworkException, AddressFormatException {
+    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(TransactionHash transactionHash, Long vout)
+          throws IOException, CoinNetworkException {
 
         long now = System.currentTimeMillis();
-        Cached cached = cache.get(address);
+        Cached cached = cache.get(transactionHash);
         if (cached != null) {
             if (now - cached.last < cach_expire) {
                 return cached.txList;
             }
         }
 
-        List<Bitcoin.Transaction> txList = getAddressTransactionsInner(transactionHash, vout);
+        List<Transaction> txList = null;
+        try {
+            txList = getAddressTransactionsInner(transactionHash.toString(), vout);
+        } catch (AddressFormatException e) {
+            e.printStackTrace();
+        }
 
         // ?
-        cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
+        cache.put(transactionHash.toString(), new Cached(transactionHash.toString(), txList, System.currentTimeMillis()));
 
         return txList;
     }
@@ -386,7 +378,7 @@ public abstract class Bitcoin implements Coin {
             throws IOException, CoinNetworkException, AddressFormatException;
 
     // Should be synchronized.
-    abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)
+    abstract org.bitcoinj.core.Transaction getTransaction(TransactionHash transactionHash)
             throws IOException;
 
     public class Transaction implements com.shuffle.bitcoin.Transaction {
@@ -423,7 +415,8 @@ public abstract class Bitcoin implements Coin {
         // Get the underlying bitcoinj representation of this transaction.
         public org.bitcoinj.core.Transaction bitcoinj() throws BlockStoreException, IOException {
             if (bitcoinj == null) {
-                bitcoinj = getTransaction(hash);
+                TransactionHash txHash = new TransactionHash(hash);
+                bitcoinj = getTransaction(txHash);
             }
 
             return bitcoinj;

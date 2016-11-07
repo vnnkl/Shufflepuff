@@ -8,19 +8,15 @@
 
 package com.shuffle.bitcoin;
 
- import com.shuffle.bitcoin.Address;
- import com.shuffle.bitcoin.CoinNetworkException;
- import com.shuffle.bitcoin.Transaction;
- import com.shuffle.bitcoin.VerificationKey;
- import com.shuffle.bitcoin.blockchain.Bitcoin;
+import com.shuffle.bitcoin.impl.TransactionHash;
 
- import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.TransactionOutPoint;
 
- import java.io.IOException;
- import java.net.MalformedURLException;
- import java.util.List;
- import java.util.Map;
- import java.util.Queue;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 
 /**
  *
@@ -39,11 +35,11 @@ public interface Coin {
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException, AddressFormatException;
 
-    long valueHeld(String transactionHash, Long vout) throws CoinNetworkException, AddressFormatException;
+   long valueHeld(TransactionOutPoint transactionOutPoint) throws CoinNetworkException;
 
     // Returns true if the address follows the correct format for CoinShuffle.
     // Returns false otherwise.
-    boolean sufficientFunds(String transactionHash, Long vout, long amount) throws CoinNetworkException, AddressFormatException, IOException;
+    boolean sufficientFunds(TransactionHash transactionHash, Integer vout, long amount) throws CoinNetworkException, IOException;
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.

@@ -8,15 +8,14 @@
 
 package com.shuffle.bitcoin.blockchain;
 
-import org.bitcoinj.core.*;
+import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.impl.TransactionHash;
+
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.params.MainNetParams;
-
-import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.blockchain.Bitcoin;
-import com.shuffle.bitcoin.blockchain.Btcd;
-
-import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.store.BlockStoreException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -26,9 +25,7 @@ import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
-import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
@@ -65,7 +62,8 @@ public class TestBtcd {
 
     @Test
     public void testGetTransaction() throws IOException {
-        Assert.assertEquals(testCase.getTransaction(txid), tx);
+        TransactionHash txidHash = new TransactionHash(txid);
+        Assert.assertEquals(testCase.getTransaction(txidHash), tx);
     }
 
     public void testGetWalletTransactions() throws IOException, BlockStoreException, AddressFormatException, CoinNetworkException {

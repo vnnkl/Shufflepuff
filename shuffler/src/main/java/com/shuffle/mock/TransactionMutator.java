@@ -11,10 +11,13 @@ package com.shuffle.mock;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.impl.TransactionHash;
 
+import org.bitcoinj.core.TransactionOutPoint;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,12 +49,24 @@ public class TransactionMutator implements Coin {
                 new HashMap<MockCoin.Output, VerificationKey>());
     }
 
+    //todo: fill me
     @Override
+    public long valueHeld(TransactionOutPoint transactionOutPoint) throws CoinNetworkException {
+        return 0;
+    }
+
+    //todo: fill me
+    @Override
+    public boolean sufficientFunds(TransactionHash transactionHash, Integer vout, long amount) throws CoinNetworkException, IOException {
+        return false;
+    }
+
+
     public long valueHeld(Address addr) throws CoinNetworkException {
         return coin.valueHeld(addr);
     }
 
-    @Override
+
     public boolean sufficientFunds(Address addr, long amount) {
         return coin.sufficientFunds(addr, amount);
     }

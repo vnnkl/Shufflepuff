@@ -8,7 +8,18 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.impl.TransactionHash;
+
+import org.apache.commons.codec.binary.Base64;
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.store.BlockStoreException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,16 +35,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-
-import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.NetworkParameters;
-
-import org.apache.commons.codec.binary.Base64;
-
-import org.bitcoinj.store.BlockStoreException;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * Created by Eugene Siegel on 4/22/16.
@@ -83,8 +84,9 @@ public class Btcd extends Bitcoin {
 
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
+     * @param transactionHash
      */
-    synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    synchronized org.bitcoinj.core.Transaction getTransaction(TransactionHash transactionHash) throws IOException {
 
         org.bitcoinj.core.Transaction tx = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawtransaction\", \"params\":[\"" + transactionHash + "\"]}";
@@ -180,11 +182,7 @@ public class Btcd extends Bitcoin {
                 Context context = Context.getOrCreate(netParams);
                 int confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
                 boolean confirmed;
-                if (confirmations == 0) {
-                    confirmed = false;
-                } else {
-                    confirmed = true;
-                }
+                confirmed = confirmations != 0;
                 org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytearray);
                 Transaction tx = new Transaction(txid, bitTx, false, confirmed);
                 txList.add(tx);
@@ -293,7 +291,19 @@ public class Btcd extends Bitcoin {
         return true;
     }
 
+
+    //todo: fill me
     @Override
+    boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
+        return false;
+    }
+
+    //todo: fill or get rid of me
+    @Override
+    protected List<Transaction> getAddressTransactionsInner(String transactionHash, Long vout) throws IOException, CoinNetworkException, AddressFormatException {
+        return null;
+    }
+
     protected synchronized List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
         return getAddressTransactionsInner(address);
     }

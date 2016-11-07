@@ -9,7 +9,10 @@
 package com.shuffle.bitcoin.blockchain;
 
 import com.google.common.util.concurrent.RateLimiter;
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.impl.TransactionHash;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
@@ -27,7 +30,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
  *
- * Created by Constantin Vennekel on 25/7/16.
+ * Created by vnnkl on 25/7/16.
  *
  */
 
@@ -45,6 +48,28 @@ public final class BlockCypherDotCom extends Bitcoin {
 
    public BlockCypherDotCom(NetworkParameters netParams, int minPeers) {
       super(netParams, minPeers);
+   }
+
+   @Override
+   boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
+      rateLimiter.acquire();
+      String url;
+      if (netParams == NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
+         url = "https://api.blockcypher.com/v1/btc/test3/txs/" + transactionHash;
+      } else {
+         url = "https://api.blockcypher.com/v1/btc/main/txs/" + transactionHash;
+      }
+      URL obj = new URL(url);
+      rateLimiter.acquire();
+      JSONTokener tokener = new JSONTokener(obj.openStream());
+      JSONObject root = new JSONObject(tokener);
+      JSONObject output = (JSONObject) root.getJSONArray("outputs").get(vout);
+      return !output.has("spent_by");
+   }
+
+   @Override
+   protected List<Transaction> getAddressTransactionsInner(String transactionHash, Long vout) throws IOException, CoinNetworkException, AddressFormatException {
+      return null;
    }
 
 
@@ -124,8 +149,9 @@ public final class BlockCypherDotCom extends Bitcoin {
      * This function takes in a transaction hash and passes it to Blockchain.info's API.
      * After some formatting, it returns a bitcoinj Transaction object using this transaction hash.
      *
+     * @param transactionHash
      */
-    public synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    public synchronized org.bitcoinj.core.Transaction getTransaction(TransactionHash transactionHash) throws IOException {
         rateLimiter.acquire();
         String url;
         if (netParams==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)){

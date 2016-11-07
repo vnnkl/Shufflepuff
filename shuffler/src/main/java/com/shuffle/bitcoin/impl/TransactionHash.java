@@ -1,6 +1,5 @@
 package com.shuffle.bitcoin.impl;
 
-import com.sun.istack.internal.NotNull;
 
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Utils;
@@ -13,10 +12,19 @@ public class TransactionHash extends Sha256Hash {
    private final byte[] bytes;
    private final Sha256Hash hash;
 
-   public TransactionHash(@NotNull String string) {
+   public TransactionHash(String string) {
       super(string);
       this.hash = Sha256Hash.wrap(string);
       this.bytes = Utils.HEX.decode(string);
+      if (hash.equals(Sha256Hash.ZERO_HASH)) {
+         throw new RuntimeException("Created Hash of all 0s");
+      }
+   }
+
+   public TransactionHash(Sha256Hash hash) {
+      super(hash.toString());
+      this.hash = hash;
+      this.bytes = hash.getBytes();
       if (hash.equals(Sha256Hash.ZERO_HASH)) {
          throw new RuntimeException("Created Hash of all 0s");
       }

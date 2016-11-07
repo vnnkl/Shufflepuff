@@ -29,8 +29,8 @@ import com.shuffle.protocol.message.MessageFactory;
 import com.shuffle.protocol.message.Packet;
 import com.shuffle.protocol.message.Phase;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
 
 import java.io.IOException;
@@ -62,45 +62,423 @@ public class CoinShuffle {
     private static final Logger log = LogManager.getLogger(CoinShuffle.class);
 
     final Crypto crypto;
-
+    final MessageFactory messages;
     private final Coin coin;
 
-    final MessageFactory messages;
+    public CoinShuffle(
+          MessageFactory messages, // Object that knows how to create and copy messages.
+          Crypto crypto, // Connects to the cryptography.
+          Coin coin // Connects us to the Bitcoin or other cryptocurrency netork.
+    ) {
+        if (crypto == null || coin == null || messages == null) {
+            throw new NullPointerException();
+        }
+        this.crypto = crypto;
+        this.coin = coin;
+        this.messages = messages;
+    }
+
+    // Test whether a set of messages are equal.
+    static synchronized boolean areEqual(Iterable<Message> messages) {
+
+        Message last = null;
+        for (Message m : messages) {
+            if (last != null) {
+
+                boolean equal = last.equals(m);
+                if (!equal) {
+                    return false;
+                }
+            }
+
+            last = m;
+        }
+
+        return true;
+    }
+
+    // In phase 1, everybody announces their new encryption keys to one another. They also
+    // optionally send change addresses to one another. This function reads that information
+    // from a message and puts it in some nice data structures.
+    private static void readAnnouncements(Map<VerificationKey, Message> messages,
+                                          Map<VerificationKey, EncryptionKey> encryptionKeys,
+                                          Map<VerificationKey, Address> change) throws FormatException {
+
+        for (Map.Entry<VerificationKey, Message> entry : messages.entrySet()) {
+            VerificationKey key = entry.getKey();
+            Message message = entry.getValue();
+
+            encryptionKeys.put(key, message.readEncryptionKey());
+
+            message = message.rest();
+            if (!message.isEmpty()) {
+                change.put(key, message.readAddress());
+            }
+        }
+    }
+
+    // This function is only called by fillBlameMatrix to collect messages sent in
+    // phases 1, 2, and 3. and to organize the information appropriately.
+    // If the function returns false, this means that packets has an invalid format.
+    private static boolean fillBlameMatrixCollectHistory(
+          VerificationKey vk,
+          VerificationKey from,
+          Queue<Packet> packets,
+          Matrix matrix,
+          // The messages sent in the broadcast phase by the last player to all the other players.
+          Map<VerificationKey, Packet> outputVectors,
+          // The list of messages history in phase 2.
+          Map<VerificationKey, Packet> shuffleMessages,
+          // The keys received by everyone in the announcement phase.
+          Map<VerificationKey, EncryptionKey> receivedKeys,
+          // The keys sent by everyone in the announcement phase.
+          Map<VerificationKey, Map<VerificationKey, EncryptionKey>> sentKeys
+    ) throws FormatException {
+
+        if (packets == null) return false;
+        boolean validPacket = true;
+
+        // Collect all packets received in the appropriate place.
+        for (Packet packet : packets) {
+            switch (packet.phase()) {
+                case BroadcastOutput: {
+                    if (outputVectors.containsKey(from)) {
+
+                        // We should only ever receive one such message from each player.
+                        if (outputVectors.containsKey(from)
+                              && !outputVectors.get(from).equals(packet)) {
+
+                            log.error("Player " + vk.toString() + " null blames " + from.toString()
+                                  + ", case A; " + outputVectors.get(from).toString() + " != "
+                                  + packet.toString());
+                            matrix.put(vk, Evidence.Liar(from, new Packet[]{outputVectors.get(from), packet}));
+                        }
+                    } else {
+                        outputVectors.put(from, packet);
+                    }
+                    break;
+                }
+                case Announcement: {
+                    Map<VerificationKey, EncryptionKey> map = sentKeys.get(packet.from());
+                    if (map == null) {
+                        map = new HashMap<>();
+                        sentKeys.put(packet.from(), map);
+                    }
+
+                    EncryptionKey key = packet.payload().readEncryptionKey();
+                    map.put(from, key);
+                    receivedKeys.put(packet.from(), key);
+                    break;
+                }
+                case Shuffling: {
+                    if (shuffleMessages.containsKey(from) && !shuffleMessages.get(from).equals(packet)) {
+                        matrix.put(vk, Evidence.Liar(from, new Packet[]{shuffleMessages.get(from), packet}));
+                    } else {
+                        shuffleMessages.put(from, packet);
+                    }
+                    break;
+                }
+                default: {
+                    // This case should never happen.
+                    // It's not malicious but it's not allowed either.
+                    validPacket = false;
+                }
+            }
+        }
+
+        return validPacket;
+    }
+
+    private static Evidence checkShuffleMisbehavior(
+          Map<Integer, VerificationKey> players,
+          Map<VerificationKey, DecryptionKey> decryptionKeys,
+          Map<VerificationKey, Packet> shuffleMessages,
+          Map<VerificationKey, Packet> broadcastMessages) throws FormatException {
+
+        if (players == null || decryptionKeys == null
+              || shuffleMessages == null || broadcastMessages == null)
+            throw new NullPointerException();
+
+        SortedSet<String> outputs = new TreeSet<>();
+
+        // Go through the steps of shuffling messages.
+        for (int i = 1; i < players.size(); i++) {
+
+            Packet packet = shuffleMessages.get(players.get(i + 1));
+            if (packet == null) {
+                // TODO Blame a player for lying.
+
+                return null;
+            }
+
+            Message message = packet.payload();
+
+            // Grab the correct number of addresses and decrypt them.
+            SortedSet<String> decrypted = new TreeSet<>();
+            for (int j = 0; j < i; j++) {
+                if (message.isEmpty()) {
+                    return Evidence.ShuffleMisbehaviorDropAddress(
+                          players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
+                }
+
+                String address = message.readString();
+                message = message.rest();
+                for (int k = i + 1; k <= players.size(); k++) {
+                    address = decryptionKeys.get(players.get(k)).decrypt(address);
+                }
+
+                // There shouldn't be duplicates.
+                if (decrypted.contains(address)) {
+                    return Evidence.ShuffleMisbehaviorDropAddress(
+                          players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
+                }
+                decrypted.add(address);
+            }
+
+            // Does this contain all the previous addresses?
+            if (!decrypted.containsAll(outputs)) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                      players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+
+            decrypted.removeAll(outputs);
+
+            // There should be one new address.
+            if (decrypted.size() != 1) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                      players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+
+            outputs.add(decrypted.first());
+        }
+
+        // Now check the last set of messages from player N.
+        // All broadcast messages should have the same content and we should
+        // have already checked for this. Therefore we just look for the first
+        // one that is available.
+        // (The message for player 1 should always be available, so theoretically
+        // we don't need to loop through everybody, but who knows what might have happened.)
+        Packet packet = null;
+        for (int j = 1; j <= players.size(); j++) {
+            packet = broadcastMessages.get(players.get(j));
+
+            if (packet != null) {
+                break;
+            }
+        }
+
+        if (packet == null) {
+            // TODO blame someone.
+            return null;
+        }
+
+        Message message = packet.payload();
+
+        // Grab the correct number of addresses and decrypt them.
+        SortedSet<String> addresses = new TreeSet<>();
+        for (int j = 0; j < players.size(); j++) {
+            if (message.isEmpty()) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                      players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+
+            Address address = message.readAddress();
+
+            // There shouldn't be duplicates.
+            if (addresses.contains(address.toString())) {
+                return Evidence.ShuffleMisbehaviorDropAddress(
+                      players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+            }
+            addresses.add(address.toString());
+        }
+
+        // Does this contain all the previous addresses?
+        if (!addresses.containsAll(outputs)) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                  players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
+
+        addresses.removeAll(outputs);
+
+        // There should be one new address.
+        if (addresses.size() != 1) {
+            return Evidence.ShuffleMisbehaviorDropAddress(
+                  players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
+        }
+
+        return null;
+    }
+
+    // Algorithm to randomly shuffle the elements of a message.
+    final Message shuffle(Message message) throws FormatException {
+
+        Message shuffled = messages.make();
+
+        // Read all elements of the packet and insert them in a Queue.
+        Queue<String> old = new LinkedList<>();
+        int N = 0;
+        while (!message.isEmpty()) {
+            old.add(message.readString());
+            message = message.rest();
+            N++;
+        }
+
+        // Then successively and randomly select which one will be inserted until none remain.
+        for (int i = N; i > 0; i--) {
+            // Get a random number between 0 and N - 1 inclusive.
+            int n = crypto.getRandom(i - 1);
+
+            for (int j = 0; j < n; j++) {
+                old.add(old.remove());
+            }
+
+            // add the randomly selected element to the queue.
+            shuffled = shuffled.attach(old.remove());
+        }
+
+        return shuffled;
+    }
+
+    // Run the protocol without creating a new thread.
+    public Transaction runProtocol(
+          long amount, // The amount to be shuffled per player.
+          long fee, // The miner fee to be paid per player.
+          SigningKey sk, // The signing key of the current player.
+          // The set of players, sorted alphabetically by address.
+          SortedSet<VerificationKey> players,
+          Address addrNew, // My new (anonymous) address.
+          Address change, // Change address. (can be null)
+          // If this is not null, the machine is put in this channel so that another thread can
+          // query the phase as it runs.
+          Send<Phase> chan
+    ) throws TimeoutException, Matrix, InterruptedException, InvalidParticipantSetException,
+          FormatException, IOException, CoinNetworkException, ExecutionException, AddressFormatException {
+
+        if (amount <= 0) {
+            throw new IllegalArgumentException();
+        }
+        if (sk == null || players == null) {
+            throw new NullPointerException();
+        }
+
+        CurrentPhase machine;
+        if (chan == null) {
+            machine = new CurrentPhase();
+        } else {
+            machine = new CurrentPhase(chan);
+        }
+
+        // Get the initial ordering of the players.
+        int i = 1;
+        Map<Integer, VerificationKey> numberedPlayers = new TreeMap<>();
+        for (VerificationKey player : players) {
+            numberedPlayers.put(i, player);
+            i++;
+        }
+
+        // Make an inbox for the next round.
+        Mailbox mailbox = new Mailbox(
+              sk.VerificationKey(), numberedPlayers.values(), messages);
+
+        return this.new Round(
+              machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox
+        ).protocolDefinition();
+    }
+
+    /**
+     * The current phase of the protocol. Can be monitored from another thread.
+     * <p>
+     * Created by Daniel Krawisz on 2/8/16.
+     */
+    static class CurrentPhase {
+
+        private final Send<Phase> ch;
+        private Phase phase = Phase.Uninitiated;
+
+        public CurrentPhase() {
+            ch = null;
+        }
+
+        public CurrentPhase(Send<Phase> ch) throws InterruptedException, IOException {
+            if (ch == null) {
+                throw new NullPointerException();
+            }
+
+            this.ch = ch;
+            ch.send(Phase.Uninitiated);
+        }
+
+        // the phase can be accessed concurrently in case we want to update
+        // the user on how the protocol is going.
+        public Phase get() {
+            return phase;
+        }
+
+        public void set(Phase phase) throws InterruptedException, IOException {
+            this.phase = phase;
+            if (ch != null) {
+                ch.send(phase);
+            }
+        }
+    }
 
     // A single round of the protocol. It is possible that the players may go through
     // several failed rounds until they have eliminated malicious players.
     class Round {
-        final CurrentPhase phase;
-
-        private final long amount; // The amount to be shuffled.
-
-        private final long fee; // The miner fee to be paid per player.
-
-        final SigningKey sk; // My signing private key.
-
         public final int me; // Which player am I?
-
         public final Map<Integer, VerificationKey> players; // The players' public keys.
-
         public final int N; // The number of players.
-
         public final VerificationKey vk; // My verification public key, which is also my identity.
-
-        public DecryptionKey dk = null;
-
         // This will contain the new encryption public keys.
         public final Map<VerificationKey, EncryptionKey> encryptionKeys = new HashMap<>();
-
+        public final Address addrNew;
+        public final Address change; // My change address. (may be null).
+        public final Map<VerificationKey, Bytestring> signatures = new HashMap<>();
+        public final Mailbox mailbox;
+        final CurrentPhase phase;
+        final SigningKey sk; // My signing private key.
+        private final long amount; // The amount to be shuffled.
+        private final long fee; // The miner fee to be paid per player.
+        public DecryptionKey dk = null;
         // The set of new addresses into which the coins will be deposited.
         public Queue<Address> newAddresses = null;
 
-        public final Address addrNew;
+        // A round is a single run of the protocol.
+        Round(CurrentPhase phase,
+              long amount,
+              long fee,
+              SigningKey sk,
+              Map<Integer, VerificationKey> players,
+              Address addrNew,
+              Address change,
+              Mailbox mailbox) throws InvalidParticipantSetException {
 
-        public final Address change; // My change address. (may be null).
+            this.phase = phase;
+            this.amount = amount;
+            this.fee = fee;
+            this.sk = sk;
+            this.players = players;
+            this.change = change;
+            vk = sk.VerificationKey();
+            this.mailbox = mailbox;
+            this.addrNew = addrNew;
 
-        public final Map<VerificationKey, Bytestring> signatures = new HashMap<>();
+            int m = -1;
+            N = players.size();
 
-        public final Mailbox mailbox;
+            // Determine what my index number is.
+            for (int i = 1; i <= N; i++) {
+                if (players.get(i).equals(vk)) {
+                    m = i;
+                    break;
+                }
+            }
+            me = m;
+
+            if (me < 0) {
+                throw new InvalidParticipantSetException(vk, players);
+            }
+        }
 
         Transaction protocolDefinition(
         ) throws TimeoutException, Matrix, InterruptedException,
@@ -476,8 +854,13 @@ public class CoinShuffle {
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
+            //todo: change from Address to UTXO array
             for (VerificationKey player : players.values()) {
-                if (!coin.sufficientFunds(player.address(), amount + fee)) {
+                //get utxos of player
+                //TransactionHash transactionHash utxoTxHash = players.get(vk).address();
+                //todo: fill me
+                //check that all utxos (player.utxos() ?) provided belong to a verification key of player, sum these up then.
+                if (!coin.sufficientFunds(null, null, 0)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }
@@ -857,400 +1240,6 @@ public class CoinShuffle {
             System.out.println("  Player " + me + "'s equivocation check hash " + check);
 
             return check.hashed();
-        }
-
-        // A round is a single run of the protocol.
-        Round(  CurrentPhase phase,
-                long amount,
-                long fee,
-                SigningKey sk,
-                Map<Integer, VerificationKey> players,
-                Address addrNew,
-                Address change,
-                Mailbox mailbox) throws InvalidParticipantSetException {
-
-            this.phase = phase;
-            this.amount = amount;
-            this.fee = fee;
-            this.sk = sk;
-            this.players = players;
-            this.change = change;
-            vk = sk.VerificationKey();
-            this.mailbox = mailbox;
-            this.addrNew = addrNew;
-
-            int m = -1;
-            N = players.size();
-
-            // Determine what my index number is.
-            for (int i = 1; i <= N; i++) {
-                if (players.get(i).equals(vk)) {
-                    m = i;
-                    break;
-                }
-            }
-            me = m;
-
-            if (me < 0) {
-                throw new InvalidParticipantSetException(vk, players);
-            }
-        }
-    }
-
-    // Algorithm to randomly shuffle the elements of a message.
-    final Message shuffle(Message message) throws FormatException {
-
-        Message shuffled = messages.make();
-
-        // Read all elements of the packet and insert them in a Queue.
-        Queue<String> old = new LinkedList<>();
-        int N = 0;
-        while (!message.isEmpty()) {
-            old.add(message.readString());
-            message = message.rest();
-            N++;
-        }
-
-        // Then successively and randomly select which one will be inserted until none remain.
-        for (int i = N; i > 0; i--) {
-            // Get a random number between 0 and N - 1 inclusive.
-            int n = crypto.getRandom(i - 1);
-
-            for (int j = 0; j < n; j++) {
-                old.add(old.remove());
-            }
-
-            // add the randomly selected element to the queue.
-            shuffled = shuffled.attach(old.remove());
-        }
-
-        return shuffled;
-    }
-
-    // Test whether a set of messages are equal.
-    static synchronized boolean areEqual(Iterable<Message> messages) {
-
-        Message last = null;
-        for (Message m : messages) {
-            if (last != null) {
-
-                boolean equal = last.equals(m);
-                if (!equal) {
-                    return false;
-                }
-            }
-
-            last = m;
-        }
-
-        return true;
-    }
-
-    // In phase 1, everybody announces their new encryption keys to one another. They also
-    // optionally send change addresses to one another. This function reads that information
-    // from a message and puts it in some nice data structures.
-    private static void readAnnouncements(Map<VerificationKey, Message> messages,
-                           Map<VerificationKey, EncryptionKey> encryptionKeys,
-                           Map<VerificationKey, Address> change) throws FormatException {
-
-        for (Map.Entry<VerificationKey, Message> entry : messages.entrySet()) {
-            VerificationKey key = entry.getKey();
-            Message message = entry.getValue();
-
-            encryptionKeys.put(key, message.readEncryptionKey());
-
-            message = message.rest();
-            if (!message.isEmpty()) {
-                change.put(key, message.readAddress());
-            }
-        }
-    }
-
-    // This function is only called by fillBlameMatrix to collect messages sent in
-    // phases 1, 2, and 3. and to organize the information appropriately.
-    // If the function returns false, this means that packets has an invalid format.
-    private static boolean fillBlameMatrixCollectHistory(
-            VerificationKey vk,
-            VerificationKey from,
-            Queue<Packet> packets,
-            Matrix matrix,
-            // The messages sent in the broadcast phase by the last player to all the other players.
-            Map<VerificationKey, Packet> outputVectors,
-             // The list of messages history in phase 2.
-            Map<VerificationKey, Packet> shuffleMessages,
-            // The keys received by everyone in the announcement phase.
-            Map<VerificationKey, EncryptionKey> receivedKeys,
-            // The keys sent by everyone in the announcement phase.
-            Map<VerificationKey, Map<VerificationKey, EncryptionKey>> sentKeys
-    ) throws FormatException {
-
-        if (packets == null) return false;
-        boolean validPacket = true;
-
-        // Collect all packets received in the appropriate place.
-        for (Packet packet : packets) {
-            switch (packet.phase()) {
-                case BroadcastOutput: {
-                    if (outputVectors.containsKey(from)) {
-
-                        // We should only ever receive one such message from each player.
-                        if (outputVectors.containsKey(from)
-                                && !outputVectors.get(from).equals(packet)) {
-
-                            log.error("Player " + vk.toString() + " null blames " + from.toString()
-                                    + ", case A; " + outputVectors.get(from).toString() + " != "
-                                    + packet.toString());
-                            matrix.put(vk, Evidence.Liar(from, new Packet[]{outputVectors.get(from), packet}));
-                        }
-                    } else {
-                        outputVectors.put(from, packet);
-                    }
-                    break;
-                }
-                case Announcement: {
-                    Map<VerificationKey, EncryptionKey> map = sentKeys.get(packet.from());
-                    if (map == null) {
-                        map = new HashMap<>();
-                        sentKeys.put(packet.from(), map);
-                    }
-
-                    EncryptionKey key = packet.payload().readEncryptionKey();
-                    map.put(from, key);
-                    receivedKeys.put(packet.from(), key);
-                    break;
-                }
-                case Shuffling: {
-                    if (shuffleMessages.containsKey(from) && !shuffleMessages.get(from).equals(packet)) {
-                        matrix.put(vk, Evidence.Liar(from, new Packet[]{shuffleMessages.get(from), packet}));
-                    } else {
-                        shuffleMessages.put(from, packet);
-                    }
-                    break;
-                }
-                default: {
-                    // This case should never happen.
-                    // It's not malicious but it's not allowed either.
-                    validPacket = false;
-                }
-            }
-        }
-
-        return validPacket;
-    }
-
-    private static Evidence checkShuffleMisbehavior(
-            Map<Integer, VerificationKey> players,
-            Map<VerificationKey, DecryptionKey> decryptionKeys,
-            Map<VerificationKey, Packet> shuffleMessages,
-            Map<VerificationKey, Packet> broadcastMessages) throws FormatException {
-
-        if (players == null || decryptionKeys == null
-                || shuffleMessages == null || broadcastMessages == null)
-            throw new NullPointerException();
-
-        SortedSet<String> outputs = new TreeSet<>();
-
-        // Go through the steps of shuffling messages.
-        for (int i = 1; i < players.size(); i++) {
-
-            Packet packet = shuffleMessages.get(players.get(i + 1));
-            if (packet == null) {
-                // TODO Blame a player for lying.
-
-                return null;
-            }
-
-            Message message = packet.payload();
-
-            // Grab the correct number of addresses and decrypt them.
-            SortedSet<String> decrypted = new TreeSet<>();
-            for (int j = 0; j < i; j++) {
-                if (message.isEmpty()) {
-                    return Evidence.ShuffleMisbehaviorDropAddress(
-                            players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
-                }
-
-                String address = message.readString();
-                message = message.rest();
-                for (int k = i + 1; k <= players.size(); k++) {
-                    address = decryptionKeys.get(players.get(k)).decrypt(address);
-                }
-
-                // There shouldn't be duplicates.
-                if (decrypted.contains(address)) {
-                    return Evidence.ShuffleMisbehaviorDropAddress(
-                            players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
-                }
-                decrypted.add(address);
-            }
-
-            // Does this contain all the previous addresses?
-            if (!decrypted.containsAll(outputs)) {
-                return Evidence.ShuffleMisbehaviorDropAddress(
-                        players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
-            }
-
-            decrypted.removeAll(outputs);
-
-            // There should be one new address.
-            if (decrypted.size() != 1) {
-                return Evidence.ShuffleMisbehaviorDropAddress(
-                        players.get(i), decryptionKeys, shuffleMessages, broadcastMessages);
-            }
-
-            outputs.add(decrypted.first());
-        }
-
-        // Now check the last set of messages from player N.
-        // All broadcast messages should have the same content and we should
-        // have already checked for this. Therefore we just look for the first
-        // one that is available.
-        // (The message for player 1 should always be available, so theoretically
-        // we don't need to loop through everybody, but who knows what might have happened.)
-        Packet packet = null;
-        for (int j = 1; j <= players.size(); j++) {
-            packet = broadcastMessages.get(players.get(j));
-
-            if (packet != null) {
-                break;
-            }
-        }
-
-        if (packet == null) {
-            // TODO blame someone.
-            return null;
-        }
-
-        Message message = packet.payload();
-
-        // Grab the correct number of addresses and decrypt them.
-        SortedSet<String> addresses = new TreeSet<>();
-        for (int j = 0; j < players.size(); j++) {
-            if (message.isEmpty()) {
-                return Evidence.ShuffleMisbehaviorDropAddress(
-                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
-            }
-
-            Address address = message.readAddress();
-
-            // There shouldn't be duplicates.
-            if (addresses.contains(address.toString())) {
-                return Evidence.ShuffleMisbehaviorDropAddress(
-                        players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
-            }
-            addresses.add(address.toString());
-        }
-
-        // Does this contain all the previous addresses?
-        if (!addresses.containsAll(outputs)) {
-            return Evidence.ShuffleMisbehaviorDropAddress(
-                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
-        }
-
-        addresses.removeAll(outputs);
-
-        // There should be one new address.
-        if (addresses.size() != 1) {
-            return Evidence.ShuffleMisbehaviorDropAddress(
-                    players.get(players.size()), decryptionKeys, shuffleMessages, broadcastMessages);
-        }
-
-        return null;
-    }
-
-    // Run the protocol without creating a new thread.
-    public Transaction runProtocol(
-            long amount, // The amount to be shuffled per player.
-            long fee, // The miner fee to be paid per player.
-            SigningKey sk, // The signing key of the current player.
-            // The set of players, sorted alphabetically by address.
-            SortedSet<VerificationKey> players,
-            Address addrNew, // My new (anonymous) address.
-            Address change, // Change address. (can be null)
-            // If this is not null, the machine is put in this channel so that another thread can
-            // query the phase as it runs.
-            Send<Phase> chan
-    ) throws TimeoutException, Matrix, InterruptedException, InvalidParticipantSetException,
-            FormatException, IOException, CoinNetworkException, ExecutionException, AddressFormatException {
-
-        if (amount <= 0) {
-            throw new IllegalArgumentException();
-        }
-        if (sk == null || players == null) {
-            throw new NullPointerException();
-        }
-
-        CurrentPhase machine;
-        if (chan == null) {
-            machine = new CurrentPhase();
-        } else {
-            machine = new CurrentPhase(chan);
-        }
-
-        // Get the initial ordering of the players.
-        int i = 1;
-        Map<Integer, VerificationKey> numberedPlayers = new TreeMap<>();
-        for (VerificationKey player : players) {
-            numberedPlayers.put(i, player);
-            i++;
-        }
-
-        // Make an inbox for the next round.
-        Mailbox mailbox = new Mailbox(
-                sk.VerificationKey(), numberedPlayers.values(), messages);
-
-        return this.new Round(
-                machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox
-        ).protocolDefinition();
-    }
-
-    public CoinShuffle(
-            MessageFactory messages, // Object that knows how to create and copy messages.
-            Crypto crypto, // Connects to the cryptography.
-            Coin coin // Connects us to the Bitcoin or other cryptocurrency netork.
-    ) {
-        if (crypto == null || coin == null || messages == null) {
-            throw new NullPointerException();
-        }
-        this.crypto = crypto;
-        this.coin = coin;
-        this.messages = messages;
-    }
-
-    /**
-     * The current phase of the protocol. Can be monitored from another thread.
-     *
-     * Created by Daniel Krawisz on 2/8/16.
-     */
-    static class CurrentPhase {
-
-        private final Send<Phase> ch;
-        private Phase phase = Phase.Uninitiated;
-
-        // the phase can be accessed concurrently in case we want to update
-        // the user on how the protocol is going.
-        public Phase get() {
-            return phase;
-        }
-
-        public void set(Phase phase) throws InterruptedException, IOException {
-            this.phase = phase;
-            if (ch != null) {
-                ch.send(phase);
-            }
-        }
-
-        public CurrentPhase() {
-            ch = null;
-        }
-
-        public CurrentPhase(Send<Phase> ch) throws InterruptedException, IOException {
-            if (ch == null) {
-                throw new NullPointerException();
-            }
-
-            this.ch = ch;
-            ch.send(Phase.Uninitiated);
         }
     }
 }
