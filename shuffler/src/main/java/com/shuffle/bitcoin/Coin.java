@@ -8,8 +8,6 @@
 
 package com.shuffle.bitcoin;
 
-import com.shuffle.bitcoin.impl.TransactionHash;
-
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.TransactionOutPoint;
 
@@ -39,7 +37,7 @@ public interface Coin {
 
     // Returns true if the address follows the correct format for CoinShuffle.
     // Returns false otherwise.
-    boolean sufficientFunds(TransactionHash transactionHash, Integer vout, long amount) throws CoinNetworkException, IOException;
+    boolean sufficientFunds(TransactionOutPoint transactionOutPoint, long amount) throws CoinNetworkException, IOException;
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.

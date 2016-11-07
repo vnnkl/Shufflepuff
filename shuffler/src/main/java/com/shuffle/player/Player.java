@@ -15,7 +15,6 @@ import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.impl.TransactionHash;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
 import com.shuffle.chan.packet.Packet;
@@ -367,8 +366,7 @@ class Player {
                 // funds will be 0 because valueHeld is messed up
                 long funds = coin.valueHeld(utxo);
                 // if (funds < amount) {
-                TransactionHash txHash = new TransactionHash(utxo.getHash());
-                if (!coin.sufficientFunds(txHash, Math.toIntExact(utxo.getIndex()), funds)) {
+                if (!coin.sufficientFunds(utxo, funds)) {
                     connect.close();
                     return Report.invalidInitialState("Insufficient funds! Address " + addr + " holds only " + funds + "; need at least " + amount);
                 }

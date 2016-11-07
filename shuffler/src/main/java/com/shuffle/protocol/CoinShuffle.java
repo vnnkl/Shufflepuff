@@ -860,7 +860,7 @@ public class CoinShuffle {
                 //TransactionHash transactionHash utxoTxHash = players.get(vk).address();
                 //todo: fill me
                 //check that all utxos (player.utxos() ?) provided belong to a verification key of player, sum these up then.
-                if (!coin.sufficientFunds(null, null, 0)) {
+                if (!coin.sufficientFunds(player.address(), 0)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }

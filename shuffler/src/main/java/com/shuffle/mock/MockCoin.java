@@ -14,7 +14,6 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.impl.TransactionHash;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
@@ -307,7 +306,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
     //todo: fill me
     @Override
-    public boolean sufficientFunds(TransactionHash transactionHash, Integer vout, long amount) throws CoinNetworkException, IOException {
+    public boolean sufficientFunds(TransactionOutPoint transactionOutPoint, long amount) throws CoinNetworkException, IOException {
         return false;
     }
 

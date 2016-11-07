@@ -13,7 +13,6 @@ import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.impl.TransactionHash;
 
 import org.bitcoinj.core.TransactionOutPoint;
 
@@ -57,7 +56,7 @@ public class TransactionMutator implements Coin {
 
     //todo: fill me
     @Override
-    public boolean sufficientFunds(TransactionHash transactionHash, Integer vout, long amount) throws CoinNetworkException, IOException {
+    public boolean sufficientFunds(TransactionOutPoint transactionOutPoint, long amount) throws CoinNetworkException, IOException {
         return false;
     }
 

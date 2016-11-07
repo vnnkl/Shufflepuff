@@ -210,10 +210,10 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public final boolean sufficientFunds(TransactionHash transactionHash, Integer vout, long amount) throws CoinNetworkException, IOException {
+    public final boolean sufficientFunds(TransactionOutPoint transactionOutPoint, long amount) throws CoinNetworkException, IOException {
 
         //
-        TransactionOutput transaction = getTransaction(transactionHash).getOutput(vout.longValue());
+        TransactionOutput transaction = getTransaction(transactionOutPoint).getOutput(vout.longValue());
         return transaction.getValue().getValue() <= amount;
 
     }
