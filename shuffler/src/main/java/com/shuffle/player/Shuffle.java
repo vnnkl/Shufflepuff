@@ -656,9 +656,9 @@ public class Shuffle {
                     throw new IllegalArgumentException("Could not read option " + o.get("port") + " as string.");
                 }
                 try {
-                    utxos = (String) o.get("utxoList");
+                    utxos = (String) o.get("utxos");
                 } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + o.get("utxoList") + " as string.");
+                    throw new IllegalArgumentException("Could not read option " + o.get("utxos") + " as string.");
                 }
 
                 JSONArray jsonUtxos = readJSONArray(utxos);
@@ -738,6 +738,47 @@ public class Shuffle {
                 throw new IllegalArgumentException("Missing option 'utxos'.");
             }
 
+            String key, anon, change, utxos;
+            Long port;
+            try {
+                key = (String) options.valueOf("key");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read option " + options.valueOf("key") + " as string.");
+            }
+            try {
+                anon = (String) options.valueOf("anon");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read option " + options.valueOf("anon") + " as string.");
+            }
+            try {
+                change = (String) options.valueOf("change");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read option " + options.valueOf("change") + " as string.");
+            }
+            try {
+                port = (Long) options.valueOf("port");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read option " + options.valueOf("port") + " as string.");
+            }
+            try {
+                utxos = (String) options.valueOf("utxos");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read option " + options.valueOf("utxos") + " as string.");
+            }
+
+            if (key == null) {
+                throw new IllegalArgumentException("Player missing field \"key\".");
+            }
+            if (anon == null) {
+                throw new IllegalArgumentException("Player missing field \"anon\".");
+            }
+            if (port == null) {
+                throw new IllegalArgumentException("Player missing field \"port\".");
+            }
+            if (utxos == null) {
+                throw new IllegalArgumentException("Player missing field \"utxos\".");
+            }
+
             // Get our UTXOs
             JSONArray jsonUtxos = readJSONArray((String)options.valueOf("utxos"));
             if (jsonUtxos == null) {
@@ -757,7 +798,6 @@ public class Shuffle {
                 // Long because we compare to null
                 Long vout;
                 Sha256Hash transactionHash;
-                String key;
                 try {
                     vout = (Long) o.get("vout");
                 } catch (ClassCastException e) {
@@ -768,11 +808,6 @@ public class Shuffle {
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("transactionHash") + " as string");
                 }
-                try {
-                    key = (String) o.get("key");
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + o.get("key") + " as string.");
-                }
 
                 if (vout == null) {
                     throw new IllegalArgumentException("Utxo missing field \"vout\".");
@@ -780,44 +815,30 @@ public class Shuffle {
                 if (transactionHash == null) {
                     throw new IllegalArgumentException("Utxo missing field \"transactionHash\".");
                 }
-                if (key == null) {
-                    throw new IllegalArgumentException("Utxo missing field \"key\".");
-                }
                 // Error if vout / transactionHash not in correct format.
                 TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
                 // The key that can sign the TransactionOutput specified by TransactionOutPoint
-                VerificationKey vk = new VerificationKeyImpl(key, netParams);
                 if (checkDuplicateUtxo.contains(t)) {
                     throw new IllegalArgumentException("Duplicate TransactionOutPoint.");
                 } else {
                     checkDuplicateUtxo.add(t);
                 }
-
-                TransactionOutPointKey tk = new TransactionOutPointKey(t, vk);
-                if (utxoList.contains(tk)) {
-                    throw new IllegalArgumentException("Duplicate TransactionOutPointKey " + tk);
-                }
-                utxoList.add(tk);
             }
 
-            // TODO
-            // local utxoList
-            String anon = (String)options.valueOf("anon");
-            Long port = (Long)options.valueOf("port");
             if (!options.has("change")) {
-                this.local.add(readPlayer(options, 1, port, anon, null, m));
+                this.local.add(readPlayer(options, key, 1, checkDuplicateUtxo, port, anon, null, m));
             } else {
-                this.local.add(readPlayer(options, 1, port, anon, (String)options.valueOf("change"), m));
+                this.local.add(readPlayer(options, key, 1, checkDuplicateUtxo, port, anon, change, m));
             }
         }
 
     }
 
-    // TODO
-    // use the UTXO list in here.
     private Player readPlayer(
             OptionSet options,
+            String key,
             int id,
+            SortedSet<TransactionOutPoint> utxos,
             long port,
             String anon,
             String change,
