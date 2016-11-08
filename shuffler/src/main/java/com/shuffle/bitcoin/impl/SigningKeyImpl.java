@@ -1,7 +1,6 @@
 package com.shuffle.bitcoin.impl;
 
 import com.shuffle.bitcoin.SigningKey;
-import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.AddressFormatException;
@@ -83,7 +82,7 @@ public class SigningKeyImpl implements SigningKey {
    }
 
    @Override
-   public VerificationKey VerificationKey() {
+   public VerificationKeyImpl VerificationKey() {
       return vk;
    }
 

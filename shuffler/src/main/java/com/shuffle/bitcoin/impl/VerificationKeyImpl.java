@@ -7,8 +7,10 @@ import com.shuffle.p2p.Bytestring;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.TransactionOutPoint;
 import org.bouncycastle.util.encoders.Hex;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -16,10 +18,11 @@ import java.util.Arrays;
  */
 public class VerificationKeyImpl implements VerificationKey {
 
+   public final Address address;
    private final ECKey ecKey;
    private final byte[] vKey;
    private final NetworkParameters params;
-   public final Address address;
+   public ArrayList<TransactionOutPoint> utxoList = new ArrayList<>();
 
    public VerificationKeyImpl(byte[] ecKey, NetworkParameters params) {
       this.ecKey = ECKey.fromPublicOnly(ecKey);
@@ -35,6 +38,26 @@ public class VerificationKeyImpl implements VerificationKey {
       this.vKey = this.ecKey.getPubKey();
       this.params = params;
       this.address = new AddressImpl(this.ecKey.toAddress(params));
+   }
+
+   public ArrayList<TransactionOutPoint> getUtxoList() {
+      return utxoList;
+   }
+
+   public void setUtxoList(ArrayList<TransactionOutPoint> utxoList) {
+      this.utxoList = utxoList;
+   }
+
+   public boolean addOutpoutToUtxoList(TransactionOutPoint outPoint) {
+      return this.utxoList.add(outPoint);
+   }
+
+   public boolean removeOutpoutFromUtxoList(TransactionOutPoint outPoint) {
+      return this.utxoList.remove(outPoint);
+   }
+
+   public boolean removeOutpoutFromUtxoList(Integer index) {
+      return this.utxoList.remove(index);
    }
 
    // returns PublicKey compressed, 66 chars
