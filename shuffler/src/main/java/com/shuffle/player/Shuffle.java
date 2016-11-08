@@ -24,6 +24,7 @@ import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockProtobuf;
+import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
@@ -158,18 +159,21 @@ public class Shuffle {
                 .withRequiredArg()
                 .ofType(String.class);
 
+        OptionSpecBuilder key = parser.acceptsAll(Arrays.asList("k", "key"), "Your private key.");
         OptionSpecBuilder port = parser.accepts("port", "Port on which to listen for connections.");
         OptionSpecBuilder change = parser.accepts("change", "Your change address. Optional.");
         OptionSpecBuilder anon = parser.accepts("anon", "A Bitcoin address to which the anonymized coins are sent.");
-        OptionSpecBuilder utxos = parser.acceptsAll(Arrays.asList("u", "utxoList"), "The list of utxos we will spend from, formatted as a JSON array.");
+        OptionSpecBuilder utxos = parser.acceptsAll(Arrays.asList("u", "utxos"), "The list of utxos we will spend from, formatted as a JSON array.");
 
         if (TEST_MODE) {
+            key.requiredUnless("local");
             port.requiredUnless("local");
             change.requiredUnless("local");
             anon.requiredUnless("local");
             utxos.requiredUnless("local");
         }
 
+        key.withRequiredArg().ofType(String.class);
         port.withRequiredArg().ofType(Long.class);
         change.withRequiredArg().ofType(String.class);
         anon.withRequiredArg().ofType(String.class);
@@ -206,12 +210,11 @@ public class Shuffle {
     public final Bytestring session;
     public final Crypto crypto;
     Set<Player> local = new HashSet<>();
+    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
     // TODO
-    // One peer can have multiple TransactionOutPoints, so the <key,value> ordering is altered here.
-    Map<Either<InetSocketAddress, Integer>, Set<TransactionOutPoint>> peers = new HashMap<>();
-    // TODO
-    // TransactionOutPointKey contains {TransactionOutPoint, VerificationKey}
-    Set<TransactionOutPointKey> utxoList = new HashSet<>();
+    // Combine this with `peers`?
+    Map<VerificationKey, Set> utxos = new HashMap<>();
+    SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
     public final ExecutorService executor;
@@ -467,8 +470,6 @@ public class Shuffle {
             throw new IllegalArgumentException("Could not read " + options.valueOf("peers") + " as json array.");
         }
 
-        // TODO
-        // Store each peer's utxoList in "peers"
         SortedSet<String> checkDuplicateAddress = new TreeSet<>();
         for (int i = 1; i <= jsonPeers.size(); i ++) {
             JSONObject o;
@@ -479,30 +480,48 @@ public class Shuffle {
                         + jsonPeers.get(i - 1) + " as json object.");
             }
 
-            String addr, utxos;
+            String key, addr, utxos;
 
+            // TODO
+            // Change addr to tcpaddr
+            // So far addr is only TCP
+            try {
+                key = (String) o.get("key");
+            } catch (ClassCastException e) {
+                throw new IllegalArgumentException("Could not read " + o.get("key") + " as string.");
+            }
             try {
                 addr = (String) o.get("address");
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("Could not read " + o.get("address") + " as string.");
             }
             try {
-                utxos = (String) o.get("utxoList");
+                utxos = (String) o.get("utxos");
             } catch (ClassCastException e) {
-                throw new IllegalArgumentException("Could not read " + o.get("utxoList") + " as string.");
+                throw new IllegalArgumentException("Could not read " + o.get("utxos") + " as string.");
             }
 
+            if (key == null) {
+                throw new IllegalArgumentException("Peer missing filed \"key\".");
+            }
             if (addr == null) {
                 throw new IllegalArgumentException("Peer missing field \"address\".");
             }
             if (utxos == null) {
-                throw new IllegalArgumentException("Peer missing field \"utxoList\".");
+                throw new IllegalArgumentException("Peer missing field \"utxos\".");
             }
 
             if (checkDuplicateAddress.contains(addr)) {
                 throw new IllegalArgumentException("Duplicate address.");
             } else {
                 checkDuplicateAddress.add(addr);
+            }
+
+            VerificationKey vk;
+            if (TEST_MODE && mockCrypto) {
+                vk = new MockVerificationKey(Integer.parseInt(key));
+            } else {
+                vk = new VerificationKeyImpl(key, netParams);
             }
 
             // Try to read address as host:port.
@@ -520,13 +539,13 @@ public class Shuffle {
             InetSocketAddress tcp = new InetSocketAddress(parts[0], port);
             Either<InetSocketAddress, Integer> address = new Either<>(tcp, null);
 
-            if (peers.containsKey(address)) {
-                throw new IllegalArgumentException("Duplicate address " + address);
+            if (peers.containsKey(key)) {
+                throw new IllegalArgumentException("Duplicate key " + key);
             }
 
             JSONArray jsonUtxos = readJSONArray(utxos);
             if (jsonUtxos == null) {
-                throw new IllegalArgumentException("Could not read " + o.get("utxoList") + " as json array.");
+                throw new IllegalArgumentException("Could not read " + o.get("utxos") + " as json array.");
             }
 
             SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
@@ -561,16 +580,15 @@ public class Shuffle {
                 // Error if vout / transactionHash not in correct format.
                 TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
                 if (checkDuplicateUtxo.contains(t)) {
-                    throw new IllegalArgumentException("Duplicate TransactionOutPoint.");
+                    throw new IllegalArgumentException("Duplicate TransactionOutPoint " + t);
                 } else {
                     checkDuplicateUtxo.add(t);
                 }
             }
 
-            // TODO
-            // Is checkDuplicateUtxo safe to use as a Set<TransactionOutPoint>?
-            // Probably...
-            peers.put(address, checkDuplicateUtxo);
+            this.peers.put(vk, address);
+            this.utxos.put(vk, checkDuplicateUtxo);
+            this.keys.add(vk);
         }
 
         executor = Executors.newFixedThreadPool(10);
@@ -578,6 +596,9 @@ public class Shuffle {
         // Get information for this player. (In test mode, one node
         // may run more than one player.)
         if (TEST_MODE && options.has("local")) {
+            if (options.has("key")) {
+                throw new IllegalArgumentException("Option 'key' not needed when 'local' is defined.");
+            }
             if (options.has("change")) {
                 throw new IllegalArgumentException("Option 'change' not needed when 'local' is defined.");
             }
@@ -587,12 +608,10 @@ public class Shuffle {
             if (options.has("port")) {
                 throw new IllegalArgumentException("Option 'port' not needed when 'local' is defined.");
             }
-            if (options.has("utxoList")) {
-                throw new IllegalArgumentException("Option 'utxoList' not needed when 'local' is defined");
+            if (options.has("utxos")) {
+                throw new IllegalArgumentException("Option 'utxos' not needed when 'local' is defined");
             }
 
-            // TODO
-            // UtxoList
             JSONArray local = readJSONArray((String)options.valueOf("local"));
             if (local == null) {
                 throw new IllegalArgumentException("Could not read " + options.valueOf("local") + " as json array.");
@@ -614,8 +633,13 @@ public class Shuffle {
                             + local.get(i - 1) + " as json object.");
                 }
 
-                String anon, change, utxos;
+                String key, anon, change, utxos;
                 Long port;
+                try {
+                    key = (String) o.get("key");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("key") + " as string.");
+                }
                 try {
                     anon = (String) o.get("anon");
                 } catch (ClassCastException e) {
@@ -639,6 +663,9 @@ public class Shuffle {
 
                 JSONArray jsonUtxos = readJSONArray(utxos);
 
+                if (key == null) {
+                    throw new IllegalArgumentException("Player missing field \"key\".");
+                }
                 if (anon == null) {
                     throw new IllegalArgumentException("Player missing field \"anon\".");
                 }
@@ -646,15 +673,12 @@ public class Shuffle {
                     throw new IllegalArgumentException("Player missing field \"port\".");
                 }
                 if (utxos == null) {
-                    throw new IllegalArgumentException("Player missing field \"utxoList\".");
+                    throw new IllegalArgumentException("Player missing field \"utxos\".");
                 }
 
                 if (jsonUtxos == null) {
-                    throw new IllegalArgumentException("Could not read " + o.get("utxoList") + " as json array.");
+                    throw new IllegalArgumentException("Could not read " + o.get("utxos") + " as json array.");
                 }
-
-                // TODO
-                // Parse local peer utxoList
 
                 SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
                 for (int j = 1; j <= jsonUtxos.size(); j++) {
@@ -692,31 +716,32 @@ public class Shuffle {
                     } else {
                         checkDuplicateUtxo.add(t);
                     }
-                    // TODO
-                    // store in some "local" list
                 }
 
-                this.local.add(readPlayer(options, i, port, anon, change, m));
+                this.local.add(readPlayer(options, key, i, checkDuplicateUtxo, port, anon, change, m));
             }
         } else {
             if (jsonPeers.size() == 0) {
                 throw new IllegalArgumentException("At least one other player must be specified.");
             }
 
+            if (!options.has("key")) {
+                throw new IllegalArgumentException("Missing option 'key'.");
+            }
             if (!options.has("anon")) {
                 throw new IllegalArgumentException("Missing option 'anon'.");
             }
             if (!options.has("port")) {
                 throw new IllegalArgumentException("Missing option 'port'.");
             }
-            if (!options.has("utxoList")) {
-                throw new IllegalArgumentException("Missing option 'utxoList'.");
+            if (!options.has("utxos")) {
+                throw new IllegalArgumentException("Missing option 'utxos'.");
             }
 
             // Get our UTXOs
-            JSONArray jsonUtxos = readJSONArray((String)options.valueOf("utxoList"));
+            JSONArray jsonUtxos = readJSONArray((String)options.valueOf("utxos"));
             if (jsonUtxos == null) {
-                throw new IllegalArgumentException("Could not read " + options.valueOf("utxoList") + " as json array.");
+                throw new IllegalArgumentException("Could not read " + options.valueOf("utxos") + " as json array.");
             }
 
             SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
