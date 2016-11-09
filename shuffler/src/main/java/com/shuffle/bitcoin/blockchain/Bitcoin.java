@@ -185,7 +185,7 @@ public abstract class Bitcoin implements Coin {
         for (TransactionOutPoint t : utxos) {
             try {
                 sum += getUtxoBalance(t);
-            } catch (IOException e) {
+            } catch (IOException | BitcoindException | CommunicationException e) {
                 throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
             }
         }
@@ -202,35 +202,26 @@ public abstract class Bitcoin implements Coin {
 
     protected synchronized long getUtxoBalance(TransactionOutPoint t) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
 
-        return 0;
-        /*
-        TransactionOutput tx = getTransaction(transactionHash).getOutput(vout);
-        if (isUtxo(transactionHash, vout)) {
+        TransactionOutput tx = getTransaction(t.getHash().toString()).getOutput(t.getIndex());
+        if (isUtxo(tx.getHash().toString(), tx.getIndex())) {
             return tx.getValue().getValue();
         } else {
             return 0;
         }
-        */
+
     }
 
     @Override
     public final boolean sufficientFunds(SortedSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException, IOException {
 
-        return false;
+        List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
 
-        //
+        long sum = 0;
 
-        /*
-        String address = addr.toString();
-
-        List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
-
-        if (transactions.size() == 1) {
-            Bitcoin.Transaction tx = transactions.get(0);
+        for (Bitcoin.Transaction tx : transactions) {
             if (!tx.confirmed) {
                 return false;
             }
-            long txAmount = 0;
 
             if (tx.bitcoinj == null) {
                 try {
@@ -245,16 +236,15 @@ public abstract class Bitcoin implements Coin {
                 /**
                  * Every address in the outputs should be of type pay to public key hash, not pay to script hash
                  */
-/*
-                String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
-                if (address.equals(addressP2pkh)) {
-                    txAmount += output.getValue().value;
+
+                TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), output.getHash());
+                if (utxos.contains(tO)) {
+                    sum += output.getValue().getValue();
                 }
             }
-            return txAmount >= amount;
-        } else {
-            return false;
-        }*/
+        }
+
+        return sum >= amount;
 
     }
 
@@ -367,7 +357,9 @@ public abstract class Bitcoin implements Coin {
     // Since we rely on 3rd party services to query the blockchain, by
     // default we cache the result.
     // TODO
-    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(String transactionHash, Long vout)
+    // Block explorers need to be updated
+    // Duplicates due to SortedSet<TransactionOutPoint>
+    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(SortedSet<TransactionOutPoint> t)
             throws IOException, CoinNetworkException, AddressFormatException {
 
         long now = System.currentTimeMillis();
@@ -378,7 +370,7 @@ public abstract class Bitcoin implements Coin {
             }
         }
 
-        List<Bitcoin.Transaction> txList = getAddressTransactionsInner(transactionHash, vout);
+        List<Bitcoin.Transaction> txList = getAddressTransactionsInner(t);
 
         // ?
         cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
@@ -404,7 +396,7 @@ public abstract class Bitcoin implements Coin {
     abstract boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException;
 
     // Should NOT be synchronized.
-    abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(String transactionHash, Long vout)
+    abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t)
             throws IOException, CoinNetworkException, AddressFormatException;
 
     // Should be synchronized.

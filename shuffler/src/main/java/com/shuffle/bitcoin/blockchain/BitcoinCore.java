@@ -70,6 +70,7 @@ public class BitcoinCore extends Bitcoin {
 
     // Don't need
     public synchronized List<Transaction> getAddressTransactionsInner(String address) {
+        // confirmed
         return new LinkedList<>();
     }
 
