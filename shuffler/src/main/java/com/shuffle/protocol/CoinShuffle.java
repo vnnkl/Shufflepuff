@@ -32,7 +32,10 @@ import com.shuffle.protocol.message.Phase;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.TransactionOutPoint;
+import org.bitcoinj.params.MainNetParams;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -72,6 +75,8 @@ public class CoinShuffle {
 
     final MessageFactory messages;
 
+    private final NetworkParameters netParams;
+
     // A single round of the protocol. It is possible that the players may go through
     // several failed rounds until they have eliminated malicious players.
     class Round {
@@ -89,7 +94,7 @@ public class CoinShuffle {
 
         public final SortedSet<TransactionOutPoint> utxos;
 
-        public final Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos = new HashMap<>();
+        public Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos = new HashMap<>();
 
         public final int N; // The number of players.
 
@@ -156,7 +161,7 @@ public class CoinShuffle {
             }
             System.out.println("Player " + me + " is about to read announcements.");
 
-            readAnnouncements(announcement, encryptionKeys, changeAddresses);
+            peerUtxos = readAnnouncements(announcement, encryptionKeys, changeAddresses, netParams);
 
             // TODO
             /**
@@ -338,14 +343,16 @@ public class CoinShuffle {
             encryptionKeys.put(vk, dk.EncryptionKey());
             changeAddresses.put(vk, change);
             Message message = messages.make().attach(dk.EncryptionKey());
-            if (change != null) {
-                message = message.attach(change);
-            }
 
-            // construct a json string from our utxos to send to other players
+            // Construct a json string from our utxos to send to other players
             String jsonUtxoString = makeJSONString(utxos);
 
             message = message.attach(jsonUtxoString);
+
+            // Attach change last because it's optional and makes cleaner code in readAnnouncements()
+            if (change != null) {
+                message = message.attach(change);
+            }
 
             mailbox.broadcast(message, phase.get());
             return dk;
@@ -977,17 +984,17 @@ public class CoinShuffle {
         String txhash = "txhash";
         String vout = "vout";
         for (TransactionOutPoint t : utxos) {
-            jsonString.concat(output + ":");
-            jsonString.concat("{");
-            jsonString.concat(txhash + ":" + t.getHash().toString());
-            jsonString.concat(",");
-            jsonString.concat(vout + ":" + String.valueOf(t.getIndex()));
-            jsonString.concat("}");
+            jsonString = jsonString.concat(output + ":");
+            jsonString = jsonString.concat("{");
+            jsonString = jsonString.concat(txhash + ":" + t.getHash().toString());
+            jsonString = jsonString.concat(",");
+            jsonString = jsonString.concat(vout + ":" + String.valueOf(t.getIndex()));
+            jsonString = jsonString.concat("}");
             if (t != utxos.last()) {
-                jsonString.concat(",");
+                jsonString = jsonString.concat(",");
             }
         }
-        jsonString.concat("}");
+        jsonString = jsonString.concat("}");
 
         return jsonString;
 
@@ -1011,10 +1018,12 @@ public class CoinShuffle {
     // In phase 1, everybody announces their new encryption keys to one another. They also
     // optionally send change addresses to one another. This function reads that information
     // from a message and puts it in some nice data structures.
-    private static void readAnnouncements(Map<VerificationKey, Message> messages,
+    private static Map<VerificationKey, SortedSet<TransactionOutPoint>> readAnnouncements(Map<VerificationKey, Message> messages,
                            Map<VerificationKey, EncryptionKey> encryptionKeys,
-                           Map<VerificationKey, Address> change) throws FormatException {
+                           Map<VerificationKey, Address> change,
+                           NetworkParameters netParams) throws FormatException {
 
+        Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxoMap = new HashMap<>();
         for (Map.Entry<VerificationKey, Message> entry : messages.entrySet()) {
             VerificationKey key = entry.getKey();
             Message message = entry.getValue();
@@ -1022,11 +1031,27 @@ public class CoinShuffle {
             encryptionKeys.put(key, message.readEncryptionKey());
 
             message = message.rest();
+
+            JSONArray utxoList = readJSONArray(message.readString());
+
+            SortedSet<TransactionOutPoint> peerUtxoSet = new TreeSet<>();
+            for (int i = 1; i <= utxoList.size(); i++) {
+                JSONObject o = (JSONObject) utxoList.get(i - 1);
+                long vout = (long) o.get("vout");
+                Sha256Hash transactionHash = Sha256Hash.wrap((String) o.get("txhash"));
+                TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
+                peerUtxoSet.add(t);
+            }
+
+            peerUtxoMap.put(key, peerUtxoSet);
+
             if (!message.isEmpty()) {
                 change.put(key, message.readAddress());
             }
 
         }
+
+        return peerUtxoMap;
     }
 
     // This function is only called by fillBlameMatrix to collect messages sent in
@@ -1271,7 +1296,8 @@ public class CoinShuffle {
     public CoinShuffle(
             MessageFactory messages, // Object that knows how to create and copy messages.
             Crypto crypto, // Connects to the cryptography.
-            Coin coin // Connects us to the Bitcoin or other cryptocurrency netork.
+            Coin coin, // Connects us to the Bitcoin or other cryptocurrency netork.
+            NetworkParameters netParams
     ) {
         if (crypto == null || coin == null || messages == null) {
             throw new NullPointerException();
@@ -1279,6 +1305,7 @@ public class CoinShuffle {
         this.crypto = crypto;
         this.coin = coin;
         this.messages = messages;
+        this.netParams = netParams;
     }
 
     /**

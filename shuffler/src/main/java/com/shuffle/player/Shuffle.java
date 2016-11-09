@@ -216,6 +216,7 @@ public class Shuffle {
     Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
+    public final NetworkParameters netParams;
 
     public final ExecutorService executor;
 
@@ -284,7 +285,6 @@ public class Shuffle {
 
         // Detect the nature of the cryptocoin network we will use.
         final String query = (String)options.valueOf("query");
-        final NetworkParameters netParams;
         final Messages.ShuffleMarshaller m;
 
         switch ((String)options.valueOf("blockchain")) {
@@ -852,7 +852,7 @@ public class Shuffle {
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, fee, coin, crypto, channel, m, System.out, utxos);
+                amount, fee, coin, crypto, channel, m, System.out, utxos, netParams);
     }
 
     private static JSONArray readJSONArray(String ar) {

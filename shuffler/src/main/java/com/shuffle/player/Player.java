@@ -36,6 +36,7 @@ import com.shuffle.protocol.message.Phase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
@@ -82,6 +83,7 @@ class Player {
     private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
     private final SortedSet<TransactionOutPoint> utxos;
+    private final NetworkParameters netParams;
 
     public Report report = null;
 
@@ -101,7 +103,8 @@ class Player {
          Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
          PrintStream stream,
-         SortedSet<TransactionOutPoint> utxos
+         SortedSet<TransactionOutPoint> utxos,
+         NetworkParameters netParams
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null) {
@@ -121,6 +124,7 @@ class Player {
         this.m = m;
         this.stream = stream;
         this.utxos = utxos;
+        this.netParams = netParams;
     }
 
     public Running start() throws IOException, InterruptedException {
@@ -160,7 +164,7 @@ class Player {
                 // If the protocol returns correctly without throwing a Matrix, then
                 // it has been successful.
                 Messages messages = new Messages(session, sk, collector.connected, collector.inbox, m);
-                CoinShuffle cs = new CoinShuffle(messages, crypto, coin);
+                CoinShuffle cs = new CoinShuffle(messages, crypto, coin, netParams);
                 return Report.success(cs.runProtocol(amount, fee, sk, addrs, utxos, anon, change, ch));
             } catch (Matrix m) {
                 return Report.failure(m, addrs);
