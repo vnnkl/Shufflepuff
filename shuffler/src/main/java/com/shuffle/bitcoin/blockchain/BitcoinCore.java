@@ -7,6 +7,7 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutPoint;
+import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
@@ -134,8 +136,32 @@ public class BitcoinCore extends Bitcoin {
     // TODO
     @Override
     protected boolean send(Bitcoin.Transaction t) {
-        // sendrawtransaction with Bitcoin Core
-        return false;
+        if (!t.canSend || t.sent) {
+            return false;
+        }
+
+        String hexTx = null;
+        try {
+            hexTx = DatatypeConverter.printHexBinary(t.bitcoinj().bitcoinSerialize());
+        } catch (BlockStoreException e) {
+            return false;
+        } catch (IOException er) {
+            return false;
+        }
+
+        // TODO response
+
+
+        String txid;
+        try {
+            txid = client.sendRawTransaction(hexTx);
+        } catch (BitcoindException | CommunicationException e) {
+            return false;
+        }
+
+        if (txid == null) return false;
+
+        return true;
     }
 
     // Don't need
