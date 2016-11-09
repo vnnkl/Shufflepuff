@@ -481,20 +481,12 @@ public class CoinShuffle {
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
-            for (SortedSet<TransactionOutPoint> utxos : peerUtxos.values()) {
-                if (!coin.sufficientFunds(utxos, amount + fee)) {
-                    // offenders.add(player
-                }
-            }
-
-            /*
             for (VerificationKey player : players.values()) {
-                if (!coin.sufficientFunds(player.address(), amount + fee)) {
-                    // Enter the blame phase.
+                SortedSet<TransactionOutPoint> utxos = peerUtxos.get(player);
+                if (!coin.sufficientFunds(utxos, amount + fee)) {
                     offenders.add(player);
                 }
             }
-            */
 
             // If they do, return.
             if (offenders.isEmpty()) return;
