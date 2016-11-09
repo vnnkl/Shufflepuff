@@ -82,7 +82,7 @@ class Player {
     private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
     private final SortedSet<TransactionOutPoint> myUtxos;
-    private final Map<VerificationKey, Set> peerUtxos;
+    private final Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos;
 
     public Report report = null;
 
@@ -103,7 +103,7 @@ class Player {
          Messages.ShuffleMarshaller m,
          PrintStream stream,
          SortedSet<TransactionOutPoint> myUtxos,
-         Map<VerificationKey, Set> peerUtxos
+         Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null) {
@@ -164,7 +164,7 @@ class Player {
                 // it has been successful.
                 Messages messages = new Messages(session, sk, collector.connected, collector.inbox, m);
                 CoinShuffle cs = new CoinShuffle(messages, crypto, coin);
-                return Report.success(cs.runProtocol(amount, fee, sk, addrs, anon, change, ch));
+                return Report.success(cs.runProtocol(amount, fee, sk, addrs, myUtxos, peerUtxos, anon, change, ch));
             } catch (Matrix m) {
                 return Report.failure(m, addrs);
             } catch (TimeoutException e) {

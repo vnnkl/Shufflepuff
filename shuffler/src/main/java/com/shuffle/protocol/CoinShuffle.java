@@ -32,6 +32,7 @@ import com.shuffle.protocol.message.Phase;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
 import java.util.Deque;
@@ -81,6 +82,10 @@ public class CoinShuffle {
         public final int me; // Which player am I?
 
         public final Map<Integer, VerificationKey> players; // The players' public keys.
+
+        public final SortedSet<TransactionOutPoint> myUtxos;
+
+        public final Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos;
 
         public final int N; // The number of players.
 
@@ -476,12 +481,20 @@ public class CoinShuffle {
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
+            for (SortedSet<TransactionOutPoint> utxos : peerUtxos.values()) {
+                if (!coin.sufficientFunds(utxos, amount + fee)) {
+                    // offenders.add(player
+                }
+            }
+
+            /*
             for (VerificationKey player : players.values()) {
                 if (!coin.sufficientFunds(player.address(), amount + fee)) {
                     // Enter the blame phase.
                     offenders.add(player);
                 }
             }
+            */
 
             // If they do, return.
             if (offenders.isEmpty()) return;
@@ -865,6 +878,8 @@ public class CoinShuffle {
                 long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
+                SortedSet<TransactionOutPoint> myUtxos,
+                Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
                 Address addrNew,
                 Address change,
                 Mailbox mailbox) throws InvalidParticipantSetException {
@@ -878,6 +893,8 @@ public class CoinShuffle {
             vk = sk.VerificationKey();
             this.mailbox = mailbox;
             this.addrNew = addrNew;
+            this.myUtxos = myUtxos;
+            this.peerUtxos = peerUtxos;
 
             int m = -1;
             N = players.size();
@@ -1163,8 +1180,9 @@ public class CoinShuffle {
             long amount, // The amount to be shuffled per player.
             long fee, // The miner fee to be paid per player.
             SigningKey sk, // The signing key of the current player.
-            // The set of players, sorted alphabetically by address.
-            SortedSet<VerificationKey> players,
+            SortedSet<VerificationKey> players, // The set of players, sorted alphabetically by address.
+            SortedSet<TransactionOutPoint> myUtxos, // The utxo list of the current player
+            Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos, // The set of utxo lists for all players
             Address addrNew, // My new (anonymous) address.
             Address change, // Change address. (can be null)
             // If this is not null, the machine is put in this channel so that another thread can
@@ -1179,6 +1197,7 @@ public class CoinShuffle {
         if (sk == null || players == null) {
             throw new NullPointerException();
         }
+
 
         CurrentPhase machine;
         if (chan == null) {
@@ -1200,7 +1219,7 @@ public class CoinShuffle {
                 sk.VerificationKey(), numberedPlayers.values(), messages);
 
         return this.new Round(
-                machine, amount, fee, sk, numberedPlayers, addrNew, change, mailbox
+                machine, amount, fee, sk, numberedPlayers, myUtxos, peerUtxos, addrNew, change, mailbox
         ).protocolDefinition();
     }
 
