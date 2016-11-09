@@ -4,12 +4,13 @@ import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SortedSet;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -69,11 +70,13 @@ public class BitcoinCore extends Bitcoin {
     }
 
     // Don't need
-    public synchronized List<Transaction> getAddressTransactionsInner(String address) {
+    // TODO
+    public synchronized List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) {
         // confirmed
         return new LinkedList<>();
     }
 
+    // TODO
     @Override
     protected boolean send(Bitcoin.Transaction t) {
         // send transaction with Bitcoin Core
@@ -82,8 +85,8 @@ public class BitcoinCore extends Bitcoin {
 
     // Don't need
     @Override
-    protected synchronized List<Transaction> getAddressTransactions(String address) {
-        return getAddressTransactionsInner(null);
+    protected synchronized List<Transaction> getAddressTransactions(SortedSet<TransactionOutPoint> t) {
+        return getAddressTransactionsInner(t);
     }
 
 }
