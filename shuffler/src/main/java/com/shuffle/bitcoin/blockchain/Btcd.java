@@ -183,6 +183,7 @@ public class Btcd extends Bitcoin {
                 String txid = currentJson.get("txid").toString();
                 HexBinaryAdapter adapter = new HexBinaryAdapter();
                 byte[] bytearray = adapter.unmarshal(currentJson.get("hex").toString());
+                // is this context necessary?
                 Context context = Context.getOrCreate(netParams);
                 int confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
                 boolean confirmed;

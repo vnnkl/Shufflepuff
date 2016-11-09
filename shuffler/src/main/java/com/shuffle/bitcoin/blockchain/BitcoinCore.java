@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -58,7 +59,28 @@ public class BitcoinCore extends Bitcoin {
         return client.getTxOut(transactionHash, vout, false);
     }
 
-    synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    public class TransactionWithConfirmations extends org.bitcoinj.core.Transaction {
+
+        byte[] bytes;
+        boolean confirmed;
+
+        public TransactionWithConfirmations(NetworkParameters netParams, byte[] bytes, boolean confirmed) {
+            super(netParams, bytes);
+            this.bytes = bytes;
+            this.confirmed = confirmed;
+        }
+
+        public boolean getConfirmed() {
+            return this.confirmed;
+        }
+
+        public byte[] getBytes() {
+            return this.bytes;
+        }
+
+    }
+
+    synchronized TransactionWithConfirmations getTransaction(String transactionHash) throws IOException {
 
         com.neemre.btcdcli4j.core.domain.Transaction rawTx;
         try {
@@ -67,57 +89,52 @@ public class BitcoinCore extends Bitcoin {
             return null;
         }
 
-
-
-        /*
-        String rawTx;
-        try {
-            // TODO
-            rawTx = client.getTransaction(transactionHash);
-        } catch (BitcoindException | CommunicationException e) {
-            e.printStackTrace();
-            return null;
+        int confirmations = rawTx.getConfirmations();
+        boolean confirmed;
+        if (confirmations == 0) {
+            confirmed = false;
+        } else {
+            confirmed = true;
         }
 
+        String rawHex = rawTx.getHex();
         HexBinaryAdapter adapter = new HexBinaryAdapter();
-        byte[] bytearray = adapter.unmarshal(rawTx);
-        org.bitcoinj.core.Transaction transactionj = new org.bitcoinj.core.Transaction(netParams, bytearray);
-        return transactionj;
-        */
-        return null;
+        byte[] bytearray = adapter.unmarshal(rawHex);
+        TransactionWithConfirmations tx = new TransactionWithConfirmations(netParams, bytearray, confirmed);
+
+        return tx;
     }
 
     // Don't need
     // TODO
     public synchronized List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) {
 
-        /**
-         * Make sure there are no duplicates
-         */
-
         List<Transaction> txList = new ArrayList<>();
-
+        SortedSet<Transaction> checkDuplicateTx = new TreeSet<>();
         for (TransactionOutPoint tO : t) {
-            org.bitcoinj.core.Transaction tx;
+            TransactionWithConfirmations tx;
             try {
                 tx = getTransaction(tO.getHash().toString());
-
-
-
+                String txid = tx.getHash().toString();
+                byte[] bytes = tx.getBytes();
+                boolean confirmed = tx.getConfirmed();
+                org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytes);
+                Transaction bTx = new Transaction(txid, bitTx, false, confirmed);
+                if (!checkDuplicateTx.contains(bTx)) {
+                    txList.add(bTx);
+                }
             } catch (IOException e) {
-                // ?
                 return null;
             }
         }
 
-        // confirmed
         return txList;
     }
 
     // TODO
     @Override
     protected boolean send(Bitcoin.Transaction t) {
-        // send transaction with Bitcoin Core
+        // sendrawtransaction with Bitcoin Core
         return false;
     }
 

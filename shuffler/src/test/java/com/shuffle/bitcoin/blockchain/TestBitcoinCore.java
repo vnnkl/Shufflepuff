@@ -33,8 +33,18 @@ public class TestBitcoinCore {
     }
 
     @Test
-    public void test2() {
+    public void test2() throws Exception {
         // test confirmations, etc
+
+        BtcdQueryClient client = new BtcdQueryClient("127.0.0.1", 8332, "admin", "pass");
+
+        com.neemre.btcdcli4j.core.domain.Transaction rawTx = client.getTransaction("0b17924648f84e60c0a83fb65027ff60dc0355c347790e5d6baced3847cd24d6");
+
+        System.out.println(rawTx);
+
+        System.out.println(rawTx.getConfirmations());
+        System.out.println(rawTx.getHex());
+
     }
 
     // REMOVE
