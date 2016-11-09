@@ -669,6 +669,7 @@ public class Shuffle {
                 this.local.add(readPlayer(options, key, i, checkDuplicateUtxo, port, anon, change, m));
             }
         } else {
+
             if (jsonPeers.size() == 0) {
                 throw new IllegalArgumentException("At least one other player must be specified.");
             }
