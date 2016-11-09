@@ -116,35 +116,36 @@ public abstract class Bitcoin implements Coin {
                                                   Map<VerificationKey, Address> changeAddresses)
             throws CoinNetworkException, AddressFormatException {
 
-        org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(netParams);
-
-        return null;
-
-        /*
         // this section adds inputs to the transaction and adds outputs to the change addresses.
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(netParams);
+
         for (VerificationKey key : from) {
             try {
-                String address = key.address().toString();
-                List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
-                if (transactions.size() > 1) return null;
-                org.bitcoinj.core.Transaction tx2 = getTransaction(transactions.get(0).hash);
-                for (TransactionOutput output : tx2.getOutputs()) {
-                    String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
-                    if (address.equals(addressP2pkh)) {
-                        tx.addInput(output);
-                        if (!changeAddresses.containsKey(key) | changeAddresses.get(key) != null) {
-                            try {
-                                tx.addOutput(output.getValue().subtract(
-                                        org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
-                                        new org.bitcoinj.core.Address(
-                                                netParams, changeAddresses.get(key).toString()));
-                            } catch (AddressFormatException e) {
-                                e.printStackTrace();
+                SortedSet<TransactionOutPoint> utxos = peerUtxos.get(key);
+                List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
+                for (Bitcoin.Transaction t : transactions) {
+                    org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);
+                    for (TransactionOutput output : tx2.getOutputs()) {
+                        TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), output.getHash());
+                        if (utxos.contains(tO)) {
+                            tx.addInput(output);
+                            // TODO
+                            // Shouldn't be !changeAddresses.containsKey(key) -- error !
+                            if (!changeAddresses.containsKey(key) | changeAddresses.get(key) != null) {
+                                try {
+                                    tx.addOutput(output.getValue().subtract(
+                                            org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
+                                            new org.bitcoinj.core.Address(
+                                                    netParams, changeAddresses.get(key).toString()));
+                                } catch (AddressFormatException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         }
                     }
                 }
+
+
 
             } catch (IOException e) {
                 throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
@@ -152,23 +153,34 @@ public abstract class Bitcoin implements Coin {
         }
 
         for (Address sendto : to) {
+            /**
+             *
+             * How can we determine if getAddressTransactions.size() == 0 for Queue<Address>to
+             * Leave it up to the user ? Warning on GUI ?
+             *
+             * String address = sendto.toString();
+             * try {
+             *      List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
+             *      if (transactions.size() > 0) return null;
+             * } catch (IOException e) {
+             *      throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
+             * }
+             *
+             */
+
             String address = sendto.toString();
-            try {
-                List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
-                if (transactions.size() > 0) return null;
-            } catch (IOException e) {
-                throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
-            }
+
             try {
                 tx.addOutput(org.bitcoinj.core.Coin.SATOSHI.multiply(amount),
                         new org.bitcoinj.core.Address(netParams, address));
             } catch (AddressFormatException e) {
                 e.printStackTrace();
             }
+
         }
 
         return new Transaction(tx.getHashAsString(), tx, true);
-        */
+
     }
 
     /**
@@ -248,10 +260,12 @@ public abstract class Bitcoin implements Coin {
 
     }
 
+    // TODO
     @Override
     public synchronized com.shuffle.bitcoin.Transaction getConflictingTransaction(
             com.shuffle.bitcoin.Transaction t, Address addr, long amount) throws CoinNetworkException, AddressFormatException {
 
+        /*
         if (!(t instanceof Transaction)) throw new IllegalArgumentException();
         Transaction transaction = (Transaction)t;
 
@@ -286,7 +300,7 @@ public abstract class Bitcoin implements Coin {
                     }
                 }
             }
-        }
+        }*/
 
         return null;
     }
@@ -356,24 +370,26 @@ public abstract class Bitcoin implements Coin {
 
     // Since we rely on 3rd party services to query the blockchain, by
     // default we cache the result.
+
     // TODO
     // Block explorers need to be updated
-    // Duplicates due to SortedSet<TransactionOutPoint>
+    // Duplicates due to SortedSet<TransactionOutPoint> ?
     protected synchronized List<Bitcoin.Transaction> getAddressTransactions(SortedSet<TransactionOutPoint> t)
             throws IOException, CoinNetworkException, AddressFormatException {
 
+        /*
         long now = System.currentTimeMillis();
         Cached cached = cache.get(address);
         if (cached != null) {
             if (now - cached.last < cach_expire) {
                 return cached.txList;
             }
-        }
+        }*/
 
         List<Bitcoin.Transaction> txList = getAddressTransactionsInner(t);
 
         // ?
-        cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
+        //cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
 
         return txList;
     }
