@@ -86,7 +86,7 @@ import joptsimple.OptionSpecBuilder;
  */
 public class Shuffle {
     // Turn this on to enable test mode options.
-    private static boolean TEST_MODE = false;
+    private static boolean TEST_MODE = true;
 
     // 1 / 100 of a bitcoin.
     private static long MIN_AMOUNT = 1000000;
@@ -560,7 +560,9 @@ public class Shuffle {
                 throw new IllegalArgumentException("Option 'utxos' not needed when 'local' is defined");
             }
 
-            JSONArray local = readJSONArray((String)options.valueOf("local"));
+            // JSONArray local = readJSONArray((String)options.valueOf("local"));
+            // TODO
+            JSONArray local = readNestedJson((String)options.valueOf("local"));
             if (local == null) {
                 throw new IllegalArgumentException("Could not read " + options.valueOf("local") + " as json array.");
             }
@@ -869,6 +871,28 @@ public class Shuffle {
         } catch (ClassCastException e) {
             throw new IllegalArgumentException("Could not parse json object " + ar + ".");
         }
+    }
+
+    private static JSONArray readNestedJson(String ar) {
+
+        /**
+         * Remove single quotation from "ar"
+         */
+
+        ar = ar.replace("'","");
+
+        try {
+            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
+            if (json == null) {
+                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+            }
+
+            return (JSONArray) json.get("x");
+
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+        }
+
     }
 
     public Collection<Player.Report> cycle()
