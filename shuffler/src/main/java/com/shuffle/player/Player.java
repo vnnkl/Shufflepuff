@@ -36,7 +36,6 @@ import com.shuffle.protocol.message.Phase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
@@ -148,10 +147,6 @@ class Player {
             SortedSet<VerificationKey> connectTo = new TreeSet<>();
             connectTo.addAll(addrs);
             connectTo.remove(sk.VerificationKey());
-
-            // connectTo is a set of Verification Keys
-            // remove myUtxos from peerUtxos
-            // myUtxos, peerUtxos
 
             long wait = time - System.currentTimeMillis();
 
