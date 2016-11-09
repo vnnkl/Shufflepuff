@@ -8,21 +8,14 @@
 
 package com.shuffle.bitcoin;
 
- import com.shuffle.bitcoin.Address;
- import com.shuffle.bitcoin.CoinNetworkException;
- import com.shuffle.bitcoin.Transaction;
- import com.shuffle.bitcoin.VerificationKey;
- import com.shuffle.bitcoin.blockchain.Bitcoin;
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.TransactionOutPoint;
 
- import org.bitcoinj.core.AddressFormatException;
- import org.bitcoinj.core.TransactionOutPoint;
-
- import java.io.IOException;
- import java.net.MalformedURLException;
- import java.util.List;
- import java.util.Map;
- import java.util.Queue;
- import java.util.SortedSet;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.SortedSet;
 
 /**
  *
