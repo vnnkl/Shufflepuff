@@ -33,6 +33,10 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.TransactionOutPoint;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
 
 import java.io.IOException;
 import java.util.Deque;
@@ -137,8 +141,9 @@ public class CoinShuffle {
             // needs to send an announcement message at this point too because he might
             // have a change address. Therefore he just follows the same procedure as
             // everyone else.
+            // Additionally, each player broadcasts their utxo list.
             dk = broadcastNewKey(changeAddresses);
-            System.out.println("Player " + me + " has broadcasted the new encryption key.");
+            System.out.println("Player " + me + " has broadcasted the new encryption key and utxos.");
 
             // Now we wait to receive similar key from everyone else.
             Map<VerificationKey, Message> announcement;
@@ -336,6 +341,11 @@ public class CoinShuffle {
             if (change != null) {
                 message = message.attach(change);
             }
+
+            // construct a json string from our utxos to send to other players
+            String jsonUtxoString = makeJSONString(utxos);
+
+            message = message.attach(jsonUtxoString);
 
             mailbox.broadcast(message, phase.get());
             return dk;
@@ -960,6 +970,44 @@ public class CoinShuffle {
         return true;
     }
 
+    private static String makeJSONString(SortedSet<TransactionOutPoint> utxos) {
+
+        String jsonString = "{";
+        String output = "output";
+        String txhash = "txhash";
+        String vout = "vout";
+        for (TransactionOutPoint t : utxos) {
+            jsonString.concat(output + ":");
+            jsonString.concat("{");
+            jsonString.concat(txhash + ":" + t.getHash().toString());
+            jsonString.concat(",");
+            jsonString.concat(vout + ":" + String.valueOf(t.getIndex()));
+            jsonString.concat("}");
+            if (t != utxos.last()) {
+                jsonString.concat(",");
+            }
+        }
+        jsonString.concat("}");
+
+        return jsonString;
+
+    }
+
+    private static JSONArray readJSONArray(String ar) {
+
+        try {
+            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
+            if (json == null) {
+                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+            }
+
+            return (JSONArray) json.get("x");
+
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+        }
+    }
+
     // In phase 1, everybody announces their new encryption keys to one another. They also
     // optionally send change addresses to one another. This function reads that information
     // from a message and puts it in some nice data structures.
@@ -977,6 +1025,7 @@ public class CoinShuffle {
             if (!message.isEmpty()) {
                 change.put(key, message.readAddress());
             }
+
         }
     }
 
