@@ -5,6 +5,7 @@ import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.blockchain.BitcoinCore;
 import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
@@ -15,6 +16,7 @@ import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
 import com.shuffle.bitcoin.impl.AddressImpl;
 import com.shuffle.bitcoin.impl.CryptoProtobuf;
+import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.bitcoin.impl.VerificationKeyImpl;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
@@ -24,6 +26,7 @@ import com.shuffle.mock.MockCoin;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockProtobuf;
+import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
 import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
@@ -844,11 +847,13 @@ public class Shuffle {
             String change,
             Messages.ShuffleMarshaller m) throws UnknownHostException, FormatException, AddressFormatException {
 
+        SigningKey sk;
         Address anonAddress;
         Address changeAddress;
         if (TEST_MODE) {
             switch ((String)options.valueOf("crypto")) {
                 case "mock" : {
+                    sk = new MockSigningKey(Integer.parseInt(key));
                     anonAddress = new MockAddress(anon);
                     if (change == null) {
                         changeAddress = null;
@@ -858,6 +863,7 @@ public class Shuffle {
                     break;
                 }
                 case "real" : {
+                    sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
                     anonAddress = new AddressImpl(anon);
                     if (change == null) {
                         changeAddress = null;
@@ -871,6 +877,7 @@ public class Shuffle {
                 }
             }
         } else {
+            sk = new SigningKeyImpl(key, ((BitcoinCrypto)crypto).getParams());
             anonAddress = new AddressImpl(anon);
             if (change == null) {
                 changeAddress = null;
@@ -879,11 +886,14 @@ public class Shuffle {
             }
         }
 
-        // TODO
-        // Parse keys? peers.put?
-        // peers.put(null, new Either<>(null, id));
+        VerificationKey vk = sk.VerificationKey();
+        if (keys.contains(vk)) {
+            throw new IllegalArgumentException("Duplicate key.");
+        }
 
-        // peers
+        keys.add(vk);
+        peers.put(vk, new Either<>(null, id));
+
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
                 new MappedChannel<>(
                         new Multiplexer<>(
@@ -892,12 +902,12 @@ public class Shuffle {
                                                 new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
                                         m.signedMarshaller()),
                                 mock.node(id)),
-                        null);
+                        peers);
 
         return new Player(
-                null, session, anonAddress,
-                changeAddress, null, time,
-                amount, fee, coin, crypto, channel, m, System.out, null);
+                sk, session, anonAddress,
+                changeAddress, keys, time,
+                amount, fee, coin, crypto, channel, m, System.out, utxos, this.utxos);
     }
 
     private static JSONArray readJSONArray(String ar) {

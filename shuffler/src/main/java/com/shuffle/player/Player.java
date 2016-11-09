@@ -82,7 +82,8 @@ class Player {
     private final Address change;
     private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
-    private final TransactionOutPoint utxo;
+    private final SortedSet<TransactionOutPoint> myUtxos;
+    private final Map<VerificationKey, Set> peerUtxos;
 
     public Report report = null;
 
@@ -102,7 +103,8 @@ class Player {
          Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
          PrintStream stream,
-         TransactionOutPoint utxo
+         SortedSet<TransactionOutPoint> myUtxos,
+         Map<VerificationKey, Set> peerUtxos
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null) {
@@ -121,7 +123,8 @@ class Player {
         this.addrs = addrs;
         this.m = m;
         this.stream = stream;
-        this.utxo = utxo;
+        this.myUtxos = myUtxos;
+        this.peerUtxos = peerUtxos;
     }
 
     public Running start() throws IOException, InterruptedException {
