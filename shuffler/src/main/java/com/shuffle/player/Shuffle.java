@@ -50,6 +50,7 @@ import org.bitcoinj.params.TestNet3Params;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -606,12 +607,12 @@ public class Shuffle {
                     throw new IllegalArgumentException("Could not read option " + o.get("port") + " as string.");
                 }
                 try {
-                    utxos = (String) o.get("utxos");
+                    utxos = "'" + o.get("utxos") + "'";
                 } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + o.get("utxos") + " as string.");
+                    throw new IllegalArgumentException("Could not read option " + "'" + o.get("utxos") + "'" + " as string.");
                 }
 
-                JSONArray jsonUtxos = readJSONArray(utxos);
+                JSONArray jsonUtxos = readJSONArrayUtxo(utxos);
 
                 if (key == null) {
                     throw new IllegalArgumentException("Player missing field \"key\".");
@@ -632,6 +633,7 @@ public class Shuffle {
 
                 HashSet<TransactionOutPoint> checkDuplicateUtxo = new HashSet<>();
                 for (int j = 1; j <= jsonUtxos.size(); j++) {
+
                     JSONObject obj;
                     try {
                         obj = (JSONObject) jsonUtxos.get(j - 1);
@@ -644,7 +646,7 @@ public class Shuffle {
                     Long vout;
                     Sha256Hash transactionHash;
                     try {
-                        vout = (Long) obj.get("vout");
+                        vout = Long.valueOf((String) obj.get("vout"));
                     } catch (ClassCastException e) {
                         throw new IllegalArgumentException("Could not read option " + obj.get("vout") + " as Long");
                     }
@@ -871,6 +873,23 @@ public class Shuffle {
         } catch (ClassCastException e) {
             throw new IllegalArgumentException("Could not parse json object " + ar + ".");
         }
+
+    }
+
+    private static JSONArray readJSONArrayUtxo(String ar) {
+
+        try {
+            ar = ar.replace("'", "");
+            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
+            if (json == null) {
+                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+            }
+
+            return (JSONArray) json.get("x");
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+        }
+
     }
 
     private static JSONArray readNestedJson(String ar) {
@@ -886,6 +905,11 @@ public class Shuffle {
             if (json == null) {
                 throw new IllegalArgumentException("Could not parse json object " + ar + ".");
             }
+
+            System.out.println("\n-------\n");
+            System.out.println(ar);
+            System.out.println("\n-------\n");
+            System.out.println(json);
 
             return (JSONArray) json.get("x");
 
