@@ -1043,6 +1043,8 @@ public class CoinShuffle {
 
             peerUtxoMap.put(key, peerUtxoSet);
 
+            message = message.rest();
+
             if (!message.isEmpty()) {
                 change.put(key, message.readAddress());
             }

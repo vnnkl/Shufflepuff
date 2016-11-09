@@ -65,15 +65,9 @@ public class TestBitcoinCore {
         }
     }
 
-    // REMOVE
     @Test
     public void test() {
 
-        /**
-         * incorrect
-         */
-
-        //SortedSet<TransactionOutPoint> utxos = new TreeSet<>();
         HashSet<TransactionOutPoint> utxos = new HashSet<>();
         utxos.add(new TransactionOutPoint(netParams, 2, Sha256Hash.wrap("4b08898741a647183c878bd4018daa998f3019b42515cf23a70e0c89aefbab3a")));
         utxos.add(new TransactionOutPoint(netParams, 3, Sha256Hash.wrap("04192d801e714cd661ea0b8182bbe3c3dcfb3ab21b563b100961baa9da3db652")));
@@ -95,7 +89,6 @@ public class TestBitcoinCore {
 
         System.out.println(readJSONArray(jsonString));
 
-        System.out.println(jsonString);
     }
 
     @Test
