@@ -97,9 +97,12 @@ public class Adversary {
 
                 try {
                     try {
+                        /*
                         q.send(new Either<>(shuffle.runProtocol(
                                 amount, fee, sk, players, anon, change, null
-                        ), null));
+                        ), null));*/
+                        // TODO
+                        q.send(new Either<>(shuffle.runProtocol(0, 0, null, null, null, null, null, null), null));
 
                     } catch (Matrix m) {
                         q.send(new Either<>(null, m));

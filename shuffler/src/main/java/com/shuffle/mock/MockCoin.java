@@ -17,6 +17,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
+import org.bitcoinj.core.TransactionOutPoint;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -34,6 +35,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -301,7 +303,9 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
         if (output == null) throw new CoinNetworkException("Cannot find output.");
 
-        if (amount > valueHeld(from.VerificationKey().address()))
+        // TODO
+        //if (amount > valueHeld(from.VerificationKey().address()))
+        if (1 > 0)
             throw new CoinNetworkException("Insufficient funds.");
 
         List<Output> in = new LinkedList<>();
@@ -353,8 +357,11 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
-    public synchronized long valueHeld(Address addr) {
-        Output entry = blockchain.get(addr);
+    // TODO
+    //public synchronized long valueHeld(Address addr) {
+    public synchronized long valueHeld(SortedSet<TransactionOutPoint> utxos) {
+        //Output entry = blockchain.get(addr);
+        Output entry = blockchain.get(null);
         if (entry == null) return 0;
 
         if (spend.get(entry) != null) return 0;
@@ -363,8 +370,11 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     }
 
     @Override
-    public boolean sufficientFunds(Address addr, long amount) {
-        return valueHeld(addr) >= amount;
+    //public boolean sufficientFunds(Address addr, long amount) {
+    public boolean sufficientFunds(SortedSet<TransactionOutPoint> utxos, long amount) {
+        // TODO
+        return false;
+        //return valueHeld(addr) >= amount;
     }
 
     @Override
@@ -372,6 +382,8 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
             final long amount,
             final long fee,
             List<VerificationKey> from,
+            // TODO
+            Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException {
 
@@ -384,7 +396,9 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         // Are there inputs big enough to make this transaction?
         for (VerificationKey key : from) {
             final Address address = key.address();
-            final long value = valueHeld(address);
+            // TODO
+            //final long value = valueHeld(address);
+            final long value = 0;
 
             Output input = blockchain.get(address);
 
@@ -409,7 +423,8 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     public Transaction getConflictingTransaction(
             Transaction transaction, Address addr, long amount) {
 
-        if (valueHeld(addr) >= amount) return null;
+        // TODO
+        // if (valueHeld(addr) >= amount) return null;
 
         Output output = blockchain.get(addr);
 

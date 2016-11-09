@@ -9,11 +9,14 @@
 package com.shuffle.bitcoin.blockchain;
 
 import com.google.common.util.concurrent.RateLimiter;
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.CoinNetworkException;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.TransactionOutPoint;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
@@ -21,6 +24,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SortedSet;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -92,8 +96,9 @@ public final class BlockCypherDotCom extends Bitcoin {
      * array.
      *
      */
-    public List<Transaction> getAddressTransactionsInner(String address) throws IOException, CoinNetworkException, AddressFormatException {
+    public List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
 
+        /*
         String url;
         if (Address.getParametersFromAddress(address)==NetworkParameters.fromID(NetworkParameters.ID_TESTNET)) {
             url = "https://api.blockcypher.com/v1/btc/test3/addrs/" + address + "/full";
@@ -117,6 +122,9 @@ public final class BlockCypherDotCom extends Bitcoin {
             return null;
         }
         return txhashes;
+        */
+
+        return null;
     }
 
     /**
@@ -141,6 +149,10 @@ public final class BlockCypherDotCom extends Bitcoin {
         byte[] bytearray = adapter.unmarshal(root.get("hex").toString());
         org.bitcoinj.core.Transaction transaction = new org.bitcoinj.core.Transaction(netParams,bytearray);
         return transaction;
+    }
+
+    synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
+        return false;
     }
 
    public List<Address> getTransactionAssociates(String transactionHash) throws IOException {

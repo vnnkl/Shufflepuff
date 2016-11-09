@@ -276,9 +276,13 @@ public class InitialState {
                         )
                 );
             } else if (mutate) {
-                shuffle = new CoinShuffle(messages, testCase.crypto(), coin.mutated());
+                // TODO
+                shuffle = null;
+                //shuffle = new CoinShuffle(messages, testCase.crypto(), coin.mutated());
             } else {
-                shuffle = new CoinShuffle(messages, testCase.crypto(), coin);
+                // TODO
+                shuffle = null;
+                //shuffle = new CoinShuffle(messages, testCase.crypto(), coin);
             }
 
             return new Adversary(testCase.amount, testCase.fee, sk, keys, addr, change, shuffle);

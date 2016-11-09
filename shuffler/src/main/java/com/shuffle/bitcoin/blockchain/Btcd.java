@@ -8,6 +8,8 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.CoinNetworkException;
 
 import java.io.BufferedReader;
@@ -20,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
 
 import javax.xml.bind.DatatypeConverter;
@@ -31,6 +34,7 @@ import org.bitcoinj.core.NetworkParameters;
 
 import org.apache.commons.codec.binary.Base64;
 
+import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -134,8 +138,9 @@ public class Btcd extends Bitcoin {
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
      */
-    public synchronized List<Transaction> getAddressTransactionsInner(String address) throws IOException {
+    public synchronized List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) throws IOException {
 
+        /*
         List<Transaction> txList = null;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
 
@@ -195,7 +200,8 @@ public class Btcd extends Bitcoin {
         out.flush();
         out.close();
 
-        return txList;
+        return txList;*/
+        return null;
 
     }
 
@@ -293,9 +299,15 @@ public class Btcd extends Bitcoin {
         return true;
     }
 
+    synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
+        return false;
+    }
+
+
+
     @Override
-    protected synchronized List<Transaction> getAddressTransactions(String address) throws IOException, CoinNetworkException, AddressFormatException {
-        return getAddressTransactionsInner(address);
+    protected synchronized List<Transaction> getAddressTransactions(SortedSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
+        return getAddressTransactionsInner(t);
     }
 
 }

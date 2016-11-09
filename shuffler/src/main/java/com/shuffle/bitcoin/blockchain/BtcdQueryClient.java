@@ -54,6 +54,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+// TODO RENAME
+// NOT A BTCDQUERYCLIENT -- BITCOIND
 public class BtcdQueryClient implements BtcdClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(BtcdQueryClient.class);

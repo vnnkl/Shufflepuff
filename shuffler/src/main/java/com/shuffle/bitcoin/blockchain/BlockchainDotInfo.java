@@ -8,6 +8,9 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -15,10 +18,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.SortedSet;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.TransactionOutPoint;
 import org.json.JSONTokener;
 import org.json.JSONObject;
 
@@ -47,12 +52,20 @@ public final class BlockchainDotInfo extends Bitcoin {
         }
     }
 
+
+    synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
+        return false;
+    }
+
     /**
      *
      * Given a wallet address, this function looks up the address' balance using Blockchain.info's
      * API. The amount returned is of type long and represents the number of satoshis.
      */
-    @Override
+
+    // TODO
+    // remove?
+    /*
     public synchronized long getAddressBalance(String address) throws IOException {
         String url = "https://blockchain.info/rawaddr/" + address;
         URL obj = new URL(url);
@@ -60,6 +73,7 @@ public final class BlockchainDotInfo extends Bitcoin {
         JSONObject root = new JSONObject(tokener);
         return Long.valueOf(root.get("final_balance").toString());
     }
+    */
 
 
     /**
@@ -69,8 +83,9 @@ public final class BlockchainDotInfo extends Bitcoin {
      * array.
      *
      */
-    protected final List<Transaction> getAddressTransactionsInner(String address) throws IOException {
+    protected final List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) throws IOException {
 
+        /*
         String url = "https://blockchain.info/rawaddr/" + address;
         URL obj = new URL(url);
         JSONTokener tokener = new JSONTokener(obj.openStream());
@@ -91,6 +106,9 @@ public final class BlockchainDotInfo extends Bitcoin {
             return null;
         }
         return txhashes;
+        */
+
+        return null;
 
     }
 
