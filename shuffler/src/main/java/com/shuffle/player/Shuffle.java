@@ -4,16 +4,16 @@ import com.google.common.primitives.Ints;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.blockchain.BitcoinCore;
-import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
-import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
+import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.blockchain.BitcoinCore;
+import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
 import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
 import com.shuffle.bitcoin.impl.AddressImpl;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.impl.CryptoProtobuf;
 import com.shuffle.bitcoin.impl.VerificationKeyImpl;
 import com.shuffle.chan.packet.Packet;
@@ -91,112 +91,6 @@ public class Shuffle {
 
     // Entropy checker must think there is at least this much entropy.
     private static int MIN_APPARENT_ENTROPY = 128;
-
-    public static OptionParser getShuffleOptionsParser() {
-        OptionParser parser = new OptionParser();
-        parser.accepts("help", "print help message.");
-
-        ArgumentAcceptingOptionSpec<String> query = parser.acceptsAll(Arrays.asList("q", "query"),
-                "Means of performing blockchain queries. btcd, blockcypher.com and blockchain.info are supported")
-                .withRequiredArg().ofType(String.class);
-
-        ArgumentAcceptingOptionSpec<String> blockchain = parser.acceptsAll(Arrays.asList("b", "blockchain"),
-                "Which blockchain to query (test or main)")
-                .withRequiredArg().ofType(String.class);
-
-        ArgumentAcceptingOptionSpec<Long> time = parser.acceptsAll(Arrays.asList("t", "time"),
-                "time at which protocol is scheduled to take place.")
-                .withRequiredArg()
-                .ofType(Long.class);
-
-        if (TEST_MODE) {
-            parser.accepts("crypto")
-                    .withRequiredArg()
-                    .ofType(String.class)
-                    .defaultsTo("mock");
-
-            query.defaultsTo("mock");
-            blockchain.defaultsTo("test");
-
-            // TODO
-            // What does this do?
-            parser.accepts("coin")
-                    .withRequiredArg()
-                    .ofType(String.class)
-                    .defaultsTo("{\"outputs\":[],\"transactions\":[]}");
-
-            parser.accepts("me").withRequiredArg().ofType(String.class);
-
-            parser.accepts("local").withRequiredArg().ofType(String.class);
-
-            parser.accepts("format").withRequiredArg().ofType(String.class)
-                    .defaultsTo("protobuf");
-
-            // Five seconds from now.
-            // time.defaultsTo(System.currentTimeMillis() + 5000L);
-
-        } else {
-            query.defaultsTo("blockcypher.com");
-            blockchain.defaultsTo("main");
-        }
-
-        parser.acceptsAll(Arrays.asList("S", "session"),
-                "The session identifier for this round")
-                .withRequiredArg()
-                .ofType(String.class);
-
-        parser.acceptsAll(Arrays.asList("B", "amount"),
-                "amount to be transferred (satoshis)")
-                .withRequiredArg()
-                .ofType(Long.class);
-        parser.acceptsAll(Arrays.asList("f", "fee"),
-                "miner fee to be paid (satoshis)")
-                .withRequiredArg()
-                .ofType(Long.class);
-        parser.acceptsAll(Arrays.asList("s", "seed"),
-                "random number seed")
-                .withRequiredArg()
-                .ofType(String.class);
-
-        OptionSpecBuilder port = parser.accepts("port", "Port on which to listen for connections.");
-        OptionSpecBuilder change = parser.accepts("change", "Your change address. Optional.");
-        OptionSpecBuilder anon = parser.accepts("anon", "A Bitcoin address to which the anonymized coins are sent.");
-        OptionSpecBuilder utxos = parser.acceptsAll(Arrays.asList("u", "utxoList"), "The list of utxos we will spend from, formatted as a JSON array.");
-
-        if (TEST_MODE) {
-            port.requiredUnless("local");
-            change.requiredUnless("local");
-            anon.requiredUnless("local");
-            utxos.requiredUnless("local");
-        }
-
-        port.withRequiredArg().ofType(Long.class);
-        change.withRequiredArg().ofType(String.class);
-        anon.withRequiredArg().ofType(String.class);
-        utxos.withRequiredArg().ofType(String.class);
-
-        parser.accepts("timeout", "The time in milliseconds that Shufflepuff waits before disconnecting due to a timeout.")
-                .withRequiredArg()
-                .ofType(Long.class)
-                .defaultsTo(1000L);
-
-        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction. Only used with blockchain.info and blockcypher.com.")
-                .withRequiredArg().ofType(Long.class).defaultsTo(5L);
-        parser.accepts("rpcuser", "Username to log in to btcd.")
-                .withRequiredArg().ofType(String.class);
-        parser.accepts("rpcpass", "Password to log in to btcd.")
-                .withRequiredArg().ofType(String.class);
-
-        parser.accepts("peers",
-                "The peers we will be connecting to, formatted as a JSON array.")
-                .withRequiredArg().ofType(String.class);
-
-        parser.accepts("report", "Path to store report file.")
-                .withRequiredArg().ofType(String.class);
-
-        return parser;
-    }
-
     public final Coin coin;
     public final String seed;
     public final long time;
@@ -205,18 +99,14 @@ public class Shuffle {
     public final long timeout;
     public final Bytestring session;
     public final Crypto crypto;
+    public final String report; // Where to save the report.
+    public final ExecutorService executor;
+    private final MockNetwork<Integer, Signed<Packet<VerificationKey, Payload>>> mock = new MockNetwork<>();
+    // TODO
     Set<Player> local = new HashSet<>();
     // TODO
     // One peer can have multiple TransactionOutPoints, so the <key,value> ordering is altered here.
     Map<Either<InetSocketAddress, Integer>, Set<TransactionOutPoint>> peers = new HashMap<>();
-    // TODO
-    // TransactionOutPointKey contains {TransactionOutPoint, VerificationKey}
-    Set<TransactionOutPointKey> utxoList = new HashSet<>();
-    public final String report; // Where to save the report.
-
-    public final ExecutorService executor;
-
-    private final MockNetwork<Integer, Signed<Packet<VerificationKey, Payload>>> mock = new MockNetwork<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
             throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception, BitcoindException, CommunicationException {
@@ -768,11 +658,11 @@ public class Shuffle {
                     checkDuplicateUtxo.add(t);
                 }
 
-                TransactionOutPointKey tk = new TransactionOutPointKey(t, vk);
+                /**TransactionOutPointKey tk = new TransactionOutPointKey(t, vk);
                 if (utxoList.contains(tk)) {
                     throw new IllegalArgumentException("Duplicate TransactionOutPointKey " + tk);
                 }
-                utxoList.add(tk);
+                 utxoList.add(tk);**/
             }
 
             // TODO
@@ -786,6 +676,194 @@ public class Shuffle {
             }
         }
 
+    }
+
+    public static OptionParser getShuffleOptionsParser() {
+        OptionParser parser = new OptionParser();
+        parser.accepts("help", "print help message.");
+
+        ArgumentAcceptingOptionSpec<String> query = parser.acceptsAll(Arrays.asList("q", "query"),
+              "Means of performing blockchain queries. btcd, blockcypher.com and blockchain.info are supported")
+              .withRequiredArg().ofType(String.class);
+
+        ArgumentAcceptingOptionSpec<String> blockchain = parser.acceptsAll(Arrays.asList("b", "blockchain"),
+              "Which blockchain to query (test or main)")
+              .withRequiredArg().ofType(String.class);
+
+        ArgumentAcceptingOptionSpec<Long> time = parser.acceptsAll(Arrays.asList("t", "time"),
+              "time at which protocol is scheduled to take place.")
+              .withRequiredArg()
+              .ofType(Long.class);
+
+        if (TEST_MODE) {
+            parser.accepts("crypto")
+                  .withRequiredArg()
+                  .ofType(String.class)
+                  .defaultsTo("mock");
+
+            query.defaultsTo("mock");
+            blockchain.defaultsTo("test");
+
+            // TODO
+            // What does this do?
+            parser.accepts("coin")
+                  .withRequiredArg()
+                  .ofType(String.class)
+                  .defaultsTo("{\"outputs\":[],\"transactions\":[]}");
+
+            parser.accepts("me").withRequiredArg().ofType(String.class);
+
+            parser.accepts("local").withRequiredArg().ofType(String.class);
+
+            parser.accepts("format").withRequiredArg().ofType(String.class)
+                  .defaultsTo("protobuf");
+
+            // Five seconds from now.
+            // time.defaultsTo(System.currentTimeMillis() + 5000L);
+
+        } else {
+            query.defaultsTo("blockcypher.com");
+            blockchain.defaultsTo("main");
+        }
+
+        parser.acceptsAll(Arrays.asList("S", "session"),
+              "The session identifier for this round")
+              .withRequiredArg()
+              .ofType(String.class);
+
+        parser.acceptsAll(Arrays.asList("B", "amount"),
+              "amount to be transferred (satoshis)")
+              .withRequiredArg()
+              .ofType(Long.class);
+        parser.acceptsAll(Arrays.asList("f", "fee"),
+              "miner fee to be paid (satoshis)")
+              .withRequiredArg()
+              .ofType(Long.class);
+        parser.acceptsAll(Arrays.asList("s", "seed"),
+              "random number seed")
+              .withRequiredArg()
+              .ofType(String.class);
+
+        OptionSpecBuilder port = parser.accepts("port", "Port on which to listen for connections.");
+        OptionSpecBuilder change = parser.accepts("change", "Your change address. Optional.");
+        OptionSpecBuilder anon = parser.accepts("anon", "A Bitcoin address to which the anonymized coins are sent.");
+        OptionSpecBuilder utxos = parser.acceptsAll(Arrays.asList("u", "utxoList"), "The list of utxos we will spend from, formatted as a JSON array.");
+
+        if (TEST_MODE) {
+            port.requiredUnless("local");
+            change.requiredUnless("local");
+            anon.requiredUnless("local");
+            utxos.requiredUnless("local");
+        }
+
+        port.withRequiredArg().ofType(Long.class);
+        change.withRequiredArg().ofType(String.class);
+        anon.withRequiredArg().ofType(String.class);
+        utxos.withRequiredArg().ofType(String.class);
+
+        parser.accepts("timeout", "The time in milliseconds that Shufflepuff waits before disconnecting due to a timeout.")
+              .withRequiredArg()
+              .ofType(Long.class)
+              .defaultsTo(1000L);
+
+        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction. Only used with blockchain.info and blockcypher.com.")
+              .withRequiredArg().ofType(Long.class).defaultsTo(5L);
+        parser.accepts("rpcuser", "Username to log in to btcd.")
+              .withRequiredArg().ofType(String.class);
+        parser.accepts("rpcpass", "Password to log in to btcd.")
+              .withRequiredArg().ofType(String.class);
+
+        parser.accepts("peers",
+              "The peers we will be connecting to, formatted as a JSON array.")
+              .withRequiredArg().ofType(String.class);
+
+        parser.accepts("report", "Path to store report file.")
+              .withRequiredArg().ofType(String.class);
+
+        return parser;
+    }
+
+    private static JSONArray readJSONArray(String ar) {
+
+        try {
+            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
+            if (json == null) {
+                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+            }
+
+            return (JSONArray) json.get("x");
+
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+        }
+    }
+
+    public static void main(String[] opts) throws IOException, BitcoindException, CommunicationException {
+
+        OptionParser parser = getShuffleOptionsParser();
+        OptionSet options;
+        try {
+            options = parser.parse(opts);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            parser.printHelpOn(System.out);
+            return;
+        }
+
+        // Check for help flag.
+        if (options.has("help")) {
+            parser.printHelpOn(System.out);
+            return;
+        }
+
+        Shuffle shuffle;
+        try {
+            shuffle = new Shuffle(options, System.out);
+        } catch (AddressFormatException a) {
+            System.out.println("Invalid private key: " + a.getMessage());
+            return;
+        } catch (BitcoinCrypto.Exception e) {
+            System.out.print(e.getMessage());
+            return;
+        } catch (IllegalArgumentException
+              //| ClassCastException
+              | ParseException
+              | FormatException
+              | UnknownHostException
+              | NoSuchAlgorithmException e) {
+
+            System.out.println("Unable to setup protocol: " + e.getMessage());
+            return;
+        }
+
+        // Warn for blockchain.info or other blockchain service.
+        if (options.valueOf("query").equals("blockchain.info") ||
+              options.valueOf("query").equals("blockcypher.com")) {
+
+            System.out.println("Warning: you have chosen to query address " +
+                  "balances over through a third party service!");
+        }
+
+        Collection<Player.Report> reports;
+        try {
+            reports = shuffle.cycle();
+        } catch (InterruptedException | ExecutionException | NullPointerException e) {
+            throw new RuntimeException(e);
+        } catch (CoinNetworkException | AddressFormatException e) {
+            System.out.println("Protocol failed: " + e.getMessage());
+            return;
+        } catch (ProtocolFailure e) {
+            System.out.println("Protocol failed as the result of a bug. Please alert Daniel Krawisz" +
+                  " at daniel.krawisz@thingobjectentity.net and include the logs that Shufflepuff" +
+                  " outputted. shutting down.");
+            return;
+        } finally {
+            shuffle.close();
+        }
+
+        for (Player.Report report : reports) {
+            System.out.println(report.toString());
+        }
     }
 
     // TODO
@@ -854,21 +932,6 @@ public class Shuffle {
                 amount, fee, coin, crypto, channel, m, System.out, null);
     }
 
-    private static JSONArray readJSONArray(String ar) {
-
-        try {
-            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
-            if (json == null) {
-                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
-            }
-
-            return (JSONArray) json.get("x");
-
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
-        }
-    }
-
     public Collection<Player.Report> cycle()
             throws IOException, InterruptedException, ExecutionException,
             CoinNetworkException, AddressFormatException, ProtocolFailure {
@@ -908,79 +971,11 @@ public class Shuffle {
         return reportMap.values();
     }
 
-    public static class ProtocolFailure extends Exception {
-
-    }
-
     public void close() {
         executor.shutdownNow();
     }
 
-    public static void main(String[] opts) throws IOException, BitcoindException, CommunicationException {
+    public static class ProtocolFailure extends Exception {
 
-        OptionParser parser = getShuffleOptionsParser();
-        OptionSet options;
-        try {
-            options = parser.parse(opts);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            parser.printHelpOn(System.out);
-            return;
-        }
-
-        // Check for help flag.
-        if (options.has("help")) {
-            parser.printHelpOn(System.out);
-            return;
-        }
-
-        Shuffle shuffle;
-        try {
-            shuffle = new Shuffle(options, System.out);
-        } catch (AddressFormatException a) {
-            System.out.println("Invalid private key: " + a.getMessage());
-            return;
-        } catch (BitcoinCrypto.Exception e) {
-            System.out.print(e.getMessage());
-            return;
-        } catch (IllegalArgumentException
-                //| ClassCastException
-                | ParseException
-                | FormatException
-                | UnknownHostException
-                | NoSuchAlgorithmException e) {
-
-            System.out.println("Unable to setup protocol: " + e.getMessage());
-            return;
-        }
-
-        // Warn for blockchain.info or other blockchain service.
-        if (options.valueOf("query").equals("blockchain.info") ||
-                options.valueOf("query").equals("blockcypher.com")) {
-
-            System.out.println("Warning: you have chosen to query address " +
-                    "balances over through a third party service!");
-        }
-
-        Collection<Player.Report> reports;
-        try {
-            reports = shuffle.cycle();
-        } catch (InterruptedException | ExecutionException | NullPointerException e) {
-            throw new RuntimeException(e);
-        } catch (CoinNetworkException | AddressFormatException e) {
-            System.out.println("Protocol failed: " + e.getMessage());
-            return;
-        } catch (ProtocolFailure e) {
-            System.out.println("Protocol failed as the result of a bug. Please alert Daniel Krawisz" +
-                    " at daniel.krawisz@thingobjectentity.net and include the logs that Shufflepuff" +
-                    " outputted. shutting down.");
-            return;
-        } finally {
-            shuffle.close();
-        }
-
-        for (Player.Report report : reports) {
-            System.out.println(report.toString());
-        }
     }
 }

@@ -14,8 +14,6 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
 
-import org.bitcoinj.core.TransactionOutPoint;
-
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -50,24 +48,14 @@ public class TransactionMutator implements Coin {
 
     //todo: fill me
     @Override
-    public long valueHeld(TransactionOutPoint transactionOutPoint) throws CoinNetworkException {
-        return 0;
+    public long valueHeld(VerificationKey verificationKey) throws CoinNetworkException {
+        return coin.valueHeld(verificationKey);
     }
 
     //todo: fill me
     @Override
-    public boolean sufficientFunds(TransactionOutPoint transactionOutPoint, long amount) throws CoinNetworkException, IOException {
-        return false;
-    }
-
-
-    public long valueHeld(Address addr) throws CoinNetworkException {
-        return coin.valueHeld(addr);
-    }
-
-
-    public boolean sufficientFunds(Address addr, long amount) {
-        return coin.sufficientFunds(addr, amount);
+    public boolean sufficientFunds(VerificationKey vk, long amount) throws CoinNetworkException, IOException {
+        return coin.sufficientFunds(vk, amount);
     }
 
     @Override

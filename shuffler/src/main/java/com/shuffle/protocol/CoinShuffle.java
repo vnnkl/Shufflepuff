@@ -17,8 +17,6 @@ import com.shuffle.bitcoin.EncryptionKey;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.impl.SigningKeyImpl;
-import com.shuffle.bitcoin.impl.VerificationKeyImpl;
 import com.shuffle.chan.Send;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.blame.Blame;
@@ -34,7 +32,6 @@ import com.shuffle.protocol.message.Phase;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
 import java.util.Deque;
@@ -429,18 +426,17 @@ public class CoinShuffle {
     // several failed rounds until they have eliminated malicious players.
     class Round {
         public final int me; // Which player am I?
-        public final Map<Integer, VerificationKeyImpl> players; // The players' public keys.
+        public final Map<Integer, VerificationKey> players; // The players' public keys.
         public final int N; // The number of players.
-        public final VerificationKeyImpl vk; // My verification public key, which is also my identity.
+        public final VerificationKey vk; // My verification public key, which is also my identity.
         // This will contain the new encryption public keys.
         public final Map<VerificationKey, EncryptionKey> encryptionKeys = new HashMap<>();
-        public final Map<VerificationKey, List<TransactionOutPoint>> utxoLists = new HashMap<>();
         public final Address addrNew;
         public final Address change; // My change address. (may be null).
         public final Map<VerificationKey, Bytestring> signatures = new HashMap<>();
         public final Mailbox mailbox;
         final CurrentPhase phase;
-        final SigningKeyImpl sk; // My signing private key.
+        final SigningKey sk; // My signing private key.
         private final long amount; // The amount to be shuffled.
         private final long fee; // The miner fee to be paid per player.
         public DecryptionKey dk = null;
@@ -451,7 +447,7 @@ public class CoinShuffle {
         Round(CurrentPhase phase,
               long amount,
               long fee,
-              SigningKeyImpl sk,
+              SigningKey sk,
               Map<Integer, VerificationKey> players,
               Address addrNew,
               Address change,
@@ -859,7 +855,7 @@ public class CoinShuffle {
 
             // Check that each participant has the required amounts.
             //todo: change from Address to UTXO array
-            for (VerificationKeyImpl player : players.values()) {
+            for (VerificationKey player : players.values()) {
                 //get utxos of player
                 //TransactionHash transactionHash utxoTxHash = players.get(vk).address();
                 //todo: fill me

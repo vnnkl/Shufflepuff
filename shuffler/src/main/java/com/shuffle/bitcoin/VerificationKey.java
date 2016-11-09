@@ -10,7 +10,10 @@ package com.shuffle.bitcoin;
 
 import com.shuffle.p2p.Bytestring;
 
+import org.bitcoinj.core.TransactionOutPoint;
+
 import java.io.Serializable;
+import java.util.ArrayList;
 
 /**
  *
@@ -27,4 +30,7 @@ public interface VerificationKey extends Comparable, Serializable {
 
     // Get the cryptocurrency address corresponding to this public key.
     Address address();
+
+    // Get the cryptocurrencies unspent TransactionOutpoints as a List to this public key.
+    ArrayList<TransactionOutPoint> getUtxoList();
 }

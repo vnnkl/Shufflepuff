@@ -38,6 +38,7 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -173,22 +174,27 @@ public abstract class Bitcoin implements Coin {
      * The valueHeld method takes in an Address variable and returns the balance held using
      * satoshis as the unit.
      *
-     * @param transactionOutPoint
+     * @param verificationKey
      */
 
     @Override
-    public long valueHeld(TransactionOutPoint transactionOutPoint) throws CoinNetworkException {
-
+    public long valueHeld(VerificationKey verificationKey) throws CoinNetworkException {
+        ArrayList<TransactionOutPoint> txPoints = verificationKey.getUtxoList();
         long value = 0;
-        try {
-            Long vout = transactionOutPoint.getIndex();
-            TransactionHash transactionHash = new TransactionHash(transactionOutPoint.getHash());
-            value = getUtxoBalance(transactionOutPoint);
-        } catch (IOException e) {
-            throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
-        } catch (BitcoindException | CommunicationException e) {
-            e.printStackTrace();
+
+        for (TransactionOutPoint txOutPoint : txPoints) {
+            TransactionHash txHash = new TransactionHash(txOutPoint.getHash());
+            try {
+                if (isUtxo(txHash.toString(), Math.toIntExact(txOutPoint.getIndex()))) {
+                    value = value + txOutPoint.getConnectedOutput().getValue().getValue();
+                }
+            } catch (IOException e) {
+                throw new CoinNetworkException("Could not look up balance: " + e.getMessage());
+            } catch (BitcoindException | CommunicationException e) {
+                e.printStackTrace();
+            }
         }
+
         return value;
     }
 
@@ -210,11 +216,20 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public final boolean sufficientFunds(TransactionOutPoint transactionOutPoint, long amount) throws CoinNetworkException, IOException {
-
-        //
-        TransactionOutput transaction = getTransaction(transactionOutPoint).getOutput(vout.longValue());
-        return transaction.getValue().getValue() <= amount;
+    public final boolean sufficientFunds(VerificationKey vk, long amount) throws CoinNetworkException, IOException {
+        // todo make me cleaner
+        long valueHeld = 0;
+        for (TransactionOutPoint outpoint : vk.getUtxoList()) {
+            long vout = outpoint.getIndex();
+            try {
+                if (isUtxo(outpoint.getHash().toString(), Math.toIntExact(vout))) {
+                    valueHeld = valueHeld + getUtxoBalance(outpoint);
+                }
+            } catch (BitcoindException | CommunicationException e) {
+                e.printStackTrace();
+            }
+        }
+        return valueHeld <= amount;
 
     }
 

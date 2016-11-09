@@ -22,7 +22,7 @@ public class VerificationKeyImpl implements VerificationKey {
    private final ECKey ecKey;
    private final byte[] vKey;
    private final NetworkParameters params;
-   public ArrayList<TransactionOutPoint> utxoList = new ArrayList<>();
+   private ArrayList<TransactionOutPoint> utxoList = new ArrayList<>();
 
    public VerificationKeyImpl(byte[] ecKey, NetworkParameters params) {
       this.ecKey = ECKey.fromPublicOnly(ecKey);
@@ -38,6 +38,15 @@ public class VerificationKeyImpl implements VerificationKey {
       this.vKey = this.ecKey.getPubKey();
       this.params = params;
       this.address = new AddressImpl(this.ecKey.toAddress(params));
+   }
+
+   public VerificationKeyImpl(String string, NetworkParameters params, ArrayList<TransactionOutPoint> outPoints) {
+      byte[] bytes = Hex.decode(string);
+      this.ecKey = ECKey.fromPublicOnly(bytes);
+      this.vKey = this.ecKey.getPubKey();
+      this.params = params;
+      this.address = new AddressImpl(this.ecKey.toAddress(params));
+      this.utxoList = outPoints;
    }
 
    public ArrayList<TransactionOutPoint> getUtxoList() {

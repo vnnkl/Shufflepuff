@@ -12,10 +12,12 @@ import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
+import org.bitcoinj.core.TransactionOutPoint;
+
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /**
  * A mock implementation of a VerificationKey.
@@ -23,8 +25,8 @@ import java.util.regex.Matcher;
  * Created by Daniel Krawisz on 12/7/15.
  */
 public class MockVerificationKey implements VerificationKey, Serializable {
-    public final int index;
     private static Pattern pattern = Pattern.compile("^vk\\[[0-9]+\\]$");
+    public final int index;
 
     public MockVerificationKey(int index) {
         this.index = index;
@@ -55,6 +57,12 @@ public class MockVerificationKey implements VerificationKey, Serializable {
     @Override
     public Address address() {
         return new MockAddress(Integer.toString(index));
+    }
+
+    //todo: fix me
+    @Override
+    public ArrayList<TransactionOutPoint> getUtxoList() {
+        return null;
     }
 
     public String toString() {

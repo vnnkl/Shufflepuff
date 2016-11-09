@@ -14,6 +14,7 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.impl.TransactionHash;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
@@ -29,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Reader;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -256,8 +258,13 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         return entry.amountHeld;
     }
 
-    public boolean sufficientFunds(Address addr, long amount) {
-        return valueHeld(addr) >= amount;
+    public boolean sufficientFunds(VerificationKey vk, long amount) {
+        try {
+            return valueHeld(vk) >= amount;
+        } catch (CoinNetworkException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
@@ -298,17 +305,20 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
                 new HashMap<Output, VerificationKey>());
     }
 
-    //todo: fill me
+    //todo: fix me
     @Override
-    public long valueHeld(TransactionOutPoint transactionOutPoint) throws CoinNetworkException {
-        return 0;
+    public long valueHeld(VerificationKey verificationKey) throws CoinNetworkException {
+        ArrayList<TransactionOutPoint> txPoints = verificationKey.getUtxoList();
+        long value = 0;
+        for (TransactionOutPoint txOutPoint : txPoints) {
+            TransactionHash txHash = new TransactionHash(txOutPoint.getHash());
+
+            value = value + txOutPoint.getConnectedOutput().getValue().getValue();
+
+        }
+        return value;
     }
 
-    //todo: fill me
-    @Override
-    public boolean sufficientFunds(TransactionOutPoint transactionOutPoint, long amount) throws CoinNetworkException, IOException {
-        return false;
-    }
 
     @Override
     public Transaction getConflictingTransaction(
