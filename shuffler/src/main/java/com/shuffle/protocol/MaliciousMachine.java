@@ -32,6 +32,7 @@ import org.bitcoinj.core.TransactionOutPoint;
 import java.io.IOException;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -427,7 +428,7 @@ public final class MaliciousMachine extends CoinShuffle {
             SigningKey sk, // The signing key of the current player.
             // The set of players, sorted alphabetically by address.
             SortedSet<VerificationKey> players,
-            SortedSet<TransactionOutPoint> t, // TODO
+            HashSet<TransactionOutPoint> t, // TODO
             Address addrNew,
             Address change, // Change address. (can be null)
             // If this is not null, the machine is put in this channel so that another thread can

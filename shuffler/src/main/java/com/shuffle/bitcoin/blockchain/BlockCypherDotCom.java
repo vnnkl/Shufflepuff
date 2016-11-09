@@ -22,6 +22,7 @@ import org.json.JSONTokener;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
@@ -96,7 +97,7 @@ public final class BlockCypherDotCom extends Bitcoin {
      * array.
      *
      */
-    public List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
+    public List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
 
         /*
         String url;

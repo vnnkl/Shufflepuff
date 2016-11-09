@@ -38,6 +38,7 @@ import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -111,7 +112,7 @@ public abstract class Bitcoin implements Coin {
     public Bitcoin.Transaction shuffleTransaction(long amount,
                                                   long fee,
                                                   List<VerificationKey> from,
-                                                  Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
+                                                  Map<VerificationKey, HashSet<TransactionOutPoint>> peerUtxos,
                                                   Queue<Address> to,
                                                   Map<VerificationKey, Address> changeAddresses)
             throws CoinNetworkException, AddressFormatException {
@@ -121,7 +122,7 @@ public abstract class Bitcoin implements Coin {
 
         for (VerificationKey key : from) {
             try {
-                SortedSet<TransactionOutPoint> utxos = peerUtxos.get(key);
+                HashSet<TransactionOutPoint> utxos = peerUtxos.get(key);
                 List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
                 for (Bitcoin.Transaction t : transactions) {
                     org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);
@@ -191,7 +192,7 @@ public abstract class Bitcoin implements Coin {
      */
 
     @Override
-    public long valueHeld(SortedSet<TransactionOutPoint> utxos) throws CoinNetworkException, AddressFormatException {
+    public long valueHeld(HashSet<TransactionOutPoint> utxos) throws CoinNetworkException, AddressFormatException {
 
         long sum = 0;
         for (TransactionOutPoint t : utxos) {
@@ -224,7 +225,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public final boolean sufficientFunds(SortedSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException, IOException {
+    public final boolean sufficientFunds(HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException, IOException {
 
         List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
 
@@ -373,8 +374,8 @@ public abstract class Bitcoin implements Coin {
 
     // TODO
     // Block explorers need to be updated
-    // Duplicates due to SortedSet<TransactionOutPoint> ?
-    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(SortedSet<TransactionOutPoint> t)
+    // Duplicates due to HashSet<TransactionOutPoint> ?
+    protected synchronized List<Bitcoin.Transaction> getAddressTransactions(HashSet<TransactionOutPoint> t)
             throws IOException, CoinNetworkException, AddressFormatException {
 
         /*
@@ -412,7 +413,7 @@ public abstract class Bitcoin implements Coin {
     abstract boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException;
 
     // Should NOT be synchronized.
-    abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t)
+    abstract protected List<Bitcoin.Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t)
             throws IOException, CoinNetworkException, AddressFormatException;
 
     // Should be synchronized.

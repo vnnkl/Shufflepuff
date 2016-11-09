@@ -92,9 +92,9 @@ public class CoinShuffle {
 
         public final Map<Integer, VerificationKey> players; // The players' public keys.
 
-        public final SortedSet<TransactionOutPoint> utxos;
+        public final HashSet<TransactionOutPoint> utxos;
 
-        public Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos = new HashMap<>();
+        public Map<VerificationKey, HashSet<TransactionOutPoint>> peerUtxos = new HashMap<>();
 
         public final int N; // The number of players.
 
@@ -894,7 +894,7 @@ public class CoinShuffle {
                 long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
-                SortedSet<TransactionOutPoint> utxos,
+                HashSet<TransactionOutPoint> utxos,
                 Address addrNew,
                 Address change,
                 Mailbox mailbox) throws InvalidParticipantSetException {
@@ -977,7 +977,7 @@ public class CoinShuffle {
         return true;
     }
 
-    private static String makeJSONString(SortedSet<TransactionOutPoint> utxos) {
+    private static String makeJSONString(HashSet<TransactionOutPoint> utxos) {
 
         String jsonString = "{";
         String output = "\"output\"";
@@ -990,7 +990,7 @@ public class CoinShuffle {
             jsonString = jsonString.concat(",");
             jsonString = jsonString.concat(vout + ":" + String.valueOf(t.getIndex()));
             jsonString = jsonString.concat("}");
-            if (t != utxos.last()) {
+            if (t != utxos.toArray()[utxos.size() - 1]) {
                 jsonString = jsonString.concat(",");
             }
         }
@@ -1018,12 +1018,12 @@ public class CoinShuffle {
     // In phase 1, everybody announces their new encryption keys to one another. They also
     // optionally send change addresses to one another. This function reads that information
     // from a message and puts it in some nice data structures.
-    private static Map<VerificationKey, SortedSet<TransactionOutPoint>> readAnnouncements(Map<VerificationKey, Message> messages,
+    private static Map<VerificationKey, HashSet<TransactionOutPoint>> readAnnouncements(Map<VerificationKey, Message> messages,
                            Map<VerificationKey, EncryptionKey> encryptionKeys,
                            Map<VerificationKey, Address> change,
                            NetworkParameters netParams) throws FormatException {
 
-        Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxoMap = new HashMap<>();
+        Map<VerificationKey, HashSet<TransactionOutPoint>> peerUtxoMap = new HashMap<>();
         for (Map.Entry<VerificationKey, Message> entry : messages.entrySet()) {
             VerificationKey key = entry.getKey();
             Message message = entry.getValue();
@@ -1034,7 +1034,7 @@ public class CoinShuffle {
 
             JSONArray utxoList = readJSONArray(message.readString());
 
-            SortedSet<TransactionOutPoint> peerUtxoSet = new TreeSet<>();
+            HashSet<TransactionOutPoint> peerUtxoSet = new HashSet<>();
             for (int i = 1; i <= utxoList.size(); i++) {
                 JSONObject o = (JSONObject) utxoList.get(i - 1);
                 long vout = (long) o.get("vout");
@@ -1252,7 +1252,7 @@ public class CoinShuffle {
             long fee, // The miner fee to be paid per player.
             SigningKey sk, // The signing key of the current player.
             SortedSet<VerificationKey> players, // The set of players, sorted alphabetically by address.
-            SortedSet<TransactionOutPoint> utxos, // The utxo list of the current player
+            HashSet<TransactionOutPoint> utxos, // The utxo list of the current player
             Address addrNew, // My new (anonymous) address.
             Address change, // Change address. (can be null)
             // If this is not null, the machine is put in this channel so that another thread can

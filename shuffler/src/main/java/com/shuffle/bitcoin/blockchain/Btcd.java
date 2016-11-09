@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
@@ -138,7 +139,7 @@ public class Btcd extends Bitcoin {
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
      */
-    public synchronized List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) throws IOException {
+    public synchronized List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         /*
         List<Transaction> txList = null;
@@ -306,7 +307,7 @@ public class Btcd extends Bitcoin {
 
 
     @Override
-    protected synchronized List<Transaction> getAddressTransactions(SortedSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
+    protected synchronized List<Transaction> getAddressTransactions(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
         return getAddressTransactionsInner(t);
     }
 

@@ -12,6 +12,7 @@ import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -31,15 +32,15 @@ public interface Coin {
             long amount,
             long fee,
             List<VerificationKey> from,
-            Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
+            Map<VerificationKey, HashSet<TransactionOutPoint>> peerUtxos,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException, AddressFormatException;
 
-    long valueHeld(SortedSet<TransactionOutPoint> utxos) throws CoinNetworkException, AddressFormatException;
+    long valueHeld(HashSet<TransactionOutPoint> utxos) throws CoinNetworkException, AddressFormatException;
 
     // Returns true if the address follows the correct format for CoinShuffle.
     // Returns false otherwise.
-    boolean sufficientFunds(SortedSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException, IOException;
+    boolean sufficientFunds(HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException, IOException;
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.

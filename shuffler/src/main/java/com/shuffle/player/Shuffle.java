@@ -628,7 +628,7 @@ public class Shuffle {
                     throw new IllegalArgumentException("Could not read " + o.get("utxos") + " as json array.");
                 }
 
-                SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
+                HashSet<TransactionOutPoint> checkDuplicateUtxo = new HashSet<>();
                 for (int j = 1; j <= jsonUtxos.size(); j++) {
                     JSONObject obj;
                     try {
@@ -733,7 +733,7 @@ public class Shuffle {
                 throw new IllegalArgumentException("Could not read " + options.valueOf("utxos") + " as json array.");
             }
 
-            SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
+            HashSet<TransactionOutPoint> checkDuplicateUtxo = new HashSet<>();
             for (int i = 1; i <= jsonUtxos.size(); i++) {
                 JSONObject o;
                 try {
@@ -786,7 +786,7 @@ public class Shuffle {
             OptionSet options,
             String key,
             int id,
-            SortedSet<TransactionOutPoint> utxos,
+            HashSet<TransactionOutPoint> utxos,
             long port,
             String anon,
             String change,

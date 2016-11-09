@@ -30,6 +30,7 @@ import java.io.ObjectOutputStream;
 import java.io.Reader;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -359,7 +360,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     @Override
     // TODO
     //public synchronized long valueHeld(Address addr) {
-    public synchronized long valueHeld(SortedSet<TransactionOutPoint> utxos) {
+    public synchronized long valueHeld(HashSet<TransactionOutPoint> utxos) {
         //Output entry = blockchain.get(addr);
         Output entry = blockchain.get(null);
         if (entry == null) return 0;
@@ -371,7 +372,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
     @Override
     //public boolean sufficientFunds(Address addr, long amount) {
-    public boolean sufficientFunds(SortedSet<TransactionOutPoint> utxos, long amount) {
+    public boolean sufficientFunds(HashSet<TransactionOutPoint> utxos, long amount) {
         // TODO
         return false;
         //return valueHeld(addr) >= amount;
@@ -383,7 +384,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
             final long fee,
             List<VerificationKey> from,
             // TODO
-            Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
+            Map<VerificationKey, HashSet<TransactionOutPoint>> peerUtxos,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException {
 

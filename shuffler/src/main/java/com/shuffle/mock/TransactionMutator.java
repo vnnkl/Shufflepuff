@@ -18,6 +18,7 @@ import com.shuffle.bitcoin.VerificationKey;
 import org.bitcoinj.core.TransactionOutPoint;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -40,7 +41,7 @@ public class TransactionMutator implements Coin {
             long amount,
             long fee,
             List<VerificationKey> from,
-            Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
+            Map<VerificationKey, HashSet<TransactionOutPoint>> peerUtxos,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses
     ) throws CoinNetworkException {
@@ -55,7 +56,7 @@ public class TransactionMutator implements Coin {
 
     @Override
     //public long valueHeld(Address addr) throws CoinNetworkException {
-    public long valueHeld(SortedSet<TransactionOutPoint> utxos) {
+    public long valueHeld(HashSet<TransactionOutPoint> utxos) {
         //return coin.valueHeld(addr);
         return 0;
     }
@@ -63,7 +64,7 @@ public class TransactionMutator implements Coin {
     @Override
     // TODO
     //public boolean sufficientFunds(Address addr, long amount) {
-    public boolean sufficientFunds(SortedSet<TransactionOutPoint> utxos, long amount) {
+    public boolean sufficientFunds(HashSet<TransactionOutPoint> utxos, long amount) {
         //return coin.sufficientFunds(addr, amount);
         return false;
     }

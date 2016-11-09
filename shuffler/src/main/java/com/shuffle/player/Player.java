@@ -82,7 +82,7 @@ class Player {
     private final Address change;
     private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
-    private final SortedSet<TransactionOutPoint> utxos;
+    private final HashSet<TransactionOutPoint> utxos;
     private final NetworkParameters netParams;
 
     public Report report = null;
@@ -103,7 +103,7 @@ class Player {
          Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
          PrintStream stream,
-         SortedSet<TransactionOutPoint> utxos,
+         HashSet<TransactionOutPoint> utxos,
          NetworkParameters netParams
     ) {
         if (sk == null || coin == null || session == null || addrs == null

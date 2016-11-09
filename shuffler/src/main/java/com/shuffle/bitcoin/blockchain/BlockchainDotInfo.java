@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
@@ -83,7 +84,7 @@ public final class BlockchainDotInfo extends Bitcoin {
      * array.
      *
      */
-    protected final List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) throws IOException {
+    protected final List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         /*
         String url = "https://blockchain.info/rawaddr/" + address;

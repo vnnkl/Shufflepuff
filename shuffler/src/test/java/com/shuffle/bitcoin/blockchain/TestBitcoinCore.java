@@ -32,6 +32,11 @@ public class TestBitcoinCore {
         //testCase = new BitcoinCore(netParams, "admin", "pass");
     }
 
+    @Test
+    public void test2() {
+        // test confirmations, etc
+    }
+
     // REMOVE
     @Test
     public void test() {
