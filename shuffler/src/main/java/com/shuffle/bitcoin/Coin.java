@@ -38,6 +38,7 @@ public interface Coin {
             long amount,
             long fee,
             List<VerificationKey> from,
+            Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException, AddressFormatException;
 

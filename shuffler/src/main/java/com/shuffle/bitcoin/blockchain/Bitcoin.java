@@ -42,6 +42,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
 
 public abstract class Bitcoin implements Coin {
@@ -110,6 +111,7 @@ public abstract class Bitcoin implements Coin {
     public Bitcoin.Transaction shuffleTransaction(long amount,
                                                   long fee,
                                                   List<VerificationKey> from,
+                                                  Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
                                                   Queue<Address> to,
                                                   Map<VerificationKey, Address> changeAddresses)
             throws CoinNetworkException, AddressFormatException {

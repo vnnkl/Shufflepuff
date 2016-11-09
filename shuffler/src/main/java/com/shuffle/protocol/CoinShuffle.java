@@ -241,9 +241,18 @@ public class CoinShuffle {
                 inputs.add(players.get(i));
             }
 
+            /**
+             *
+             * TODO
+             *
+             * What about `myUtxos` ?
+             * `myUtxos` is never used.
+             *
+             */
+
             // Generate the join transaction.
             Transaction t = coin.shuffleTransaction(
-                    amount, fee, inputs, newAddresses, changeAddresses);
+                    amount, fee, inputs, peerUtxos, newAddresses, changeAddresses);
 
             checkDoubleSpending(t);
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
