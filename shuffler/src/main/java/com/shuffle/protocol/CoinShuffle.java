@@ -979,12 +979,10 @@ public class CoinShuffle {
 
     private static String makeJSONString(HashSet<TransactionOutPoint> utxos) {
 
-        String jsonString = "{";
-        String output = "\"output\"";
+        String jsonString = "[";
         String txhash = "\"txhash\"";
         String vout = "\"vout\"";
         for (TransactionOutPoint t : utxos) {
-            jsonString = jsonString.concat(output + ":");
             jsonString = jsonString.concat("{");
             jsonString = jsonString.concat(txhash + ":" + "\"" + t.getHash().toString() + "\"");
             jsonString = jsonString.concat(",");
@@ -994,7 +992,7 @@ public class CoinShuffle {
                 jsonString = jsonString.concat(",");
             }
         }
-        jsonString = jsonString.concat("}");
+        jsonString = jsonString.concat("]");
 
         return jsonString;
 

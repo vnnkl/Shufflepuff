@@ -9,6 +9,9 @@ import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.params.MainNetParams;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONValue;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -47,30 +50,50 @@ public class TestBitcoinCore {
 
     }
 
+    private static JSONArray readJSONArray(String ar) {
+
+        try {
+            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
+            if (json == null) {
+                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+            }
+
+            return (JSONArray) json.get("x");
+
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+        }
+    }
+
     // REMOVE
     @Test
     public void test() {
+
+        /**
+         * incorrect
+         */
+
         //SortedSet<TransactionOutPoint> utxos = new TreeSet<>();
         HashSet<TransactionOutPoint> utxos = new HashSet<>();
         utxos.add(new TransactionOutPoint(netParams, 2, Sha256Hash.wrap("4b08898741a647183c878bd4018daa998f3019b42515cf23a70e0c89aefbab3a")));
-        String jsonString = "{";
-        String output = "\"output\"";
+        utxos.add(new TransactionOutPoint(netParams, 3, Sha256Hash.wrap("04192d801e714cd661ea0b8182bbe3c3dcfb3ab21b563b100961baa9da3db652")));
+        String jsonString = "[";
         String txhash = "\"txhash\"";
         String vout = "\"vout\"";
         for (TransactionOutPoint t : utxos) {
-            jsonString = jsonString.concat(output + ":");
             jsonString = jsonString.concat("{");
             jsonString = jsonString.concat(txhash + ":" + "\"" + t.getHash().toString() + "\"");
             jsonString = jsonString.concat(",");
             jsonString = jsonString.concat(vout + ":" + String.valueOf(t.getIndex()));
             jsonString = jsonString.concat("}");
-            //if (t != utxos.last()) {
             if (t != utxos.toArray()[utxos.size() - 1]) {
                 jsonString = jsonString.concat(",");
             }
         }
 
-        jsonString = jsonString.concat("}");
+        jsonString = jsonString.concat("]");
+
+        System.out.println(readJSONArray(jsonString));
 
         System.out.println(jsonString);
     }
