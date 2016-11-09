@@ -149,6 +149,10 @@ class Player {
             connectTo.addAll(addrs);
             connectTo.remove(sk.VerificationKey());
 
+            // connectTo is a set of Verification Keys
+            // remove myUtxos from peerUtxos
+            // myUtxos, peerUtxos
+
             long wait = time - System.currentTimeMillis();
 
             // Run the protocol.
@@ -193,13 +197,12 @@ class Player {
             try {
 
                 // Check whether I have sufficient funds to engage in this join.
-                Address addr = sk.VerificationKey().address();
                 // funds will be 0 because valueHeld is messed up
-                long funds = coin.valueHeld(addr);
+                long funds = coin.valueHeld(myUtxos);
                 // if (funds < amount) {
-                if (!coin.sufficientFunds(addr, amount)) {
+                if (!coin.sufficientFunds(myUtxos, amount)) {
                     connect.close();
-                    return Report.invalidInitialState("Insufficient funds! Address " + addr + " holds only " + funds + "; need at least " + amount);
+                    return Report.invalidInitialState("Insufficient funds! Utxos " + myUtxos + " hold only " + funds + "; need at least " + amount);
                 }
 
                 final Chan<Phase> ch = new BasicChan<>(2);

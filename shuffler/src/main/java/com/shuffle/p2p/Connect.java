@@ -151,6 +151,8 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
     public Connect(Channel<Identity, P> channel, Crypto crypto)
             throws InterruptedException, IOException {
 
+        // TODO
+        // For large Shuffles, a capacity of 100 could be too low
         this(channel, crypto, 100);
     }
 

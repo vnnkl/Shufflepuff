@@ -892,6 +892,7 @@ public class Shuffle {
         }
 
         keys.add(vk);
+        this.utxos.put(vk, utxos);
         peers.put(vk, new Either<>(null, id));
 
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
