@@ -214,9 +214,6 @@ public class Shuffle {
     public final Crypto crypto;
     Set<Player> local = new HashSet<>();
     Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
-    // TODO
-    // Combine this with `peers`?
-    Map<VerificationKey, Set> utxos = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
@@ -483,7 +480,7 @@ public class Shuffle {
                         + jsonPeers.get(i - 1) + " as json object.");
             }
 
-            String key, addr, utxos;
+            String key, addr;
 
             // TODO
             // Change addr to tcpaddr
@@ -498,20 +495,12 @@ public class Shuffle {
             } catch (ClassCastException e) {
                 throw new IllegalArgumentException("Could not read " + o.get("address") + " as string.");
             }
-            try {
-                utxos = (String) o.get("utxos");
-            } catch (ClassCastException e) {
-                throw new IllegalArgumentException("Could not read " + o.get("utxos") + " as string.");
-            }
 
             if (key == null) {
                 throw new IllegalArgumentException("Peer missing filed \"key\".");
             }
             if (addr == null) {
                 throw new IllegalArgumentException("Peer missing field \"address\".");
-            }
-            if (utxos == null) {
-                throw new IllegalArgumentException("Peer missing field \"utxos\".");
             }
 
             if (checkDuplicateAddress.contains(addr)) {
@@ -546,51 +535,7 @@ public class Shuffle {
                 throw new IllegalArgumentException("Duplicate key " + key);
             }
 
-            JSONArray jsonUtxos = readJSONArray(utxos);
-            if (jsonUtxos == null) {
-                throw new IllegalArgumentException("Could not read " + o.get("utxos") + " as json array.");
-            }
-
-            SortedSet<TransactionOutPoint> checkDuplicateUtxo = new TreeSet<>();
-            for (int j = 1; j <= jsonUtxos.size(); j++) {
-                JSONObject obj;
-                try {
-                    obj = (JSONObject) jsonUtxos.get(i - 1);
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read "
-                            + jsonUtxos.get(i - 1) + " as json object.");
-                }
-
-                // Long because we compare to null
-                Long vout;
-                Sha256Hash transactionHash;
-                try {
-                    vout = (Long) obj.get("vout");
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + obj.get("vout") + " as Long");
-                }
-                try {
-                    transactionHash = Sha256Hash.wrap((String) obj.get("transactionHash"));
-                } catch (ClassCastException e) {
-                    throw new IllegalArgumentException("Could not read option " + obj.get("transactionHash") + " as string");
-                }
-                if (vout == null) {
-                    throw new IllegalArgumentException("Utxo missing field \"vout\".");
-                }
-                if (transactionHash == null) {
-                    throw new IllegalArgumentException("Utxo missing field \"transactionHash\".");
-                }
-                // Error if vout / transactionHash not in correct format.
-                TransactionOutPoint t = new TransactionOutPoint(netParams, vout, transactionHash);
-                if (checkDuplicateUtxo.contains(t)) {
-                    throw new IllegalArgumentException("Duplicate TransactionOutPoint " + t);
-                } else {
-                    checkDuplicateUtxo.add(t);
-                }
-            }
-
             this.peers.put(vk, address);
-            this.utxos.put(vk, checkDuplicateUtxo);
             this.keys.add(vk);
         }
 
@@ -892,7 +837,6 @@ public class Shuffle {
         }
 
         keys.add(vk);
-        this.utxos.put(vk, utxos);
         peers.put(vk, new Either<>(null, id));
 
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
@@ -908,7 +852,7 @@ public class Shuffle {
         return new Player(
                 sk, session, anonAddress,
                 changeAddress, keys, time,
-                amount, fee, coin, crypto, channel, m, System.out, utxos, this.utxos);
+                amount, fee, coin, crypto, channel, m, System.out, utxos);
     }
 
     private static JSONArray readJSONArray(String ar) {

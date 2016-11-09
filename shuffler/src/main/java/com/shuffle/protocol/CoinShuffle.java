@@ -83,9 +83,9 @@ public class CoinShuffle {
 
         public final Map<Integer, VerificationKey> players; // The players' public keys.
 
-        public final SortedSet<TransactionOutPoint> myUtxos;
+        public final SortedSet<TransactionOutPoint> utxos;
 
-        public final Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos;
+        public final Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos = new HashMap<>();
 
         public final int N; // The number of players.
 
@@ -152,6 +152,11 @@ public class CoinShuffle {
             System.out.println("Player " + me + " is about to read announcements.");
 
             readAnnouncements(announcement, encryptionKeys, changeAddresses);
+
+            // TODO
+            /**
+             * Broadcast utxos to each other
+             */
 
             // Phase 2: Shuffle
             // In the shuffle phase, players go in order and reorder the addresses they have been
@@ -240,15 +245,6 @@ public class CoinShuffle {
             for (int i = 1; i <= N; i++) {
                 inputs.add(players.get(i));
             }
-
-            /**
-             *
-             * TODO
-             *
-             * What about `myUtxos` ?
-             * `myUtxos` is never used.
-             *
-             */
 
             // Generate the join transaction.
             Transaction t = coin.shuffleTransaction(
@@ -490,12 +486,14 @@ public class CoinShuffle {
             List<VerificationKey> offenders = new LinkedList<>();
 
             // Check that each participant has the required amounts.
+            /*
             for (VerificationKey player : players.values()) {
                 SortedSet<TransactionOutPoint> utxos = peerUtxos.get(player);
                 if (!coin.sufficientFunds(utxos, amount + fee)) {
                     offenders.add(player);
                 }
             }
+            */
 
             // If they do, return.
             if (offenders.isEmpty()) return;
@@ -879,8 +877,7 @@ public class CoinShuffle {
                 long fee,
                 SigningKey sk,
                 Map<Integer, VerificationKey> players,
-                SortedSet<TransactionOutPoint> myUtxos,
-                Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos,
+                SortedSet<TransactionOutPoint> utxos,
                 Address addrNew,
                 Address change,
                 Mailbox mailbox) throws InvalidParticipantSetException {
@@ -894,8 +891,7 @@ public class CoinShuffle {
             vk = sk.VerificationKey();
             this.mailbox = mailbox;
             this.addrNew = addrNew;
-            this.myUtxos = myUtxos;
-            this.peerUtxos = peerUtxos;
+            this.utxos = utxos;
 
             int m = -1;
             N = players.size();
@@ -1182,8 +1178,7 @@ public class CoinShuffle {
             long fee, // The miner fee to be paid per player.
             SigningKey sk, // The signing key of the current player.
             SortedSet<VerificationKey> players, // The set of players, sorted alphabetically by address.
-            SortedSet<TransactionOutPoint> myUtxos, // The utxo list of the current player
-            Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos, // The set of utxo lists for all players
+            SortedSet<TransactionOutPoint> utxos, // The utxo list of the current player
             Address addrNew, // My new (anonymous) address.
             Address change, // Change address. (can be null)
             // If this is not null, the machine is put in this channel so that another thread can
@@ -1220,7 +1215,7 @@ public class CoinShuffle {
                 sk.VerificationKey(), numberedPlayers.values(), messages);
 
         return this.new Round(
-                machine, amount, fee, sk, numberedPlayers, myUtxos, peerUtxos, addrNew, change, mailbox
+                machine, amount, fee, sk, numberedPlayers, utxos, addrNew, change, mailbox
         ).protocolDefinition();
     }
 

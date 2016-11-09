@@ -26,7 +26,6 @@ import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.core.TransactionOutput;
@@ -203,8 +202,6 @@ public abstract class Bitcoin implements Coin {
 
     protected synchronized long getUtxoBalance(TransactionOutPoint t) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
 
-
-
         return 0;
         /*
         TransactionOutput tx = getTransaction(transactionHash).getOutput(vout);
@@ -369,6 +366,7 @@ public abstract class Bitcoin implements Coin {
 
     // Since we rely on 3rd party services to query the blockchain, by
     // default we cache the result.
+    // TODO
     protected synchronized List<Bitcoin.Transaction> getAddressTransactions(String transactionHash, Long vout)
             throws IOException, CoinNetworkException, AddressFormatException {
 

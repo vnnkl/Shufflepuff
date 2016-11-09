@@ -81,8 +81,7 @@ class Player {
     private final Address change;
     private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
-    private final SortedSet<TransactionOutPoint> myUtxos;
-    private final Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos;
+    private final SortedSet<TransactionOutPoint> utxos;
 
     public Report report = null;
 
@@ -102,8 +101,7 @@ class Player {
          Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel,
          Messages.ShuffleMarshaller m,
          PrintStream stream,
-         SortedSet<TransactionOutPoint> myUtxos,
-         Map<VerificationKey, SortedSet<TransactionOutPoint>> peerUtxos
+         SortedSet<TransactionOutPoint> utxos
     ) {
         if (sk == null || coin == null || session == null || addrs == null
                 || crypto == null || anon == null || channel == null) {
@@ -122,8 +120,7 @@ class Player {
         this.addrs = addrs;
         this.m = m;
         this.stream = stream;
-        this.myUtxos = myUtxos;
-        this.peerUtxos = peerUtxos;
+        this.utxos = utxos;
     }
 
     public Running start() throws IOException, InterruptedException {
@@ -164,7 +161,7 @@ class Player {
                 // it has been successful.
                 Messages messages = new Messages(session, sk, collector.connected, collector.inbox, m);
                 CoinShuffle cs = new CoinShuffle(messages, crypto, coin);
-                return Report.success(cs.runProtocol(amount, fee, sk, addrs, myUtxos, peerUtxos, anon, change, ch));
+                return Report.success(cs.runProtocol(amount, fee, sk, addrs, utxos, anon, change, ch));
             } catch (Matrix m) {
                 return Report.failure(m, addrs);
             } catch (TimeoutException e) {
@@ -193,11 +190,11 @@ class Player {
 
                 // Check whether I have sufficient funds to engage in this join.
                 // funds will be 0 because valueHeld is messed up
-                long funds = coin.valueHeld(myUtxos);
+                long funds = coin.valueHeld(utxos);
                 // if (funds < amount) {
-                if (!coin.sufficientFunds(myUtxos, amount)) {
+                if (!coin.sufficientFunds(utxos, amount)) {
                     connect.close();
-                    return Report.invalidInitialState("Insufficient funds! Utxos " + myUtxos + " hold only " + funds + "; need at least " + amount);
+                    return Report.invalidInitialState("Insufficient funds! Utxos " + utxos + " hold only " + funds + "; need at least " + amount);
                 }
 
                 final Chan<Phase> ch = new BasicChan<>(2);
