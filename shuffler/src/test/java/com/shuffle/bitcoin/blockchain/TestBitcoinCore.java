@@ -14,6 +14,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.HashSet;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
@@ -27,6 +30,34 @@ public class TestBitcoinCore {
 
     public TestBitcoinCore() throws MalformedURLException, BitcoindException, CommunicationException {
         //testCase = new BitcoinCore(netParams, "admin", "pass");
+    }
+
+    // REMOVE
+    @Test
+    public void test() {
+        //SortedSet<TransactionOutPoint> utxos = new TreeSet<>();
+        HashSet<TransactionOutPoint> utxos = new HashSet<>();
+        utxos.add(new TransactionOutPoint(netParams, 2, Sha256Hash.wrap("4b08898741a647183c878bd4018daa998f3019b42515cf23a70e0c89aefbab3a")));
+        String jsonString = "{";
+        String output = "\"output\"";
+        String txhash = "\"txhash\"";
+        String vout = "\"vout\"";
+        for (TransactionOutPoint t : utxos) {
+            jsonString = jsonString.concat(output + ":");
+            jsonString = jsonString.concat("{");
+            jsonString = jsonString.concat(txhash + ":" + "\"" + t.getHash().toString() + "\"");
+            jsonString = jsonString.concat(",");
+            jsonString = jsonString.concat(vout + ":" + String.valueOf(t.getIndex()));
+            jsonString = jsonString.concat("}");
+            //if (t != utxos.last()) {
+            if (t != utxos.toArray()[utxos.size() - 1]) {
+                jsonString = jsonString.concat(",");
+            }
+        }
+
+        jsonString = jsonString.concat("}");
+
+        System.out.println(jsonString);
     }
 
     @Test

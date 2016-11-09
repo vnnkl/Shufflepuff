@@ -2,12 +2,15 @@ package com.shuffle.bitcoin.blockchain;
 
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
+import com.shuffle.bitcoin.CoinNetworkException;
 
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutPoint;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.SortedSet;
@@ -57,7 +60,8 @@ public class BitcoinCore extends Bitcoin {
     synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
         String rawTx;
         try {
-            rawTx = client.getRawTransaction(transactionHash);
+            // TODO
+            rawTx = client.getTransaction(transactionHash);
         } catch (BitcoindException | CommunicationException e) {
             e.printStackTrace();
             return null;
@@ -72,8 +76,22 @@ public class BitcoinCore extends Bitcoin {
     // Don't need
     // TODO
     public synchronized List<Transaction> getAddressTransactionsInner(SortedSet<TransactionOutPoint> t) {
+
+        List<Transaction> txList = new ArrayList<>();
+
+        for (TransactionOutPoint tO : t) {
+            org.bitcoinj.core.Transaction tx;
+            try {
+                tx = getTransaction(tO.getHash().toString());
+
+            } catch (IOException e) {
+                // ?
+                return null;
+            }
+        }
+
         // confirmed
-        return new LinkedList<>();
+        return txList;
     }
 
     // TODO
@@ -84,6 +102,7 @@ public class BitcoinCore extends Bitcoin {
     }
 
     // Don't need
+    // TODO
     @Override
     protected synchronized List<Transaction> getAddressTransactions(SortedSet<TransactionOutPoint> t) {
         return getAddressTransactionsInner(t);

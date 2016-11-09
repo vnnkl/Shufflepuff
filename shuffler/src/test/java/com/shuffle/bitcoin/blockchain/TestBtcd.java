@@ -36,6 +36,8 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  */
 
 public class TestBtcd {
+    // TODO
+    /*
 
     NetworkParameters netParams = MainNetParams.get();
 
@@ -79,12 +81,13 @@ public class TestBtcd {
          * I feel like this is a suitable enough test to see that getWalletTransactions contains
          * the correct bitcoinj Transaction objects and is working.
          */
+    /*
         List<Bitcoin.Transaction> listOfTx = testCase.getAddressTransactions(testAddress);
         Transaction testTx = listOfTx.get(0).bitcoinj();
         Transaction testTx2 = listOfTx.get(1).bitcoinj();
         List<Transaction> testTxList = new LinkedList<>(Arrays.asList(testTx, testTx2));
         Assert.assertEquals(txList, testTxList);
 
-    }
+    }*/
 
 }

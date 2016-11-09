@@ -25,6 +25,8 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 public class TestBtcdTestnet {
 
+    // TODO
+    /*
     NetworkParameters netParams = TestNet3Params.get();
     Btcd testCase;
     HexBinaryAdapter adapter = new HexBinaryAdapter();
@@ -59,5 +61,6 @@ public class TestBtcdTestnet {
         List<Transaction> testTxList = new LinkedList<>(Arrays.asList(testTx, testTx2));
         Assert.assertEquals(txList, testTxList);
     }
+    */
 
 }

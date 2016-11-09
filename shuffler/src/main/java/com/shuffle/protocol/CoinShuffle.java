@@ -980,13 +980,13 @@ public class CoinShuffle {
     private static String makeJSONString(SortedSet<TransactionOutPoint> utxos) {
 
         String jsonString = "{";
-        String output = "output";
-        String txhash = "txhash";
-        String vout = "vout";
+        String output = "\"output\"";
+        String txhash = "\"txhash\"";
+        String vout = "\"vout\"";
         for (TransactionOutPoint t : utxos) {
             jsonString = jsonString.concat(output + ":");
             jsonString = jsonString.concat("{");
-            jsonString = jsonString.concat(txhash + ":" + t.getHash().toString());
+            jsonString = jsonString.concat(txhash + ":" + "\"" + t.getHash().toString() + "\"");
             jsonString = jsonString.concat(",");
             jsonString = jsonString.concat(vout + ":" + String.valueOf(t.getIndex()));
             jsonString = jsonString.concat("}");

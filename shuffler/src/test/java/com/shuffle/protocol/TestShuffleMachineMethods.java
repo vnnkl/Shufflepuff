@@ -63,12 +63,14 @@ public class TestShuffleMachineMethods {
 
         SortedSet<VerificationKey> playerSet = new TreeSet<>();
         playerSet.addAll(players.values());
+
+        // TODO
         CoinShuffle shuffle = new CoinShuffle(
-                messages, new MockCrypto(new InsecureRandom(seed)), new MockCoin()
+                messages, new MockCrypto(new InsecureRandom(seed)), new MockCoin(), null
         );
         CoinShuffle.CurrentPhase machine = new CoinShuffle.CurrentPhase();
         return shuffle.new Round(
-                machine, amount, fee, sk, players, addr, null, new Mailbox(sk.VerificationKey(), playerSet, messages)
+                machine, amount, fee, sk, players, null, addr, null, new Mailbox(sk.VerificationKey(), playerSet, messages)
         );
     }
 
@@ -176,11 +178,12 @@ public class TestShuffleMachineMethods {
     }
 
     private CoinShuffle shuffleTestInitialization(Messages messages, int[] rand) {
+        // TODO
         return new CoinShuffle(
                 messages,
                 new MockCrypto(
                         new RandomSequence(rand)),
-                new MockCoin());
+                new MockCoin(), null);
     }
 
     @Test
@@ -397,11 +400,12 @@ public class TestShuffleMachineMethods {
 
         MockNetwork net = new MockNetwork(session, sk, others, 100);
 
+        // TODO
         CoinShuffle shuffle = new CoinShuffle(net.messages(sk.VerificationKey()),
-                crypto, new MockCoin());
+                crypto, new MockCoin(), null);
 
         return shuffle.new Round(
-                new CoinShuffle.CurrentPhase(), amount, fee, sk, players, addr, null, mailbox
+                new CoinShuffle.CurrentPhase(), amount, fee, sk, players, null, addr, null, mailbox
         );
     }
 
