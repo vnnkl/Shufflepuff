@@ -127,7 +127,7 @@ public abstract class Bitcoin implements Coin {
                 for (Bitcoin.Transaction t : transactions) {
                     org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);
                     for (TransactionOutput output : tx2.getOutputs()) {
-                        TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), output.getHash());
+                        TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(t.hash));
                         if (utxos.contains(tO)) {
                             tx.addInput(output);
                             // TODO

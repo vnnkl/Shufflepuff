@@ -123,6 +123,7 @@ public class BitcoinCore extends Bitcoin {
                 if (!checkDuplicateTx.contains(bTx)) {
                     txList.add(bTx);
                 }
+                checkDuplicateTx.add(bTx);
             } catch (IOException e) {
                 return null;
             }
