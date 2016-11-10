@@ -260,6 +260,7 @@ public class CoinShuffle {
             Transaction t = coin.shuffleTransaction(
                     amount, fee, inputs, peerUtxos, newAddresses, changeAddresses);
 
+            System.out.println("~_~_~_~_~_~_~_~_~_\n\n\n~_~_~_~_~!_~~");
             checkDoubleSpending(t);
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 

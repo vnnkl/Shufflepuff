@@ -122,31 +122,33 @@ public abstract class Bitcoin implements Coin {
 
         for (VerificationKey key : from) {
             try {
-                HashSet<TransactionOutPoint> utxos = peerUtxos.get(key);
-                List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
-                for (Bitcoin.Transaction t : transactions) {
-                    org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);
-                    for (TransactionOutput output : tx2.getOutputs()) {
-                        TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(t.hash));
-                        if (utxos.contains(tO)) {
-                            tx.addInput(output);
-                            // TODO
-                            // Shouldn't be !changeAddresses.containsKey(key) -- error !
-                            if (!changeAddresses.containsKey(key) | changeAddresses.get(key) != null) {
-                                try {
-                                    tx.addOutput(output.getValue().subtract(
-                                            org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
-                                            new org.bitcoinj.core.Address(
-                                                    netParams, changeAddresses.get(key).toString()));
-                                } catch (AddressFormatException e) {
-                                    e.printStackTrace();
+                if (peerUtxos.containsKey(key)) {
+                    HashSet<TransactionOutPoint> utxos = peerUtxos.get(key);
+                    // incorrect
+                    // TODO
+                    List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
+                    for (Bitcoin.Transaction t : transactions) {
+                        org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);
+                        for (TransactionOutput output : tx2.getOutputs()) {
+                            TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(t.hash));
+                            if (utxos.contains(tO)) {
+                                tx.addInput(output);
+                                // TODO
+                                // Shouldn't be !changeAddresses.containsKey(key) -- error !
+                                if (!changeAddresses.containsKey(key) | changeAddresses.get(key) != null) {
+                                    try {
+                                        tx.addOutput(output.getValue().subtract(
+                                                org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
+                                                new org.bitcoinj.core.Address(
+                                                        netParams, changeAddresses.get(key).toString()));
+                                    } catch (AddressFormatException e) {
+                                        e.printStackTrace();
+                                    }
                                 }
                             }
                         }
                     }
                 }
-
-
 
             } catch (IOException e) {
                 throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
