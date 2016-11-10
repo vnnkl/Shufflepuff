@@ -216,7 +216,7 @@ public abstract class Bitcoin implements Coin {
     protected synchronized long getUtxoBalance(TransactionOutPoint t) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
 
         TransactionOutput tx = getTransaction(t.getHash().toString()).getOutput(t.getIndex());
-        if (isUtxo(tx.getHash().toString(), tx.getIndex())) {
+        if (isUtxo(t.getHash().toString(), (int) t.getIndex())) {
             return tx.getValue().getValue();
         } else {
             return 0;
@@ -250,7 +250,7 @@ public abstract class Bitcoin implements Coin {
                  * Every address in the outputs should be of type pay to public key hash, not pay to script hash
                  */
 
-                TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), output.getHash());
+                TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(tx.hash));
                 if (utxos.contains(tO)) {
                     sum += output.getValue().getValue();
                 }

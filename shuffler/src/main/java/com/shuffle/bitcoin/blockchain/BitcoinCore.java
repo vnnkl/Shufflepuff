@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
@@ -112,7 +110,7 @@ public class BitcoinCore extends Bitcoin {
     public synchronized List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) {
 
         List<Transaction> txList = new ArrayList<>();
-        SortedSet<Transaction> checkDuplicateTx = new TreeSet<>();
+        HashSet<Transaction> checkDuplicateTx = new HashSet<>();
         for (TransactionOutPoint tO : t) {
             TransactionWithConfirmations tx;
             try {
