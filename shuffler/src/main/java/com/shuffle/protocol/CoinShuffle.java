@@ -162,7 +162,7 @@ public class CoinShuffle {
             System.out.println("Player " + me + " is about to read announcements.");
 
             peerUtxos = readAnnouncements(announcement, encryptionKeys, changeAddresses, netParams);
-
+            peerUtxos.put(vk, utxos);
             // TODO
             /**
              * Broadcast utxos to each other
