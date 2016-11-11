@@ -207,9 +207,9 @@ public abstract class Bitcoin implements Coin {
 
     protected synchronized long getUtxoBalance(TransactionOutPoint transactionOutPoint) throws IOException, CoinNetworkException, BitcoindException, CommunicationException {
         TransactionHash txHash = new TransactionHash(transactionOutPoint.getHash());
-        Long vout = transactionOutPoint.getIndex();
-        if (isUtxo(txHash.toString(), vout.intValue())) {
-            return getTransaction(txHash).getOutput(vout).getValue().getValue();
+        org.bitcoinj.core.Transaction tx = getTransaction(txHash);
+        if (isUtxo(transactionOutPoint.getHash().toString(), (int) transactionOutPoint.getIndex())) {
+            return tx.getOutput(transactionOutPoint.getIndex()).getValue().getValue();
         } else {
             return 0;
         }

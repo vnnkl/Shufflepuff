@@ -7,13 +7,13 @@ import com.shuffle.bitcoin.impl.TransactionHash;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bouncycastle.util.encoders.Hex;
+import org.json.JSONObject;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
  * Created by nsa on 10/24/16.
@@ -62,19 +62,21 @@ public class BitcoinCore extends Bitcoin {
         return getAddressTransactions(address.toString());
     }
 
-    synchronized org.bitcoinj.core.Transaction getTransaction(TransactionHash transactionHash) throws IOException {
-        String rawTx;
+    synchronized TransactionWithConfirmations getTransaction(TransactionHash transactionHash) throws IOException {
+        JSONObject txObject = null;
         try {
-            rawTx = client.getRawTransaction(transactionHash.toString());
+            txObject = new JSONObject(client.getRawTransaction(transactionHash.toString(), 1));
         } catch (BitcoindException | CommunicationException e) {
             e.printStackTrace();
-            return null;
         }
 
-        HexBinaryAdapter adapter = new HexBinaryAdapter();
-        byte[] bytearray = adapter.unmarshal(rawTx);
-        org.bitcoinj.core.Transaction transactionj = new org.bitcoinj.core.Transaction(netParams, bytearray);
-        return transactionj;
+        boolean confirmed;
+        confirmed = txObject.has("confirmations");
+
+        String rawHex = txObject.getString("hex");
+        TransactionWithConfirmations tx = new TransactionWithConfirmations(netParams, Hex.decode(rawHex), confirmed);
+
+        return tx;
     }
 
     // Don't need
@@ -91,6 +93,27 @@ public class BitcoinCore extends Bitcoin {
     // Don't need
     protected synchronized List<Transaction> getAddressTransactions(String address) {
         return getAddressTransactionsInner(null);
+    }
+
+    public class TransactionWithConfirmations extends org.bitcoinj.core.Transaction {
+
+        byte[] bytes;
+        boolean confirmed;
+
+        public TransactionWithConfirmations(NetworkParameters netParams, byte[] bytes, boolean confirmed) {
+            super(netParams, bytes);
+            this.bytes = bytes;
+            this.confirmed = confirmed;
+        }
+
+        public boolean getConfirmed() {
+            return this.confirmed;
+        }
+
+        public byte[] getBytes() {
+            return this.bytes;
+        }
+
     }
 
 }
