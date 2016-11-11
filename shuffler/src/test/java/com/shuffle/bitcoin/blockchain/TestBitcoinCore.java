@@ -33,7 +33,13 @@ public class TestBitcoinCore {
         // TestNetTX: 088e057abb28fa4cba570ee3ce9e2e28de390136e2b6139dc4109810c0b0ad6d 0
         // MainNetTX: 4b08898741a647183c878bd4018daa998f3019b42515cf23a70e0c89aefbab3a 0
         //boolean testUtxo = testCase.isUtxo("8acc615b65c0d0c1ff255e3a316f69706a495aab426ee448506f99d5a2629598", 6);
-        boolean testUtxo = testCase.isUtxo("088e057abb28fa4cba570ee3ce9e2e28de390136e2b6139dc4109810c0b0ad6d", 0);
+
+        String utxo;
+        if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+            utxo = "088e057abb28fa4cba570ee3ce9e2e28de390136e2b6139dc4109810c0b0ad6d";
+        } else
+            utxo = "4b08898741a647183c878bd4018daa998f3019b42515cf23a70e0c89aefbab3a";
+        boolean testUtxo = testCase.isUtxo(utxo, 0);
         Assert.assertTrue(testUtxo);
     }
 
