@@ -2,7 +2,9 @@ package com.shuffle.bitcoin.blockchain;
 
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
+import com.neemre.btcdcli4j.core.domain.RawTransaction;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
@@ -82,14 +84,19 @@ public class BitcoinCore extends Bitcoin {
 
     synchronized TransactionWithConfirmations getTransaction(String transactionHash) throws IOException {
 
-        com.neemre.btcdcli4j.core.domain.Transaction rawTx;
+        RawTransaction rx;
+        Object rawObject;
+
         try {
-            rawTx = client.getTransaction(transactionHash);
-        } catch (BitcoindException | CommunicationException e) {
+            rawObject = client.getRawTransaction(transactionHash, 1);
+        } catch(BitcoindException | CommunicationException e) {
             return null;
         }
 
-        int confirmations = rawTx.getConfirmations();
+        rx = (RawTransaction) rawObject;
+
+        // only confirmed transactions for now
+        int confirmations = rx.getConfirmations();
         boolean confirmed;
         if (confirmations == 0) {
             confirmed = false;
@@ -97,7 +104,7 @@ public class BitcoinCore extends Bitcoin {
             confirmed = true;
         }
 
-        String rawHex = rawTx.getHex();
+        String rawHex = rx.getHex();
         HexBinaryAdapter adapter = new HexBinaryAdapter();
         byte[] bytearray = adapter.unmarshal(rawHex);
         TransactionWithConfirmations tx = new TransactionWithConfirmations(netParams, bytearray, confirmed);
@@ -150,6 +157,7 @@ public class BitcoinCore extends Bitcoin {
 
         // TODO response
 
+        System.out.println("TX HASH : " + hexTx);
 
         String txid;
         try {
