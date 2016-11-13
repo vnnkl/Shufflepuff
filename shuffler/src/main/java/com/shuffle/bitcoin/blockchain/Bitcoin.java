@@ -43,6 +43,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
 
@@ -343,9 +344,11 @@ public abstract class Bitcoin implements Coin {
      * Takes in a transaction and a private key and returns a signature (if possible)
      * as a Bytestring object.
      */
-    public Bytestring getSignature(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
+    public HashSet<Bytestring> getSignature(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
 
         org.bitcoinj.core.Transaction copyTx = signTx;
+
+        HashSet<Bytestring> sigSet = new HashSet<>();
 
         for (int i = 0; i < copyTx.getInputs().size(); i++) {
             TransactionInput input = copyTx.getInput(i);
@@ -358,13 +361,13 @@ public abstract class Bitcoin implements Coin {
             input.setScriptSig(inputScript);
             try {
                 input.verify(connectedOutput);
-                return new Bytestring(inputScript.getProgram());
+                sigSet.add(new Bytestring(inputScript.getProgram()));
             } catch (VerificationException e) {
                 input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
             }
         }
 
-        return null;
+        return sigSet;
     }
 
     // Converts a Bytestring object to a Script object.
@@ -484,7 +487,7 @@ public abstract class Bitcoin implements Coin {
         }
 
         @Override
-        public Bytestring sign(SigningKey sk) {
+        public HashSet<Bytestring> sign(SigningKey sk) {
             if (!(sk instanceof SigningKeyImpl)) {
                 return null;
             }

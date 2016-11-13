@@ -45,6 +45,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by Daniel Krawisz on 12/5/15.
  */
 public class MockCoin implements com.shuffle.sim.MockCoin {
+
     public static class Output implements Serializable {
         public final Address address;
         public final long amountHeld;
@@ -175,12 +176,13 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         }
 
         @Override
-        public Bytestring sign(SigningKey sk) {
+        public HashSet<Bytestring> sign(SigningKey sk) {
             try {
                 ByteArrayOutputStream b = new ByteArrayOutputStream();
                 ObjectOutputStream o = new ObjectOutputStream(b);
                 o.writeObject(new MockSignature(sk, z));
-                return new Bytestring(b.toByteArray());
+                return null;
+                //return new Bytestring(b.toByteArray());
             } catch (IOException e) {
                 // This should not really happen.
                 throw new RuntimeException(e);
@@ -315,7 +317,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         out.add(new Output(to, amount));
 
         Transaction t = new MockTransaction(in, out, this);
-        t.addInputScript(t.sign(from));
+        //t.addInputScript(t.sign(from));
 
         return t;
     }

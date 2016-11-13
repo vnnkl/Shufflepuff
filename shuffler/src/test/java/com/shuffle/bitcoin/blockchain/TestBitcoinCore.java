@@ -4,6 +4,7 @@ import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.domain.RawTransaction;
 import com.neemre.btcdcli4j.core.domain.Transaction;
+import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
@@ -35,6 +36,32 @@ public class TestBitcoinCore {
 
     public TestBitcoinCore() throws MalformedURLException, BitcoindException, CommunicationException {
         //testCase = new BitcoinCore(netParams, "admin", "pass");
+    }
+
+
+
+    @Test
+    public void test4() throws Exception {
+
+            HashSet<Bytestring> sigs = new HashSet<>();
+            sigs.add(new Bytestring("\"leol\"".getBytes()));
+            sigs.add(new Bytestring("\"woakoekokefw\"".getBytes()));
+            sigs.add(new Bytestring("\"wokwokwokwok\"".getBytes()));
+            String jsonString = "{";
+            int count = 0;
+            for (Bytestring b : sigs) {
+                jsonString = jsonString.concat("\"" + String.valueOf(count) + "\":" + new String(b.bytes));
+                if (!b.equals(sigs.toArray()[sigs.size() - 1])) {
+                    jsonString = jsonString.concat(",");
+                }
+                count++;
+            }
+            jsonString = jsonString.concat("}");
+
+            Bytestring x  = new Bytestring(jsonString.getBytes());
+            System.out.println(x);
+            System.out.println(new String(x.bytes));
+
     }
 
     @Test

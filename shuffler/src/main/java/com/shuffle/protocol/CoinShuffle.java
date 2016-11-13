@@ -260,15 +260,24 @@ public class CoinShuffle {
             Transaction t = coin.shuffleTransaction(
                     amount, fee, inputs, peerUtxos, newAddresses, changeAddresses);
 
-            System.out.println("~_~_~_~_~_~_~_~_~_\n\n\n~_~_~_~_~!_~~");
             checkDoubleSpending(t);
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
             // Generate the input script using our signing key.
-            Message inputScript = messages.make().attach(t.sign(sk));
+            // Bytestring JSONSigs = t.sign(sk);
+            // un JSON when adding to input
+            HashSet<Bytestring> sigSet = t.sign(sk);
+            HashSet<Message> mSet = new HashSet<>();
+            for (Bytestring b : sigSet) {
+                Message inputScript = messages.make().attach(b);
+                mSet.add(inputScript);
+            }
 
             System.out.println("Player " + me + " broadcasts signature ");
-            mailbox.broadcast(inputScript, phase.get());
+            //mailbox.broadcast(inputScript, phase.get());
+            for (Message m : mSet) {
+                mailbox.broadcast(m, phase.get());
+            }
 
             // Send signature messages around and receive them from other players.
             // During this time we could also get notices of invalid signatures
@@ -276,8 +285,12 @@ public class CoinShuffle {
             Map<VerificationKey, Message> signatureMessages = null;
             boolean invalidClaim = false;
             try {
+                // peers' signatures
                 signatureMessages = mailbox.receiveFromMultiple(playerSet(1, N), phase.get());
-                signatureMessages.put(vk, inputScript);
+                // our signatures
+                for (Message m : mSet) {
+                    signatureMessages.put(vk, m);
+                }
                 System.out.println("Player " + me + " receives signatures ");
             } catch (BlameException e) {
                 switch (e.packet.payload().readBlame().reason) {
@@ -298,16 +311,17 @@ public class CoinShuffle {
                 }
             }
 
+
             // Verify the signatures.
             Map<VerificationKey, Bytestring> invalid = new HashMap<>();
             for (Map.Entry<VerificationKey, Message> sig : signatureMessages.entrySet()) {
                 VerificationKey key = sig.getKey();
                 Bytestring signature = sig.getValue().readSignature();
-                signatures.put(key, signature);
-
                 if (!t.addInputScript(signature)) {
                     invalid.put(key, signature);
                 }
+                //Useless?
+                //signatures.put(key, signature);
             }
 
             if (invalid.size() > 0 || invalidClaim) {

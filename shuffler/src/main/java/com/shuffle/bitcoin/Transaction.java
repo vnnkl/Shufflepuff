@@ -12,6 +12,7 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -26,7 +27,7 @@ public interface Transaction extends Serializable {
     Bytestring serialize();
 
     // Sign the transaction and return the input script.
-    Bytestring sign(SigningKey sk);
+    HashSet<Bytestring> sign(SigningKey sk);
 
     boolean addInputScript(Bytestring b) throws FormatException;
 
