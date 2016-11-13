@@ -38,6 +38,7 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -108,6 +109,9 @@ public abstract class Bitcoin implements Coin {
      *
      */
 
+    // TODO
+    // Clean up this design
+    // Fee?
     @Override
     public Bitcoin.Transaction shuffleTransaction(long amount,
                                                   long fee,
@@ -119,8 +123,7 @@ public abstract class Bitcoin implements Coin {
 
         // this section adds inputs to the transaction and adds outputs to the change addresses.
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(netParams);
-        Map<Address, Integer> addressIndex = new HashMap<>();
-        Integer index = 0;
+        HashMap<org.bitcoinj.core.Address, org.bitcoinj.core.Coin> map = new HashMap<>();
 
         for (VerificationKey key : from) {
             try {
@@ -133,27 +136,21 @@ public abstract class Bitcoin implements Coin {
                             TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(t.hash));
                             if (utxos.contains(tO)) {
                                 tx.addInput(output);
-                                if (changeAddresses.containsKey(key) && changeAddresses.get(key) != null) {
+                                // TODO
+                                // this line is buggy since Address doesn't have equal()
+                                if (changeAddresses.get(key) != null) {
                                     Address current = changeAddresses.get(key);
-                                    // TODO
-                                    if (!addressIndex.containsKey(current) || addressIndex.get(current) != null) {
-                                        try {
-                                            tx.addOutput(output.getValue().subtract(
-                                                    org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
-                                                    new org.bitcoinj.core.Address(
-                                                            netParams, current.toString()));
-                                            addressIndex.put(current, index);
-                                            index++;
-                                        } catch (AddressFormatException e) {
-                                            e.printStackTrace();
+                                    try {
+                                        org.bitcoinj.core.Coin coin = output.getValue().subtract(org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee));
+                                        org.bitcoinj.core.Address addr = new org.bitcoinj.core.Address(netParams, current.toString());
+                                        if (map.containsKey(addr)) {
+                                            org.bitcoinj.core.Coin c = map.get(addr);
+                                            map.put(addr, coin.add(c));
+                                        } else {
+                                            map.put(addr, coin);
                                         }
-                                    } else {
-                                        // this gets rid of duplicate change addresses
-                                        Integer inputIndex = addressIndex.get(current);
-                                        // fee is already accounted for since we are updating a change address
-                                        org.bitcoinj.core.Coin value = output.getValue().subtract(org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee));
-                                        TransactionOutput changeAddress = tx.getOutput(new Long(inputIndex));
-                                        changeAddress.getValue().add(value);
+                                    } catch (AddressFormatException e) {
+                                        e.printStackTrace();
                                     }
                                 }
                             }
@@ -164,6 +161,10 @@ public abstract class Bitcoin implements Coin {
             } catch (IOException e) {
                 throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
             }
+        }
+
+        for (org.bitcoinj.core.Address a : map.keySet()) {
+            tx.addOutput(map.get(a), a);
         }
 
 
