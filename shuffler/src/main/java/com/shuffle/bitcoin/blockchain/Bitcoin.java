@@ -46,6 +46,8 @@ import java.util.Queue;
 import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
 
+import javax.xml.bind.DatatypeConverter;
+
 public abstract class Bitcoin implements Coin {
     static long cach_expire = 10000; // Ten seconds.
 
@@ -124,8 +126,6 @@ public abstract class Bitcoin implements Coin {
             try {
                 if (peerUtxos.containsKey(key)) {
                     HashSet<TransactionOutPoint> utxos = peerUtxos.get(key);
-                    // incorrect
-                    // TODO
                     List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
                     for (Bitcoin.Transaction t : transactions) {
                         org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);

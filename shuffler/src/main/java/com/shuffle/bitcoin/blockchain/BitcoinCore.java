@@ -3,8 +3,6 @@ package com.shuffle.bitcoin.blockchain;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.domain.RawTransaction;
-import com.shuffle.bitcoin.CoinNetworkException;
-import com.sun.org.apache.xerces.internal.impl.dv.util.HexBin;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
