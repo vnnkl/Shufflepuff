@@ -119,6 +119,8 @@ public abstract class Bitcoin implements Coin {
 
         // this section adds inputs to the transaction and adds outputs to the change addresses.
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(netParams);
+        Map<Address, Integer> addressIndex = new HashMap<>();
+        Integer index = 0;
 
         for (VerificationKey key : from) {
             try {
@@ -131,16 +133,27 @@ public abstract class Bitcoin implements Coin {
                             TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(t.hash));
                             if (utxos.contains(tO)) {
                                 tx.addInput(output);
-                                // TODO
-                                // Shouldn't be !changeAddresses.containsKey(key) -- error !
-                                if (!changeAddresses.containsKey(key) | changeAddresses.get(key) != null) {
-                                    try {
-                                        tx.addOutput(output.getValue().subtract(
-                                                org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
-                                                new org.bitcoinj.core.Address(
-                                                        netParams, changeAddresses.get(key).toString()));
-                                    } catch (AddressFormatException e) {
-                                        e.printStackTrace();
+                                if (changeAddresses.containsKey(key) && changeAddresses.get(key) != null) {
+                                    Address current = changeAddresses.get(key);
+                                    // TODO
+                                    if (!addressIndex.containsKey(current) || addressIndex.get(current) != null) {
+                                        try {
+                                            tx.addOutput(output.getValue().subtract(
+                                                    org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee)),
+                                                    new org.bitcoinj.core.Address(
+                                                            netParams, current.toString()));
+                                            addressIndex.put(current, index);
+                                            index++;
+                                        } catch (AddressFormatException e) {
+                                            e.printStackTrace();
+                                        }
+                                    } else {
+                                        // this gets rid of duplicate change addresses
+                                        Integer inputIndex = addressIndex.get(current);
+                                        // fee is already accounted for since we are updating a change address
+                                        org.bitcoinj.core.Coin value = output.getValue().subtract(org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee));
+                                        TransactionOutput changeAddress = tx.getOutput(new Long(inputIndex));
+                                        changeAddress.getValue().add(value);
                                     }
                                 }
                             }
@@ -152,6 +165,8 @@ public abstract class Bitcoin implements Coin {
                 throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
             }
         }
+
+
 
         for (Address sendto : to) {
             /**
