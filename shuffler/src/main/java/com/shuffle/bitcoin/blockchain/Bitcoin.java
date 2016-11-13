@@ -14,6 +14,7 @@ import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.CoinNetworkException;
+import com.shuffle.bitcoin.Signatures;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
@@ -43,11 +44,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
-import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
-
-import javax.xml.bind.DatatypeConverter;
 
 public abstract class Bitcoin implements Coin {
     static long cach_expire = 10000; // Ten seconds.
@@ -344,11 +341,11 @@ public abstract class Bitcoin implements Coin {
      * Takes in a transaction and a private key and returns a signature (if possible)
      * as a Bytestring object.
      */
-    public HashSet<Bytestring> getSignature(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
+    public Bytestring getSignature(org.bitcoinj.core.Transaction signTx, ECKey privKey) {
 
         org.bitcoinj.core.Transaction copyTx = signTx;
 
-        HashSet<Bytestring> sigSet = new HashSet<>();
+        HashSet<Bytestring> sigs = new HashSet<>();
 
         for (int i = 0; i < copyTx.getInputs().size(); i++) {
             TransactionInput input = copyTx.getInput(i);
@@ -361,13 +358,16 @@ public abstract class Bitcoin implements Coin {
             input.setScriptSig(inputScript);
             try {
                 input.verify(connectedOutput);
-                sigSet.add(new Bytestring(inputScript.getProgram()));
+                sigs.add(new Bytestring(inputScript.getProgram()));
             } catch (VerificationException e) {
                 input.setScriptSig(this.bytestringToInputScript(new Bytestring(originalScript)));
             }
         }
 
-        return sigSet;
+        Signatures s = new Signatures("null".getBytes(), sigs);
+
+        return s;
+
     }
 
     // Converts a Bytestring object to a Script object.
@@ -487,7 +487,7 @@ public abstract class Bitcoin implements Coin {
         }
 
         @Override
-        public HashSet<Bytestring> sign(SigningKey sk) {
+        public Bytestring sign(SigningKey sk) {
             if (!(sk instanceof SigningKeyImpl)) {
                 return null;
             }

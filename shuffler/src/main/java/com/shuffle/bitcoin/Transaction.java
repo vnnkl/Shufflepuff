@@ -27,7 +27,7 @@ public interface Transaction extends Serializable {
     Bytestring serialize();
 
     // Sign the transaction and return the input script.
-    HashSet<Bytestring> sign(SigningKey sk);
+    Bytestring sign(SigningKey sk);
 
     boolean addInputScript(Bytestring b) throws FormatException;
 

@@ -176,13 +176,12 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         }
 
         @Override
-        public HashSet<Bytestring> sign(SigningKey sk) {
+        public Bytestring sign(SigningKey sk) {
             try {
                 ByteArrayOutputStream b = new ByteArrayOutputStream();
                 ObjectOutputStream o = new ObjectOutputStream(b);
                 o.writeObject(new MockSignature(sk, z));
-                return null;
-                //return new Bytestring(b.toByteArray());
+                return new Bytestring(b.toByteArray());
             } catch (IOException e) {
                 // This should not really happen.
                 throw new RuntimeException(e);

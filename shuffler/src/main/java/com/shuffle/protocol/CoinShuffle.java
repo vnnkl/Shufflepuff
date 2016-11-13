@@ -14,6 +14,7 @@ import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
+import com.shuffle.bitcoin.Signatures;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.VerificationKey;
@@ -264,20 +265,9 @@ public class CoinShuffle {
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
             // Generate the input script using our signing key.
-            // Bytestring JSONSigs = t.sign(sk);
-            // un JSON when adding to input
-            HashSet<Bytestring> sigSet = t.sign(sk);
-            HashSet<Message> mSet = new HashSet<>();
-            for (Bytestring b : sigSet) {
-                Message inputScript = messages.make().attach(b);
-                mSet.add(inputScript);
-            }
-
+            Message inputScript = messages.make().attach(t.sign(sk));
             System.out.println("Player " + me + " broadcasts signature ");
-            //mailbox.broadcast(inputScript, phase.get());
-            for (Message m : mSet) {
-                mailbox.broadcast(m, phase.get());
-            }
+            mailbox.broadcast(inputScript, phase.get());
 
             // Send signature messages around and receive them from other players.
             // During this time we could also get notices of invalid signatures
@@ -288,9 +278,7 @@ public class CoinShuffle {
                 // peers' signatures
                 signatureMessages = mailbox.receiveFromMultiple(playerSet(1, N), phase.get());
                 // our signatures
-                for (Message m : mSet) {
-                    signatureMessages.put(vk, m);
-                }
+                signatureMessages.put(vk, inputScript);
                 System.out.println("Player " + me + " receives signatures ");
             } catch (BlameException e) {
                 switch (e.packet.payload().readBlame().reason) {
@@ -316,10 +304,19 @@ public class CoinShuffle {
             Map<VerificationKey, Bytestring> invalid = new HashMap<>();
             for (Map.Entry<VerificationKey, Message> sig : signatureMessages.entrySet()) {
                 VerificationKey key = sig.getKey();
-                Bytestring signature = sig.getValue().readSignature();
+                Signatures signature = (Signatures) sig.getValue().readSignature();
+
+                for (Bytestring s : signature.sigs) {
+                    System.out.println("\nS\n:" + s);
+                    if (!t.addInputScript(s)) {
+                        invalid.put(key, s);
+                    }
+                }
+
+                /*
                 if (!t.addInputScript(signature)) {
                     invalid.put(key, signature);
-                }
+                }*/
                 //Useless?
                 //signatures.put(key, signature);
             }
