@@ -125,50 +125,6 @@ public abstract class Bitcoin implements Coin {
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(netParams);
         HashMap<org.bitcoinj.core.Address, org.bitcoinj.core.Coin> map = new HashMap<>();
 
-        for (VerificationKey key : from) {
-            try {
-                if (peerUtxos.containsKey(key)) {
-                    HashSet<TransactionOutPoint> utxos = peerUtxos.get(key);
-                    List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
-                    for (Bitcoin.Transaction t : transactions) {
-                        org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);
-                        for (TransactionOutput output : tx2.getOutputs()) {
-                            TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(t.hash));
-                            if (utxos.contains(tO)) {
-                                tx.addInput(output);
-                                // TODO
-                                // this line is buggy since Address doesn't have equal()
-                                if (changeAddresses.get(key) != null) {
-                                    Address current = changeAddresses.get(key);
-                                    try {
-                                        org.bitcoinj.core.Coin coin = output.getValue().subtract(org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee));
-                                        org.bitcoinj.core.Address addr = new org.bitcoinj.core.Address(netParams, current.toString());
-                                        if (map.containsKey(addr)) {
-                                            org.bitcoinj.core.Coin c = map.get(addr);
-                                            map.put(addr, coin.add(c));
-                                        } else {
-                                            map.put(addr, coin);
-                                        }
-                                    } catch (AddressFormatException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-
-            } catch (IOException e) {
-                throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
-            }
-        }
-
-        for (org.bitcoinj.core.Address a : map.keySet()) {
-            tx.addOutput(map.get(a), a);
-        }
-
-
-
         for (Address sendto : to) {
             /**
              *
@@ -194,6 +150,48 @@ public abstract class Bitcoin implements Coin {
                 e.printStackTrace();
             }
 
+        }
+
+        for (VerificationKey key : from) {
+            try {
+                if (peerUtxos.containsKey(key)) {
+                    HashSet<TransactionOutPoint> utxos = peerUtxos.get(key);
+                    List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
+                    for (Bitcoin.Transaction t : transactions) {
+                        org.bitcoinj.core.Transaction tx2 = getTransaction(t.hash);
+                        for (TransactionOutput output : tx2.getOutputs()) {
+                            TransactionOutPoint tO = new TransactionOutPoint(netParams, output.getIndex(), Sha256Hash.wrap(t.hash));
+                            if (utxos.contains(tO)) {
+                                tx.addInput(output);
+                                // TODO
+                                // this line is buggy since Address doesn't have equal()
+                                if (changeAddresses.get(key) != null) {
+                                    Address current = changeAddresses.get(key);
+                                    try {
+                                        // what about utxo < amount
+                                        org.bitcoinj.core.Coin coin = output.getValue().subtract(org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee));
+                                        org.bitcoinj.core.Address addr = new org.bitcoinj.core.Address(netParams, current.toString());
+                                        if (map.containsKey(addr)) {
+                                            org.bitcoinj.core.Coin c = map.get(addr);
+                                            map.put(addr, coin.add(c));
+                                        } else {
+                                            map.put(addr, coin);
+                                        }
+                                    } catch (AddressFormatException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                throw new CoinNetworkException("Could not generate shuffle tx: " + e.getMessage());
+            }
+        }
+
+        for (org.bitcoinj.core.Address a : map.keySet()) {
+            tx.addOutput(map.get(a), a);
         }
 
         return new Transaction(tx.getHashAsString(), tx, true);
