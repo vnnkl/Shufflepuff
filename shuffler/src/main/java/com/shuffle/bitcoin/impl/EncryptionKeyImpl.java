@@ -3,12 +3,15 @@ package com.shuffle.bitcoin.impl;
 import com.shuffle.bitcoin.EncryptionKey;
 
 import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.BadPaddingException;
@@ -52,11 +55,15 @@ public class EncryptionKeyImpl implements EncryptionKey {
     public String encrypt(String input) {
 
         // encrypts the address passed for this encryption key
-
+        Security.insertProviderAt(new BouncyCastleProvider(), 1);
         //get cipher cipher for ECIES encryption
         Cipher cipher = null;
         try {
-            cipher = Cipher.getInstance("ECIES");
+            try {
+                cipher = Cipher.getInstance("ECIES", "BC");
+            } catch (NoSuchProviderException e) {
+                e.printStackTrace();
+            }
         } catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
             e.printStackTrace();
             throw new RuntimeException(e);

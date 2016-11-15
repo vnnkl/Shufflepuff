@@ -16,7 +16,6 @@ import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.discovery.DnsDiscovery;
-import org.bitcoinj.store.UnreadableWalletException;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
@@ -43,8 +42,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.Nullable;
 import javax.crypto.Cipher;
@@ -53,31 +50,12 @@ import javax.crypto.Cipher;
 public class BitcoinCrypto implements Crypto {
 
    private final SecureRandom sr;
+   private final KeyPairGenerator keyPG;
    // Figure out which network we should connect to. Each one gets its own set of files.
    NetworkParameters params;
    KeyChainGroup keyChainGroup;
-   private final KeyPairGenerator keyPG;
    WalletAppKit kit;
    String fileprefix = "shufflepuff";
-
-   public static class Exception extends java.lang.Exception {
-      public Exception(String message) {
-         super(message);
-      }
-   }
-
-   private static void crashIfJCEMissing() throws NoSuchAlgorithmException, Exception {
-      int size = Cipher.getMaxAllowedKeyLength("AES");
-      Integer expected = Integer.MAX_VALUE;
-      if (size < expected) {
-         String msg = "Max key size is " + size + ", but expected " + expected +
-               ". Unfortunately, you have a security policy that limits your encryption " +
-               "strength. Please either use OpenJDK or allow yourself to use strong crypto\n" +
-               "by installing the according JCE files:\n" +
-               "http://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters";
-         throw new Exception(msg);
-      }
-   }
 
    public BitcoinCrypto(NetworkParameters networkParameters) throws NoSuchAlgorithmException, Exception {
       this.params = NetworkParameters.fromID(networkParameters.getId());
@@ -95,6 +73,8 @@ public class BitcoinCrypto implements Crypto {
    public BitcoinCrypto(NetworkParameters networkParameters, KeyChainGroup keyChainGroup) throws NoSuchAlgorithmException, Exception {
       this(networkParameters);
       this.keyChainGroup = keyChainGroup;
+      Security.insertProviderAt(new BouncyCastleProvider(), 1);
+      crashIfJCEMissing();
       //this.kit = getKit().restoreWalletFromSeed(keyChainGroup.getActiveKeyChain().getSeed());
       //this.wallet = kit.wallet();
    }
@@ -111,8 +91,35 @@ public class BitcoinCrypto implements Crypto {
       //this.wallet = kit.wallet();
    }
 
-   public NetworkParameters getParams() {
-      return params;
+   private static void crashIfJCEMissing() throws NoSuchAlgorithmException, Exception {
+      int size = Cipher.getMaxAllowedKeyLength("AES");
+      Integer expected = Integer.MAX_VALUE;
+      if (size < expected) {
+         String msg = "Max key size is " + size + ", but expected " + expected +
+               ". Unfortunately, you have a security policy that limits your encryption " +
+               "strength. Please either use OpenJDK or allow yourself to use strong crypto\n" +
+               "by installing the according JCE files:\n" +
+               "http://stackoverflow.com/questions/6481627/java-security-illegal-key-size-or-default-parameters";
+         throw new Exception(msg);
+      }
+   }
+
+   public static boolean isValidAddress(String address, NetworkParameters params) {
+      try {
+         new Address(params, address);
+         return true;
+      } catch (AddressFormatException e) {
+         return false;
+      }
+   }
+
+   public static PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
+      byte[] clear = Base64.decode(key64);
+      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
+      KeyFactory fact = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
+      PrivateKey priv = fact.generatePrivate(keySpec);
+      Arrays.fill(clear, (byte) 0);
+      return priv;
    }
 
    /*private void restoreFromSeed(String mnemonic) {
@@ -127,6 +134,30 @@ public class BitcoinCrypto implements Crypto {
 
    }*/
 
+   public static PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
+      byte[] data = Base64.decode(stored);
+      X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
+      KeyFactory fact = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
+      try {
+         return fact.generatePublic(spec);
+      } catch (InvalidKeySpecException e) {
+         throw new IllegalArgumentException(e);
+      }
+   }
+
+   public static Bytestring hexStringToByteArray(String s) {
+      int len = s.length();
+      byte[] data = new byte[len / 2];
+      for (int i = 0; i < len; i += 2) {
+         data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+               + Character.digit(s.charAt(i + 1), 16));
+      }
+      return new Bytestring(data);
+   }
+
+   public NetworkParameters getParams() {
+      return params;
+   }
 
    public Transaction send(String destinationAddress, long amountSatoshis) throws InsufficientMoneyException {
       Address addressj;
@@ -208,37 +239,6 @@ public class BitcoinCrypto implements Crypto {
       }
    }
 
-
-   public static boolean isValidAddress(String address, NetworkParameters params) {
-      try {
-         new Address(params, address);
-         return true;
-      } catch (AddressFormatException e) {
-         return false;
-      }
-   }
-
-   public static PrivateKey loadPrivateKey(String key64) throws GeneralSecurityException {
-      byte[] clear = Base64.decode(key64);
-      PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(clear);
-      KeyFactory fact = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
-      PrivateKey priv = fact.generatePrivate(keySpec);
-      Arrays.fill(clear, (byte) 0);
-      return priv;
-   }
-
-
-   public static PublicKey loadPublicKey(String stored) throws GeneralSecurityException {
-      byte[] data = Base64.decode(stored);
-      X509EncodedKeySpec spec = new X509EncodedKeySpec(data);
-      KeyFactory fact = KeyFactory.getInstance("ECDSA", new BouncyCastleProvider());
-      try {
-         return fact.generatePublic(spec);
-      } catch (InvalidKeySpecException e) {
-         throw new IllegalArgumentException(e);
-      }
-   }
-
    @Override
    public synchronized DecryptionKey makeDecryptionKey() {
       // String ppath = getCurrentPathAsString();
@@ -266,14 +266,10 @@ public class BitcoinCrypto implements Crypto {
       return sr.nextInt(n + 1);
    }
 
-   public static Bytestring hexStringToByteArray(String s) {
-      int len = s.length();
-      byte[] data = new byte[len / 2];
-      for (int i = 0; i < len; i += 2) {
-         data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-               + Character.digit(s.charAt(i + 1), 16));
+   public static class Exception extends java.lang.Exception {
+      public Exception(String message) {
+         super(message);
       }
-      return new Bytestring(data);
    }
 
 }
