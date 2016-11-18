@@ -148,9 +148,9 @@ public abstract class Bitcoin implements Coin {
       for (VerificationKey key : from) {
          try {
             if (peerUtxos.containsKey(key)) {
-
                // get all transactions belonging to VKey
                HashSet<TransactionOutPoint> utxos = peerUtxos.get(key);
+               // get total amount of utxos held by Vkey
                long keyAmount = valueHeld(utxos);
                List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
                if (keyAmount >= amount + fee) {
@@ -168,18 +168,22 @@ public abstract class Bitcoin implements Coin {
                      }
                   }
                   if (changeAddresses.get(key) != null) {
+                     //if a change address was supplied, get it
                      Address current = changeAddresses.get(key);
                      try {
+                        // change amount is amount of ((all utxos of key) - (amount+fee)), in satoshis
                         org.bitcoinj.core.Coin coin = org.bitcoinj.core.Coin.valueOf(keyAmount).subtract(org.bitcoinj.core.Coin.SATOSHI.multiply(amount + fee));
                         org.bitcoinj.core.Address addr = new org.bitcoinj.core.Address(netParams, current.toString());
                         if (map.containsKey(addr)) {
                            org.bitcoinj.core.Coin c = map.get(addr);
                            map.put(addr, coin.add(c));
                         } else {
+                           // put change amount and address in map
                            map.put(addr, coin);
                         }
                      } catch (AddressFormatException e) {
                         e.printStackTrace();
+                        throw new RuntimeException(e);
                      }
                   }
                } else {
