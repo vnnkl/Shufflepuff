@@ -84,7 +84,7 @@ public final class BlockchainDotInfo extends Bitcoin {
      * array.
      *
      */
-    protected final List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) throws IOException {
+    protected final List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         /*
         String url = "https://blockchain.info/rawaddr/" + address;

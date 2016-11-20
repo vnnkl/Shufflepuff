@@ -37,6 +37,7 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.store.BlockStoreException;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -162,12 +163,10 @@ public class CoinShuffle {
             }
             System.out.println("Player " + me + " is about to read announcements.");
 
+            // TODO
+            // Broadcast utxos in a better way?
             peerUtxos = readAnnouncements(announcement, encryptionKeys, changeAddresses, netParams);
             peerUtxos.put(vk, utxos);
-            // TODO
-            /**
-             * Broadcast utxos to each other
-             */
 
             // Phase 2: Shuffle
             // In the shuffle phase, players go in order and reorder the addresses they have been
@@ -261,7 +260,12 @@ public class CoinShuffle {
             Transaction t = coin.shuffleTransaction(
                     amount, fee, inputs, peerUtxos, newAddresses, changeAddresses);
 
-            checkDoubleSpending(t);
+            try {
+                checkDoubleSpending(t);
+            } catch (BlockStoreException e) {
+                throw new RuntimeException("Could not determine if a double spend occurred.");
+            }
+
             if (t == null) throw new RuntimeException("Transaction in null. This should not happen.");
 
             // Generate the input script using our signing key.
@@ -305,20 +309,15 @@ public class CoinShuffle {
             for (Map.Entry<VerificationKey, Message> sig : signatureMessages.entrySet()) {
                 VerificationKey key = sig.getKey();
                 Signatures signature = (Signatures) sig.getValue().readSignature();
+                // TODO
+                // Useless ? Buggy ?
+                signatures.put(key, signature);
 
                 for (Bytestring s : signature.sigs) {
-                    System.out.println("\nS\n:" + s);
                     if (!t.addInputScript(s)) {
                         invalid.put(key, s);
                     }
                 }
-
-                /*
-                if (!t.addInputScript(signature)) {
-                    invalid.put(key, signature);
-                }*/
-                //Useless?
-                //signatures.put(key, signature);
             }
 
             if (invalid.size() > 0 || invalidClaim) {
@@ -560,12 +559,12 @@ public class CoinShuffle {
         }
 
         void checkDoubleSpending(Transaction t) throws InterruptedException, IOException,
-                FormatException, TimeoutException, Matrix, CoinNetworkException, AddressFormatException {
+                FormatException, TimeoutException, Matrix, CoinNetworkException, AddressFormatException, BlockStoreException {
 
             // Check for double spending.
             Message doubleSpend = messages.make();
             for (VerificationKey key : players.values()) {
-                Transaction o = coin.getConflictingTransaction(t, key.address(), amount);
+                Transaction o = coin.getConflictingTransaction(t, peerUtxos.get(key), amount);
                 if (o != null) {
                     doubleSpend = doubleSpend.attach(Blame.DoubleSpend(key, o));
                 }

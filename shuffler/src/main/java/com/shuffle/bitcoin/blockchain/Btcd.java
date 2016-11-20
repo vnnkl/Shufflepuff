@@ -135,7 +135,7 @@ public class Btcd extends Bitcoin {
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
      */
-    public synchronized List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) throws IOException {
+    public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         /*
         List<Transaction> txList = null;
@@ -304,8 +304,8 @@ public class Btcd extends Bitcoin {
 
 
     @Override
-    protected synchronized List<Transaction> getAddressTransactions(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
-        return getAddressTransactionsInner(t);
+    protected synchronized List<Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
+        return getTransactionsFromUtxosInner(t);
     }
 
 }

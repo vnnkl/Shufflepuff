@@ -97,7 +97,7 @@ public final class BlockCypherDotCom extends Bitcoin {
      * array.
      *
      */
-    public List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
+    public List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
 
         /*
         String url;

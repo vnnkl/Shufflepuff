@@ -423,11 +423,11 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
 
     @Override
     public Transaction getConflictingTransaction(
-            Transaction transaction, Address addr, long amount) {
+            Transaction transaction, HashSet<TransactionOutPoint> utxos, long amount) {
 
         // TODO
         // if (valueHeld(addr) >= amount) return null;
-
+        /*
         Output output = blockchain.get(addr);
 
         if (output == null) return null;
@@ -437,6 +437,8 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         if (t != null) return t;
 
         return sent.get(output);
+        */
+        return null;
     }
 
     @Override

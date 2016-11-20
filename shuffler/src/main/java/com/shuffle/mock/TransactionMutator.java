@@ -70,7 +70,7 @@ public class TransactionMutator implements Coin {
     }
 
     @Override
-    public Transaction getConflictingTransaction(Transaction t, Address addr, long amount) {
-        return coin.getConflictingTransaction(t, addr, amount);
+    public Transaction getConflictingTransaction(Transaction t, HashSet<TransactionOutPoint> utxos, long amount) {
+        return coin.getConflictingTransaction(t, utxos, amount);
     }
 }
