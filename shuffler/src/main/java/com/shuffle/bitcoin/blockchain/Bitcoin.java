@@ -51,7 +51,7 @@ public abstract class Bitcoin implements Coin {
    final PeerGroup peerGroup;
    final int minPeers;
    final Context context;
-   protected Map<String, Cached> cache = new HashMap<>();
+   protected Map<HashSet<TransactionOutPoint>, Cached> cache = new HashMap<>();
 
    /**
     * The constructor takes in a NetworkParameters variable that determines whether we
@@ -298,30 +298,27 @@ public abstract class Bitcoin implements Coin {
       return new Script(program.bytes);
    }
 
-
-   // Since we rely on 3rd party services to query the blockchain, by
-   // default we cache the result.
-
    // TODO
    // Block explorers need to be updated
-   // Duplicates due to HashSet<TransactionOutPoint> ?
+
+   /**
+    * We cache the results due to some 3rd party blockchains that rate-limit.
+    * This might be removed.
+    */
    protected synchronized List<Bitcoin.Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t)
          throws IOException, CoinNetworkException, AddressFormatException {
 
-        /*
         long now = System.currentTimeMillis();
-        Cached cached = cache.get(address);
+        Cached cached = cache.get(t);
         if (cached != null) {
             if (now - cached.last < cache_expire) {
                 return cached.txList;
             }
         }
-        */
 
       List<Bitcoin.Transaction> txList = getTransactionsFromUtxosInner(t);
 
-      // ?
-      // cache.put(address, new Cached(address, txList, System.currentTimeMillis()));
+      cache.put(t, new Cached(t, txList, System.currentTimeMillis()));
 
       return txList;
    }
@@ -453,12 +450,12 @@ public abstract class Bitcoin implements Coin {
    }
 
    protected class Cached {
-      public final String address;
+      public final HashSet<TransactionOutPoint> utxos;
       public final List<Bitcoin.Transaction> txList;
       public final long last;
 
-      private Cached(String address, List<Bitcoin.Transaction> txList, long last) {
-         this.address = address;
+      private Cached(HashSet<TransactionOutPoint> utxos, List<Bitcoin.Transaction> txList, long last) {
+         this.utxos = utxos;
          this.txList = txList;
          this.last = last;
       }
