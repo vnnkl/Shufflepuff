@@ -7,6 +7,7 @@ import com.shuffle.bitcoin.CoinNetworkException;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
@@ -138,6 +139,40 @@ public class BitcoinCore extends Bitcoin {
         return txList;
     }
 
+    /*
+     * The resulting TransactionWithConfirmations object does not actually have to be confirmed here.
+     * This is only returned so that the byte[] of the bitcoinj Transaction are easily available.
+     */
+    public synchronized TransactionWithConfirmations getConflictingUtxosQuery(String transactionHash) throws IOException {
+
+    }
+
+    public synchronized List<Transaction> getConflictingUtxos(HashSet<TransactionOutPoint> t) {
+
+        List<Transaction> txList = new ArrayList<>();
+        HashSet<Transaction> checkDuplicateTx = new HashSet<>();
+        for (TransactionOutPoint tO : t) {
+            TransactionWithConfirmations tx;
+            try {
+                tx = getConflictingUtxosQuery(tO.getHash().toString());
+                String txid = tx.getHash().toString();
+                byte[] bytes = tx.getBytes();
+                boolean confirmed = tx.getConfirmed();
+                org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytes);
+                Transaction bTx = new Transaction(txid, bitTx, false, confirmed);
+                if (!checkDuplicateTx.contains(bTx)) {
+                    txList.add(bTx);
+                }
+                checkDuplicateTx.add(bTx);
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        return txList;
+
+    }
+
     // TODO
     // must include 0 confirmations
     public synchronized com.shuffle.bitcoin.Transaction getConflictingTransactionInner(
@@ -147,7 +182,7 @@ public class BitcoinCore extends Bitcoin {
         if (!(t instanceof Transaction)) throw new IllegalArgumentException();
         Transaction transaction = (Transaction)t;
 
-        List<Transaction> transactions = getTransactionsFromUtxos(utxos);
+        List<Transaction> transactions = getConflictingUtxos(utxos);
 
         for (Transaction tx : transactions) {
             for (TransactionInput input : tx.bitcoinj().getInputs()) {
@@ -162,6 +197,7 @@ public class BitcoinCore extends Bitcoin {
     }
 
     // TODO
+    // How does this get called ?
     @Override
     protected boolean send(Bitcoin.Transaction t) {
         if (!t.canSend || t.sent) {
