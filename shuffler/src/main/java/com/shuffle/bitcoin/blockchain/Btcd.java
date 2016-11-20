@@ -21,24 +21,20 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.SortedSet;
 import java.util.concurrent.ExecutionException;
-
-import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
-
-import org.apache.commons.codec.binary.Base64;
-
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
-import org.json.JSONArray;
+
+import javax.xml.bind.DatatypeConverter;
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
+
 
 /**
  * Created by Eugene Siegel on 4/22/16.

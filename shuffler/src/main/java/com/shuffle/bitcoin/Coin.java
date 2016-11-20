@@ -10,6 +10,7 @@ package com.shuffle.bitcoin;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.TransactionOutPoint;
+import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
 import java.util.HashSet;
@@ -42,6 +43,7 @@ public interface Coin {
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.
-    Transaction getConflictingTransaction(Transaction transaction, HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException;
+    Transaction getConflictingTransaction(Transaction transaction, HashSet<TransactionOutPoint> utxos, long amount)
+            throws CoinNetworkException, AddressFormatException, BlockStoreException, IOException;
 
 }

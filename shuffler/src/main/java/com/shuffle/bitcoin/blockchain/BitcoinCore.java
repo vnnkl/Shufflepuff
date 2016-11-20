@@ -8,6 +8,7 @@ import com.shuffle.bitcoin.CoinNetworkException;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
 
@@ -138,38 +139,22 @@ public class BitcoinCore extends Bitcoin {
 
     public synchronized com.shuffle.bitcoin.Transaction getConflictingTransactionInner(
             com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
-            throws CoinNetworkException, AddressFormatException {
+            throws CoinNetworkException, AddressFormatException, BlockStoreException, IOException {
 
         if (!(t instanceof Transaction)) throw new IllegalArgumentException();
         Transaction transaction = (Transaction)t;
 
-        /*
-        if (!(t instanceof Transaction)) throw new IllegalArgumentException();
-        Transaction transaction = (Transaction)t;
+        List<Transaction> transactions = getTransactionsFromUtxos(utxos);
 
-        String address = addr.toString();
-
-        List<Bitcoin.Transaction> transactions = null;
-        try {
-            transactions = getAddressTransactions(address);
-        } catch (IOException e) {
-            // Can we return null here?
-            return null;
-        }
-
-        for (Bitcoin.Transaction tx : transactions) {
-            for (TransactionInput input : tx.bitcoinj.getInputs()) {
-                // Can be multiple inputs for transaction parameter.
-                for (TransactionInput txInput : transaction.bitcoinj.getInputs()) {
+        for (Transaction tx : transactions) {
+            for (TransactionInput input : tx.bitcoinj().getInputs()) {
+                for (TransactionInput txInput : transaction.bitcoinj().getInputs()) {
                     if (input.equals(txInput)) {
                         return tx;
                     }
                 }
             }
         }
-
-        return null;
-        */
 
         return null;
 

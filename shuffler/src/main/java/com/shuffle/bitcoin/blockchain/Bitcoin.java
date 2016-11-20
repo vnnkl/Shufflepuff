@@ -221,7 +221,8 @@ public abstract class Bitcoin implements Coin {
 
    @Override
    public synchronized com.shuffle.bitcoin.Transaction getConflictingTransaction(
-         com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException {
+         com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
+           throws CoinNetworkException, AddressFormatException, BlockStoreException, IOException {
 
        return getConflictingTransactionInner(t, utxos, amount);
 
@@ -336,6 +337,7 @@ public abstract class Bitcoin implements Coin {
       if (peerGroup == null) {
          return false;
       }
+
       peerGroup.broadcastTransaction(t.bitcoinj).future().get();
       t.sent = true;
       return true;
@@ -343,7 +345,7 @@ public abstract class Bitcoin implements Coin {
 
    abstract com.shuffle.bitcoin.Transaction getConflictingTransactionInner(
            com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
-           throws CoinNetworkException, AddressFormatException;
+           throws CoinNetworkException, AddressFormatException, BlockStoreException, IOException;
 
    abstract boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException;
 
