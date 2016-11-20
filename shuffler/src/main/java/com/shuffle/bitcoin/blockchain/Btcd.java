@@ -203,13 +203,15 @@ public class Btcd extends Bitcoin {
 
     }
 
+    // TODO
+    // How does this get called ?
     @Override
     protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException, CoinNetworkException {
         if (!t.canSend || t.sent) {
             return false;
         }
 
-        String hexTx = null;
+        String hexTx;
         try {
             hexTx = DatatypeConverter.printHexBinary(t.bitcoinj().bitcoinSerialize());
         } catch (BlockStoreException e) {
@@ -219,7 +221,7 @@ public class Btcd extends Bitcoin {
         }
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"sendrawtransaction\", \"params\":[\"" + hexTx + "\"]}";
 
-        HttpURLConnection connection = null;
+        HttpURLConnection connection;
         try {
             connection = (HttpURLConnection) url.openConnection();
         } catch (IOException e) {
@@ -297,11 +299,10 @@ public class Btcd extends Bitcoin {
         return true;
     }
 
+    // TODO
     synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
         return false;
     }
-
-
 
     @Override
     protected synchronized List<Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {

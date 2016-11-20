@@ -143,7 +143,7 @@ public class BitcoinCore extends Bitcoin {
             return false;
         }
 
-        String hexTx = null;
+        String hexTx;
         try {
             hexTx = DatatypeConverter.printHexBinary(t.bitcoinj().bitcoinSerialize());
         } catch (BlockStoreException e) {
