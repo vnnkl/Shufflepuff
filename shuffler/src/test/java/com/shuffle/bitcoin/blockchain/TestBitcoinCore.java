@@ -3,15 +3,12 @@ package com.shuffle.bitcoin.blockchain;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.domain.RawTransaction;
-import com.neemre.btcdcli4j.core.domain.Transaction;
 import com.shuffle.p2p.Bytestring;
 
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
-//import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutPoint;
-import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.params.TestNet3Params;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -21,24 +18,35 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
+//import org.bitcoinj.core.Transaction;
 
 /**
  * Created by nsa on 10/25/16.
  */
 public class TestBitcoinCore {
 
-    NetworkParameters netParams = MainNetParams.get();
+    NetworkParameters netParams = TestNet3Params.get();
     BitcoinCore testCase;
 
     public TestBitcoinCore() throws MalformedURLException, BitcoindException, CommunicationException {
-        //testCase = new BitcoinCore(netParams, "admin", "pass");
+        testCase = new BitcoinCore(netParams, "admin", "pass");
     }
 
+    private static JSONArray readJSONArray(String ar) {
 
+        try {
+            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
+            if (json == null) {
+                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+            }
+
+            return (JSONArray) json.get("x");
+
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
+        }
+    }
 
     @Test
     public void test4() throws Exception {
@@ -80,30 +88,15 @@ public class TestBitcoinCore {
     public void test2() throws Exception {
         // test confirmations, etc
 
-        BtcdQueryClient client = new BtcdQueryClient("127.0.0.1", 8332, "admin", "pass");
+        BtcdQueryClient client = new BtcdQueryClient("127.0.0.1", 18332, "admin", "pass");
 
-        com.neemre.btcdcli4j.core.domain.Transaction rawTx = client.getTransaction("0b17924648f84e60c0a83fb65027ff60dc0355c347790e5d6baced3847cd24d6");
+        RawTransaction x = (RawTransaction) client.getRawTransaction("a4f233d19fbbebde45e7296bb5e830962c4565d0aefc409a73df3143637cb0af", 1);
 
-        System.out.println(rawTx);
+        System.out.println(x);
 
-        System.out.println(rawTx.getConfirmations());
-        System.out.println(rawTx.getHex());
+        System.out.println(x.getConfirmations());
+        System.out.println(x.getTxId());
 
-    }
-
-    private static JSONArray readJSONArray(String ar) {
-
-        try {
-            JSONObject json = (JSONObject) JSONValue.parse("{\"x\":" + ar + "}");
-            if (json == null) {
-                throw new IllegalArgumentException("Could not parse json object " + ar + ".");
-            }
-
-            return (JSONArray) json.get("x");
-
-        } catch (ClassCastException e) {
-            throw new IllegalArgumentException("Could not parse json object " + ar + ".");
-        }
     }
 
     @Test
@@ -135,7 +128,7 @@ public class TestBitcoinCore {
     @Test
     public void isUtxo() throws IOException, BitcoindException, CommunicationException {
         //boolean testUtxo = testCase.isUtxo("8acc615b65c0d0c1ff255e3a316f69706a495aab426ee448506f99d5a2629598", 6);
-        boolean testUtxo = testCase.isUtxo("4b08898741a647183c878bd4018daa998f3019b42515cf23a70e0c89aefbab3a", 0);
+        boolean testUtxo = testCase.isUtxo("a4f233d19fbbebde45e7296bb5e830962c4565d0aefc409a73df3143637cb0af", 0);
         Assert.assertTrue(testUtxo);
     }
 
