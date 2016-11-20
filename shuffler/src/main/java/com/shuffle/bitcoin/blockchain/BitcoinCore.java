@@ -3,9 +3,11 @@ package com.shuffle.bitcoin.blockchain;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.domain.RawTransaction;
+import com.shuffle.bitcoin.Address;
+import com.shuffle.bitcoin.CoinNetworkException;
 
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
 
@@ -13,7 +15,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 
 import javax.xml.bind.DatatypeConverter;
@@ -110,9 +111,7 @@ public class BitcoinCore extends Bitcoin {
         return tx;
     }
 
-    // Don't need
-    // TODO
-    public synchronized List<Transaction> getAddressTransactionsInner(HashSet<TransactionOutPoint> t) {
+    public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) {
 
         List<Transaction> txList = new ArrayList<>();
         HashSet<Transaction> checkDuplicateTx = new HashSet<>();
@@ -135,6 +134,45 @@ public class BitcoinCore extends Bitcoin {
         }
 
         return txList;
+    }
+
+    public synchronized com.shuffle.bitcoin.Transaction getConflictingTransactionInner(
+            com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
+            throws CoinNetworkException, AddressFormatException {
+
+        if (!(t instanceof Transaction)) throw new IllegalArgumentException();
+        Transaction transaction = (Transaction)t;
+
+        /*
+        if (!(t instanceof Transaction)) throw new IllegalArgumentException();
+        Transaction transaction = (Transaction)t;
+
+        String address = addr.toString();
+
+        List<Bitcoin.Transaction> transactions = null;
+        try {
+            transactions = getAddressTransactions(address);
+        } catch (IOException e) {
+            // Can we return null here?
+            return null;
+        }
+
+        for (Bitcoin.Transaction tx : transactions) {
+            for (TransactionInput input : tx.bitcoinj.getInputs()) {
+                // Can be multiple inputs for transaction parameter.
+                for (TransactionInput txInput : transaction.bitcoinj.getInputs()) {
+                    if (input.equals(txInput)) {
+                        return tx;
+                    }
+                }
+            }
+        }
+
+        return null;
+        */
+
+        return null;
+
     }
 
     // TODO
@@ -169,11 +207,9 @@ public class BitcoinCore extends Bitcoin {
         return true;
     }
 
-    // Don't need
-    // TODO
     @Override
-    protected synchronized List<Transaction> getAddressTransactions(HashSet<TransactionOutPoint> t) {
-        return getAddressTransactionsInner(t);
+    protected synchronized List<Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t) {
+        return getTransactionsFromUtxosInner(t);
     }
 
 }

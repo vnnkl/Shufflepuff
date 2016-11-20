@@ -16,7 +16,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.SortedSet;
 
 /**
  *
@@ -38,12 +37,11 @@ public interface Coin {
 
     long valueHeld(HashSet<TransactionOutPoint> utxos) throws CoinNetworkException, AddressFormatException;
 
-    // Returns true if the address follows the correct format for CoinShuffle.
-    // Returns false otherwise.
+    // Returns true if the utxo list has sufficient funds, false otherwise
     boolean sufficientFunds(HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException, IOException;
 
     // If there is a conflicting transaction in the mempool or blockchain, this function
     // returns that transaction.
-    Transaction getConflictingTransaction(Transaction transaction, Address addr, long amount) throws CoinNetworkException, AddressFormatException;
+    Transaction getConflictingTransaction(Transaction transaction, HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException;
 
 }
