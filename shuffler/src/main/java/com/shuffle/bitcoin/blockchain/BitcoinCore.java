@@ -3,7 +3,6 @@ package com.shuffle.bitcoin.blockchain;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.domain.RawTransaction;
-import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
 
 import org.bitcoinj.core.AddressFormatException;
@@ -29,10 +28,13 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  *
  * 1. We cannot lookup address balances with Bitcoin Core easily, there is no address index.
  *
- * 2. So, the users know each other's Bitcoin addresses - and send each other the UTXO they want to
- *    send from.
+ * 2. So, the users know each other's Bitcoin addresses - and send each other the UTXOs they want to
+ *    spend from.
  *
  */
+
+// TODO
+// Setup instructions
 
 public class BitcoinCore extends Bitcoin {
 
@@ -56,7 +58,6 @@ public class BitcoinCore extends Bitcoin {
         client = new BtcdQueryClient("127.0.0.1", rpcport, rpcuser, rpcpass);
     }
 
-    // TODO -- VERIFY {address, vout, & don't need mempool}
     synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
         return client.getTxOut(transactionHash, vout, false);
     }
@@ -148,10 +149,8 @@ public class BitcoinCore extends Bitcoin {
 
         for (Transaction tx : transactions) {
             for (TransactionInput input : tx.bitcoinj().getInputs()) {
-                for (TransactionInput txInput : transaction.bitcoinj().getInputs()) {
-                    if (input.equals(txInput)) {
-                        return tx;
-                    }
+                if (transaction.bitcoinj().getInputs().contains(input)) {
+                    return tx;
                 }
             }
         }
@@ -175,10 +174,6 @@ public class BitcoinCore extends Bitcoin {
         } catch (IOException er) {
             return false;
         }
-
-        // TODO response
-
-        System.out.println("TX HASH : " + hexTx);
 
         String txid;
         try {

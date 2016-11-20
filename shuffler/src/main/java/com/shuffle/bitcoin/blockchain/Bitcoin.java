@@ -228,10 +228,6 @@ public abstract class Bitcoin implements Coin {
 
    }
 
-   //TODO
-   /**
-    * Optimize ?
-    */
    public org.bitcoinj.core.Transaction signTransaction(org.bitcoinj.core.Transaction signTx, List<Bytestring> programSignatures) {
 
       List<Script> inputScripts = new LinkedList<>();
@@ -262,7 +258,8 @@ public abstract class Bitcoin implements Coin {
       return signTx;
    }
 
-    // TODO
+   // TODO
+   // copyTx seems wrong, as does fake-signing the transaction to get the signature
    /**
     * Takes in a transaction and a private key and returns a signature (if possible)
     * as a Bytestring object.
@@ -301,6 +298,7 @@ public abstract class Bitcoin implements Coin {
       return new Script(program.bytes);
    }
 
+
    // Since we rely on 3rd party services to query the blockchain, by
    // default we cache the result.
 
@@ -328,6 +326,8 @@ public abstract class Bitcoin implements Coin {
       return txList;
    }
 
+   // TODO
+   // Why this send() method ?
    protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException, CoinNetworkException {
       if (!t.canSend || t.sent) {
          return false;
