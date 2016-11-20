@@ -312,7 +312,7 @@ public abstract class Bitcoin implements Coin {
         long now = System.currentTimeMillis();
         Cached cached = cache.get(address);
         if (cached != null) {
-            if (now - cached.last < cach_expire) {
+            if (now - cached.last < cache_expire) {
                 return cached.txList;
             }
         }

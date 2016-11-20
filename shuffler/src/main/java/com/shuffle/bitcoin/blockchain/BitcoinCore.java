@@ -138,6 +138,8 @@ public class BitcoinCore extends Bitcoin {
         return txList;
     }
 
+    // TODO
+    // must include 0 confirmations
     public synchronized com.shuffle.bitcoin.Transaction getConflictingTransactionInner(
             com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
             throws CoinNetworkException, AddressFormatException, BlockStoreException, IOException {
