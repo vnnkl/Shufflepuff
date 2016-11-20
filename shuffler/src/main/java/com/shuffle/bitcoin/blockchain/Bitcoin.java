@@ -38,6 +38,7 @@ import org.bitcoinj.store.BlockStoreException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -134,6 +135,14 @@ public abstract class Bitcoin implements Coin {
             long keyAmount = valueHeld(utxos);
             if (keyAmount >= amount + fee) {
                List<Bitcoin.Transaction> transactions = getTransactionsFromUtxos(utxos);
+
+               // sanitize transactions list to remove unconfirmed tx's
+               for (Iterator<Bitcoin.Transaction> it = transactions.iterator(); it.hasNext(); ) {
+                   Bitcoin.Transaction tr = it.next();
+                   if (!tr.confirmed) {
+                       it.remove();
+                   }
+               }
                for (Bitcoin.Transaction t : transactions) {
                   for (TransactionOutput output : t.bitcoinj.getOutputs()) {
                      //if output is part of utxo set add it to transaction as input
@@ -221,12 +230,25 @@ public abstract class Bitcoin implements Coin {
 
    @Override
    public synchronized com.shuffle.bitcoin.Transaction getConflictingTransaction(
-         com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
+           com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
            throws CoinNetworkException, AddressFormatException, BlockStoreException, IOException {
 
-       return getConflictingTransactionInner(t, utxos, amount);
+       if (!(t instanceof Transaction)) throw new IllegalArgumentException();
+       Transaction transaction = (Transaction)t;
 
-   }
+       List<Transaction> transactions = getTransactionsFromUtxos(utxos);
+
+       for (Transaction tx : transactions) {
+           for (TransactionInput input : tx.bitcoinj().getInputs()) {
+               if (transaction.bitcoinj().getInputs().contains(input)) {
+                   return tx;
+               }
+           }
+       }
+
+       return null;
+
+    }
 
    public org.bitcoinj.core.Transaction signTransaction(org.bitcoinj.core.Transaction signTx, List<Bytestring> programSignatures) {
 
@@ -303,7 +325,7 @@ public abstract class Bitcoin implements Coin {
 
    /**
     * We cache the results due to some 3rd party blockchains that rate-limit.
-    * This might be removed.
+    * This caching might be removed.
     */
    protected synchronized List<Bitcoin.Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t)
          throws IOException, CoinNetworkException, AddressFormatException {
@@ -339,10 +361,6 @@ public abstract class Bitcoin implements Coin {
       t.sent = true;
       return true;
    }
-
-   abstract com.shuffle.bitcoin.Transaction getConflictingTransactionInner(
-           com.shuffle.bitcoin.Transaction t, HashSet<TransactionOutPoint> utxos, long amount)
-           throws CoinNetworkException, AddressFormatException, BlockStoreException, IOException;
 
    abstract boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException;
 
