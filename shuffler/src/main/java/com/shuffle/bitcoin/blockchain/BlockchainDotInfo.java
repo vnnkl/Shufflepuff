@@ -73,7 +73,6 @@ public final class BlockchainDotInfo extends Bitcoin {
 
     // TODO
     // remove?
-    /*
     public synchronized long getAddressBalance(String address) throws IOException {
         String url = "https://blockchain.info/rawaddr/" + address;
         URL obj = new URL(url);
@@ -81,7 +80,6 @@ public final class BlockchainDotInfo extends Bitcoin {
         JSONObject root = new JSONObject(tokener);
         return Long.valueOf(root.get("final_balance").toString());
     }
-    */
 
 
     /**
@@ -114,30 +112,6 @@ public final class BlockchainDotInfo extends Bitcoin {
         }
 
         return txList;
-
-        /*
-        String url = "https://blockchain.info/rawaddr/" + address;
-        URL obj = new URL(url);
-        JSONTokener tokener = new JSONTokener(obj.openStream());
-        JSONObject root = new JSONObject(tokener);
-        List<Transaction> txhashes = new LinkedList<>();
-        for (int i = 0; i < root.getJSONArray("txs").length(); i++) {
-            boolean confirmed;
-            String blockHeight = root.getJSONArray("txs").getJSONObject(i).get("block_height").toString();
-            if (blockHeight == null) {
-                confirmed = false;
-            } else {
-                confirmed = true;
-            }
-            txhashes.add(new Transaction(
-                    root.getJSONArray("txs").getJSONObject(i).get("hash").toString(), false, confirmed));
-        }
-        if (txhashes.size() == 50) {
-            return null;
-        }
-        return txhashes;
-        */
-
 
 
     }
