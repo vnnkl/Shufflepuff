@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 // TODO
 // Setup instructions
+// TLS
 
 public class BitcoinCore extends Bitcoin {
 
@@ -87,7 +88,7 @@ public class BitcoinCore extends Bitcoin {
         try {
             rawObject = client.getRawTransaction(transactionHash, 1);
         } catch(BitcoindException | CommunicationException e) {
-            return null;
+            throw new IOException();
         }
 
         rx = (RawTransaction) rawObject;
@@ -109,7 +110,7 @@ public class BitcoinCore extends Bitcoin {
         return tx;
     }
 
-    public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) {
+    public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         List<Transaction> txList = new ArrayList<>();
         HashSet<Transaction> checkDuplicateTx = new HashSet<>();
@@ -127,7 +128,7 @@ public class BitcoinCore extends Bitcoin {
                 }
                 checkDuplicateTx.add(bTx);
             } catch (IOException e) {
-                return null;
+                throw new IOException();
             }
         }
 
@@ -162,7 +163,7 @@ public class BitcoinCore extends Bitcoin {
     }
 
     @Override
-    protected synchronized List<Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t) {
+    protected synchronized List<Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t) throws IOException {
         return getTransactionsFromUtxosInner(t);
     }
 

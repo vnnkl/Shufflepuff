@@ -8,8 +8,6 @@
 
 package com.shuffle.bitcoin.blockchain;
 
-import com.neemre.btcdcli4j.core.BitcoindException;
-import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.CoinNetworkException;
 
 import java.io.BufferedReader;
@@ -20,14 +18,15 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
 
@@ -61,7 +60,8 @@ import org.json.JSONObject;
  *
  */
 
-// TODO TLS
+// TODO
+// TLS
 
 public class Btcd extends Bitcoin {
 
@@ -146,6 +146,15 @@ public class Btcd extends Bitcoin {
      * // description
      */
     public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
+
+        List<Transaction> txList = new ArrayList<>();
+        /**
+         * 1. Call getTransaction() in a loop
+         * 2. This returns both confirmed and unconfirmed transactions
+         * 3. Call inMempool() to see if confirmed/unconfirmed
+         * 4. Note this in a Bitcoin.Transaction object
+         * 5. Return this list
+         */
 
         return null;
 
@@ -239,16 +248,10 @@ public class Btcd extends Bitcoin {
             response.append('\r');
         }
         rd.close();
+
         JSONObject json = new JSONObject(response.toString());
-        if (json.isNull("result")) {
-           return false;
-        }
 
-        //JSONArray jsonArray = json.getJSONArray("result");
-
-        // or true/false ???
-
-        return true;
+        return !(json.isNull("result"));
     }
 
     private synchronized boolean inMempool(String transactionHash) throws IOException {

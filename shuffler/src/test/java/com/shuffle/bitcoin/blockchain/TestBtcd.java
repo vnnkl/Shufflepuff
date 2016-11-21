@@ -9,11 +9,8 @@
 package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.*;
-import org.bitcoinj.core.Transaction;
 
 import org.bitcoinj.params.TestNet3Params;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.junit.Test;
 
 /**
@@ -36,7 +33,6 @@ public class TestBtcd {
     /*
 
     NetworkParameters netParams = MainNetParams.get();
-
 
     // the below objects are mainnet objects
     Btcd testCase;
