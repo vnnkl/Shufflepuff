@@ -225,7 +225,7 @@ public abstract class Bitcoin implements Coin {
 
    @Override
    public final boolean sufficientFunds(HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException {
-      return valueHeld(utxos) > amount;
+      return valueHeld(utxos) >= amount;
    }
 
    @Override
