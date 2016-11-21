@@ -240,7 +240,6 @@ public class Btcd extends Bitcoin {
         rd.close();
         JSONObject json = new JSONObject(response.toString());
         JSONArray jsonArray = json.getJSONArray("result");
-        /*
         if (json.isNull("result")) {
             JSONObject errorObj = json.getJSONObject("error");
             String errorMsg = errorObj.getString("message");
@@ -248,8 +247,7 @@ public class Btcd extends Bitcoin {
                 return null;
             }
         }
-        return (String) json.get("result");
-        */
+
         return jsonArray;
     }
 
@@ -257,9 +255,11 @@ public class Btcd extends Bitcoin {
      *
      */
     // TODO
+    // THIS CHECKS IF ANY CONFIRMATIONS -.- NOT IF ANY UTXOS
     synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
 
-        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawmempool\", \"params\":[\"false\"]}";
+        // verbose is false, don't use vout anywhere
+        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawmempool\", \"params\":[false]}";
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoInput(true);
         connection.setDoOutput(true);
@@ -296,9 +296,11 @@ public class Btcd extends Bitcoin {
                 return false;
             }
         }
-        // get result
 
-        return true;
+        JSONArray jsonArray = json.getJSONArray("result");
+
+        // or true/false ? ??
+        return jsonArray.toString().contains("\"" + transactionHash + "\"");
     }
 
     @Override
