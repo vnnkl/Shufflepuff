@@ -11,22 +11,22 @@ package com.shuffle.bitcoin.blockchain;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.SortedSet;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.TransactionOutPoint;
-import org.json.JSONTokener;
 import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 
 /**
@@ -55,7 +55,14 @@ public final class BlockchainDotInfo extends Bitcoin {
 
 
     synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
-        return false;
+        // https://blockchain.info/rawtx/$tx_hash
+        String url = "https://blockchain.info/rawtx/" + transactionHash;
+        URL obj = new URL(url);
+        JSONTokener tokener = new JSONTokener(obj.openStream());
+        JSONObject root = new JSONObject(tokener);
+        org.json.JSONArray outputs = root.getJSONArray("out");
+        JSONObject output = (JSONObject) outputs.get(vout);
+        return !output.getBoolean("spent");
     }
 
     /**
@@ -79,12 +86,34 @@ public final class BlockchainDotInfo extends Bitcoin {
 
     /**
      *
-     * Given a wallet address, this function looks up all transactions associated with the wallet
+     * Given a set or TransactionOutpoints, this function looks up all transactions associated with the wallet
      * using Blockchain.info's API. These "n" transaction hashes are then returned in a String
      * array.
      *
      */
     protected final List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
+
+        List<Transaction> txList = new ArrayList<>();
+        HashSet<Transaction> checkDuplicateTx = new HashSet<>();
+        for (TransactionOutPoint tO : t) {
+            TransactionWithConfirmations tx;
+            try {
+                tx = getTransaction(tO.getHash().toString());
+                String txid = tx.getHash().toString();
+                byte[] bytes = tx.getBytes();
+                boolean confirmed = tx.getConfirmed();
+                org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytes);
+                Transaction bTx = new Transaction(txid, bitTx, false, confirmed);
+                if (!checkDuplicateTx.contains(bTx)) {
+                    txList.add(bTx);
+                }
+                checkDuplicateTx.add(bTx);
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
+        return txList;
 
         /*
         String url = "https://blockchain.info/rawaddr/" + address;
@@ -109,7 +138,7 @@ public final class BlockchainDotInfo extends Bitcoin {
         return txhashes;
         */
 
-        return null;
+
 
     }
 
@@ -119,7 +148,7 @@ public final class BlockchainDotInfo extends Bitcoin {
      * After some formatting, it returns a bitcoinj Transaction object using this transaction hash.
      *
      */
-    public synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
+    public synchronized TransactionWithConfirmations getTransaction(String transactionHash) throws IOException {
 
         String url = "https://blockchain.info/tr/rawtx/" + transactionHash + "?format=hex";
         URL obj = new URL(url);
@@ -134,9 +163,38 @@ public final class BlockchainDotInfo extends Bitcoin {
         }
         HexBinaryAdapter adapter = new HexBinaryAdapter();
         byte[] bytearray = adapter.unmarshal(response.toString());
+
+        url = "https://blockchain.info/rawtx/" + transactionHash;
+        obj = new URL(url);
+        JSONTokener tokener = new JSONTokener(obj.openStream());
+        JSONObject root = new JSONObject(tokener);
+        if (root.has("block_height")) {
+            return new TransactionWithConfirmations(netParams, bytearray, true);
+        }
         // bitcoinj needs this Context variable
         Context context = Context.getOrCreate(netParams);
-        return new org.bitcoinj.core.Transaction(netParams, bytearray);
+        return new TransactionWithConfirmations(netParams, bytearray, false);
+
+    }
+
+    public class TransactionWithConfirmations extends org.bitcoinj.core.Transaction {
+
+        byte[] bytes;
+        boolean confirmed;
+
+        public TransactionWithConfirmations(NetworkParameters netParams, byte[] bytes, boolean confirmed) {
+            super(netParams, bytes);
+            this.bytes = bytes;
+            this.confirmed = confirmed;
+        }
+
+        public boolean getConfirmed() {
+            return this.confirmed;
+        }
+
+        public byte[] getBytes() {
+            return this.bytes;
+        }
 
     }
 
