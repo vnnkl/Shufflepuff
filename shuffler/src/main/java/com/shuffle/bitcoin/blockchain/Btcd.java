@@ -148,6 +148,17 @@ public class Btcd extends Bitcoin {
     public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         List<Transaction> txList = new ArrayList<>();
+        HashSet<Transaction> checkDuplicateTx = new HashSet<>();
+        for (TransactionOutPoint tO : t) {
+            try {
+                String txid = tO.getHash().toString();
+                org.bitcoinj.core.Transaction tx = getTransaction(txid);
+
+            } catch (IOException e) {
+                throw new IOException();
+            }
+        }
+
         /**
          * 1. Call getTransaction() in a loop
          * 2. This returns both confirmed and unconfirmed transactions
@@ -156,7 +167,7 @@ public class Btcd extends Bitcoin {
          * 5. Return this list
          */
 
-        return null;
+        return txList;
 
     }
 
