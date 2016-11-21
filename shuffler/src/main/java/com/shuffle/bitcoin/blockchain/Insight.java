@@ -6,16 +6,25 @@
 
 package com.shuffle.bitcoin.blockchain;
 
+import com.neemre.btcdcli4j.core.BitcoindException;
+import com.neemre.btcdcli4j.core.CommunicationException;
+import com.shuffle.bitcoin.CoinNetworkException;
+import com.subgraph.orchid.encoders.Hex;
+
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.TransactionOutPoint;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 
 /**
@@ -43,6 +52,67 @@ public class Insight extends Bitcoin {
 
    }
 
+   @Override
+   boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
+      // https://blockchain.info/rawtx/$tx_hash
+      String url = "https://" + insightMainnetURL + "/api/tx/" + transactionHash;
+      if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+         url = "https://" + insightTestnetURL + "/api/tx/" + transactionHash;
+      }
+      URL obj = new URL(url);
+      JSONTokener tokener = new JSONTokener(obj.openStream());
+      JSONObject object = new JSONObject(tokener);
+      JSONArray outs = object.getJSONArray("vout");
+      JSONObject voutObj = (JSONObject) outs.get(vout);
+      return voutObj.getString("spentTxId") == "null";
+   }
+
+
+   protected List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException, CoinNetworkException, AddressFormatException {
+      List<Transaction> txList = new ArrayList<>();
+      HashSet<Transaction> checkDuplicateTx = new HashSet<>();
+      for (TransactionOutPoint tO : t) {
+         Insight.TransactionWithConfirmations tx;
+         try {
+            tx = getTransaction(tO.getHash().toString());
+            byte[] bytes = tx.getBytes();
+            boolean confirmed = tx.getConfirmed();
+            org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytes);
+            Transaction bTx = new Transaction(tx.getHashAsString(), bitTx, false, confirmed);
+            if (!checkDuplicateTx.contains(bTx)) {
+               txList.add(bTx);
+            }
+            checkDuplicateTx.add(bTx);
+         } catch (IOException e) {
+            return null;
+         }
+      }
+
+      return txList;
+
+   }
+
+   public class TransactionWithConfirmations extends org.bitcoinj.core.Transaction {
+
+      byte[] bytes;
+      boolean confirmed;
+
+      public TransactionWithConfirmations(NetworkParameters netParams, byte[] bytes, boolean confirmed) {
+         super(netParams, bytes);
+         this.bytes = bytes;
+         this.confirmed = confirmed;
+      }
+
+      public boolean getConfirmed() {
+         return this.confirmed;
+      }
+
+      public byte[] getBytes() {
+         return this.bytes;
+      }
+
+   }
+
    public Insight(NetworkParameters netParams, int minPeers, String MainNetUrl, String TestNetUrl) {
       super(netParams, minPeers);
       if (!netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
@@ -58,7 +128,7 @@ public class Insight extends Bitcoin {
     * Given a wallet address, this function looks up the address' balance using Insights
     * API. The amount returned is of type long and represents the number of satoshis.
     */
-   @Override
+
    public synchronized long getAddressBalance(String address) throws IOException {
       String url = "https://" + insightMainnetURL + "/api/addr/" + address;
       if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
@@ -94,21 +164,32 @@ public class Insight extends Bitcoin {
    }
 
    /**
-    * This function takes in a transaction hash and passes it to Blockchain.info's API.
+    * This function takes in a transaction hash and passes it to insights API.
     * After some formatting, it returns a bitcoinj Transaction object using this transaction hash.
     */
-   public synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
-
+   public synchronized Insight.TransactionWithConfirmations getTransaction(String transactionHash) throws IOException {
       String url = "https://" + insightMainnetURL + "/api/rawtx/" + transactionHash;
       if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
          url = "https://" + insightTestnetURL + "/api/rawtx/" + transactionHash;
       }
       URL obj = new URL(url);
       JSONTokener tokener = new JSONTokener(obj.openStream());
-      JSONObject object = new JSONObject(tokener);
-      HexBinaryAdapter adapter = new HexBinaryAdapter();
-      byte[] bytearray = adapter.unmarshal(object.getString("rawtx"));
-      return new org.bitcoinj.core.Transaction(netParams, bytearray);
+      JSONObject root = new JSONObject(tokener);
+      byte[] bytes = Hex.decode(root.getString("rawtx"));
+
+      url = "https://" + insightMainnetURL + "/api/tx/" + transactionHash;
+      if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+         url = "https://" + insightTestnetURL + "/api/tx/" + transactionHash;
+      }
+      obj = new URL(url);
+      tokener = new JSONTokener(obj.openStream());
+      root = new JSONObject(tokener);
+      if (root.getInt("blockheight") == -1) {
+         return new Insight.TransactionWithConfirmations(netParams, bytes, false);
+      }
+      // bitcoinj needs this Context variable
+      Context context = Context.getOrCreate(netParams);
+      return new Insight.TransactionWithConfirmations(netParams, bytes, true);
 
    }
 

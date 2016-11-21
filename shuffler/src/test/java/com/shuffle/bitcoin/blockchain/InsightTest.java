@@ -1,12 +1,16 @@
 package com.shuffle.bitcoin.blockchain;
 
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Sha256Hash;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionOutPoint;
+import org.bitcoinj.params.TestNet3Params;
 import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -33,9 +37,28 @@ public class InsightTest {
    }
 
    @Test
+   public void testIsUtxo() throws Exception {
+      Assert.assertFalse(insightTestnetTest.isUtxo("a49aa30eb850966db6c1aba5c8c725cb375d9c741c597b462388dccee16408c3", 0));
+   }
+
+   @Test
+   public void testGetTransactionsFromUtxosInner() throws Exception {
+      HashSet<TransactionOutPoint> utxos = new HashSet<TransactionOutPoint>();
+      TransactionOutPoint outPoint = new TransactionOutPoint(TestNet3Params.get(), 0, Sha256Hash.wrap("a49aa30eb850966db6c1aba5c8c725cb375d9c741c597b462388dccee16408c3"));
+      utxos.add(outPoint);
+
+      // hex of tx aa4d70d6bd8533ece17a45f5e83d382b83ef5da0c7d51ab38c39f510f7aa6d32
+      byte[] payload = Hex.decode("0100000001eb66389ecd512e19a26d74074e9be7151cbc65c7b211182693e23eaac83238c1000000006a473044022060549963655fb8d32a6f69e604db291dd40d8f35b502772bc3914b2c01c0689202207b6d83ef6f2c7805bdcbc7824be5b1a53f655115716d9413f12168079b985f1901210392567ed6709a9596778a06990ccf8dc6bf7ae6803a048e9ace5be13e26bcfb81ffffffff0220a10700000000001976a914e98ac1b3ccb0c70886575c3c20946df535c1190088aca3cd7a03000000001976a91425baeb25cf6174b4f93be0b78415146a942dc8c288ac00000000");
+      Transaction testTx = new Transaction(TestNet3Params.get(), payload);
+      List<Bitcoin.Transaction> tList = insightTestnetTest.getTransactionsFromUtxosInner(utxos);
+      Assert.assertTrue(tList.get(0).equals(testTx));
+
+   }
+
+   @Test
    public void testGetAddressTransactions() throws Exception {
       // for easy check n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc or n2KwazAwSdE2SyPBfWQfWxSgMrmWFUu3Nx for many addresses
-      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactions("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
+      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactionsInner("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
       //List<com.shuffle.bitcoin.blockchain.Bitcoin.Transaction> transactionListMain = blockCypherMain.getAddressTransactions("1BitcoinEaterAddressDontSendf59kuE");
       assert transactionListTest != null;
       for (Bitcoin.Transaction trans : transactionListTest) {
@@ -54,7 +77,7 @@ public class InsightTest {
    @Test
    public void testGetAddressAssociates() throws Exception {
       // for easy check n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc or n2KwazAwSdE2SyPBfWQfWxSgMrmWFUu3Nx for many addresses
-      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactions("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
+      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactionsInner("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
       //List<com.shuffle.bitcoin.blockchain.Bitcoin.Transaction> transactionListMain = blockCypherMain.getAddressTransactions("1BitcoinEaterAddressDontSendf59kuE");
       assert transactionListTest != null;
       for (Bitcoin.Transaction trans : transactionListTest) {
