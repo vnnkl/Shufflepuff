@@ -27,19 +27,8 @@ public class TestBtcd {
         NetworkParameters netParams = TestNet3Params.get();
         Btcd test = new Btcd(netParams, "admin", "pass");
 
-        JSONArray utxos = test.getMempool();
-        String utxo = utxos.getString(0);
-        System.out.println(utxos);
-        System.out.println(utxo);
-
-        if (utxos.toString().contains("\"" + utxo + "\"")) System.out.println("Is utxo");
-
-        Transaction tx = test.getTransaction(utxo);
-        System.out.println(tx);
-
-        System.out.println("~\n~\n~\n~");
-        String txout = test.getTxOut("fe68ebbbec06746a26d4038b500b3b9450b91f9e5c0935304b18fe13ec3eccbd",0);
-        System.out.println(txout);
+        boolean isUTXO = test.isUtxo("fe68ebbbec06746a26d4038b500b3b9450b91f9e5c0935304b18fe13ec3eccbd", 10);
+        System.out.println(isUTXO);
 
     }
 
