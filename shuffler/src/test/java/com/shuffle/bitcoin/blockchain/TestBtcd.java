@@ -18,6 +18,8 @@ import com.shuffle.bitcoin.blockchain.Btcd;
 
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.store.BlockStoreException;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -36,6 +38,26 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
  */
 
 public class TestBtcd {
+
+    @Test
+    public void quickTest() throws Exception {
+        NetworkParameters netParams = TestNet3Params.get();
+        Btcd test = new Btcd(netParams, "admin", "pass");
+
+        /*
+        Transaction tx = test.getTransaction("fe68ebbbec06746a26d4038b500b3b9450b91f9e5c0935304b18fe13ec3eccbd");
+        System.out.println(tx);
+        */
+
+        JSONArray utxos = test.getMempool();
+        JSONObject utxo = utxos.getJSONObject(0);
+        System.out.println(utxo);
+
+        Transaction tx = test.getTransaction("ee86923aea4d859c30798a97f2ec082e7a030a3a04b7ad96e887138ccb6a8906");
+        System.out.println(tx);
+
+    }
+
     // TODO
     /*
 

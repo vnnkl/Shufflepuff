@@ -19,7 +19,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.ProtocolException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -35,14 +34,15 @@ import org.bitcoinj.store.BlockStoreException;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.apache.commons.codec.binary.Base64;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.simple.JSONArray;
-
 
 /**
  * Created by Eugene Siegel on 4/22/16.
  */
 
+// TODO
+// No addrindex
 /**
  *
  * This class allows lookup of transactions associated to any Bitcoin address.
@@ -92,7 +92,6 @@ public class Btcd extends Bitcoin {
 
         org.bitcoinj.core.Transaction tx;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawtransaction\", \"params\":[\"" + transactionHash + "\"]}";
-
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
@@ -142,69 +141,13 @@ public class Btcd extends Bitcoin {
      * We don't use Btcd's "searchrawtransactions" RPC call because we are not looking for the
      * transactions pertaining to a particular address, but rather the transactions related to
      * a set of UTXOs.
+     *
+     * // TODO
+     * // description
      */
     public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
-        List<Transaction> txList;
-        String temp = "";
-        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + temp + "\"]}";
-
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("Accept", "application/json");
-        Base64 b = new Base64();
-        String authString = rpcuser + ":" + rpcpass;
-        String encoding = b.encodeAsString(authString.getBytes());
-        connection.setRequestProperty("Authorization", "Basic " + encoding);
-        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
-        connection.setDoInput(true);
-        OutputStream out = connection.getOutputStream();
-        out.write(requestBody.getBytes());
-
-        if (connection.getResponseCode() == HttpURLConnection.HTTP_OK) {
-            InputStream is = connection.getInputStream();
-            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-            String line;
-            StringBuffer response = new StringBuffer();
-            while ((line = rd.readLine()) != null) {
-                response.append(line);
-                response.append('\r');
-            }
-            rd.close();
-
-            JSONObject json = new JSONObject(response.toString());
-            org.json.JSONArray jsonarray;
-            txList = new LinkedList<>();
-            if (json.isNull("result")) {
-                return txList;
-            } else {
-                jsonarray = json.getJSONArray("result");
-            }
-            for (int i = 0; i < jsonarray.length(); i++) {
-                JSONObject currentJson = jsonarray.getJSONObject(i);
-                String txid = currentJson.get("txid").toString();
-                HexBinaryAdapter adapter = new HexBinaryAdapter();
-                byte[] bytearray = adapter.unmarshal(currentJson.get("hex").toString());
-                // is this context necessary?
-                Context context = Context.getOrCreate(netParams);
-                int confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
-                boolean confirmed;
-                confirmed = !(confirmations == 0);
-                org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytearray);
-                Transaction tx = new Transaction(txid, bitTx, false, confirmed);
-                txList.add(tx);
-            }
-
-        } else {
-            throw new IOException();
-        }
-
-        out.flush();
-        out.close();
-
-        return txList;
+        return null;
 
     }
 
@@ -265,9 +208,97 @@ public class Btcd extends Bitcoin {
         return true;
     }
 
+    JSONArray getMempool() throws Exception {
+        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawmempool\", \"params\":[false]}";
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setDoInput(true);
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        Base64 b = new Base64();
+        String authString = rpcuser + ":" + rpcpass;
+        String encoding = b.encodeAsString(authString.getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + encoding);
+        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
+        OutputStream out = connection.getOutputStream();
+        out.write(requestBody.getBytes());
+        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
+        InputStream is = connection.getInputStream();
+        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+        String line;
+        StringBuffer response = new StringBuffer();
+        while (true) {
+            try {
+                if ((line = rd.readLine()) == null) break;
+            } catch (IOException e) {
+                return null;
+            }
+            response.append(line);
+            response.append('\r');
+        }
+        rd.close();
+        JSONObject json = new JSONObject(response.toString());
+        JSONArray jsonArray = json.getJSONArray("result");
+        /*
+        if (json.isNull("result")) {
+            JSONObject errorObj = json.getJSONObject("error");
+            String errorMsg = errorObj.getString("message");
+            if (errorMsg.isEmpty()) {
+                return null;
+            }
+        }
+        return (String) json.get("result");
+        */
+        return jsonArray;
+    }
+
+    /**
+     *
+     */
     // TODO
     synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
-        return false;
+
+        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawmempool\", \"params\":[\"false\"]}";
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        connection.setDoInput(true);
+        connection.setDoOutput(true);
+        connection.setRequestMethod("POST");
+        connection.setRequestProperty("Content-Type", "application/json");
+        connection.setRequestProperty("Accept", "application/json");
+        Base64 b = new Base64();
+        String authString = rpcuser + ":" + rpcpass;
+        String encoding = b.encodeAsString(authString.getBytes());
+        connection.setRequestProperty("Authorization", "Basic " + encoding);
+        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
+        OutputStream out = connection.getOutputStream();
+        out.write(requestBody.getBytes());
+        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return false;
+        InputStream is = connection.getInputStream();
+        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+        String line;
+        StringBuffer response = new StringBuffer();
+        while (true) {
+            try {
+                if ((line = rd.readLine()) == null) break;
+            } catch (IOException e) {
+                return false;
+            }
+            response.append(line);
+            response.append('\r');
+        }
+        rd.close();
+        JSONObject json = new JSONObject(response.toString());
+        if (json.isNull("result")) {
+            JSONObject errorObj = json.getJSONObject("error");
+            String errorMsg = errorObj.getString("message");
+            if (errorMsg.isEmpty()) {
+                return false;
+            }
+        }
+        // get result
+
+        return true;
     }
 
     @Override
