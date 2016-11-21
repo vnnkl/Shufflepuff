@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
+import java.net.ProtocolException;
 import java.net.URL;
 import java.util.HashSet;
 import java.util.List;
@@ -87,7 +88,7 @@ public class Btcd extends Bitcoin {
      */
     synchronized org.bitcoinj.core.Transaction getTransaction(String transactionHash) throws IOException {
 
-        org.bitcoinj.core.Transaction tx = null;
+        org.bitcoinj.core.Transaction tx;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawtransaction\", \"params\":[\"" + transactionHash + "\"]}";
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -122,6 +123,8 @@ public class Btcd extends Bitcoin {
             Context context = Context.getOrCreate(netParams);
             tx = new org.bitcoinj.core.Transaction(netParams, bytearray);
 
+        } else {
+            throw new IOException();
         }
 
         out.flush();
@@ -134,11 +137,13 @@ public class Btcd extends Bitcoin {
     /**
      * This method will take in an address hash and return a List of all transactions associated with
      * this address.  These transactions are in bitcoinj's Transaction format.
+     *
+     * Could technically look up "searchrawtransactions" with just an address, don't need a HashSet
+     * of TransactionOutPoints.
      */
     public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
-        /*
-        List<Transaction> txList = null;
+        List<Transaction> txList;
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -193,107 +198,69 @@ public class Btcd extends Bitcoin {
                 txList.add(tx);
             }
 
+        } else {
+            throw new IOException();
         }
 
         out.flush();
         out.close();
 
-        return txList;*/
-        return null;
+        return txList;
 
     }
 
-    // TODO
-    // How does this get called ?
     @Override
     protected boolean send(Bitcoin.Transaction t) throws ExecutionException, InterruptedException, CoinNetworkException {
         if (!t.canSend || t.sent) {
             return false;
         }
 
-        String hexTx;
         try {
-            hexTx = DatatypeConverter.printHexBinary(t.bitcoinj().bitcoinSerialize());
-        } catch (BlockStoreException e) {
-            return false;
-        } catch (IOException er) {
-            return false;
-        }
-        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"sendrawtransaction\", \"params\":[\"" + hexTx + "\"]}";
-
-        HttpURLConnection connection;
-        try {
-            connection = (HttpURLConnection) url.openConnection();
-        } catch (IOException e) {
-            return false;
-        }
-        connection.setDoOutput(true);
-        try {
+            String hexTx = DatatypeConverter.printHexBinary(t.bitcoinj().bitcoinSerialize());
+            String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"sendrawtransaction\", \"params\":[\"" + hexTx + "\"]}";
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setDoInput(true);
+            connection.setDoOutput(true);
             connection.setRequestMethod("POST");
-        } catch (java.net.ProtocolException e) {
-            return false;
-        }
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("Accept", "application/json");
-        Base64 b = new Base64();
-        String authString = rpcuser + ":" + rpcpass;
-        String encoding = b.encodeAsString(authString.getBytes());
-        connection.setRequestProperty("Authorization", "Basic " + encoding);
-        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
-        connection.setDoInput(true);
-        OutputStream out;
-        try {
-            out = connection.getOutputStream();
-        } catch (IOException e) {
-            return false;
-        }
-        try {
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("Accept", "application/json");
+            Base64 b = new Base64();
+            String authString = rpcuser + ":" + rpcpass;
+            String encoding = b.encodeAsString(authString.getBytes());
+            connection.setRequestProperty("Authorization", "Basic " + encoding);
+            connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
+            OutputStream out = connection.getOutputStream();
             out.write(requestBody.getBytes());
-        } catch (IOException e) {
-            return false;
-        }
-
-        try {
             if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return false;
-        } catch (IOException e) {
-            return false;
-        }
-
-        InputStream is;
-        try {
-            is = connection.getInputStream();
-        } catch (IOException e) {
-            return false;
-        }
-        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-        String line;
-        StringBuffer response = new StringBuffer();
-        while (true) {
-            try {
-                if ((line = rd.readLine()) == null) break;
-            } catch (IOException e) {
-                return false;
+            InputStream is = connection.getInputStream();
+            BufferedReader rd = new BufferedReader(new InputStreamReader(is));
+            String line;
+            StringBuffer response = new StringBuffer();
+            while (true) {
+                try {
+                    if ((line = rd.readLine()) == null) break;
+                } catch (IOException e) {
+                    return false;
+                }
+                response.append(line);
+                response.append('\r');
             }
-            response.append(line);
-            response.append('\r');
-        }
-
-        try {
             rd.close();
-        } catch (IOException e) {
-            return false;
-        }
-
-        JSONObject json = new JSONObject(response.toString());
-        if (json.isNull("result")) {
-            JSONObject errorObj = json.getJSONObject("error");
-            String errorMsg = errorObj.getString("message");
-            String parsed = errorMsg.substring(0,37);
-            // transaction is already in mempool, return true
-            if (parsed.equals("TX rejected: already have transaction")) {
-                return true;
+            JSONObject json = new JSONObject(response.toString());
+            if (json.isNull("result")) {
+                JSONObject errorObj = json.getJSONObject("error");
+                String errorMsg = errorObj.getString("message");
+                String parsed = errorMsg.substring(0,37);
+                // transaction is already in mempool, return true
+                if (parsed.equals("TX rejected: already have transaction")) {
+                    return true;
+                } else {
+                    throw new CoinNetworkException(errorMsg);
+                }
             }
-            throw new CoinNetworkException(errorMsg);
+
+        } catch (IOException | BlockStoreException e) {
+            return false;
         }
 
         return true;

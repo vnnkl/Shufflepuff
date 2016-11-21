@@ -134,9 +134,6 @@ public class BitcoinCore extends Bitcoin {
         return txList;
     }
 
-
-    // TODO
-    // How does this get called ?
     @Override
     protected boolean send(Bitcoin.Transaction t) {
         if (!t.canSend || t.sent) {
