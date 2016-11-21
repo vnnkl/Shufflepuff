@@ -367,6 +367,7 @@ public abstract class Bitcoin implements Coin {
    abstract protected List<Bitcoin.Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t)
          throws IOException, CoinNetworkException, AddressFormatException;
 
+   // includes mempool transactions
    abstract org.bitcoinj.core.Transaction getTransaction(String transactionHash)
          throws IOException;
 

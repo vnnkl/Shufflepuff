@@ -13,6 +13,7 @@ import org.bitcoinj.core.Transaction;
 
 import org.bitcoinj.params.TestNet3Params;
 import org.json.JSONArray;
+import org.json.JSONObject;
 import org.junit.Test;
 
 /**
@@ -27,7 +28,7 @@ public class TestBtcd {
         Btcd test = new Btcd(netParams, "admin", "pass");
 
         JSONArray utxos = test.getMempool();
-        String utxo = utxos.getString(5);
+        String utxo = utxos.getString(0);
         System.out.println(utxos);
         System.out.println(utxo);
 
@@ -35,6 +36,10 @@ public class TestBtcd {
 
         Transaction tx = test.getTransaction(utxo);
         System.out.println(tx);
+
+        System.out.println("~\n~\n~\n~");
+        String txout = test.getTxOut("fe68ebbbec06746a26d4038b500b3b9450b91f9e5c0935304b18fe13ec3eccbd",0);
+        System.out.println(txout);
 
     }
 
