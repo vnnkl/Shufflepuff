@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -35,6 +36,7 @@ import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import org.apache.commons.codec.binary.Base64;
 import org.json.JSONObject;
+import org.json.simple.JSONArray;
 
 
 /**
@@ -135,16 +137,17 @@ public class Btcd extends Bitcoin {
     }
 
     /**
-     * This method will take in an address hash and return a List of all transactions associated with
-     * this address.  These transactions are in bitcoinj's Transaction format.
+     * This method will take in a set of UTXOs and return a List of all associated transactions.
      *
-     * Could technically look up "searchrawtransactions" with just an address, don't need a HashSet
-     * of TransactionOutPoints.
+     * We don't use Btcd's "searchrawtransactions" RPC call because we are not looking for the
+     * transactions pertaining to a particular address, but rather the transactions related to
+     * a set of UTXOs.
      */
     public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         List<Transaction> txList;
-        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + address + "\"]}";
+        String temp = "";
+        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"searchrawtransactions\", \"params\":[\"" + temp + "\"]}";
 
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoOutput(true);
@@ -172,7 +175,7 @@ public class Btcd extends Bitcoin {
             rd.close();
 
             JSONObject json = new JSONObject(response.toString());
-            JSONArray jsonarray = null;
+            org.json.JSONArray jsonarray;
             txList = new LinkedList<>();
             if (json.isNull("result")) {
                 return txList;
@@ -188,11 +191,7 @@ public class Btcd extends Bitcoin {
                 Context context = Context.getOrCreate(netParams);
                 int confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
                 boolean confirmed;
-                if (confirmations == 0) {
-                    confirmed = false;
-                } else {
-                    confirmed = true;
-                }
+                confirmed = !(confirmations == 0);
                 org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytearray);
                 Transaction tx = new Transaction(txid, bitTx, false, confirmed);
                 txList.add(tx);
