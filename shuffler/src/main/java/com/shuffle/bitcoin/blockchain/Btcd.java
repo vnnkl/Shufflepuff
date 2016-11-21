@@ -153,19 +153,16 @@ public class Btcd extends Bitcoin {
             try {
                 String txid = tO.getHash().toString();
                 org.bitcoinj.core.Transaction tx = getTransaction(txid);
-
+                boolean confirmed = !inMempool(txid);
+                Transaction bTx = new Transaction(txid, tx, false, confirmed);
+                if (!checkDuplicateTx.contains(bTx)) {
+                    txList.add(bTx);
+                }
+                checkDuplicateTx.add(bTx);
             } catch (IOException e) {
                 throw new IOException();
             }
         }
-
-        /**
-         * 1. Call getTransaction() in a loop
-         * 2. This returns both confirmed and unconfirmed transactions
-         * 3. Call inMempool() to see if confirmed/unconfirmed
-         * 4. Note this in a Bitcoin.Transaction object
-         * 5. Return this list
-         */
 
         return txList;
 
@@ -296,6 +293,8 @@ public class Btcd extends Bitcoin {
         }
         rd.close();
         JSONObject json = new JSONObject(response.toString());
+        // TODO
+        // What about an empty Btcd mempool ?
         if (json.isNull("result")) {
             JSONObject errorObj = json.getJSONObject("error");
             String errorMsg = errorObj.getString("message");

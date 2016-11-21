@@ -119,10 +119,8 @@ public class BitcoinCore extends Bitcoin {
             try {
                 String txid = tO.getHash().toString();
                 tx = getTransaction(txid);
-                byte[] bytes = tx.getBytes();
                 boolean confirmed = tx.getConfirmed();
-                org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytes);
-                Transaction bTx = new Transaction(txid, bitTx, false, confirmed);
+                Transaction bTx = new Transaction(txid, tx, false, confirmed);
                 if (!checkDuplicateTx.contains(bTx)) {
                     txList.add(bTx);
                 }
@@ -150,6 +148,8 @@ public class BitcoinCore extends Bitcoin {
             return false;
         }
 
+        // TODO
+        // transaction already in mempool ?
         String txid;
         try {
             txid = client.sendRawTransaction(hexTx);
