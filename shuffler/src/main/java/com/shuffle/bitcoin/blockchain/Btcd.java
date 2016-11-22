@@ -10,6 +10,15 @@ package com.shuffle.bitcoin.blockchain;
 
 import com.shuffle.bitcoin.CoinNetworkException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.TransactionOutPoint;
+import org.bitcoinj.store.BlockStoreException;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,17 +32,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.TransactionOutPoint;
-import org.bitcoinj.store.BlockStoreException;
-
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-import org.apache.commons.codec.binary.Base64;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * Created by Eugene Siegel on 4/22/16.
@@ -83,7 +83,7 @@ public class Btcd extends Bitcoin {
             throw new IllegalArgumentException("Invalid network parameters passed to btcd. ");
         }
     }
-g
+
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
      */
