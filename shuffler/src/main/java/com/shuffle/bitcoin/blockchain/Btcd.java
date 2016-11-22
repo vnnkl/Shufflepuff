@@ -83,7 +83,7 @@ public class Btcd extends Bitcoin {
             throw new IllegalArgumentException("Invalid network parameters passed to btcd. ");
         }
     }
-
+g
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
      */
