@@ -144,12 +144,11 @@ public abstract class Bitcoin implements Coin {
                    }
                }
                for (Bitcoin.Transaction t : transactions) {
-                  for (TransactionOutput output : t.bitcoinj.getOutputs()) {
-                     //if output is part of utxo set add it to transaction as input
-                     if (utxos.contains(output.getOutPointFor())) {
-                        tx.addInput(output);
+                  t.bitcoinj.getOutputs().forEach(transactionOutput -> {
+                     if (utxos.contains(transactionOutput.getOutPointFor())) {
+                        tx.addInput(transactionOutput);
                      }
-                  }
+                  });
                }
 
                if (changeAddresses.get(key) != null) {

@@ -31,6 +31,7 @@ import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 // TODO
 // Setup instructions
+// TLS
 
 public class BitcoinCore extends Bitcoin {
 
@@ -58,22 +59,22 @@ public class BitcoinCore extends Bitcoin {
         return client.getTxOut(transactionHash, vout, false);
     }
 
-    public class TransactionWithConfirmations extends org.bitcoinj.core.Transaction {
+    private class TransactionWithConfirmations extends org.bitcoinj.core.Transaction {
 
         byte[] bytes;
         boolean confirmed;
 
-        public TransactionWithConfirmations(NetworkParameters netParams, byte[] bytes, boolean confirmed) {
+        private TransactionWithConfirmations(NetworkParameters netParams, byte[] bytes, boolean confirmed) {
             super(netParams, bytes);
             this.bytes = bytes;
             this.confirmed = confirmed;
         }
 
-        public boolean getConfirmed() {
+        private boolean getConfirmed() {
             return this.confirmed;
         }
 
-        public byte[] getBytes() {
+        private byte[] getBytes() {
             return this.bytes;
         }
 
@@ -87,7 +88,7 @@ public class BitcoinCore extends Bitcoin {
         try {
             rawObject = client.getRawTransaction(transactionHash, 1);
         } catch(BitcoindException | CommunicationException e) {
-            return null;
+            throw new IOException();
         }
 
         rx = (RawTransaction) rawObject;
@@ -109,25 +110,23 @@ public class BitcoinCore extends Bitcoin {
         return tx;
     }
 
-    public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) {
+    public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
         List<Transaction> txList = new ArrayList<>();
         HashSet<Transaction> checkDuplicateTx = new HashSet<>();
         for (TransactionOutPoint tO : t) {
             TransactionWithConfirmations tx;
             try {
-                tx = getTransaction(tO.getHash().toString());
-                String txid = tx.getHash().toString();
-                byte[] bytes = tx.getBytes();
+                String txid = tO.getHash().toString();
+                tx = getTransaction(txid);
                 boolean confirmed = tx.getConfirmed();
-                org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytes);
-                Transaction bTx = new Transaction(txid, bitTx, false, confirmed);
+                Transaction bTx = new Transaction(txid, tx, false, confirmed);
                 if (!checkDuplicateTx.contains(bTx)) {
                     txList.add(bTx);
                 }
                 checkDuplicateTx.add(bTx);
             } catch (IOException e) {
-                return null;
+                throw new IOException();
             }
         }
 
@@ -149,6 +148,8 @@ public class BitcoinCore extends Bitcoin {
             return false;
         }
 
+        // TODO
+        // transaction already in mempool ?
         String txid;
         try {
             txid = client.sendRawTransaction(hexTx);
@@ -162,7 +163,7 @@ public class BitcoinCore extends Bitcoin {
     }
 
     @Override
-    protected synchronized List<Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t) {
+    protected synchronized List<Transaction> getTransactionsFromUtxos(HashSet<TransactionOutPoint> t) throws IOException {
         return getTransactionsFromUtxosInner(t);
     }
 

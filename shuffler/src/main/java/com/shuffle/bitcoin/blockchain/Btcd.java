@@ -8,8 +8,6 @@
 
 package com.shuffle.bitcoin.blockchain;
 
-import com.neemre.btcdcli4j.core.BitcoindException;
-import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.CoinNetworkException;
 
 import java.io.BufferedReader;
@@ -20,8 +18,8 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -61,7 +59,8 @@ import org.json.JSONObject;
  *
  */
 
-// TODO TLS
+// TODO
+// TLS
 
 public class Btcd extends Bitcoin {
 
@@ -84,7 +83,7 @@ public class Btcd extends Bitcoin {
             throw new IllegalArgumentException("Invalid network parameters passed to btcd. ");
         }
     }
-
+g
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
      */
@@ -147,7 +146,24 @@ public class Btcd extends Bitcoin {
      */
     public synchronized List<Transaction> getTransactionsFromUtxosInner(HashSet<TransactionOutPoint> t) throws IOException {
 
-        return null;
+        List<Transaction> txList = new ArrayList<>();
+        HashSet<Transaction> checkDuplicateTx = new HashSet<>();
+        for (TransactionOutPoint tO : t) {
+            try {
+                String txid = tO.getHash().toString();
+                org.bitcoinj.core.Transaction tx = getTransaction(txid);
+                boolean confirmed = !inMempool(txid);
+                Transaction bTx = new Transaction(txid, tx, false, confirmed);
+                if (!checkDuplicateTx.contains(bTx)) {
+                    txList.add(bTx);
+                }
+                checkDuplicateTx.add(bTx);
+            } catch (IOException e) {
+                throw new IOException();
+            }
+        }
+
+        return txList;
 
     }
 
@@ -208,7 +224,7 @@ public class Btcd extends Bitcoin {
         return true;
     }
 
-    String getTxOut(String hexTx, int vout) throws Exception {
+    synchronized boolean isUtxo(String hexTx, int vout) throws IOException {
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"gettxout\", \"params\":[\"" + hexTx + "\"";
         requestBody = requestBody.concat("," + Integer.toString(vout) + ",false]}");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
@@ -224,7 +240,7 @@ public class Btcd extends Bitcoin {
         connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
         OutputStream out = connection.getOutputStream();
         out.write(requestBody.getBytes());
-        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
+        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) throw new IOException();
         InputStream is = connection.getInputStream();
         BufferedReader rd = new BufferedReader(new InputStreamReader(is));
         String line;
@@ -233,31 +249,19 @@ public class Btcd extends Bitcoin {
             try {
                 if ((line = rd.readLine()) == null) break;
             } catch (IOException e) {
-                return null;
+                throw new IOException();
             }
             response.append(line);
             response.append('\r');
         }
         rd.close();
+
         JSONObject json = new JSONObject(response.toString());
-        if (json.isNull("result")) {
-            JSONObject errorObj = json.getJSONObject("error");
-            String errorMsg = errorObj.getString("message");
-            if (errorMsg.isEmpty()) {
-                return null;
-            }
-        }
 
-        //JSONArray jsonArray = json.getJSONArray("result");
-
-        // or true/false ???
-
-        return response.toString();
+        return !(json.isNull("result"));
     }
 
-    // make sure this returns all transactions in mempool
-    JSONArray getMempool() throws Exception {
-        // verbose is false, don't use vout anywhere
+    private synchronized boolean inMempool(String transactionHash) throws IOException {
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawmempool\", \"params\":[false]}";
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setDoInput(true);
@@ -272,7 +276,7 @@ public class Btcd extends Bitcoin {
         connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
         OutputStream out = connection.getOutputStream();
         out.write(requestBody.getBytes());
-        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return null;
+        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) throw new IOException();
         InputStream is = connection.getInputStream();
         BufferedReader rd = new BufferedReader(new InputStreamReader(is));
         String line;
@@ -281,76 +285,25 @@ public class Btcd extends Bitcoin {
             try {
                 if ((line = rd.readLine()) == null) break;
             } catch (IOException e) {
-                return null;
+                throw new IOException();
             }
             response.append(line);
             response.append('\r');
         }
         rd.close();
         JSONObject json = new JSONObject(response.toString());
+        // TODO
+        // What about an empty Btcd mempool ?
         if (json.isNull("result")) {
             JSONObject errorObj = json.getJSONObject("error");
             String errorMsg = errorObj.getString("message");
             if (errorMsg.isEmpty()) {
-                return null;
+                throw new IOException();
             }
         }
 
         JSONArray jsonArray = json.getJSONArray("result");
 
-        // or true/false ???
-        return jsonArray;
-    }
-
-    /**
-     *
-     */
-    // TODO
-    // THIS CHECKS IF ANY CONFIRMATIONS -.- NOT IF ANY UTXOS
-    synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
-
-        // verbose is false, don't use vout anywhere
-        String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"getrawmempool\", \"params\":[false]}";
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setDoInput(true);
-        connection.setDoOutput(true);
-        connection.setRequestMethod("POST");
-        connection.setRequestProperty("Content-Type", "application/json");
-        connection.setRequestProperty("Accept", "application/json");
-        Base64 b = new Base64();
-        String authString = rpcuser + ":" + rpcpass;
-        String encoding = b.encodeAsString(authString.getBytes());
-        connection.setRequestProperty("Authorization", "Basic " + encoding);
-        connection.setRequestProperty("Content-Length", Integer.toString(requestBody.getBytes().length));
-        OutputStream out = connection.getOutputStream();
-        out.write(requestBody.getBytes());
-        if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) return false;
-        InputStream is = connection.getInputStream();
-        BufferedReader rd = new BufferedReader(new InputStreamReader(is));
-        String line;
-        StringBuffer response = new StringBuffer();
-        while (true) {
-            try {
-                if ((line = rd.readLine()) == null) break;
-            } catch (IOException e) {
-                return false;
-            }
-            response.append(line);
-            response.append('\r');
-        }
-        rd.close();
-        JSONObject json = new JSONObject(response.toString());
-        if (json.isNull("result")) {
-            JSONObject errorObj = json.getJSONObject("error");
-            String errorMsg = errorObj.getString("message");
-            if (errorMsg.isEmpty()) {
-                return false;
-            }
-        }
-
-        JSONArray jsonArray = json.getJSONArray("result");
-
-        // or true/false ???
         return jsonArray.toString().contains("\"" + transactionHash + "\"");
     }
 
