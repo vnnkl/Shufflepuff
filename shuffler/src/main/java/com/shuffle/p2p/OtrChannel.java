@@ -11,19 +11,19 @@ package com.shuffle.p2p;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
-
-import net.java.otr4j.OtrEngineHost;
-import net.java.otr4j.OtrException;
-import net.java.otr4j.OtrPolicy;
-import net.java.otr4j.OtrPolicyImpl;
-import net.java.otr4j.crypto.OtrCryptoEngineImpl;
-import net.java.otr4j.crypto.OtrCryptoException;
-import net.java.otr4j.session.FragmenterInstructions;
-import net.java.otr4j.session.InstanceTag;
-import net.java.otr4j.session.SessionID;
-import net.java.otr4j.session.SessionImpl;
+import com.shuffle.otr4j.OtrEngineHost;
+import com.shuffle.otr4j.OtrException;
+import com.shuffle.otr4j.OtrPolicy;
+import com.shuffle.otr4j.OtrPolicyImpl;
+import com.shuffle.otr4j.crypto.OtrCryptoEngineImpl;
+import com.shuffle.otr4j.crypto.OtrCryptoException;
+import com.shuffle.otr4j.session.FragmenterInstructions;
+import com.shuffle.otr4j.session.InstanceTag;
+import com.shuffle.otr4j.session.SessionID;
+import com.shuffle.otr4j.session.SessionImpl;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -250,7 +250,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             for (String part : outgoingMessage) {
-                System.out.println("s " + OtrChannel.this + " " + message + " " + part);
                 if (part.equals("?OTRv23?null")) throw new NullPointerException();
                 s.send(new Bytestring(part.getBytes()));
             }
@@ -312,11 +311,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
-            System.out.println("k " + OtrChannel.this + " " + new String(message.bytes));
             if (new String(message.bytes).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
-                receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
+                receivedMessage = sessionImpl.transformReceiving(new String(message.bytes, StandardCharsets.UTF_8));
                 if (!encrypted) {
                     messageCount++;
                     if (messageCount == 2) {
@@ -331,14 +329,12 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             if (receivedMessage == null) {
-                System.out.println("******");
                 return true;
             }
 
             chan.close();
 
             if (receivedMessage.equals("?OTRv23?null")) throw new NullPointerException();
-            System.out.println("r " + OtrChannel.this + " " + new Bytestring(receivedMessage.getBytes()));
 
             try {
                 return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
@@ -383,11 +379,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) {
-            System.out.println("k " + OtrChannel.this + " " + new String(message.bytes));
             if (new String(message.bytes).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
-                receivedMessage = sessionImpl.transformReceiving(new String(message.bytes));
+                receivedMessage = sessionImpl.transformReceiving(new String(message.bytes, StandardCharsets.UTF_8));
                 if (!encrypted) {
                     messageCount++;
                     if (messageCount == 3) {
@@ -400,12 +395,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             }
 
             if (receivedMessage == null) {
-                System.out.println("*****");
                 return true;
             }
 
             if (receivedMessage.equals("?OTRv23?null")) throw new NullPointerException();
-            System.out.println("r " + OtrChannel.this + " " + new Bytestring(receivedMessage.getBytes()));
 
             try {
                 return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
