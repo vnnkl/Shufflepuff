@@ -16,10 +16,11 @@ public class BitPayInsightTest {
 
    // BitPayInsight BitpayInsightTestnetTest = new BitPayInsight(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), 3);
 
-   //MainNet tx:  9d9cc3995326848839c6117ad9b0fc9464890b866dcdda11e249cee323eab139
+   //MainNet tx: 9d9cc3995326848839c6117ad9b0fc9464890b866dcdda11e249cee323eab139
    //TestNet tx: 1f9f22ae425c379e650621025483741d841c555d7f5f23f8c11b02684fe3158c
 
-   Insight insightMainnetTest = new Insight(NetworkParameters.fromID(NetworkParameters.ID_MAINNET), 3);
+   BitPayInsight insightMainnetTest = new BitPayInsight(NetworkParameters.fromID(NetworkParameters.ID_MAINNET), 0);
+   //BitPayInsight insightTestnetTest = new BitPayInsight(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), 0);
 
    @Test
    public void testGetAddressBalance() throws Exception {
@@ -33,6 +34,12 @@ public class BitPayInsightTest {
       long balance = insightMainnetTest.getAddressBalance("1CL5zkcneQ1uHpK8f3zcTAnC1GbLdKo1vn");
       Assert.assertEquals(0, balance);
       System.out.println("balance : " + balance);
+   }
+
+   @Test
+   public void testIsUtxo() throws Exception {
+      Assert.assertFalse(insightMainnetTest.isUtxo("9d9cc3995326848839c6117ad9b0fc9464890b866dcdda11e249cee323eab139", 0));
+      // Assert.assertFalse(insightTestnetTest.isUtxo("a49aa30eb850966db6c1aba5c8c725cb375d9c741c597b462388dccee16408c3", 0));
    }
 
    @Test

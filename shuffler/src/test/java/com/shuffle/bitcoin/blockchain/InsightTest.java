@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class InsightTest {
 
-   Insight insightTestnetTest = new Insight(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), 3);
+   Insight insightTestnetTest = new Insight(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), 0);
 
    // Insight insightMainnetTest = new Insight(NetworkParameters.fromID(NetworkParameters.ID_MAINNET), 3);
 
@@ -51,14 +51,16 @@ public class InsightTest {
       byte[] payload = Hex.decode("0100000001eb66389ecd512e19a26d74074e9be7151cbc65c7b211182693e23eaac83238c1000000006a473044022060549963655fb8d32a6f69e604db291dd40d8f35b502772bc3914b2c01c0689202207b6d83ef6f2c7805bdcbc7824be5b1a53f655115716d9413f12168079b985f1901210392567ed6709a9596778a06990ccf8dc6bf7ae6803a048e9ace5be13e26bcfb81ffffffff0220a10700000000001976a914e98ac1b3ccb0c70886575c3c20946df535c1190088aca3cd7a03000000001976a91425baeb25cf6174b4f93be0b78415146a942dc8c288ac00000000");
       Transaction testTx = new Transaction(TestNet3Params.get(), payload);
       List<Bitcoin.Transaction> tList = insightTestnetTest.getTransactionsFromUtxosInner(utxos);
-      Assert.assertTrue(tList.get(0).equals(testTx));
+      // as we get a TransactionWithConfirmations returned, we create a new TX from serialized TXwConf to make test green
+      Transaction tx = new Transaction(tList.get(0).bitcoinj().getParams(), tList.get(0).bitcoinj().bitcoinSerialize());
+      Assert.assertTrue(testTx.equals(tx));
 
    }
 
    @Test
    public void testGetAddressTransactions() throws Exception {
       // for easy check n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc or n2KwazAwSdE2SyPBfWQfWxSgMrmWFUu3Nx for many addresses
-      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactionsInner("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
+      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactionsInner("mixTDUnvJ4YQxJwZ7UZQmEpSysr2ciWAv5");
       //List<com.shuffle.bitcoin.blockchain.Bitcoin.Transaction> transactionListMain = blockCypherMain.getAddressTransactions("1BitcoinEaterAddressDontSendf59kuE");
       assert transactionListTest != null;
       for (Bitcoin.Transaction trans : transactionListTest) {
@@ -77,7 +79,7 @@ public class InsightTest {
    @Test
    public void testGetAddressAssociates() throws Exception {
       // for easy check n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc or n2KwazAwSdE2SyPBfWQfWxSgMrmWFUu3Nx for many addresses
-      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactionsInner("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc");
+      List<Bitcoin.Transaction> transactionListTest = insightTestnetTest.getAddressTransactionsInner("mixTDUnvJ4YQxJwZ7UZQmEpSysr2ciWAv5");
       //List<com.shuffle.bitcoin.blockchain.Bitcoin.Transaction> transactionListMain = blockCypherMain.getAddressTransactions("1BitcoinEaterAddressDontSendf59kuE");
       assert transactionListTest != null;
       for (Bitcoin.Transaction trans : transactionListTest) {
@@ -96,7 +98,9 @@ public class InsightTest {
       // tx a49aa30eb850966db6c1aba5c8c725cb375d9c741c597b462388dccee16408c3 from n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc or 1f9f22ae425c379e650621025483741d841c555d7f5f23f8c11b02684fe3158c
       Transaction otherTransaction = new Transaction(NetworkParameters.fromID(NetworkParameters.ID_TESTNET), Hex.decode("0100000001eb66389ecd512e19a26d74074e9be7151cbc65c7b211182693e23eaac83238c1000000006a473044022060549963655fb8d32a6f69e604db291dd40d8f35b502772bc3914b2c01c0689202207b6d83ef6f2c7805bdcbc7824be5b1a53f655115716d9413f12168079b985f1901210392567ed6709a9596778a06990ccf8dc6bf7ae6803a048e9ace5be13e26bcfb81ffffffff0220a10700000000001976a914e98ac1b3ccb0c70886575c3c20946df535c1190088aca3cd7a03000000001976a91425baeb25cf6174b4f93be0b78415146a942dc8c288ac00000000"));
       Transaction transactionTest = insightTestnetTest.getTransaction("a49aa30eb850966db6c1aba5c8c725cb375d9c741c597b462388dccee16408c3");
-      Assert.assertEquals(otherTransaction, transactionTest);
+      // as we get a TransactionWithConfirmations returned, we create a new TX from serialized TXwConf to make test green
+      Transaction tx = new Transaction(transactionTest.getParams(), transactionTest.bitcoinSerialize());
+      Assert.assertEquals(otherTransaction, tx);
       // tx fdb0959aed119a9cfd6696cf41716854a0d5cce5d7b19fd2417f8f148cf0b735 from 1BitcoinEaterAddressDontSendf59kuE
       //Transaction transactionMain = blockCypherMain.getTransaction("fdb0959aed119a9cfd6696cf41716854a0d5cce5d7b19fd2417f8f148cf0b735");
    }
