@@ -249,6 +249,7 @@ public class CoinShuffle {
             Message inputScript = messages.make().attach(t.sign(sk));
 
             System.out.println("Player " + me + " broadcasts signature ");
+
             mailbox.broadcast(inputScript, phase.get());
 
             // Send signature messages around and receive them from other players.
@@ -327,7 +328,6 @@ public class CoinShuffle {
             if (change != null) {
                 message = message.attach(change);
             }
-
             mailbox.broadcast(message, phase.get());
             return dk;
         }

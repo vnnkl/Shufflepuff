@@ -56,6 +56,8 @@ import com.shuffle.otr4j.io.messages.PlainTextMessage;
 import com.shuffle.otr4j.io.messages.QueryMessage;
 import com.shuffle.otr4j.util.SelectableMap;
 
+import org.apache.commons.codec.binary.Hex;
+
 /**
  *
  * @author George Politis
@@ -242,6 +244,7 @@ public class SessionImpl implements Session {
 		sess4.setLocalPair(newPair, sess4.getLocalKeyID() + 1);
 	}
 
+	// TODO BufferOverflowException
 	private byte[] collectOldMacKeys() {
 		logger.finest("Collecting old MAC keys to be revealed.");
 		int len = 0;
@@ -580,6 +583,7 @@ public class SessionImpl implements Session {
 			byte[] computedMAC = otrCryptoEngine.sha1Hmac(serializedT,
 					matchingKeys.getReceivingMACKey(),
 					SerializationConstants.TYPE_LEN_MAC);
+
 			if (!Arrays.equals(computedMAC, data.mac)) {
 				logger.finest("MAC verification failed, ignoring message");
 				getHost().unreadableMessageReceived(this.getSessionID());

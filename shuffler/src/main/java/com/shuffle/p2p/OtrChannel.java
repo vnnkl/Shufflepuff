@@ -22,6 +22,10 @@ import com.shuffle.otr4j.session.InstanceTag;
 import com.shuffle.otr4j.session.SessionID;
 import com.shuffle.otr4j.session.SessionImpl;
 
+import org.bouncycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.EncoderException;
+import org.bouncycastle.util.encoders.Hex;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
@@ -34,7 +38,7 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * The OtrChannel class allows OTR ("Off-The-Record") encrypted communications. OtrChannel is a
- * wrapper for a plaintext Channel like TcpChannel or WebsocketClientChannel / WebsocketServerChannel.
+ * wrapper for a plaintext Channel like TcpChannel or WebsocketChannel.
  * After an initialization phase, it ensures messages over the input Channel are encrypted
  * first via Jitsi's OTR library. OtrChannel then passes these encrypted messages to the inner
  * input Channel.
@@ -244,13 +248,13 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public boolean send(Bytestring message) throws InterruptedException, IOException {
             String[] outgoingMessage;
             try {
-                outgoingMessage = sessionImpl.transformSending(org.bouncycastle.util.encoders.Hex.toHexString(message.bytes), null);
-            } catch (OtrException e) {
+                outgoingMessage = sessionImpl.transformSending(new String(Hex.encode(message.bytes)), null);
+            } catch (OtrException | EncoderException e) {
+                this.close();
                 return false;
             }
 
             for (String part : outgoingMessage) {
-                if (part.equals("?OTRv23?null")) throw new NullPointerException();
                 s.send(new Bytestring(part.getBytes()));
             }
             return true;
@@ -311,7 +315,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
-            if (new String(message.bytes).equals("?OTRv23?null")) throw new NullPointerException();
+            //if (new String(message.bytes, StandardCharsets.UTF_8).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes, StandardCharsets.UTF_8));
@@ -334,11 +338,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             chan.close();
 
-            if (receivedMessage.equals("?OTRv23?null")) throw new NullPointerException();
-
             try {
                 return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
-            } catch (IOException e) {
+            } catch (IOException | DecoderException e) {
                 this.close();
                 return false;
             }
@@ -379,7 +381,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) {
-            if (new String(message.bytes).equals("?OTRv23?null")) throw new NullPointerException();
+            //if (new String(message.bytes, StandardCharsets.UTF_8).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes, StandardCharsets.UTF_8));
@@ -398,11 +400,10 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
                 return true;
             }
 
-            if (receivedMessage.equals("?OTRv23?null")) throw new NullPointerException();
-
             try {
                 return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
-            } catch (IOException | InterruptedException e) {
+            } catch (IOException | InterruptedException | DecoderException e) {
+                this.close();
                 return false;
             }
 

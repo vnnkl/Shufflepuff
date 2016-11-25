@@ -22,6 +22,7 @@ import com.shuffle.sim.InitialState;
 import com.shuffle.sim.Simulator;
 import com.shuffle.sim.init.Initializer;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -57,7 +58,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
 
         // Tests for successful runs.
         int minPlayers = 3;
-        int maxPlayers = 5;
+        int maxPlayers = 10;
         for (int numPlayer = minPlayers; numPlayer <= maxPlayers; numPlayer++) {
             log.info("Protocol successful run with " + numPlayer + " players.");
             SuccessfulRun(numPlayer);

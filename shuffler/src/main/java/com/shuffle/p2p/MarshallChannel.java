@@ -44,7 +44,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         @Override
         public boolean send(X x) throws InterruptedException, IOException {
             Bytestring b = m.marshall(x);
-            return b != null && s.send(b);
+            return s.send(b);
         }
 
         @Override
