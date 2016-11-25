@@ -11,16 +11,16 @@ package com.shuffle.p2p;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
-import com.shuffle.otr4j.OtrEngineHost;
-import com.shuffle.otr4j.OtrException;
-import com.shuffle.otr4j.OtrPolicy;
-import com.shuffle.otr4j.OtrPolicyImpl;
-import com.shuffle.otr4j.crypto.OtrCryptoEngineImpl;
-import com.shuffle.otr4j.crypto.OtrCryptoException;
-import com.shuffle.otr4j.session.FragmenterInstructions;
-import com.shuffle.otr4j.session.InstanceTag;
-import com.shuffle.otr4j.session.SessionID;
-import com.shuffle.otr4j.session.SessionImpl;
+import net.java.otr4j.OtrEngineHost;
+import net.java.otr4j.OtrException;
+import net.java.otr4j.OtrPolicy;
+import net.java.otr4j.OtrPolicyImpl;
+import net.java.otr4j.crypto.OtrCryptoEngineImpl;
+import net.java.otr4j.crypto.OtrCryptoException;
+import net.java.otr4j.session.FragmenterInstructions;
+import net.java.otr4j.session.InstanceTag;
+import net.java.otr4j.session.SessionID;
+import net.java.otr4j.session.SessionImpl;
 
 import org.bouncycastle.util.encoders.DecoderException;
 import org.bouncycastle.util.encoders.EncoderException;
@@ -315,7 +315,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) throws InterruptedException, IOException {
-            //if (new String(message.bytes, StandardCharsets.UTF_8).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes, StandardCharsets.UTF_8));
@@ -381,7 +380,6 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
         @Override
         public boolean send(Bytestring message) {
-            //if (new String(message.bytes, StandardCharsets.UTF_8).equals("?OTRv23?null")) throw new NullPointerException();
             String receivedMessage;
             try {
                 receivedMessage = sessionImpl.transformReceiving(new String(message.bytes, StandardCharsets.UTF_8));

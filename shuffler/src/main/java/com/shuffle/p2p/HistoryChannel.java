@@ -2,10 +2,6 @@ package com.shuffle.p2p;
 
 import com.shuffle.chan.HistorySend;
 import com.shuffle.chan.Send;
-import com.shuffle.otr4j.OtrPolicy;
-import com.shuffle.otr4j.OtrPolicyImpl;
-import com.shuffle.otr4j.session.SessionID;
-import com.shuffle.otr4j.session.SessionImpl;
 
 import java.io.IOException;
 import java.io.Serializable;
