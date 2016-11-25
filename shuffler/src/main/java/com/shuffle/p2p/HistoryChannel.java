@@ -176,5 +176,6 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
         if (listener == null) return null;
 
         return this.channel.open(new HistoryListener(listener));
+
     }
 }
