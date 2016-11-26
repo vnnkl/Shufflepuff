@@ -40,7 +40,7 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
         @Override
         public synchronized Session<Q, X> openSession(Send<X> send) throws InterruptedException, IOException {
-            if (send == null) return null;
+            if (send == null) throw new NullPointerException();
 
             HistorySend<X> history = new HistorySend<>(send);
             Session<Q, X> session = peer.openSession(history);
