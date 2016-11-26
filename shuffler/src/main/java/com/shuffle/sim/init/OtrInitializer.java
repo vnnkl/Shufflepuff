@@ -63,10 +63,12 @@ public class OtrInitializer<X> implements Initializer<X> {
         // Create a new mailbox.
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
-        // Create a new channel.
-        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<VerificationKey, Signed<X>>(
-                new OtrChannel<>(mockNetwork.node(sk.VerificationKey())), this.marshaller);
 
+
+        // Create a new channel.
+
+
+        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<>(new OtrChannel<>(mockNetwork.node(vk)), marshaller);
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {
 
@@ -88,6 +90,7 @@ public class OtrInitializer<X> implements Initializer<X> {
             VerificationKey kv = ks.VerificationKey();
 
             // And create a corresponding session the other way.
+
             inputs.put(kv, channel.getPeer(kv).openSession(inbox.receivesFrom(vk)));
         }
 

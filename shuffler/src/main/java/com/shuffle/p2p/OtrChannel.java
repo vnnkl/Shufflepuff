@@ -11,7 +11,6 @@ package com.shuffle.p2p;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
-
 import net.java.otr4j.OtrEngineHost;
 import net.java.otr4j.OtrException;
 import net.java.otr4j.OtrPolicy;
@@ -22,13 +21,17 @@ import net.java.otr4j.session.FragmenterInstructions;
 import net.java.otr4j.session.InstanceTag;
 import net.java.otr4j.session.SessionID;
 import net.java.otr4j.session.SessionImpl;
+import net.java.otr4j.session.TLV;
 
-import org.apache.commons.codec.binary.Hex;
+import org.bouncycastle.util.encoders.DecoderException;
+import org.bouncycastle.util.encoders.EncoderException;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 
 /**
  * Created by Eugene Siegel on 5/10/16.
@@ -36,7 +39,7 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * The OtrChannel class allows OTR ("Off-The-Record") encrypted communications. OtrChannel is a
- * wrapper for a plaintext Channel like TcpChannel or WebsocketClientChannel / WebsocketServerChannel.
+ * wrapper for a plaintext Channel like TcpChannel or WebsocketChannel.
  * After an initialization phase, it ensures messages over the input Channel are encrypted
  * first via Jitsi's OTR library. OtrChannel then passes these encrypted messages to the inner
  * input Channel.
@@ -52,6 +55,28 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
      * for this particular implementation.  If you need other jitsi/otr functionality,
      * feel free to change the methods.
      */
+
+    private class SynchronizedSessionImpl {
+
+        private final SessionImpl sessionImpl;
+
+        private SynchronizedSessionImpl(SessionImpl sessionImpl) {
+            this.sessionImpl = sessionImpl;
+        }
+
+        private synchronized String transformReceiving(String msgText) throws OtrException {
+            return this.sessionImpl.transformReceiving(msgText);
+        }
+
+        private synchronized String[] transformSending(String msgText) throws OtrException {
+            return this.sessionImpl.transformSending(msgText);
+        }
+
+        private synchronized String[] transformSending(String msgText, List<TLV> tlvs) throws OtrException {
+            return this.sessionImpl.transformSending(msgText, tlvs);
+        }
+
+    }
 
     private class SendOtrEngineHost implements OtrEngineHost {
         private final OtrPolicy policy;
@@ -223,14 +248,14 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
     private class OtrSession implements Session<Address, Bytestring> {
         private final Session<Address, Bytestring> s;
-        private final SessionImpl sessionImpl;
+        private final SynchronizedSessionImpl sessionImpl;
 
         /**
          * @param s -- Tells OtrSession which inner Session to use.
          * @param sessionImpl -- Tells OtrSession which SessionImpl to use in the send() message.
          */
 
-        private OtrSession(Session<Address, Bytestring> s, SessionImpl sessionImpl) {
+        private OtrSession(Session<Address, Bytestring> s, SynchronizedSessionImpl sessionImpl) {
             this.s = s;
             this.sessionImpl = sessionImpl;
         }
@@ -246,8 +271,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         public boolean send(Bytestring message) throws InterruptedException, IOException {
             String[] outgoingMessage;
             try {
-                outgoingMessage = sessionImpl.transformSending(org.bouncycastle.util.encoders.Hex.toHexString(message.bytes), null);
-            } catch (OtrException e) {
+                outgoingMessage = sessionImpl.transformSending(new String(Hex.encode(message.bytes)), null);
+            } catch (OtrException | EncoderException e) {
+                this.close();
                 return false;
             }
 
@@ -284,7 +310,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private boolean encrypted = false;
         private int messageCount = 0;
         private Send<Boolean> chan;
-        private SessionImpl sessionImpl;
+        private SynchronizedSessionImpl sessionImpl;
 
         private OtrSendAlice(Send<Bytestring> z, Send<Boolean> chan) {
             this.z = z;
@@ -336,7 +362,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             try {
                 return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
-            } catch (IOException e) {
+            } catch (IOException | DecoderException e) {
                 this.close();
                 return false;
             }
@@ -367,9 +393,9 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
         private boolean encrypted = false;
         private int messageCount = 0;
         private Send<Bytestring> z;
-        private final SessionImpl sessionImpl;
+        private final SynchronizedSessionImpl sessionImpl;
 
-        private OtrSendBob(Listener<Address, Bytestring> l, Session<Address, Bytestring> s, SessionImpl sessionImpl) {
+        private OtrSendBob(Listener<Address, Bytestring> l, Session<Address, Bytestring> s, SynchronizedSessionImpl sessionImpl) {
             this.l = l;
             this.s = s;
             this.sessionImpl = sessionImpl;
@@ -397,7 +423,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
 
             try {
                 return z.send(new Bytestring(org.bouncycastle.util.encoders.Hex.decode(receivedMessage)));
-            } catch (IOException | InterruptedException e) {
+            } catch (IOException | InterruptedException | DecoderException e) {
+                this.close();
                 return false;
             }
 
@@ -431,8 +458,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
                     | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
             SessionImpl sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
-
-            return new OtrSendBob(this.l, session, sessionImpl);
+            SynchronizedSessionImpl syncSession = new SynchronizedSessionImpl(sessionImpl);
+            return new OtrSendBob(this.l, session, syncSession);
         }
 
     }
@@ -479,7 +506,8 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
             OtrPolicy policy = new OtrPolicyImpl(OtrPolicy.ALLOW_V2 | OtrPolicy.ALLOW_V3
                     | OtrPolicy.ERROR_START_AKE); // this assumes the user wants either v2 or v3
             SessionImpl sessionImpl = new SessionImpl(sessionID, new SendOtrEngineHost(policy, session));
-            alice.sessionImpl = sessionImpl;
+            SynchronizedSessionImpl syncSession = new SynchronizedSessionImpl(sessionImpl);
+            alice.sessionImpl = syncSession;
 
             // This string depends on the version / type of OTR encryption that the user wants.
             String query = "?OTRv23?";
@@ -490,15 +518,13 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
              */
 
             Boolean result = chan.receive();
-            if (result) {
-
-            } else {
+            if (!result) {
                 chan.close();
                 session.close();
                 return null;
             }
 
-            return new OtrSession(session, sessionImpl);
+            return new OtrSession(session, syncSession);
         }
 
         @Override

@@ -40,6 +40,8 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
         @Override
         public synchronized Session<Q, X> openSession(Send<X> send) throws InterruptedException, IOException {
+            if (send == null) throw new NullPointerException();
+
             HistorySend<X> history = new HistorySend<>(send);
             Session<Q, X> session = peer.openSession(history);
 
@@ -57,9 +59,8 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
             peer.close();
         }
 
-        public synchronized List<Session<Q, X>> history() {
-
-            List<Session<Q, X>> h = new LinkedList<>();
+        public synchronized List<HistorySession> history() {
+            List<HistorySession> h = new LinkedList<>();
             h.addAll(sessions);
             return h;
         }
@@ -86,7 +87,7 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
     }
 
     @Override
-    public synchronized Peer<Q, X> getPeer(Q you) {
+    public synchronized HistoryPeer getPeer(Q you) {
         return getHistoryPeer(you);
     }
 
@@ -110,7 +111,7 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
 
         @Override
         public Peer<Q, X> peer() {
-            return peers.get(session.peer());
+            return new HistoryPeer(session.peer());
         }
 
         @Override
@@ -142,25 +143,39 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
         }
     }
 
+    private class HistoryListener implements Listener<Q, X> {
+
+        private final Listener<Q, X> l;
+
+        private HistoryListener(Listener<Q, X> l) {
+            this.l = l;
+        }
+
+        @Override
+        public Send<X> newSession(Session<Q, X> session) throws InterruptedException {
+
+            Send<X> s = l.newSession(session);
+
+            HistorySend<X> h = new HistorySend<>(s);
+
+            HistorySession hs = new HistorySession(session, h);
+
+            HistoryPeer p = getHistoryPeer(session.peer().identity());
+            if (p == null) return null;
+
+            p.sessions.add(hs);
+
+            return h;
+        }
+
+    }
+
     @Override
     public Connection<Q> open(Listener<Q, X> listener) throws InterruptedException, IOException {
-        return channel.open(new Listener<Q, X>() {
 
-            @Override
-            public Send<X> newSession(Session<Q, X> session) throws InterruptedException {
-                Send<X> s = listener.newSession(session);
+        if (listener == null) return null;
 
-                HistorySend<X> h = new HistorySend<>(s);
+        return this.channel.open(new HistoryListener(listener));
 
-                HistorySession hs = new HistorySession(session, h);
-
-                HistoryPeer p = getHistoryPeer(session.peer().identity());
-                if (p == null) return null;
-
-                p.sessions.add(hs);
-
-                return h;
-            }
-        });
     }
 }

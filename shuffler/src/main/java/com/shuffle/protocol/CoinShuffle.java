@@ -225,6 +225,7 @@ public class CoinShuffle {
 
             equivocationCheck(encryptionKeys, newAddresses, false);
 
+
             // Phase 5: verification and submission.
             // Everyone creates a Bitcoin transaction and signs it, then broadcasts the signature.
             // If all signatures check out, then the transaction is history into the net.
@@ -247,6 +248,7 @@ public class CoinShuffle {
             Message inputScript = messages.make().attach(t.sign(sk));
 
             System.out.println("Player " + me + " broadcasts signature ");
+
             mailbox.broadcast(inputScript, phase.get());
 
             // Send signature messages around and receive them from other players.
@@ -315,7 +317,6 @@ public class CoinShuffle {
         // Everyone except player 1 creates a new keypair and sends it around to everyone else.
         DecryptionKey broadcastNewKey(Map<VerificationKey, Address> changeAddresses)
                 throws TimeoutException, InterruptedException, IOException, FormatException {
-
             DecryptionKey dk = null;
             dk = crypto.makeDecryptionKey();
 
@@ -326,7 +327,6 @@ public class CoinShuffle {
             if (change != null) {
                 message = message.attach(change);
             }
-
             mailbox.broadcast(message, phase.get());
             return dk;
         }
