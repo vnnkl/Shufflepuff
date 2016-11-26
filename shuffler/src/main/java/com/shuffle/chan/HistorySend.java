@@ -1,7 +1,5 @@
 package com.shuffle.chan;
 
-import com.shuffle.p2p.Bytestring;
-
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;

@@ -9,7 +9,6 @@
 package com.shuffle.mock;
 
 import com.shuffle.chan.Send;
-import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Connection;
 import com.shuffle.p2p.FundamentalPeer;

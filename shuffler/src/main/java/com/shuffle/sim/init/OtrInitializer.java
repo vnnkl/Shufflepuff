@@ -10,7 +10,6 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Connection;
-import com.shuffle.p2p.HistoryChannel;
 import com.shuffle.p2p.Listener;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.OtrChannel;

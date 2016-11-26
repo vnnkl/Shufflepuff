@@ -132,7 +132,6 @@ public class CoinShuffle {
             // needs to send an announcement message at this point too because he might
             // have a change address. Therefore he just follows the same procedure as
             // everyone else.
-
             dk = broadcastNewKey(changeAddresses);
             System.out.println("Player " + me + " has broadcasted the new encryption key.");
 
