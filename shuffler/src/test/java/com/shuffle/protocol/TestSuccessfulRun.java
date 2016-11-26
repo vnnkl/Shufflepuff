@@ -57,7 +57,7 @@ public class TestSuccessfulRun extends TestShuffleMachine {
             InterruptedException, BitcoinCrypto.Exception, IOException {
 
         // Tests for successful runs.
-        int minPlayers = 3;
+        int minPlayers = 2;
         int maxPlayers = 13;
         for (int numPlayer = minPlayers; numPlayer <= maxPlayers; numPlayer++) {
             log.info("Protocol successful run with " + numPlayer + " players.");
