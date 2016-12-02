@@ -16,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.LinkedList;
-import java.util.List;
 
 /**
  * Tests for the tcp connection
@@ -33,16 +32,16 @@ public class TestTcpChannel {
     // This is also a vector.
     Connection<Integer>[] conn;
 
-    // The peers that represent the programs' view of one anothers
-    // This is an assymmetric 2-tensor.
+    // The peers that represent the programs' view of one another
+    // This is an asymmetric 2-tensor.
     Peer<Integer, LinkedList<Integer>>[][] peer;
 
     // The session from A to B and the session from B to A.
-    // Also an assymmetric 2-tensor.
+    // Also an asymmetric 2-tensor.
     Session<Integer, LinkedList<Integer>>[][] session;
 
     // Channels for receiving messages.
-    // another assymmetric 2-tensor.
+    // another asymmetric 2-tensor.
     Receive<LinkedList<Integer>> rec[][];
 
     // The connection listeners. A vector.
