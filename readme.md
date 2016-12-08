@@ -35,9 +35,8 @@ Shufflepuff with the details of the join transaction to be constructed and
 contact information for the other players.
 
 Shufflepuff needs to look up address balances in order to run the protocol.
-For lite applications there is an option for querying blockcypher.com. For
-players with full nodes, an option is provided to look up balances using [btcd](https://github.com/btcsuite/btcd). (We couldn't use Bitcoin Core because it does not provide an option to index
-all addresses in the blockchain.)
+For players with full nodes, an option is provided to look up balances using
+[btcd](https://github.com/btcsuite/btcd). Bitcoin Core support is coming soon!
 
 Usage:
 
@@ -66,7 +65,7 @@ The user must provide contact information for the other players:
 Blockchain options:
 
     * --blockchain  Available options are 'test' and 'main'. Default is 'main'.
-    * --query       Means of querying the blockchain. Options are 'btcd', 'blockcypher.com', 'blockchain.info'.
+    * --query       Means of querying the blockchain. Only option is 'btcd'.
 
 ### Using Shufflepuff as a Library
 
