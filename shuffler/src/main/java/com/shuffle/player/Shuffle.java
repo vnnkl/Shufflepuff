@@ -175,7 +175,7 @@ public class Shuffle {
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
-        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction. Only used with blockchain.info and blockcypher.com.")
+        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction.")
                 .withRequiredArg().ofType(Long.class).defaultsTo(5L);
         parser.accepts("rpcuser", "Username to log in to btcd.")
                 .withRequiredArg().ofType(String.class);
@@ -323,11 +323,9 @@ public class Shuffle {
                 // fallthrough.
             } default : {
                 throw new IllegalArgumentException(
-                        "Invalid option for 'blockchain' supplied. Available options are 'btcd', " +
-                                "'blockcypher.com', and 'blockchain.info'. 'btcd' allows for " +
-                                "looking up options on a local instance of the blockchain. " +
-                                "'blockcypher.com' and 'blockchain.info' allow for querying the " +
-                                "blockchain over the web."
+                        "Invalid option for 'blockchain' supplied. Only options is 'btcd'. " +
+                                "'btcd' allows for looking up options on a local instance of " +
+                                "the blockchain. "
                 );
             }
         }
@@ -727,14 +725,6 @@ public class Shuffle {
 
             System.out.println("Unable to setup protocol: " + e.getMessage());
             return;
-        }
-
-        // Warn for blockchain.info or other blockchain service.
-        if (options.valueOf("query").equals("blockchain.info") ||
-                options.valueOf("query").equals("blockcypher.com")) {
-
-            System.out.println("Warning: you have chosen to query address " +
-                    "balances over through a third party service!");
         }
 
         Collection<Player.Report> reports;
