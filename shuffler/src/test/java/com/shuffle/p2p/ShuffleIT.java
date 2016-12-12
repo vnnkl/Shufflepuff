@@ -1,5 +1,7 @@
 package com.shuffle.p2p;
 
+import com.shuffle.player.Shuffle;
+
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
@@ -7,6 +9,8 @@ import org.bitcoinj.core.NetworkParameters;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+
+import joptsimple.OptionParser;
 
 /**
  * Created by conta on 08.12.16.
@@ -42,10 +46,45 @@ public class ShuffleIT {
    // better provide keys with funds and create everything else
 
    // anon (shuffled) address
-   List<String> anonStringList = getPorts(3);
-
+   HashMap anonStringList = getAnonStringList(3);
 
    // change address
+   HashMap changeStringList = getChangeStringList(3);
+
+
+   // prepare optionSets for shuffle
+   public OptionParser getOptionParser() {
+      OptionParser optionParser = new OptionParser();
+      optionParser.accepts("session").withRequiredArg();
+      optionParser.accepts("amount").withRequiredArg();
+      optionParser.accepts("time").withRequiredArg();
+      optionParser.accepts("fee").withRequiredArg();
+
+      optionParser.accepts("port");
+      optionParser.accepts("key");
+      optionParser.accepts("anon");
+      optionParser.accepts("change");
+
+      optionParser.accepts("query").withOptionalArg();
+      optionParser.accepts("blockchain");
+      optionParser.accepts("local");
+      optionParser.accepts("peers");
+
+      optionParser.accepts("rpcuser").requiredIf("query").withRequiredArg();
+      optionParser.accepts("rpcpass").requiredIf("query").withRequiredArg();
+
+
+      return optionParser;
+   }
+
+
+   // OptionSet options = parser.parse( "-a", "-B", "-?" );
+
+
+   // new shuffle
+   Shuffle shuffle1 = new Shuffle();
+
+
 
 
    public ECKey getNewPrivKey() {
@@ -64,6 +103,17 @@ public class ShuffleIT {
       return privPubMap;
    }
 
+   public HashMap<String, String> getChangeStringList(Integer n) {
+      HashMap<String, String> privPubMap = new HashMap<>();
+      List<String> changeStringList = new LinkedList<>();
+      for (int i = 0; i < n; i++) {
+         ECKey ecKey = getNewPrivKey();
+         privPubMap.put(ecKey.getPrivateKeyAsHex(), ecKey.toAddress(netParams).toString());
+         changeStringList.add(i, getNewPrivKey().getPublicKeyAsHex());
+      }
+      return privPubMap;
+   }
+
    public List<String> getPorts(Integer n) {
       List<String> portStringList = new LinkedList<>();
       for (int i = 1880; i < i + n; i++) {
@@ -76,14 +126,10 @@ public class ShuffleIT {
    public List<String> getSessionIds(Integer n) {
       List<String> stringList = new LinkedList<>();
       for (int i = 0; i < n; i++) {
-         stringList.add(i, "seshionId" + n);
+         stringList.add(i, "sessionId" + n);
       }
       return stringList;
    }
-
-   /**
-    * http://www.convert-unix-time.com/api?timestamp=now
-    */
 
 
 }
