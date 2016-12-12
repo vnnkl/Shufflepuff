@@ -175,7 +175,7 @@ public class Shuffle {
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
-        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction.")
+        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction (currently unused).")
                 .withRequiredArg().ofType(Long.class).defaultsTo(5L);
         parser.accepts("rpcuser", "Username to log in to btcd.")
                 .withRequiredArg().ofType(String.class);
