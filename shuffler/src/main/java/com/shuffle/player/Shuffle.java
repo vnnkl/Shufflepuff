@@ -3,13 +3,11 @@ package com.shuffle.player;
 import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.blockchain.BlockCypherDotCom;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.bitcoin.Coin;
 import com.shuffle.bitcoin.Crypto;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
-import com.shuffle.bitcoin.blockchain.BlockchainDotInfo;
 import com.shuffle.bitcoin.blockchain.Btcd;
 import com.shuffle.bitcoin.impl.AddressImpl;
 import com.shuffle.bitcoin.impl.CryptoProtobuf;
@@ -35,7 +33,6 @@ import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.Multiplexer;
-import com.shuffle.p2p.OtrChannel;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
@@ -97,7 +94,7 @@ public class Shuffle {
         parser.accepts("help", "print help message.");
 
         ArgumentAcceptingOptionSpec<String> query = parser.acceptsAll(Arrays.asList("q", "query"),
-                "Means of performing blockchain queries. btcd, blockcypher.com and blockchain.info are supported")
+                "Means of performing blockchain queries. Currently only btcd is supported")
                 .withRequiredArg().ofType(String.class);
 
         ArgumentAcceptingOptionSpec<String> blockchain = parser.acceptsAll(Arrays.asList("b", "blockchain"),
@@ -134,7 +131,7 @@ public class Shuffle {
             //time.defaultsTo(System.currentTimeMillis() + 5000L);
 
         } else {
-            query.defaultsTo("blockcypher.com");
+            query.defaultsTo("btcd");
             blockchain.defaultsTo("main");
         }
 
@@ -178,7 +175,7 @@ public class Shuffle {
                 .ofType(Long.class)
                 .defaultsTo(1000L);
 
-        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction. Only used with blockchain.info and blockcypher.com.")
+        parser.accepts("minbitcoinnetworkpeers", "Minimum peers to be connected to before broadcasting transaction (currently unused).")
                 .withRequiredArg().ofType(Long.class).defaultsTo(5L);
         parser.accepts("rpcuser", "Username to log in to btcd.")
                 .withRequiredArg().ofType(String.class);
@@ -313,44 +310,6 @@ public class Shuffle {
 
                 coin = new Btcd(netParams, rpcuser, rpcpass);
                 break;
-            } case "blockchain.info" : {
-
-                if (netParams.equals(TestNet3Params.get())) {
-                    throw new IllegalArgumentException("Blockchain.info does not support testnet.");
-                }
-
-                if (!options.has("minbitcoinnetworkpeers")) {
-                    throw new IllegalArgumentException("Need to set minbitcoinnetworkpeers parameter (min peers to connect to in Bitcoin Network)");
-                } else if (options.has("rpcuser")) {
-                    throw new IllegalArgumentException("Blockchain.info does not use a rpcuser parameter");
-                } else if (options.has("rpcpass")) {
-                    throw new IllegalArgumentException("Blockchain.info does not use a rpcpass parameter");
-                }
-
-                Long minbitcoinnetworkpeers = (Long)options.valueOf("minbitcoinnetworkpeers");
-
-                int minbitcoinnetworkpeersInt = Ints.checkedCast(minbitcoinnetworkpeers);
-
-                coin = new BlockchainDotInfo(netParams, minbitcoinnetworkpeersInt);
-                break;
-            } case "blockcypher.com" : {
-
-                if (!options.has("blockchain")) {
-                    throw new IllegalArgumentException("Need to set blockchain parameter (test or main)");
-                } else if (!options.has("minbitcoinnetworkpeers")) {
-                    throw new IllegalArgumentException("Need to set minbitcoinnetworkpeers parameter (min peers to connect to in Bitcoin Network)");
-                } else if (options.has("rpcuser")) {
-                    throw new IllegalArgumentException("Blockcypher.com does not use a rpcuser parameter");
-                } else if (options.has("rpcpass")) {
-                    throw new IllegalArgumentException("Blockcypher.com does not use a rpcpass parameter");
-                }
-
-                Long minbitcoinnetworkpeers = (Long)options.valueOf("minbitcoinnetworkpeers");
-
-                int minbitcoinnetworkpeersInt = Ints.checkedCast(minbitcoinnetworkpeers);
-
-                coin = new BlockCypherDotCom(netParams, minbitcoinnetworkpeersInt);
-                break;
             } case "mock" : {
                 if (TEST_MODE) {
                     try {
@@ -364,11 +323,9 @@ public class Shuffle {
                 // fallthrough.
             } default : {
                 throw new IllegalArgumentException(
-                        "Invalid option for 'blockchain' supplied. Available options are 'btcd', " +
-                                "'blockcypher.com', and 'blockchain.info'. 'btcd' allows for " +
-                                "looking up options on a local instance of the blockchain. " +
-                                "'blockcypher.com' and 'blockchain.info' allow for querying the " +
-                                "blockchain over the web."
+                        "Invalid option for 'blockchain' supplied. Only options is 'btcd'. " +
+                                "'btcd' allows for looking up options on a local instance of " +
+                                "the blockchain. "
                 );
             }
         }
@@ -768,14 +725,6 @@ public class Shuffle {
 
             System.out.println("Unable to setup protocol: " + e.getMessage());
             return;
-        }
-
-        // Warn for blockchain.info or other blockchain service.
-        if (options.valueOf("query").equals("blockchain.info") ||
-                options.valueOf("query").equals("blockcypher.com")) {
-
-            System.out.println("Warning: you have chosen to query address " +
-                    "balances over through a third party service!");
         }
 
         Collection<Player.Report> reports;
