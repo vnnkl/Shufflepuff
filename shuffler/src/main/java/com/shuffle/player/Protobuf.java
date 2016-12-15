@@ -188,9 +188,13 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         }
 
         if (b.packets != null) {
+            Proto.Packets.Builder packets = Proto.Packets.newBuilder();
+
             for (com.shuffle.protocol.message.Packet p : b.packets) {
-                bb.setPackets(Proto.Packets.newBuilder().addPacket(marshallSignedPacket(p)));
+                bb.setPackets(packets.addPacket(marshallSignedPacket(p)));
             }
+
+            bb.setPackets(packets);
         }
 
         return bb;
