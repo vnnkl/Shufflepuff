@@ -50,7 +50,7 @@ import java.util.concurrent.ExecutionException;
  * Created by Simulator on 2/8/16.
  */
 public class InitialState {
-    private static final Logger log = LogManager.getLogger(TestCase.class);
+    private static final Logger log = LogManager.getLogger(InitialState.class);
 
     // An expected return state that matches any blame matrix, even a null one.
     // Used for ensuring a test can't fail no matter what value

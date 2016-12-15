@@ -20,6 +20,7 @@ import com.shuffle.monad.Either;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.InitialState;
 import com.shuffle.sim.Simulator;
+import com.shuffle.sim.TestCase;
 import com.shuffle.sim.init.Initializer;
 
 import org.bouncycastle.util.encoders.Hex;
@@ -115,15 +116,15 @@ public class TestSuccessfulRun extends TestShuffleMachine {
                         new ChangeTestInput(99, true)),
         };
 
-        Crypto mc = new MockCrypto(new InsecureRandom(3928));
-
         int i = 0;
         for (ChangeTestCase test : tests) {
             i ++;
             String session = "change test case " + i;
 
-            InitialState init = new InitialState(
-                    new MockTestCase(session, Initializer.Type.Basic, test.amount, test.fee));
+            TestCase testCase = new MockTestCase(session, Initializer.Type.Basic, test.amount, test.fee);
+            Crypto mc = testCase.crypto();
+
+            InitialState init = new InitialState(testCase);
 
             // First create the bitcoin mock network.
             List<ChangeTestExpected> expected = new LinkedList<>();

@@ -96,7 +96,7 @@ public class TestShuffleMachine {
         }
 
         @Override
-        protected Crypto crypto() {
+        public Crypto crypto() {
             return crypto;
         }
 
@@ -124,7 +124,7 @@ public class TestShuffleMachine {
         }
 
         @Override
-        protected Crypto crypto() {
+        public Crypto crypto() {
             return crypto;
         }
 
@@ -135,6 +135,7 @@ public class TestShuffleMachine {
     }
 
     public class NoShuffleTestCase extends TestCase {
+        private Crypto crypto;
 
         NoShuffleTestCase(String session) {
             super(new Bytestring(("CoinShuffle Shufflepuff test " + session).getBytes()),
@@ -142,9 +143,12 @@ public class TestShuffleMachine {
         }
 
         @Override
-        protected Crypto crypto() {
-            ++seed;
-            return new MockCrypto(new AlwaysZero());
+        public Crypto crypto() {
+            if (crypto == null) {
+                ++seed;
+                crypto = new MockCrypto(new AlwaysZero());
+            }
+            return crypto;
         }
 
         @Override

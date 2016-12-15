@@ -61,7 +61,7 @@ public abstract class TestCase {
 
     // Get the cryptography service for this test case (could be mock crypto or real, depending
     // on what we're testing.)
-    protected abstract Crypto crypto();
+    public abstract Crypto crypto();
     protected abstract Protobuf proto();
 
     // An initial state containing no malicious players.
