@@ -1,10 +1,15 @@
 package com.shuffle.sim.init;
 
 import com.shuffle.bitcoin.SigningKey;
+import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.packet.Marshaller;
+import com.shuffle.chan.packet.Signed;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.p2p.HistoryChannel;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A class that creates connections between players in a simulation.
@@ -16,9 +21,9 @@ public interface Initializer<X> {
     // This function is called every time a new player is created in a simulation.
     Communication<X> connect(SigningKey sk) throws IOException, InterruptedException;
 
-    void clear();
+    Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<X>>.HistorySession>>> end();
 
-    public enum Type {
+    enum Type {
         Basic,
         Mock,
         Marshall,

@@ -6,9 +6,11 @@ import com.shuffle.chan.Inbox;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.p2p.HistoryChannel;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -67,7 +69,9 @@ public class BasicInitializer<X> implements Initializer<X> {
     }
 
     @Override
-    public void clear() {
+    public Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<X>>.HistorySession>>> end() {
         networks.clear();
+
+        return null;
     }
 }

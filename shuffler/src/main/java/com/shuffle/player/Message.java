@@ -177,7 +177,7 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
 
             Atom a = (Atom) o;
 
-            return this == a || a.sig == sig
+            return this == a || (a.sig == null && sig == null || sig != null && sig.equals(a.sig))
                     && (a.ek == null && ek == null || ek != null && ek.equals(a.ek))
                     && (a.addr == null && addr == null || addr != null && addr.equals(a.addr))
                     && (a.blame == null && blame == null || blame != null && blame.equals(a.blame))

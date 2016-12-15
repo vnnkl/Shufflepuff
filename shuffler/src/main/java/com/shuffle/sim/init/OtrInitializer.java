@@ -8,8 +8,8 @@ import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Connection;
+import com.shuffle.p2p.HistoryChannel;
 import com.shuffle.p2p.Listener;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.OtrChannel;
@@ -42,6 +42,8 @@ public class OtrInitializer<X> implements Initializer<X> {
 
     private final List<Connection<VerificationKey>> connections = new LinkedList<>();
 
+    private final Map<SigningKey, HistoryChannel<VerificationKey, Signed<X>>> channels = new HashMap<>();
+
     public OtrInitializer(Bytestring session, int capacity, Marshaller<Signed<X>> marshaller) {
 
         if (session == null || capacity == 0 || marshaller == null) throw new IllegalArgumentException();
@@ -63,12 +65,11 @@ public class OtrInitializer<X> implements Initializer<X> {
         // Create a new mailbox.
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
-
-
         // Create a new channel.
+        HistoryChannel<VerificationKey, Signed<X>> channel = new HistoryChannel<>(new MarshallChannel<>(new OtrChannel<>(mockNetwork.node(vk)), marshaller));
 
+        channels.put(sk, channel);
 
-        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<>(new OtrChannel<>(mockNetwork.node(vk)), marshaller);
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {
 
@@ -101,11 +102,18 @@ public class OtrInitializer<X> implements Initializer<X> {
     }
 
     @Override
-    public void clear() {
+    public Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<X>>.HistorySession>>> end() {
         networks.clear();
 
         for (Connection<VerificationKey> c : connections) {
             c.close();
         }
+
+        Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<X>>.HistorySession>>> histories = new HashMap<>();
+        for (Map.Entry<SigningKey, HistoryChannel<VerificationKey, Signed<X>>> entry : channels.entrySet()) {
+            histories.put(entry.getKey().VerificationKey(), entry.getValue().histories());
+        }
+
+        return histories;
     }
 }

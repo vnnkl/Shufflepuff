@@ -32,7 +32,7 @@ public class HistorySend<X> implements Send<X> {
     }
 
     public synchronized List<X> history() {
-        List<X> h = new LinkedList<X>();
+        List<X> h = new LinkedList<>();
         h.addAll(history);
         return h;
     }

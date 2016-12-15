@@ -110,7 +110,7 @@ public class TestInitializer {
                 connections.put(alice, c);
             }
 
-            initializer.clear();
+            initializer.end();
         }
     }
 }

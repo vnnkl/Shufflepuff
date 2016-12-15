@@ -10,6 +10,7 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.Connection;
+import com.shuffle.p2p.HistoryChannel;
 import com.shuffle.p2p.Listener;
 import com.shuffle.p2p.MarshallChannel;
 import com.shuffle.p2p.Session;
@@ -41,6 +42,8 @@ public class MarshallInitializer<X> implements Initializer<X> {
 
     private final List<Connection<VerificationKey>> connections = new LinkedList<>();
 
+    private final Map<SigningKey, HistoryChannel<VerificationKey, Signed<X>>> channels = new HashMap<>();
+
     public MarshallInitializer(Bytestring session, int capacity, Marshaller<Signed<X>> marshaller) {
 
         if (session == null || capacity == 0 || marshaller == null) throw new IllegalArgumentException();
@@ -63,7 +66,9 @@ public class MarshallInitializer<X> implements Initializer<X> {
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
 
         // Create a new channel.
-        Channel<VerificationKey, Signed<X>> channel = new MarshallChannel<>(mockNetwork.node(sk.VerificationKey()), this.marshaller);
+        HistoryChannel<VerificationKey, Signed<X>> channel = new HistoryChannel<>(new MarshallChannel<>(mockNetwork.node(sk.VerificationKey()), this.marshaller));
+
+        channels.put(sk, channel);
 
         // Open the channel.
         connections.add(channel.open(new Listener<VerificationKey, Signed<X>>() {
@@ -96,11 +101,18 @@ public class MarshallInitializer<X> implements Initializer<X> {
     }
 
     @Override
-    public void clear() {
+    public Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<X>>.HistorySession>>> end() {
         networks.clear();
 
         for (Connection<VerificationKey> c : connections) {
             c.close();
         }
+
+        Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<X>>.HistorySession>>> histories = new HashMap<>();
+        for (Map.Entry<SigningKey, HistoryChannel<VerificationKey, Signed<X>>> entry : channels.entrySet()) {
+            histories.put(entry.getKey().VerificationKey(), entry.getValue().histories());
+        }
+
+        return histories;
     }
 }

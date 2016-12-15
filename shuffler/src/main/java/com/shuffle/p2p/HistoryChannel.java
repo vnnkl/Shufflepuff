@@ -5,6 +5,7 @@ import com.shuffle.chan.Send;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +87,15 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
         return peer;
     }
 
+    public Map<Q, List<HistorySession>> histories() {
+        Map<Q, List<HistorySession>> map = new HashMap<Q, List<HistorySession>>();
+        for (Map.Entry<Q, HistoryPeer> entry : peers.entrySet()) {
+            map.put(entry.getKey(), entry.getValue().history());
+        }
+
+        return map;
+    }
+
     @Override
     public synchronized HistoryPeer getPeer(Q you) {
         return getHistoryPeer(you);
@@ -95,13 +105,24 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
     // grab the history of messages sent and received.
     public class HistorySession implements Session<Q, X> {
         private final List<X> sent = new LinkedList<>();
-        public final HistorySend<X> received;
+        public HistorySend<X> received;
 
         private final Session<Q, X> session;
 
         private HistorySession(Session<Q, X> session, HistorySend<X> received) {
             this.session = session;
             this.received = received;
+        }
+
+        private HistorySession(Session<Q, X> session) {
+            this.session = session;
+            this.received = null;
+        }
+
+        private void setReceived(HistorySend<X> received) {
+            if (this.received == null) {
+                this.received = received;
+            }
         }
 
         @Override
@@ -154,14 +175,16 @@ public class HistoryChannel<Q, X extends Serializable> implements Channel<Q, X> 
         @Override
         public Send<X> newSession(Session<Q, X> session) throws InterruptedException {
 
-            Send<X> s = l.newSession(session);
+            HistoryPeer p = getHistoryPeer(session.peer().identity());
+            if (p == null) return null;
+
+            HistorySession hs = new HistorySession(session);
+
+            Send<X> s = l.newSession(hs);
 
             HistorySend<X> h = new HistorySend<>(s);
 
-            HistorySession hs = new HistorySession(session, h);
-
-            HistoryPeer p = getHistoryPeer(session.peer().identity());
-            if (p == null) return null;
+            hs.setReceived(h);
 
             p.sessions.add(hs);
 

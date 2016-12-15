@@ -21,6 +21,7 @@ import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
 import com.shuffle.p2p.Bytestring;
+import com.shuffle.p2p.HistoryChannel;
 import com.shuffle.player.Payload;
 import com.shuffle.protocol.blame.Matrix;
 import com.shuffle.sim.init.BasicInitializer;
@@ -33,7 +34,11 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -97,7 +102,83 @@ public final class Simulator {
 
         Map<SigningKey, Either<Transaction, Matrix>> results = runSimulation(machines);
 
-        initializer.clear(); // Avoid memory leak.
+        // Check that all messages sent and received are the same.
+        Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession>>> histories = initializer.end();
+        if (histories == null) return results;
+
+        Set<VerificationKey> used = new HashSet<>();
+        for (Map.Entry<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession>>> entryFrom : histories.entrySet()) {
+            VerificationKey fromKey = entryFrom.getKey();
+            used.add(fromKey);
+
+            for (Map.Entry<VerificationKey, List<HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession>> entryTo : entryFrom.getValue().entrySet()) {
+                VerificationKey toKey = entryTo.getKey();
+                if (used.contains(toKey)) continue; // Don't check the same set of messages twice.
+
+                // These should be identical, since they are histories in both directions
+                // from a pair of players.
+                List<HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession> historyFrom = entryTo.getValue();
+                List<HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession> historyTo = histories.get(entryTo.getKey()).get(fromKey);
+
+                // These should be the same size.
+                if (historyFrom.size() != historyTo.size()) {
+                    System.out.println("  Unequal session sizes: " + historyFrom.size() + " to " + historyTo.size());
+                    return null;
+                }
+
+                Iterator<HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession> isf = historyFrom.iterator();
+                Iterator<HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession> ist = historyTo.iterator();
+
+                while (isf.hasNext()) {
+                    HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession sessionFrom = isf.next();
+                    HistoryChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>>.HistorySession sessionTo = ist.next();
+
+                    List<Signed<Packet<VerificationKey, Payload>>> fromReceived = sessionFrom.received();
+                    List<Signed<Packet<VerificationKey, Payload>>> toReceived = sessionTo.received();
+
+                    List<Signed<Packet<VerificationKey, Payload>>> fromSent = sessionFrom.sent();
+                    List<Signed<Packet<VerificationKey, Payload>>> toSent = sessionTo.sent();
+
+                    if (fromSent.size() != toReceived.size()) {
+                        System.out.println("    Unequal session sent sizes: " + toReceived.size() + " to " + fromSent.size());
+                        return null;
+                    }
+
+                    if (fromReceived.size() != toSent.size()) {
+                        System.out.println("    Unequal session received sizes: " + fromReceived.size() + " to " + toSent.size());
+                        return null;
+                    }
+
+                    Iterator<Signed<Packet<VerificationKey, Payload>>> ipfr = fromReceived.iterator();
+                    Iterator<Signed<Packet<VerificationKey, Payload>>> iptr = toReceived.iterator();
+                    Iterator<Signed<Packet<VerificationKey, Payload>>> ipfs = fromSent.iterator();
+                    Iterator<Signed<Packet<VerificationKey, Payload>>> ipts = toSent.iterator();
+
+                    while (ipfr.hasNext()) {
+                        Signed<Packet<VerificationKey, Payload>> received = ipfr.next();
+                        Signed<Packet<VerificationKey, Payload>> sent = ipts.next();
+
+                        if (!received.equals(sent)) {
+                            System.out.println("Message from " + toKey + " to " + fromKey + " sent as " + sent + " but received as " + received);
+
+                            return null;
+                        }
+                    }
+
+                    while (ipfs.hasNext()) {
+                        Signed<Packet<VerificationKey, Payload>> received = iptr.next();
+                        Signed<Packet<VerificationKey, Payload>> sent = ipfs.next();
+
+                        if (!received.equals(sent)) {
+                            System.out.println("Message from " + fromKey + " to " + toKey + " sent as " + sent + " but received as " + received);
+
+                            return null;
+                        }
+                    }
+                }
+            }
+        }
+
         return results;
     }
 
