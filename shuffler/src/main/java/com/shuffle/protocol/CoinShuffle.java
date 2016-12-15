@@ -553,9 +553,10 @@ public class CoinShuffle {
 
                 for (Packet packet : hashMessages) {
                     hashes.put(packet.from(), packet.payload());
-                    // Include my own hash.
-                    hashes.put(vk, equivocationCheckHash(players, encryptionKeys, newAddresses));
                 }
+
+                // Include my own hash.
+                hashes.put(vk, equivocationCheckHash(players, encryptionKeys, newAddresses));
             }
 
             // The messages sent in the broadcast phase by the last player to all the other players.
@@ -633,7 +634,7 @@ public class CoinShuffle {
                                 Message newHash =
                                         equivocationCheckHash(players, receivedKeys, addresses);
 
-                                if (!hashes.get(from).equals(newHash)) {
+                                if (newHash == null || !hashes.get(from).equals(newHash)) {
                                     matrix.put(vk, Evidence.Liar(from, new Packet[]{packet}));
                                 }
 
@@ -832,6 +833,7 @@ public class CoinShuffle {
         // Generate the message sent during the equivocation check phase.
         // This message hashes some information that the player has received.
         // It is used to check that other players have received the same information.
+        // It returns null if the message cannot be constructed.
         final Message equivocationCheckHash(
                 Map<Integer, VerificationKey> players,
                 Map<VerificationKey, EncryptionKey> encryptionKeys,
@@ -842,7 +844,11 @@ public class CoinShuffle {
             System.out.println("  Player " + me + "'s encryption keys: " + encryptionKeys);
             System.out.println("  Player " + me + "'s players: " + players);
             for (int i = 1; i <= players.size(); i++) {
-                check = check.attach(encryptionKeys.get(players.get(i)));
+                EncryptionKey key = encryptionKeys.get(players.get(i));
+                if (key == null) {
+                    return null;
+                }
+                check = check.attach(key);
             }
 
             // During a normal round of the protocol, the players have all received a

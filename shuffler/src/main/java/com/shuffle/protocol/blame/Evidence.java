@@ -91,6 +91,7 @@ public class Evidence {
             }
             case Liar: {
                 if (accused == null || packets == null) throw new IllegalArgumentException();
+                break;
             }
             default: {
                 throw new IllegalArgumentException();
