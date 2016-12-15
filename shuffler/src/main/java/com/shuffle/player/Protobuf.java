@@ -303,7 +303,7 @@ public abstract class Protobuf implements Messages.ShuffleMarshaller {
         DecryptionKey key = null;
         if (blame.hasKey()) {
             try {
-                key = unmarshallDecryptionKey(blame.getKey().getKey(),unmarshallBlame(blame).privateKey.EncryptionKey().toString());
+                key = unmarshallDecryptionKey(blame.getKey().getKey(), blame.getKey().getPublic());
             } catch (NumberFormatException e) {
                 throw new FormatException(e.getMessage());
             }
