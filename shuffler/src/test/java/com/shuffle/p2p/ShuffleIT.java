@@ -17,8 +17,13 @@ import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -122,27 +127,42 @@ public class ShuffleIT {
       OptionSet player2set = parser.parse((arguments + " --port 3002 --key cPpU65DtcqaqUpieaooT2FkYc9i8s1Q2KnXhcSvvm3fsPbJQSuW7 --anon mpUr8en3adMSctw3vmyECid8c6zEEweFSi --change n3Cta4xp9F1zzkuCSH9nzXACAiM6dcjHTY " + player2peers + player2utxos).split(" "));
       OptionSet player3set = parser.parse((arguments + " --port 3003 --key cNnPdwysBLBA3jENeFKA3Q6fZkGR19N2MvngPWiDaEAdBSQbWyBB --anon mmTgeLetNQXQSip4a8EhYh6DA1VDCQGzXv --change mzxuvrNabkuTL8u5Sa4tHvnTcWPH91ZYT6 " + player3peers + player3utxos).split(" "));
 
-      Thread player1Thread = new Thread(() -> {
+      // make ThreadGroup
+      ThreadGroup threadGroup = new ThreadGroup("3x Shuffle ThreadGroup");
+
+      //make separate threads
+      Thread player1Thread = new Thread(threadGroup, () -> {
          try {
             Shuffle player1Shuffle = new Shuffle(player1set, System.out);
          } catch (ParseException | UnknownHostException | FormatException | NoSuchAlgorithmException | AddressFormatException | MalformedURLException | BitcoinCrypto.Exception | BitcoindException | CommunicationException e) {
             e.printStackTrace();
          }
       });
-      Thread player2Thread = new Thread(() -> {
+      Thread player2Thread = new Thread(threadGroup, () -> {
          try {
             Shuffle player1Shuffle = new Shuffle(player2set, System.out);
          } catch (ParseException | UnknownHostException | FormatException | NoSuchAlgorithmException | AddressFormatException | MalformedURLException | BitcoinCrypto.Exception | BitcoindException | CommunicationException e) {
             e.printStackTrace();
          }
       });
-      Thread player3Thread = new Thread(() -> {
+      Thread player3Thread = new Thread(threadGroup, () -> {
          try {
             Shuffle player3Shuffle = new Shuffle(player3set, System.out);
          } catch (ParseException | UnknownHostException | FormatException | NoSuchAlgorithmException | AddressFormatException | MalformedURLException | BitcoinCrypto.Exception | BitcoindException | CommunicationException e) {
             e.printStackTrace();
          }
       });
+
+      ExecutorService executorService = Executors.newFixedThreadPool(3);
+
+      List<Thread> threadList = new LinkedList<Thread>();
+      threadList.add(player1Thread);
+      threadList.add(player2Thread);
+      threadList.add(player3Thread);
+      Set<Callable<String>> callables = new HashSet<Callable<String>>();
+
+      executorService.invokeAll(threadList);
+
       player1Thread.start();
       player2Thread.start();
       player3Thread.start();
