@@ -242,6 +242,8 @@ public abstract class Bitcoin implements Coin {
     @Override
     public final boolean sufficientFunds(HashSet<TransactionOutPoint> utxos, long amount) throws CoinNetworkException, AddressFormatException, IOException {
 
+        System.out.println(amount);
+        System.out.println(utxos);
         List<Bitcoin.Transaction> transactions = getAddressTransactions(utxos);
 
         long sum = 0;
