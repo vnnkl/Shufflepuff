@@ -1,29 +1,20 @@
 package com.shuffle.p2p;
 
-import com.neemre.btcdcli4j.core.BitcoindException;
-import com.neemre.btcdcli4j.core.CommunicationException;
-import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.player.Shuffle;
-import com.shuffle.protocol.FormatException;
 
-import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.junit.Test;
 
-import java.net.MalformedURLException;
-import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -130,42 +121,33 @@ public class ShuffleIT {
       // make ThreadGroup
       ThreadGroup threadGroup = new ThreadGroup("3x Shuffle ThreadGroup");
 
-      //make separate threads
-      Thread player1Thread = new Thread(threadGroup, () -> {
-         try {
-            Shuffle player1Shuffle = new Shuffle(player1set, System.out);
-         } catch (ParseException | UnknownHostException | FormatException | NoSuchAlgorithmException | AddressFormatException | MalformedURLException | BitcoinCrypto.Exception | BitcoindException | CommunicationException e) {
-            e.printStackTrace();
-         }
-      });
-      Thread player2Thread = new Thread(threadGroup, () -> {
-         try {
-            Shuffle player1Shuffle = new Shuffle(player2set, System.out);
-         } catch (ParseException | UnknownHostException | FormatException | NoSuchAlgorithmException | AddressFormatException | MalformedURLException | BitcoinCrypto.Exception | BitcoindException | CommunicationException e) {
-            e.printStackTrace();
-         }
-      });
-      Thread player3Thread = new Thread(threadGroup, () -> {
-         try {
-            Shuffle player3Shuffle = new Shuffle(player3set, System.out);
-         } catch (ParseException | UnknownHostException | FormatException | NoSuchAlgorithmException | AddressFormatException | MalformedURLException | BitcoinCrypto.Exception | BitcoindException | CommunicationException e) {
-            e.printStackTrace();
-         }
-      });
+      // check http://winterbe.com/posts/2015/04/07/java8-concurrency-tutorial-thread-executor-examples/
 
       ExecutorService executorService = Executors.newFixedThreadPool(3);
 
-      List<Thread> threadList = new LinkedList<Thread>();
-      threadList.add(player1Thread);
-      threadList.add(player2Thread);
-      threadList.add(player3Thread);
-      Set<Callable<String>> callables = new HashSet<Callable<String>>();
+      // not needed as we will find txid in printstream
+      // ExecutorCompletionService<String> completionService = new ExecutorCompletionService<String>(executorService);
 
-      executorService.invokeAll(threadList);
+      ArrayList<OptionSet> optionSetArrayList = new ArrayList<OptionSet>();
+      optionSetArrayList.add(0, player1set);
+      optionSetArrayList.add(1, player2set);
+      optionSetArrayList.add(2, player3set);
 
-      player1Thread.start();
-      player2Thread.start();
-      player3Thread.start();
+      List<Callable<Shuffle>> callableList = new ArrayList<Callable<Shuffle>>();
+      for (int i = 0; i < 3; i++) {
+         int finalI = i;
+         Callable<Shuffle> shuffleCallable = () -> new Shuffle(optionSetArrayList.get(finalI), System.out);
+         callableList.add(shuffleCallable);
+      }
+      List<Future<Shuffle>> futureList;
+      try {
+         futureList = executorService.invokeAll(callableList);
+      } catch (InterruptedException e) {
+         e.printStackTrace();
+         throw new RuntimeException("Interruption in executor Service thread", e);
+      }
+
+      executorService.shutdown();
 
    }
 
