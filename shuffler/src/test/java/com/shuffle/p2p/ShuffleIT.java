@@ -91,8 +91,8 @@ public class ShuffleIT {
        *
        */
 
-      // same for all players
-      String arguments = "--amount 500000 --session testnet00 --query bitcoin-core --blockchain test  --fee 8000 --rpcuser admin --rpcpass pass --time " + time.toString();
+      // same for all players, min amount 100000
+      String arguments = "--amount 2000000 --session testnet00 --query bitcoin-core --crypto real --blockchain test  --fee 8000 --rpcuser admin --rpcpass pass --time " + time.toString();
 
       String player1peers = null;
       String player2peers = null;

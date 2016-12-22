@@ -640,7 +640,7 @@ public class Shuffle {
                 Long vout;
                 Sha256Hash transactionHash;
                 try {
-                    vout = (Long) o.get("vout");
+                    vout = Long.parseLong((String) o.get("vout"));
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("vout") + " as Long");
                 }
