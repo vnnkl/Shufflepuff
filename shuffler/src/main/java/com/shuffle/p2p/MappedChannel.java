@@ -64,7 +64,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
 		private int messageCount = 0;
 		private final Send<Boolean> chan;
 		
-		private MappedSend(Send<X> z, Send<Boolean> chan) {
+		private MappedAliceSend(Send<X> z, Send<Boolean> chan) {
 			this.z = z;
 			this.chan = chan;
 		}
@@ -137,7 +137,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
 			if (send == null) return null;
 			Chan<Boolean> chan = new BasicChan<>(1);
 			
-			MappedAliceSend alice = new MappedSend(send, chan);
+			MappedAliceSend alice = new MappedAliceSend(send, chan);
 			Session<Address, X> session = inner.openSession(alice);
 			if (session == null) return null;
 			
