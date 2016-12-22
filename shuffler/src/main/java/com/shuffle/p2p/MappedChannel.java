@@ -1,5 +1,7 @@
 package com.shuffle.p2p;
 
+import com.shuffle.chan.BasicChan;
+import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
 
 import java.io.IOException;
@@ -56,6 +58,62 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
             return "MappedSession[" + inner + "]";
         }
     }
+    
+    private class MappedAliceSend implements Send<X> {
+		private final Send<X> z;
+		private int messageCount = 0;
+		private final Send<Boolean> chan;
+		
+		private MappedSend(Send<X> z, Send<Boolean> chan) {
+			this.z = z;
+			this.chan = chan;
+		}
+		
+		@Override
+		public boolean send(X x) throws InterruptedException, IOException {
+			if (messageCount == 0) {
+				// handle identifying message
+				chan.send(true);
+				messageCount++;
+			}
+			return x != null && z.send(x);
+		}
+		
+		@Override
+		public void close() {
+			z.close();
+		}
+	}
+	
+	private class MappedBobSend implements Send<X> {
+		private final Listener<Identity, X> l;
+		private final Session<Address, X> s;
+		private int messageCount = 0;
+		private Send<X> z;
+		
+		private MappedBobSend(Listener<Identity, X> l, Session<Address, X> s) {
+			this.l = l;
+			this.s = s;
+		}
+		
+		// TODO
+		@Override
+		public boolean send(X x) throws InterruptedException, IOException {
+			if (messageCount == 0) {
+				// z = 
+				messageCount++;
+			}
+			
+			// return z.send()
+			return false;
+		}
+		
+		@Override
+		public void close() {
+			s.close();
+		}
+		
+	}
 
     private class MappedPeer implements Peer<Identity,X> {
         private final Peer<Address, X> inner;
@@ -73,11 +131,26 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
             return identity;
         }
 
+		// TODO
         @Override
         public Session<Identity, X> openSession(Send<X> send) throws InterruptedException, IOException {
-            Session<Address, X> session = inner.openSession(send);
-            if (session == null) return null;
-            return new MappedSession(session, identity);
+			if (send == null) return null;
+			Chan<Boolean> chan = new BasicChan<>(1);
+			
+			MappedAliceSend alice = new MappedSend(send, chan);
+			Session<Address, X> session = inner.openSession(alice);
+			if (session == null) return null;
+			
+			Boolean result = chan.receive();
+			if (result) {
+				
+			} else {
+				chan.close();
+				session.close();
+				return null;
+			}
+			
+			return new MappedSession(session, identity);
         }
 
         @Override
@@ -121,11 +194,16 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
             this.inner = inner;
         }
 
+		// TODO
         @Override
         public Send<X> newSession(Session<Address, X> session) throws InterruptedException {
+			return new MappedBobSend(inner, session);
+			
+			/*
             Identity you = inverse.get(session.peer().identity());
             if (you == null) throw new NullPointerException();
             return inner.newSession(new MappedSession(session, you));
+            */
         }
     }
 
@@ -133,7 +211,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
     public Connection<Identity> open(Listener<Identity, X> listener) throws InterruptedException, IOException {
         Connection<Address> c = inner.open(new MappedListener(listener));
         if (c == null) return null;
-
+		
         for (Map.Entry<Identity, Address> e : hosts.entrySet()) {
             if (inverse.containsKey(e.getValue())) {
                 hosts.remove(e.getKey());
@@ -141,7 +219,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
 
             inverse.put(e.getValue(), e.getKey());
         }
-
+		
         return new MappedConnection(c);
     }
 

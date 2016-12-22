@@ -177,8 +177,8 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
             if (address == null) {
                 return null;
             }
-
-            Socket socket = new Socket(identity.getAddress(), identity.getPort());
+			
+			Socket socket = new Socket(identity.getAddress(), identity.getPort());
 
             return new TcpSession(socket);
         }
@@ -339,18 +339,18 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                 try {
                     // New connection found.
                     Socket client = server.accept();
-
+					
                     // Determine the identity of this connection.
                     InetSocketAddress identity =
                             new InetSocketAddress(client.getInetAddress(), client.getPort());
-
+					
                     TcpPeer.TcpSession session = openSessions.putOpenSession(identity, client);
 
                     if (session == null) {
                         client.close();
                         continue;
                     }
-
+					
                     Send<Bytestring> send = listener.newSession(session);
 
                     if (send == null) {
@@ -437,7 +437,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                     throw new IOException(e);
                 }
             }
-
+			
             running = true;
 
             openSessions = new OpenSessions();

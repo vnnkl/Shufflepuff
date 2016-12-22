@@ -164,7 +164,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
         collector = new Collector<>(new Inbox<Identity, P>(capacity));
 
         connection = channel.open(collector);
-        if (connection == null ) throw new IllegalArgumentException();
+        if (connection == null) throw new IllegalArgumentException();
 
         this.channel = channel;
         this.crypto = crypto;
