@@ -3,28 +3,27 @@ package com.shuffle.p2p;
 import com.shuffle.chan.Send;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Created by Daniel Krawisz on 5/27/16.
  */
-public class MappedChannel<Identity, Address, X extends Serializable> implements Channel<Identity, X> {
-    private final Channel<Address, X> inner;
+public class MappedChannel<Identity, Address> implements Channel<Identity, Bytestring> {
+    private final Channel<Address, Bytestring> inner;
     private final Map<Identity, Address> hosts;
     private final Map<Address, Identity> inverse = new HashMap<>();
 
-    public MappedChannel(Channel<Address, X> inner, Map<Identity, Address> hosts) {
+    public MappedChannel(Channel<Address, Bytestring> inner, Map<Identity, Address> hosts) {
         this.inner = inner;
         this.hosts = hosts;
     }
 
-    private class MappedSession implements Session<Identity, X> {
-        private final Session<Address, X> inner;
+    private class MappedSession implements Session<Identity, Bytestring> {
+        private final Session<Address, Bytestring> inner;
         private final Identity identity;
 
-        private MappedSession(Session<Address, X> inner, Identity identity) {
+        private MappedSession(Session<Address, Bytestring> inner, Identity identity) {
             if (inner == null || identity == null) throw new NullPointerException();
 
             this.inner = inner;
@@ -37,13 +36,13 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
 
         @Override
-        public Peer<Identity, X> peer() {
+        public Peer<Identity, Bytestring> peer() {
             return new MappedPeer(inner.peer(), identity);
         }
 
         @Override
-        public boolean send(X x) throws InterruptedException, IOException {
-            return inner.send(x);
+        public boolean send(Bytestring b) throws InterruptedException, IOException {
+            return inner.send(b);
         }
 
         @Override
@@ -56,12 +55,48 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
             return "MappedSession[" + inner + "]";
         }
     }
+	
+	private class MappedBobSend implements Send<Bytestring> {
+		private final Listener<Identity, Bytestring> l;
+		private final Session<Address, Bytestring> s;
+		private int messageCount = 0;
+		private Send<Bytestring> z;
+		
+		private MappedBobSend(Listener<Identity, Bytestring> l, Session<Address, Bytestring> s) {
+			this.l = l;
+			this.s = s;
+		}
+		
+		@Override
+		public boolean send(Bytestring message) throws InterruptedException, IOException {
+			if (messageCount == 0) {
+				messageCount++;
+				Identity you = null;
+				for (Map.Entry<Address, Identity> e : inverse.entrySet()) {
+					if (e.getKey().toString().equals(new String(message.bytes))) {
+						you = e.getValue();
+						break;
+					}
+				}
+				if (you == null) throw new NullPointerException();
+				this.z = l.newSession(new MappedSession(s, you));
+				return true;
+			} else {
+				return this.z.send(message);
+			}
+		}
+		
+		@Override
+		public void close() {
+			s.close();
+		}
+	}
 
-    private class MappedPeer implements Peer<Identity,X> {
-        private final Peer<Address, X> inner;
+    private class MappedPeer implements Peer<Identity,Bytestring> {
+        private final Peer<Address, Bytestring> inner;
         private final Identity identity;
 
-        private MappedPeer(Peer<Address, X> inner, Identity identity) {
+        private MappedPeer(Peer<Address, Bytestring> inner, Identity identity) {
             if (inner == null || identity == null) throw new NullPointerException();
 
             this.inner = inner;
@@ -74,10 +109,16 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
 
         @Override
-        public Session<Identity, X> openSession(Send<X> send) throws InterruptedException, IOException {
-            Session<Address, X> session = inner.openSession(send);
-            if (session == null) return null;
-            return new MappedSession(session, identity);
+        public Session<Identity, Bytestring> openSession(Send<Bytestring> send) throws InterruptedException, IOException {
+            if (send == null) return null;
+			Session<Address, Bytestring> session = inner.openSession(send);
+			if (session == null) return null;
+			
+			MappedSession s = new MappedSession(session, identity);
+			
+			session.send(new Bytestring(s.peer().identity().toString().getBytes()));
+			
+			return s;
         }
 
         @Override
@@ -87,7 +128,7 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
     }
 
     @Override
-    public Peer<Identity, X> getPeer(Identity you) {
+    public Peer<Identity, Bytestring> getPeer(Identity you) {
         Address addr = hosts.get(you);
         if (addr == null) return null;
 
@@ -114,23 +155,21 @@ public class MappedChannel<Identity, Address, X extends Serializable> implements
         }
     }
 
-    private class MappedListener implements Listener<Address, X> {
-        private final Listener<Identity, X> inner;
+    private class MappedListener implements Listener<Address, Bytestring> {
+        private final Listener<Identity, Bytestring> inner;
 
-        private MappedListener(Listener<Identity, X> inner) {
+        private MappedListener(Listener<Identity, Bytestring> inner) {
             this.inner = inner;
         }
 
         @Override
-        public Send<X> newSession(Session<Address, X> session) throws InterruptedException {
-            Identity you = inverse.get(session.peer().identity());
-            if (you == null) throw new NullPointerException();
-            return inner.newSession(new MappedSession(session, you));
+        public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
+            return new MappedBobSend(inner, session);
         }
     }
 
     @Override
-    public Connection<Identity> open(Listener<Identity, X> listener) throws InterruptedException, IOException {
+    public Connection<Identity> open(Listener<Identity, Bytestring> listener) throws InterruptedException, IOException {
         Connection<Address> c = inner.open(new MappedListener(listener));
         if (c == null) return null;
 
