@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -38,7 +40,7 @@ public class ShuffleIT {
    String amountString = amount.toString();
 
    // Current system unixtime in milliseconds -> seconds + 3 min, same for everyone
-   Long time = (System.currentTimeMillis() / 1000L) + 180L;
+   Long time = (System.currentTimeMillis() / 1000L) + 30L;
 
    //fee amount in satoshi = 50000
    Coin feeAmount = Coin.valueOf(5000L);
@@ -67,29 +69,29 @@ public class ShuffleIT {
 
    // OptionSet options = parser.parse( "-a", "-B", "-?" );
 
+   /**
+    * we will shuffle from the same keys
+    * privKey        pub         address
+    * <p>
+    * Player1 cTqDy2FrE1rYWHD5c7mAyKu8RDFb6xU3gv2tmnHNiAgMEKzBSzny  03ad9403ba57d610ddcf660432dd04eb47c9135fec7f1aedba5217bcecfa820434  mnstkekN1bAZXL83QCmoQkN723h7Q7q14G
+    * shuffles to n3izGxHXfgafbhtQ8Ls8CMsqFNbYcMncM3
+    * change to n3Cta4xp9F1zzkuCSH9nzXACAiM6dcjHTY
+    * <p>
+    * Player2 cPpU65DtcqaqUpieaooT2FkYc9i8s1Q2KnXhcSvvm3fsPbJQSuW7  02b6408cd341300a0e19cc69a5442d015524593bc6d2157fbaba42dfbe80495ec8  moFLhtjSQjiTxCYetVcJpdEZoKob4vWCNV
+    * shuffles to mpUr8en3adMSctw3vmyECid8c6zEEweFSi
+    * change to n2kvNLWvXUv5yeFrnZeqU9FUtGSM6sytim
+    * <p>
+    * Player 3 cNnPdwysBLBA3jENeFKA3Q6fZkGR19N2MvngPWiDaEAdBSQbWyBB  026f040da7316679729b3a6483d43754a608c96c798b504564edf0a71b04eb1005  n3izGxHXfgafbhtQ8Ls8CMsqFNbYcMncM3
+    * shuffles to mmTgeLetNQXQSip4a8EhYh6DA1VDCQGzXv
+    * change to mzxuvrNabkuTL8u5Sa4tHvnTcWPH91ZYT6
+    * <p>
+    * --port 3001 --utxos [{"vout":"3","transactionHash":"0d41246259b95010bac124b3f0cc5c4d98f0449eef5d533f5af39e9b86740cb4"}]
+    */
 
-   // new shuffle
    @Test
    public void testShuffle() {
 
-      /** we will shuffle from the same keys
-       *    privKey        pub         address
-       *
-       *   Player1 cTqDy2FrE1rYWHD5c7mAyKu8RDFb6xU3gv2tmnHNiAgMEKzBSzny  03ad9403ba57d610ddcf660432dd04eb47c9135fec7f1aedba5217bcecfa820434  mnstkekN1bAZXL83QCmoQkN723h7Q7q14G
-       *   shuffles to n3izGxHXfgafbhtQ8Ls8CMsqFNbYcMncM3
-       *   change to n3Cta4xp9F1zzkuCSH9nzXACAiM6dcjHTY
-       *
-       *   Player2 cPpU65DtcqaqUpieaooT2FkYc9i8s1Q2KnXhcSvvm3fsPbJQSuW7  02b6408cd341300a0e19cc69a5442d015524593bc6d2157fbaba42dfbe80495ec8  moFLhtjSQjiTxCYetVcJpdEZoKob4vWCNV
-       *   shuffles to mpUr8en3adMSctw3vmyECid8c6zEEweFSi
-       *   change to n2kvNLWvXUv5yeFrnZeqU9FUtGSM6sytim
-       *
-       *   Player 3 cNnPdwysBLBA3jENeFKA3Q6fZkGR19N2MvngPWiDaEAdBSQbWyBB  026f040da7316679729b3a6483d43754a608c96c798b504564edf0a71b04eb1005  n3izGxHXfgafbhtQ8Ls8CMsqFNbYcMncM3
-       *   shuffles to mmTgeLetNQXQSip4a8EhYh6DA1VDCQGzXv
-       *   change to mzxuvrNabkuTL8u5Sa4tHvnTcWPH91ZYT6
-       *
-       * --port 3001 --utxos [{"vout":"3","transactionHash":"0d41246259b95010bac124b3f0cc5c4d98f0449eef5d533f5af39e9b86740cb4"}]
-       *
-       */
+
 
       // same for all players, min amount 100000
       String arguments = "--amount 2000000 --session testnet00 --query bitcoin-core --crypto real --blockchain test  --fee 8000 --rpcuser admin --rpcpass pass --time " + time.toString();
@@ -114,9 +116,14 @@ public class ShuffleIT {
 
       //make optionSets
       OptionParser parser = ShuffleIT.getShuffleOptionsParser();
-      OptionSet player1set = parser.parse((arguments + " --port 3001 --key cTqDy2FrE1rYWHD5c7mAyKu8RDFb6xU3gv2tmnHNiAgMEKzBSzny --anon n3izGxHXfgafbhtQ8Ls8CMsqFNbYcMncM3 --change n2kvNLWvXUv5yeFrnZeqU9FUtGSM6sytim " + player1peers + player1utxos).split(" "));
-      OptionSet player2set = parser.parse((arguments + " --port 3002 --key cPpU65DtcqaqUpieaooT2FkYc9i8s1Q2KnXhcSvvm3fsPbJQSuW7 --anon mpUr8en3adMSctw3vmyECid8c6zEEweFSi --change n3Cta4xp9F1zzkuCSH9nzXACAiM6dcjHTY " + player2peers + player2utxos).split(" "));
-      OptionSet player3set = parser.parse((arguments + " --port 3003 --key cNnPdwysBLBA3jENeFKA3Q6fZkGR19N2MvngPWiDaEAdBSQbWyBB --anon mmTgeLetNQXQSip4a8EhYh6DA1VDCQGzXv --change mzxuvrNabkuTL8u5Sa4tHvnTcWPH91ZYT6 " + player3peers + player3utxos).split(" "));
+      String[] player1StringSet = (arguments + " --port 3001 --key cTqDy2FrE1rYWHD5c7mAyKu8RDFb6xU3gv2tmnHNiAgMEKzBSzny --anon n3izGxHXfgafbhtQ8Ls8CMsqFNbYcMncM3 --change n2kvNLWvXUv5yeFrnZeqU9FUtGSM6sytim " + player1peers + player1utxos).split(" ");
+      String[] player2StringSet = (arguments + " --port 3002 --key cPpU65DtcqaqUpieaooT2FkYc9i8s1Q2KnXhcSvvm3fsPbJQSuW7 --anon mpUr8en3adMSctw3vmyECid8c6zEEweFSi --change n3Cta4xp9F1zzkuCSH9nzXACAiM6dcjHTY " + player2peers + player2utxos).split(" ");
+      String[] player3StringSet = (arguments + " --port 3003 --key cNnPdwysBLBA3jENeFKA3Q6fZkGR19N2MvngPWiDaEAdBSQbWyBB --anon mmTgeLetNQXQSip4a8EhYh6DA1VDCQGzXv --change mzxuvrNabkuTL8u5Sa4tHvnTcWPH91ZYT6 " + player3peers + player3utxos).split(" ");
+
+
+      OptionSet player1set = parser.parse(player1StringSet);
+      OptionSet player2set = parser.parse(player2StringSet);
+      OptionSet player3set = parser.parse(player3StringSet);
 
       // make ThreadGroup
       ThreadGroup threadGroup = new ThreadGroup("3x Shuffle ThreadGroup");
@@ -126,20 +133,33 @@ public class ShuffleIT {
       ExecutorService executorService = Executors.newFixedThreadPool(3);
 
       // not needed as we will find txid in printstream
-      // ExecutorCompletionService<String> completionService = new ExecutorCompletionService<String>(executorService);
+      ExecutorCompletionService<String> completionService = new ExecutorCompletionService<String>(executorService);
+
+      ArrayList<String[]> optionStringArrayList = new ArrayList<String[]>();
+      optionStringArrayList.add(0, player1StringSet);
+      optionStringArrayList.add(1, player2StringSet);
+      optionStringArrayList.add(2, player3StringSet);
+
 
       ArrayList<OptionSet> optionSetArrayList = new ArrayList<OptionSet>();
       optionSetArrayList.add(0, player1set);
       optionSetArrayList.add(1, player2set);
       optionSetArrayList.add(2, player3set);
 
-      List<Callable<Shuffle>> callableList = new ArrayList<Callable<Shuffle>>();
+      List<Callable<Void>> callableList = new ArrayList<Callable<Void>>();
       for (int i = 0; i < 3; i++) {
          int finalI = i;
-         Callable<Shuffle> shuffleCallable = () -> new Shuffle(optionSetArrayList.get(finalI), System.out);
+         Callable<Void> shuffleCallable = new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+               Shuffle.main(optionStringArrayList.get(finalI));
+               //return new Shuffle(optionSetArrayList.get(finalI), System.out).main(optionStringArrayList.get(finalI));
+               return null;
+            }
+         };
          callableList.add(shuffleCallable);
       }
-      List<Future<Shuffle>> futureList;
+      List<Future<Void>> futureList;
       try {
          futureList = executorService.invokeAll(callableList);
       } catch (InterruptedException e) {
@@ -147,7 +167,26 @@ public class ShuffleIT {
          throw new RuntimeException("Interruption in executor Service thread", e);
       }
 
-      executorService.shutdown();
+      for (Future<Void> future : futureList) {
+         if (future.isCancelled()) {
+            try {
+               System.out.println(future.get().toString());
+            } catch (InterruptedException e) {
+               e.printStackTrace();
+            } catch (ExecutionException e) {
+               e.printStackTrace();
+            }
+         }
+         if (future.isDone()) {
+            try {
+               System.out.println("Done " + future.get());
+            } catch (InterruptedException e) {
+               e.printStackTrace();
+            } catch (ExecutionException e) {
+               e.printStackTrace();
+            }
+         }
+      }
 
    }
 
