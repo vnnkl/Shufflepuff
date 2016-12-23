@@ -70,6 +70,7 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		@Override
 		public boolean send(Bytestring message) throws InterruptedException, IOException {
 			if (messageCount == 0) {
+				messageCount++;
 				Identity you = null;
 				for (Map.Entry<Address, Identity> e : inverse.entrySet()) {
 					if (e.getKey().toString().equals(new String(message.bytes))) {
@@ -78,9 +79,10 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 					}
 				}
 				if (you == null) throw new NullPointerException();
-				z = l.newSession(new MappedSession(s, you));
+				this.z = l.newSession(new MappedSession(s, you));
+				return true;
 			} else {
-				
+				return this.z.send(message);
 			}
 		}
 		
