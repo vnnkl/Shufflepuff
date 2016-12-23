@@ -166,11 +166,6 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		@Override
 		public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
 			return new MappedBobSend(inner, session);
-			/*
-			Identity you = inverse.get(session.peer().identity());
-			if (you == null) throw new NullPointerException();
-			return inner.newSession(new MappedSession(session, you));
-			*/
 		}
 	}
 
