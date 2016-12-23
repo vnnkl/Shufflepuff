@@ -60,13 +60,34 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		private final Listener<Identity, Bytestring> l;
 		private final Session<Address, Bytestring> s;
 		private int messageCount = 0;
+		private Send<Bytestring> z;
 		
 		private MappedBobSend(Listener<Identity, Bytestring> l, Session<Address, Bytestring> s) {
 			this.l = l;
 			this.s = s;
 		}
 		
+		@Override
+		public boolean send(Bytestring message) throws InterruptedException, IOException {
+			if (messageCount == 0) {
+				Identity you = null;
+				for (Map.Entry<Address, Identity> e : inverse.entrySet()) {
+					if (e.getKey().toString().equals(new String(message.bytes))) {
+						you = e.getValue();
+						break;
+					}
+				}
+				if (you == null) throw new NullPointerException();
+				z = l.newSession(new MappedSession(s, you));
+			} else {
+				
+			}
+		}
 		
+		@Override
+		public void close() {
+			s.close();
+		}
 		
 	}
 
@@ -94,7 +115,7 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 			
 			MappedSession s = new MappedSession(session, identity);
 			
-			//session.send(s.peer().identity());
+			session.send(new Bytestring(s.peer().identity().toString().getBytes()));
 			
 			return s;
 		}
