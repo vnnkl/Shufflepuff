@@ -200,7 +200,7 @@ public class Shuffle {
     public final Bytestring session;
     public final Crypto crypto;
     Set<Player> local = new HashSet<>();
-    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
+    Map<VerificationKey,InetSocketAddress> peers = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
@@ -437,12 +437,11 @@ public class Shuffle {
             }
 
             InetSocketAddress tcp = new InetSocketAddress(parts[0], port);
-            Either<InetSocketAddress, Integer> address = new Either<>(tcp, null);
 
             if (peers.containsKey(vk)) {
                 throw new IllegalArgumentException("Duplicate key " + key);
             }
-            peers.put(vk, address);
+            peers.put(vk, tcp);
             keys.add(vk);
         }
 
@@ -601,19 +600,16 @@ public class Shuffle {
         }
 
         keys.add(vk);
-        peers.put(vk, new Either<>(null, id));
-
-        Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
-                new MappedChannel<>(
-                        new Multiplexer<>(
-                                new MarshallChannel<>(
-                                        new TcpChannel(
-                                                new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
-                                        m.signedMarshaller()),
-                                mock.node(id)),
-                        peers);
-
-
+		
+		Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
+				new MarshallChannel<>(
+						new MappedChannel<>(
+								new TcpChannel(
+										new InetSocketAddress(InetAddress.getLocalHost(), (int) port)
+								),
+						peers),
+				m.signedMarshaller());
+		
         /*
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
                 new MappedChannel<>(
