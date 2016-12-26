@@ -61,7 +61,6 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
         }
     }
 	
-	/*
 	private class MappedAliceSend implements Send<Bytestring> {
 		private final Send<Bytestring> z;
 		private int messageCount = 0;
@@ -76,19 +75,14 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		public boolean send(Bytestring message) throws InterruptedException, IOException {
 			if (messageCount < 2) {
 				messageCount++;
-				if (messageCount == 2) {
-					if (new String(message.bytes).equals("received")) {
-						chan.send(true);
-						return true;
-					} else {
-						chan.send(false);
-						return false;
-					}
+				if (new String(message.bytes).equals("received")) {
+					chan.send(true);
+					return true;
 				}
 				return true;
-			} else {
-				return this.z.send(message);
 			}
+
+			return this.z.send(message);
 		}
 		
 		@Override
@@ -97,7 +91,6 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 			chan.close();
 		}
 	}
-	*/
 	
 	private class MappedBobSend implements Send<Bytestring> {
 		private final Listener<Identity, Bytestring> l;
@@ -116,9 +109,6 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 				messageCount++;
 				Identity you = null;
 				for (Map.Entry<Address, Identity> e : inverse.entrySet()) {
-					System.out.println("Key " + e.getKey().toString());
-					System.out.println("Value " + e.getValue().toString());
-					System.out.println(new String(message.bytes));
 					if (e.getValue().toString().equals(new String(message.bytes))) {
 						you = e.getValue();
 						break;
@@ -126,11 +116,10 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 				}
 				if (you == null) throw new NullPointerException();
 				this.z = l.newSession(new MappedSession(s, you));
-				System.out.println("sup");
-				return true;
-			} else {
-				return this.z.send(message);
+				return this.s.send(new Bytestring("received".getBytes()));
 			}
+
+			return this.z.send(message);
 		}
 		
 		@Override
@@ -160,26 +149,20 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
             if (send == null) return null;
 			Chan<Boolean> chan = new BasicChan<>(1);
 			
-			//MappedAliceSend alice = new MappedAliceSend(send, chan);
-			//Session<Address, Bytestring> session = inner.openSession(alice);
-			Session<Address, Bytestring> session = inner.openSession(send);
+			MappedAliceSend alice = new MappedAliceSend(send, chan);
+			Session<Address, Bytestring> session = inner.openSession(alice);
 			if (session == null) return null;
 			
 			MappedSession s = new MappedSession(session, identity);
 			
-			//String id = s.peer().identity().toString();
+			session.send(new Bytestring(myIdentity().toString().getBytes()));
 			
-			String id = myIdentity().toString();
-			session.send(new Bytestring(id.getBytes()));
-			
-			/*
 			Boolean result = chan.receive();
 			if (!result) {
 				chan.close();
 				session.close();
 				return null;
 			}
-			*/
 			
 			return s;
         }

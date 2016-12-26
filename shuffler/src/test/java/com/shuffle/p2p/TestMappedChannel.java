@@ -64,10 +64,8 @@ public class TestMappedChannel {
 		aliceMap = new HashMap<>();
 		bobMap = new HashMap<>();
 		
-		//aliceMap.put(aliceKey, aliceAddr);
 		aliceMap.put(bobKey, bobAddr);
 		bobMap.put(aliceKey, aliceAddr);
-		//bobMap.put(bobKey, bobAddr);
 		
 		aliceTcp = new TcpChannel(aliceAddr);
 		bobTcp = new TcpChannel(bobAddr);
@@ -105,6 +103,8 @@ public class TestMappedChannel {
 
 			@Override
 			public void close() {
+				// TODO
+				// println never called
 				System.out.println("bobSend closed");
 			}
 		};
@@ -138,7 +138,7 @@ public class TestMappedChannel {
 	
 	@After
 	public void shutdown() {
-		/*
+		
 		aliceToBobSession.close();
 		bobToAliceSession.close();
 		
@@ -149,7 +149,7 @@ public class TestMappedChannel {
 		org.junit.Assert.assertTrue(bobToAliceSession.closed());
 
 		org.junit.Assert.assertTrue(aliceConnection.closed());
-		org.junit.Assert.assertTrue(bobConnection.closed());*/
+		org.junit.Assert.assertTrue(bobConnection.closed());
 		
 	}
 	
