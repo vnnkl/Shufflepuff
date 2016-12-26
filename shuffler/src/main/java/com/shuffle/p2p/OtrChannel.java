@@ -551,7 +551,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
      * Here we simply pass on a new OtrListener object to the open inner channel.
      * An OtrConnection is returned.
      */
-
+    
     @Override
     public OtrConnection open(Listener<Address, Bytestring> listener) throws InterruptedException, IOException {
 

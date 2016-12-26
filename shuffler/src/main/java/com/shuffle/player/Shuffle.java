@@ -37,7 +37,6 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
-import com.shuffle.p2p.Multiplexer;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
@@ -108,7 +107,7 @@ public class Shuffle {
     public final ExecutorService executor;
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, Payload>>> mock = new MockNetwork<>();
     Set<Player> local = new HashSet<>();
-    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
+	Map<VerificationKey,InetSocketAddress> peers = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
 
     public Shuffle(OptionSet options, PrintStream stream)
@@ -418,13 +417,12 @@ public class Shuffle {
             }
 
             InetSocketAddress tcp = new InetSocketAddress(parts[0], port);
-            Either<InetSocketAddress, Integer> address = new Either<>(tcp, null);
 
             if (peers.containsKey(key)) {
                 throw new IllegalArgumentException("Duplicate key " + key);
             }
 
-            this.peers.put(vk, address);
+            this.peers.put(vk, tcp);
             this.keys.add(vk);
         }
 
@@ -965,17 +963,15 @@ public class Shuffle {
         }
 
         keys.add(vk);
-        peers.put(vk, new Either<>(null, id));
 
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
-              new MappedChannel<>(
-                    new Multiplexer<>(
-                          new MarshallChannel<>(
+                new MarshallChannel<>(
+                        new MappedChannel<>(
                                 new TcpChannel(
-                                      new InetSocketAddress(InetAddress.getLocalHost(), (int) port)),
-                                m.signedMarshaller()),
-                          mock.node(id)),
-                    peers);
+                                        new InetSocketAddress(InetAddress.getLocalHost(), (int) port)
+                                ),
+                        peers, vk),
+                m.signedMarshaller());
 
         return new Player(
               sk, session, anonAddress,
