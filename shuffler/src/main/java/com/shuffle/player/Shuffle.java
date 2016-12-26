@@ -600,6 +600,7 @@ public class Shuffle {
         }
 
         keys.add(vk);
+        //peers.put(vk, new InetSocketAddress(InetAddress.getLocalHost(), (int) port));
 		
 		Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
 				new MarshallChannel<>(
@@ -607,7 +608,7 @@ public class Shuffle {
 								new TcpChannel(
 										new InetSocketAddress(InetAddress.getLocalHost(), (int) port)
 								),
-						peers),
+						peers, vk),
 				m.signedMarshaller());
 		
         /*
