@@ -9,7 +9,6 @@
 package com.shuffle.bitcoin;
 
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.protocol.message.Packet;
 
 /**
  *

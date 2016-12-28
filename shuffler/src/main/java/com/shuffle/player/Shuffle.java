@@ -1,6 +1,5 @@
 package com.shuffle.player;
 
-import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;

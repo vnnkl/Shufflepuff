@@ -14,7 +14,6 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 /**
  * Created by Daniel Krawisz on 12/9/15.

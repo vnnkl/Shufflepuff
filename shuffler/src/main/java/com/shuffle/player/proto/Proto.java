@@ -153,7 +153,7 @@ public final class Proto {
 
     private final int value;
 
-    private Phase(int value) {
+    Phase(int value) {
       this.value = value;
     }
 
@@ -314,7 +314,7 @@ public final class Proto {
 
     private final int value;
 
-    private Reason(int value) {
+    Reason(int value) {
       this.value = value;
     }
 

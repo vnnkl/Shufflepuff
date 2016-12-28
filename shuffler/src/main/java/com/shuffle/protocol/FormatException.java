@@ -8,8 +8,6 @@
 
 package com.shuffle.protocol;
 
-import com.shuffle.protocol.message.Message;
-
 /**
  * To be thrown when a message is incorrectly formatted and cannot be interpreted.
  *
