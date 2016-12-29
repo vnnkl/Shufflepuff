@@ -22,7 +22,6 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockProtobuf;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
-import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
@@ -31,7 +30,6 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
-import com.shuffle.p2p.Multiplexer;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
