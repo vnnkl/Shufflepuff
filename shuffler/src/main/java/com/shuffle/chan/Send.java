@@ -8,8 +8,6 @@
 
 package com.shuffle.chan;
 
-import com.shuffle.protocol.FormatException;
-
 import java.io.IOException;
 
 /**

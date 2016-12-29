@@ -1,6 +1,5 @@
 package com.shuffle.player;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;

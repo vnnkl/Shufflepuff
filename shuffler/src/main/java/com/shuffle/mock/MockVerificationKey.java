@@ -15,7 +15,6 @@ import com.shuffle.p2p.Bytestring;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
 /**
  * A mock implementation of a VerificationKey.

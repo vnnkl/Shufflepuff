@@ -8,10 +8,8 @@
 
 package com.shuffle.mock;
 
-import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.DecryptionKey;
 import com.shuffle.bitcoin.EncryptionKey;
-import com.shuffle.protocol.FormatException;
 
 import java.io.Serializable;
 

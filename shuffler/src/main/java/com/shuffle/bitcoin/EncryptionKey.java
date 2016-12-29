@@ -8,8 +8,6 @@
 
 package com.shuffle.bitcoin;
 
-import com.shuffle.protocol.FormatException;
-
 /**
  *
  * A public encryption key.

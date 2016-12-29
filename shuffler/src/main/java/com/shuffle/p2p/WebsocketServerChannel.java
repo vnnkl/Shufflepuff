@@ -28,7 +28,6 @@ import javax.websocket.server.ServerEndpoint;
 
 import org.glassfish.tyrus.core.TyrusSession;
 import org.glassfish.tyrus.server.Server;
-import org.glassfish.tyrus.container.grizzly.server.*;
 
 
 /**

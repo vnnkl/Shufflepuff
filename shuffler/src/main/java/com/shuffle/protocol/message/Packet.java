@@ -11,7 +11,6 @@ package com.shuffle.protocol.message;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.p2p.Bytestring;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 /**

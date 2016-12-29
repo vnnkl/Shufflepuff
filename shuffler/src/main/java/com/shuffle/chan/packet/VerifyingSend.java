@@ -2,7 +2,6 @@ package com.shuffle.chan.packet;
 
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Send;
-import com.shuffle.p2p.Bytestring;
 
 import java.io.IOException;
 

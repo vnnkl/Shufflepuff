@@ -3,7 +3,6 @@ package com.shuffle.chan.packet;
 import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.chan.Send;
 import com.shuffle.p2p.Bytestring;
-import com.shuffle.protocol.FormatException;
 
 import java.io.IOException;
 
