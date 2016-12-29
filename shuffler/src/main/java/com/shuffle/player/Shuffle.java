@@ -1,6 +1,5 @@
 package com.shuffle.player;
 
-import com.google.common.primitives.Ints;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
@@ -23,7 +22,6 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockProtobuf;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
-import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
@@ -32,7 +30,6 @@ import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.Channel;
 import com.shuffle.p2p.MappedChannel;
 import com.shuffle.p2p.MarshallChannel;
-import com.shuffle.p2p.Multiplexer;
 import com.shuffle.p2p.TcpChannel;
 import com.shuffle.protocol.FormatException;
 
@@ -201,7 +198,7 @@ public class Shuffle {
     public final Bytestring session;
     public final Crypto crypto;
     Set<Player> local = new HashSet<>();
-    Map<VerificationKey, Either<InetSocketAddress, Integer>> peers = new HashMap<>();
+    Map<VerificationKey,InetSocketAddress> peers = new HashMap<>();
     SortedSet<VerificationKey> keys = new TreeSet<>();
     public final String report; // Where to save the report.
 
@@ -438,12 +435,11 @@ public class Shuffle {
             }
 
             InetSocketAddress tcp = new InetSocketAddress(parts[0], port);
-            Either<InetSocketAddress, Integer> address = new Either<>(tcp, null);
 
             if (peers.containsKey(vk)) {
                 throw new IllegalArgumentException("Duplicate key " + key);
             }
-            peers.put(vk, address);
+            peers.put(vk, tcp);
             keys.add(vk);
         }
 
@@ -602,19 +598,17 @@ public class Shuffle {
         }
 
         keys.add(vk);
-        peers.put(vk, new Either<>(null, id));
-
-        Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
-                new MappedChannel<>(
-                        new Multiplexer<>(
-                                new MarshallChannel<>(
-                                        new TcpChannel(
-                                                new InetSocketAddress(InetAddress.getLocalHost(), (int)port)),
-                                        m.signedMarshaller()),
-                                mock.node(id)),
-                        peers);
-
-
+        //peers.put(vk, new InetSocketAddress(InetAddress.getLocalHost(), (int) port));
+		
+		Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
+				new MarshallChannel<>(
+						new MappedChannel<>(
+								new TcpChannel(
+										new InetSocketAddress(InetAddress.getLocalHost(), (int) port)
+								),
+						peers, vk),
+				m.signedMarshaller());
+		
         /*
         Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
                 new MappedChannel<>(
