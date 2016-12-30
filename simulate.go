@@ -19,9 +19,10 @@ var minConf = 6
 
 // RPC represents a bitcoin wallet rpc server.
 type RPC struct {
-	user     string
-	password string
-	server   string
+	user       string
+	password   string
+	server     string
+	passphrase string
 }
 
 // sendPostRequest sends the marshalled JSON-RPC command using HTTP-POST mode
@@ -128,7 +129,7 @@ func (rpc *RPC) CreateNewAddress() (btcutil.Address, error) {
 	// Expected response is an address.
 	addr, err := btcutil.DecodeAddress(response, &chaincfg.TestNet3Params)
 	if err != nil {
-		return nil, fmt.Errorf("Could not decode address %s; got error %s", response, err.Error())
+		return nil, fmt.Errorf("Could not decode address: %s; got error %s", response, err.Error())
 	}
 
 	return addr, nil
@@ -147,7 +148,7 @@ func (rpc *RPC) SendFrom(account string, to btcutil.Address, amount uint64) (*ch
 	}
 	hash, err := chainhash.NewHashFromStr(string(response))
 	if err != nil {
-		return nil, fmt.Errorf("Could not decode tx hash %s; got error %s", response, err.Error())
+		return nil, fmt.Errorf("Could not decode tx hash: %s; got error %s", response, err.Error())
 	}
 
 	return hash, nil
@@ -169,10 +170,44 @@ func (rpc *RPC) SendMany(account string, amounts map[btcutil.Address]uint64) (*c
 	}
 	hash, err := chainhash.NewHashFromStr(string(response))
 	if err != nil {
-		return nil, fmt.Errorf("Could not decode tx hash %s; got error %s", response, err.Error())
+		return nil, fmt.Errorf("Could not decode tx hash: %s; got error %s", response, err.Error())
 	}
 
 	return hash, nil
+}
+
+// DumpPrivateKey sends a dumpprivkey command.
+func (rpc *RPC) DumpPrivateKey(address btcutil.Address) (*btcutil.WIF, error) {
+	response, err := rpc.rpcCommand(btcjson.DumpPrivKeyCmd{})
+	if err != nil {
+		return nil, err
+	}
+
+	// Expected response is an address.
+	wif, err := btcutil.DecodeWIF(response)
+	if err != nil {
+		return nil, fmt.Errorf("Could not decode WIF: %s; got error %s", response, err.Error())
+	}
+
+	return wif, nil
+}
+
+// WalletPassphrase sends a walletpassphrase command.
+func (rpc *RPC) WalletPassphrase(timeout uint32) error {
+	response, err := rpc.rpcCommand(btcjson.WalletPassphraseCmd{
+		Passphrase: rpc.passphrase,
+		Timeout:    int64(timeout),
+	})
+	if err != nil {
+		return err
+	}
+
+	// Expected response is null.
+	if response != "null" {
+		return errors.New(response)
+	}
+
+	return nil
 }
 
 func writeName(w *bytes.Buffer, name string) {
