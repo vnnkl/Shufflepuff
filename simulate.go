@@ -11,10 +11,13 @@ import (
 
 	"github.com/btcsuite/btcd/btcjson"
 	"github.com/btcsuite/btcd/chaincfg"
+	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcutil"
 )
 
-// RPC represents a bitcoin wallet rpc server. 
+var minConf = 6
+
+// RPC represents a bitcoin wallet rpc server.
 type RPC struct {
 	user     string
 	password string
@@ -103,7 +106,6 @@ func (rpc *RPC) CreateNewAccount(name string) error {
 	response, err := rpc.rpcCommand(btcjson.CreateNewAccountCmd{
 		Account: name,
 	})
-
 	if err != nil {
 		return err
 	}
@@ -116,10 +118,9 @@ func (rpc *RPC) CreateNewAccount(name string) error {
 	return nil
 }
 
-// CreateNewAddress sends a createnewaddress command.
+// CreateNewAddress sends an rpc createnewaddress command.
 func (rpc *RPC) CreateNewAddress() (btcutil.Address, error) {
 	response, err := rpc.rpcCommand(btcjson.GetNewAddressCmd{})
-
 	if err != nil {
 		return nil, err
 	}
@@ -131,6 +132,47 @@ func (rpc *RPC) CreateNewAddress() (btcutil.Address, error) {
 	}
 
 	return addr, nil
+}
+
+// SendFrom sends an rpc sendfrom command.
+func (rpc *RPC) SendFrom(account string, to btcutil.Address, amount uint64) (*chainhash.Hash, error) {
+	response, err := rpc.rpcCommand(btcjson.SendFromCmd{
+		FromAccount: account,
+		ToAddress:   to.EncodeAddress(),
+		Amount:      float64(amount) / 100000000,
+		MinConf:     &minConf,
+	})
+	if err != nil {
+		return nil, err
+	}
+	hash, err := chainhash.NewHashFromStr(string(response))
+	if err != nil {
+		return nil, fmt.Errorf("Could not decode tx hash %s; got error %s", response, err.Error())
+	}
+
+	return hash, nil
+}
+
+// SendMany sends an rpc sendmany command.
+func (rpc *RPC) SendMany(account string, amounts map[btcutil.Address]uint64) (*chainhash.Hash, error) {
+	floatAmounts := make(map[string]float64)
+	for addr, amount := range amounts {
+		floatAmounts[addr.EncodeAddress()] = float64(amount) / 100000000
+	}
+	response, err := rpc.rpcCommand(btcjson.SendManyCmd{
+		FromAccount: account,
+		Amounts:     floatAmounts,
+		MinConf:     &minConf,
+	})
+	if err != nil {
+		return nil, err
+	}
+	hash, err := chainhash.NewHashFromStr(string(response))
+	if err != nil {
+		return nil, fmt.Errorf("Could not decode tx hash %s; got error %s", response, err.Error())
+	}
+
+	return hash, nil
 }
 
 func writeName(w *bytes.Buffer, name string) {
