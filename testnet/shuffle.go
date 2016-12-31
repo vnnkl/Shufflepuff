@@ -2,16 +2,23 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 )
 
+// Address contains the private key and the Bitcoin address derived from it.
+type Address struct {
+	private *btcutil.WIF
+	public  btcutil.Address
+}
+
 // Player represents a simulated player. He has some number of in keys
 // which will be merged to create the join transaction, one anon key
 // to be his anonymized output, and a change address.
 type Player struct {
-	in     []*btcutil.WIF
+	in     []*Address
 	anon   *btcutil.WIF
 	change btcutil.Address
 }
@@ -23,19 +30,34 @@ type Shuffle []Player
 // ToJSON encodes a Shuffle as a JSON string.
 func (sh Shuffle) ToJSON() string {
 	players := make([]struct {
-		in     []string
+		in []struct {
+			private string
+			public  string
+		}
 		anon   string
 		change string
 	}, 0, len(sh))
 
 	for _, player := range sh {
-		in := make([]string, 0, len(player.in))
-		for _, wif := range player.in {
-			in = append(in, wif.String())
+		in := make([]struct {
+			private string
+			public  string
+		}, 0, len(player.in))
+		for _, address := range player.in {
+			in = append(in, struct {
+				private string
+				public  string
+			}{
+				private: address.private.String(),
+				public:  address.public.EncodeAddress(),
+			})
 		}
 
 		players = append(players, struct {
-			in     []string
+			in []struct {
+				private string
+				public  string
+			}
 			anon   string
 			change string
 		}{
@@ -52,7 +74,10 @@ func (sh Shuffle) ToJSON() string {
 // DecodeShuffleFromJSON tries to create a Shuffle type given a json string.
 func DecodeShuffleFromJSON(JSON string) (Shuffle, error) {
 	var players []struct {
-		in     []string
+		in []struct {
+			private string
+			public  string
+		}
 		anon   string
 		change string
 	}
@@ -65,13 +90,21 @@ func DecodeShuffleFromJSON(JSON string) (Shuffle, error) {
 	shuffle := make([]Player, 0, len(players))
 
 	for _, player := range players {
-		in := make([]*btcutil.WIF, 0, len(player.in))
+		in := make([]*Address, 0, len(player.in))
 		for _, i := range player.in {
-			wif, err := btcutil.DecodeWIF(i)
+			wif, err := btcutil.DecodeWIF(i.private)
 			if err != nil {
 				return nil, err
 			}
-			in = append(in, wif)
+			address, err := btcutil.DecodeAddress(i.public, &chaincfg.TestNet3Params)
+			if err != nil {
+				return nil, err
+			}
+
+			in = append(in, &Address{
+				private: wif,
+				public:  address,
+			})
 		}
 
 		anon, err := btcutil.DecodeWIF(player.anon)
@@ -106,7 +139,7 @@ func GenerateShuffle(rpc *RPC, defaultAccount, testAccount string, inputNums []u
 
 	for _, inputNum := range inputNums {
 		player := Player{
-			in: make([]*btcutil.WIF, inputNum),
+			in: make([]*Address, inputNum),
 		}
 
 		for i := uint32(0); i < inputNum; i++ {
@@ -118,12 +151,12 @@ func GenerateShuffle(rpc *RPC, defaultAccount, testAccount string, inputNums []u
 			player.in[i] = wif
 		}
 
-		wif, err := rpc.CreateNewPrivKey(testAccount)
+		anon, err := rpc.CreateNewPrivKey(testAccount)
 		if err != nil {
 			return nil, err
 		}
 
-		player.anon = wif
+		player.anon = anon.private
 
 		address, err := rpc.CreateNewAddress(testAccount)
 		if err != nil {
@@ -136,4 +169,30 @@ func GenerateShuffle(rpc *RPC, defaultAccount, testAccount string, inputNums []u
 	}
 
 	return Shuffle(players), nil
+}
+
+// Fund funds the addresses in the Shuffle object from the default account.
+func (sh Shuffle) Fund(rpc *RPC, defaultAccount string, funds []uint64) error {
+	// TODO test whether sufficient funds exist.
+
+	if len(funds) != len(sh) {
+		return errors.New("Must have as many funds as players.")
+	}
+
+	to := make(map[btcutil.Address]uint64)
+	// create a map from address to amounts.
+	for i := 0; i < len(sh); i++ {
+		each := funds[i] / uint64(len(sh[i].in))
+
+		for _, address := range sh[i].in {
+			to[address.public] = each
+		}
+	}
+
+	_, err := rpc.SendMany(defaultAccount, to)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

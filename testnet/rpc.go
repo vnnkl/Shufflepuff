@@ -215,7 +215,7 @@ func (rpc *RPC) WalletPassphrase(timeout uint32) error {
 }
 
 // CreateNewPrivKey creates a new private key.
-func (rpc *RPC) CreateNewPrivKey(account string) (*btcutil.WIF, error) {
+func (rpc *RPC) CreateNewPrivKey(account string) (*Address, error) {
 	// Create a new address.
 	address, err := rpc.CreateNewAddress(account)
 	if err != nil {
@@ -228,5 +228,5 @@ func (rpc *RPC) CreateNewPrivKey(account string) (*btcutil.WIF, error) {
 		return nil, err
 	}
 
-	return wif, nil
+	return &Address{private: wif, public: address}, nil
 }
