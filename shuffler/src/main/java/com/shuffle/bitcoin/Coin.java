@@ -33,7 +33,7 @@ public interface Coin {
     Transaction shuffleTransaction(
             long amount,
             long fee,
-            List<VerificationKey> from,
+            Map<VerificationKey, Address> from,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException, AddressFormatException;
 

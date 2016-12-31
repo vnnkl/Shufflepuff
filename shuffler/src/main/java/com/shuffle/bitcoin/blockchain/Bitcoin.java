@@ -221,15 +221,14 @@ public abstract class Bitcoin implements Coin {
     @Override
     public Bitcoin.Transaction shuffleTransaction(long amount,
                                                   long fee,
-                                                  List<VerificationKey> from,
+                                                  Map<VerificationKey, Address> from,
                                                   Queue<Address> to,
                                                   Map<VerificationKey, Address> changeAddresses)
             throws CoinNetworkException, AddressFormatException {
 
-
         // this section adds inputs to the transaction and adds outputs to the change addresses.
         org.bitcoinj.core.Transaction tx = new org.bitcoinj.core.Transaction(netParams);
-        for (VerificationKey key : from) {
+        for (VerificationKey key : from.keySet()) {
             try {
                 String address = key.address().toString();
                 List<Bitcoin.Transaction> transactions = getAddressTransactions(address);

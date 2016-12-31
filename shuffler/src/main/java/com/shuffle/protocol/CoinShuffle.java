@@ -232,9 +232,10 @@ public class CoinShuffle {
             phase.set(Phase.VerificationAndSubmission);
             System.out.println("Player " + me + " reaches phase 5. ");
 
-            List<VerificationKey> inputs = new LinkedList<>();
+            Map<VerificationKey, Address> inputs = new HashMap<>();
             for (int i = 1; i <= N; i++) {
-                inputs.add(players.get(i));
+                VerificationKey key = players.get(i);
+                inputs.put(key, key.address());
             }
 
             // Generate the join transaction.

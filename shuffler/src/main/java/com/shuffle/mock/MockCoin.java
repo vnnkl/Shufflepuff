@@ -371,7 +371,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
     public Transaction shuffleTransaction(
             final long amount,
             final long fee,
-            List<VerificationKey> from,
+            Map<VerificationKey, Address> from,
             Queue<Address> to,
             Map<VerificationKey, Address> changeAddresses) throws CoinNetworkException {
 
@@ -382,7 +382,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         List<Output> outputs = new LinkedList<>();
 
         // Are there inputs big enough to make this transaction?
-        for (VerificationKey key : from) {
+        for (VerificationKey key : from.keySet()) {
             final Address address = key.address();
             final long value = valueHeld(address);
 
@@ -402,7 +402,7 @@ public class MockCoin implements com.shuffle.sim.MockCoin {
         outputs.addAll(changes);
 
         return new MockTransaction(inputs, outputs, 1, this,
-                new HashMap<Output, VerificationKey>());
+                new HashMap<>());
     }
 
     @Override
