@@ -20,7 +20,7 @@ type Player struct {
 // for all players.
 type Shuffle []Player
 
-// ToJSON encodes a Shuffle as a JSON string. 
+// ToJSON encodes a Shuffle as a JSON string.
 func (sh Shuffle) ToJSON() string {
 	players := make([]struct {
 		in     []string
@@ -92,4 +92,48 @@ func DecodeShuffleFromJSON(JSON string) (Shuffle, error) {
 	}
 
 	return Shuffle(shuffle), nil
+}
+
+// GenerateShuffle create a shuffle object by interacting over rpc with a wallet.
+func GenerateShuffle(rpc *RPC, defaultAccount, testAccount string, inputNums []uint32) (Shuffle, error) {
+	// Create test account.
+	err := rpc.CreateNewAccount(testAccount)
+	if err != nil {
+		return nil, err
+	}
+
+	players := make([]Player, 0, len(inputNums))
+
+	for _, inputNum := range inputNums {
+		player := Player{
+			in: make([]*btcutil.WIF, inputNum),
+		}
+
+		for i := uint32(0); i < inputNum; i++ {
+			wif, err := rpc.CreateNewPrivKey(testAccount)
+			if err != nil {
+				return nil, err
+			}
+
+			player.in[i] = wif
+		}
+
+		wif, err := rpc.CreateNewPrivKey(testAccount)
+		if err != nil {
+			return nil, err
+		}
+
+		player.anon = wif
+
+		address, err := rpc.CreateNewAddress(testAccount)
+		if err != nil {
+			return nil, err
+		}
+
+		player.change = address
+
+		players = append(players, player)
+	}
+
+	return Shuffle(players), nil
 }

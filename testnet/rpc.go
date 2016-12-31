@@ -103,9 +103,9 @@ func (rpc *RPC) rpcCommand(command interface{}) (string, error) {
 }
 
 // CreateNewAccount sends a createnewaccount command.
-func (rpc *RPC) CreateNewAccount(name string) error {
+func (rpc *RPC) CreateNewAccount(account string) error {
 	response, err := rpc.rpcCommand(btcjson.CreateNewAccountCmd{
-		Account: name,
+		Account: account,
 	})
 	if err != nil {
 		return err
@@ -119,9 +119,11 @@ func (rpc *RPC) CreateNewAccount(name string) error {
 	return nil
 }
 
-// CreateNewAddress sends an rpc createnewaddress command.
-func (rpc *RPC) CreateNewAddress() (btcutil.Address, error) {
-	response, err := rpc.rpcCommand(btcjson.GetNewAddressCmd{})
+// CreateNewAddress sends an rpc getnewaddress command.
+func (rpc *RPC) CreateNewAddress(account string) (btcutil.Address, error) {
+	response, err := rpc.rpcCommand(btcjson.GetNewAddressCmd{
+		Account: &account,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -176,9 +178,11 @@ func (rpc *RPC) SendMany(account string, amounts map[btcutil.Address]uint64) (*c
 	return hash, nil
 }
 
-// DumpPrivateKey sends a dumpprivkey command.
-func (rpc *RPC) DumpPrivateKey(address btcutil.Address) (*btcutil.WIF, error) {
-	response, err := rpc.rpcCommand(btcjson.DumpPrivKeyCmd{})
+// dumpPrivateKey sends a dumpprivkey command.
+func (rpc *RPC) dumpPrivateKey(address btcutil.Address) (*btcutil.WIF, error) {
+	response, err := rpc.rpcCommand(btcjson.DumpPrivKeyCmd{
+		Address: address.EncodeAddress(),
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -208,4 +212,21 @@ func (rpc *RPC) WalletPassphrase(timeout uint32) error {
 	}
 
 	return nil
+}
+
+// CreateNewPrivKey creates a new private key.
+func (rpc *RPC) CreateNewPrivKey(account string) (*btcutil.WIF, error) {
+	// Create a new address.
+	address, err := rpc.CreateNewAddress(account)
+	if err != nil {
+		return nil, err
+	}
+
+	// Then get the private key.
+	wif, err := rpc.dumpPrivateKey(address)
+	if err != nil {
+		return nil, err
+	}
+
+	return wif, nil
 }
