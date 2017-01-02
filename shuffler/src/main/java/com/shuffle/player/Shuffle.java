@@ -28,7 +28,6 @@ import com.shuffle.mock.MockNetwork;
 import com.shuffle.mock.MockProtobuf;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
-import com.shuffle.monad.Either;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
@@ -638,7 +637,7 @@ public class Shuffle {
                 Long vout;
                 Sha256Hash transactionHash;
                 try {
-                    vout = (Long) o.get("vout");
+                    vout = Long.parseLong((String) o.get("vout"));
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("vout") + " as Long");
                 }
