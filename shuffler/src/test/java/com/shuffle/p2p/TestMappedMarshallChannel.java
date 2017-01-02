@@ -9,7 +9,12 @@ import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
+import com.shuffle.mock.InsecureRandom;
+import com.shuffle.mock.MockCrypto;
+import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
+import com.shuffle.player.Message;
+import com.shuffle.player.Messages;
 import com.shuffle.player.Payload;
 
 import org.junit.After;
@@ -19,9 +24,11 @@ import org.junit.Test;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * A test of MappedChannel in conjunction with TcpChannel and MarshallChannel
@@ -174,7 +181,7 @@ public class TestMappedMarshallChannel {
 	}
 	
 	@Test
-	public void testSendMessages() throws InterruptedException, IOException {
+	public void testSendMessages() throws InterruptedException, IOException, NoSuchAlgorithmException {
 		
 		// Alice gets a peer by using Bob's VerificationKey.
 		// The returned Peer object represents Bob.
@@ -194,9 +201,41 @@ public class TestMappedMarshallChannel {
 		 */
 		aliceToBobSession = aliceToBob.openSession(aliceSend);
 
-		// ----
-		// construct a Packet<Verification, Payload> for Alice to send.
-		Packet<VerificationKey, Payload> p = new Packet<>();
+		// TODO
+		Bytestring session = new Bytestring("test mapped marshall".getBytes());
+
+		Connect<VerificationKey, Packet<VerificationKey, Payload>> aliceConnect = 
+				new Connect<>(aliceMarshall, new MockCrypto(new InsecureRandom(5000)));
+
+		SortedSet<VerificationKey> aliceConnectTo = new TreeSet<>();
+		aliceConnectTo.add(bobKey);
+		
+		Collector<VerificationKey, Packet<VerificationKey, Payload>> aliceCollector = 
+				aliceConnect.connect(aliceConnectTo, 3);
+		
+		Messages aliceMessages = new Messages(session, new MockSigningKey(5000), aliceCollector.connected, aliceCollector.inbox, m);
+		Message aliceMessage = new Message(aliceMessages);
+		Payload alicePayload = new Payload(null, aliceMessage);
+		Packet<VerificationKey, Payload> alicePacket = new Packet<>(session, aliceKey, bobKey, 0, alicePayload);
+		
+		Connect<VerificationKey, Packet<VerificationKey, Payload>> bobConnect =
+				new Connect<>(bobMarshall, new MockCrypto(new InsecureRandom(5001)));
+		
+		SortedSet<VerificationKey> bobConnectTo = new TreeSet<>();
+		bobConnectTo.add(aliceKey);
+		
+		Collector<VerificationKey, Packet<VerificationKey, Payload>> bobCollector = 
+				bobConnect.connect(bobConnectTo, 3);
+		
+		Messages bobMessages = new Messages(session, new MockSigningKey(5001), aliceCollector.connected, aliceCollector.inbox, m);
+		Message bobMessage = new Message(bobMessages);
+		Payload bobPayload = new Payload(null, bobMessage);
+		Packet<VerificationKey, Payload> bobPacket = new Packet<>(session, bobKey, aliceKey, 0, bobPayload);
+		
+		// Alice sends a packet containing the message "" to Bob
+		aliceToBobSession.send(alicePacket);
+		// Bob send a packet containing the message "" to Alice
+		bobToAliceSession.send(bobPacket);
 		
 	}
 	
