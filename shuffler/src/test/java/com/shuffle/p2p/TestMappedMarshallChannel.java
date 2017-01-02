@@ -4,15 +4,18 @@ package com.shuffle.p2p;
  * Created by nsa on 1/2/17.
  */
 
+import com.shuffle.bitcoin.SigningKey;
 import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.Send;
 import com.shuffle.chan.packet.JavaMarshaller;
 import com.shuffle.chan.packet.Marshaller;
 import com.shuffle.chan.packet.Packet;
+import com.shuffle.chan.packet.Signed;
 import com.shuffle.mock.InsecureRandom;
 import com.shuffle.mock.MockCrypto;
 import com.shuffle.mock.MockSigningKey;
 import com.shuffle.mock.MockVerificationKey;
+import com.shuffle.player.JavaShuffleMarshaller;
 import com.shuffle.player.Message;
 import com.shuffle.player.Messages;
 import com.shuffle.player.Payload;
@@ -37,6 +40,9 @@ import java.util.TreeSet;
  */
 
 public class TestMappedMarshallChannel {
+	
+	// The object that creates the Signed Packet Marshaller
+	Messages.ShuffleMarshaller sm;
 	
 	// Packet Marshaller for transforming Bytestring messages to Packets
 	// Alice & Bob can use the same Marshaller object
@@ -63,31 +69,33 @@ public class TestMappedMarshallChannel {
 	MappedChannel<VerificationKey, InetSocketAddress> mappedBob;
 	
 	// Alice & Bob's respective MarshallChannels
-	MarshallChannel<VerificationKey, Packet<VerificationKey, Payload>> aliceMarshall;
-	MarshallChannel<VerificationKey, Packet<VerificationKey, Payload>> bobMarshall;
+	MarshallChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> aliceMarshall;
+	MarshallChannel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> bobMarshall;
 	
 	// Alice & Bob's respective MarshallConnections
 	Connection<VerificationKey> aliceConnection;
 	Connection<VerificationKey> bobConnection;
 	
 	// Alice & Bob's Send objects - this is where their Listeners pass received messages
-	Send<Packet<VerificationKey, Payload>> aliceSend;
-	Send<Packet<VerificationKey, Payload>> bobSend;
+	Send<Signed<Packet<VerificationKey, Payload>>> aliceSend;
+	Send<Signed<Packet<VerificationKey, Payload>>> bobSend;
 	
 	// Alice & Bob's respective Peer objects - these represent the Peer they are connected to
-	Peer<VerificationKey, Packet<VerificationKey, Payload>> aliceToBob;
-	Peer<VerificationKey, Packet<VerificationKey, Payload>> bobToAlice;
+	Peer<VerificationKey, Signed<Packet<VerificationKey, Payload>>> aliceToBob;
+	Peer<VerificationKey, Signed<Packet<VerificationKey, Payload>>> bobToAlice;
 	
 	// Alice & Bob's respective Session objects - these represent a Session object that can send messages to
 	// the connected Peer
-	Session<VerificationKey, Packet<VerificationKey, Payload>> aliceToBobSession;
-	Session<VerificationKey, Packet<VerificationKey, Payload>> bobToAliceSession;
+	Session<VerificationKey, Signed<Packet<VerificationKey, Payload>>> aliceToBobSession;
+	Session<VerificationKey, Signed<Packet<VerificationKey, Payload>>> bobToAliceSession;
 	
 	@Before
 	public void setup() throws InterruptedException, IOException {
 		
+		sm = new JavaShuffleMarshaller();
+		
 		// Alice & Bob's collective Packet Marshaller
-		m = new JavaMarshaller<>();
+		m = sm.packetMarshaller();
 		
 		// Alice uses port 5000 for TCPChannel
 		aliceKey = new MockVerificationKey(5000);
@@ -118,16 +126,16 @@ public class TestMappedMarshallChannel {
 		mappedBob = new MappedChannel<>(bobTcp, bobMap, bobKey);
 		
 		// Alice & Bob create their own MarshallChannel
-		aliceMarshall = new MarshallChannel<>(mappedAlice, m);
-		bobMarshall = new MarshallChannel<>(mappedBob, m);
+		aliceMarshall = new MarshallChannel<>(mappedAlice, sm.signedMarshaller());
+		bobMarshall = new MarshallChannel<>(mappedBob, sm.signedMarshaller());
 
 		/**
 		 * Here Alice creates the Send object and the Listener object
 		 */
-		aliceSend = new Send<Packet<VerificationKey, Payload>>() {
+		aliceSend = new Send<Signed<Packet<VerificationKey, Payload>>>() {
 			@Override
-			public boolean send(Packet<VerificationKey, Payload> verificationKeyPayloadPacket) throws InterruptedException, IOException {
-				System.out.println("Alice received: " + verificationKeyPayloadPacket.payload + " \n from: " + verificationKeyPayloadPacket.from);
+			public boolean send(Signed<Packet<VerificationKey, Payload>> verificationKeyPayloadPacket) throws InterruptedException, IOException {
+				System.out.println("Alice received: " + verificationKeyPayloadPacket.message.payload + " \n from: " + verificationKeyPayloadPacket.message.from);
 				return true;
 			}
 
@@ -139,9 +147,9 @@ public class TestMappedMarshallChannel {
 			}
 		};
 		
-		Listener<VerificationKey, Packet<VerificationKey, Payload>> aliceListener = new Listener<VerificationKey, Packet<VerificationKey, Payload>>() {
+		Listener<VerificationKey, Signed<Packet<VerificationKey, Payload>>> aliceListener = new Listener<VerificationKey, Signed<Packet<VerificationKey, Payload>>>() {
 			@Override
-			public Send<Packet<VerificationKey, Payload>> newSession(Session<VerificationKey, Packet<VerificationKey, Payload>> session) throws InterruptedException {
+			public Send<Signed<Packet<VerificationKey, Payload>>> newSession(Session<VerificationKey, Signed<Packet<VerificationKey, Payload>>> session) throws InterruptedException {
 				System.out.println("Alice's listener caught: " + session);
 				return aliceSend;
 			}
@@ -150,10 +158,10 @@ public class TestMappedMarshallChannel {
 		/**
 		 * Here Bob creates the Send object and the Listener object
 		 */
-		bobSend = new Send<Packet<VerificationKey, Payload>>() {
+		bobSend = new Send<Signed<Packet<VerificationKey, Payload>>>() {
 			@Override
-			public boolean send(Packet<VerificationKey, Payload> verificationKeyPayloadPacket) throws InterruptedException, IOException {
-				System.out.println("Bob received: " + verificationKeyPayloadPacket.payload + " \n from: " + verificationKeyPayloadPacket.from);
+			public boolean send(Signed<Packet<VerificationKey, Payload>> verificationKeyPayloadPacket) throws InterruptedException, IOException {
+				System.out.println("Bob received: " + verificationKeyPayloadPacket.message.payload + " \n from: " + verificationKeyPayloadPacket.message.from);
 				return true;
 			}
 
@@ -163,9 +171,9 @@ public class TestMappedMarshallChannel {
 			}
 		};
 		
-		Listener<VerificationKey, Packet<VerificationKey, Payload>> bobListener = new Listener<VerificationKey, Packet<VerificationKey, Payload>>() {
+		Listener<VerificationKey, Signed<Packet<VerificationKey, Payload>>> bobListener = new Listener<VerificationKey, Signed<Packet<VerificationKey, Payload>>>() {
 			@Override
-			public Send<Packet<VerificationKey, Payload>> newSession(Session<VerificationKey, Packet<VerificationKey, Payload>> session) throws InterruptedException {
+			public Send<Signed<Packet<VerificationKey, Payload>>> newSession(Session<VerificationKey, Signed<Packet<VerificationKey, Payload>>> session) throws InterruptedException {
 				// We initialize bobToAliceSession here since Alice initiated the connection & sent the first message.
 				bobToAliceSession = session;
 				System.out.println("Bob's listener caught: " + session);
@@ -204,33 +212,41 @@ public class TestMappedMarshallChannel {
 		// TODO
 		Bytestring session = new Bytestring("test mapped marshall".getBytes());
 
-		Connect<VerificationKey, Packet<VerificationKey, Payload>> aliceConnect = 
+		Connect<VerificationKey, Signed<Packet<VerificationKey, Payload>>> aliceConnect = 
 				new Connect<>(aliceMarshall, new MockCrypto(new InsecureRandom(5000)));
 
 		SortedSet<VerificationKey> aliceConnectTo = new TreeSet<>();
 		aliceConnectTo.add(bobKey);
 		
-		Collector<VerificationKey, Packet<VerificationKey, Payload>> aliceCollector = 
+		Collector<VerificationKey, Signed<Packet<VerificationKey, Payload>>> aliceCollector = 
 				aliceConnect.connect(aliceConnectTo, 3);
+
+		SigningKey aliceSk = new MockSigningKey(5000);
 		
-		Messages aliceMessages = new Messages(session, new MockSigningKey(5000), aliceCollector.connected, aliceCollector.inbox, m);
+		Messages aliceMessages = new Messages(session, aliceSk, aliceCollector.connected, aliceCollector.inbox, sm);
 		Message aliceMessage = new Message(aliceMessages);
+		aliceMessage.attach("Hello Bob!");
 		Payload alicePayload = new Payload(null, aliceMessage);
-		Packet<VerificationKey, Payload> alicePacket = new Packet<>(session, aliceKey, bobKey, 0, alicePayload);
+		Signed<Packet<VerificationKey, Payload>> alicePacket = new Signed<>(
+				new Packet<>(session, aliceKey, bobKey, 0, alicePayload), aliceSk, m);
 		
-		Connect<VerificationKey, Packet<VerificationKey, Payload>> bobConnect =
+		Connect<VerificationKey, Signed<Packet<VerificationKey, Payload>>> bobConnect =
 				new Connect<>(bobMarshall, new MockCrypto(new InsecureRandom(5001)));
 		
 		SortedSet<VerificationKey> bobConnectTo = new TreeSet<>();
 		bobConnectTo.add(aliceKey);
 		
-		Collector<VerificationKey, Packet<VerificationKey, Payload>> bobCollector = 
+		Collector<VerificationKey, Signed<Packet<VerificationKey, Payload>>> bobCollector = 
 				bobConnect.connect(bobConnectTo, 3);
 		
-		Messages bobMessages = new Messages(session, new MockSigningKey(5001), aliceCollector.connected, aliceCollector.inbox, m);
+		SigningKey bobSk = new MockSigningKey(5001);
+		
+		Messages bobMessages = new Messages(session, bobSk, aliceCollector.connected, aliceCollector.inbox, sm);
 		Message bobMessage = new Message(bobMessages);
+		bobMessage.attach("Alice response");
 		Payload bobPayload = new Payload(null, bobMessage);
-		Packet<VerificationKey, Payload> bobPacket = new Packet<>(session, bobKey, aliceKey, 0, bobPayload);
+		Signed<Packet<VerificationKey, Payload>> bobPacket = new Signed<>(
+				new Packet<>(session, bobKey, aliceKey, 0, bobPayload), bobSk, m);
 		
 		// Alice sends a packet containing the message "" to Bob
 		aliceToBobSession.send(alicePacket);
