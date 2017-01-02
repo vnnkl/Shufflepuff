@@ -17,6 +17,7 @@ public class HistorySend<X> implements Send<X> {
 
     @Override
     public synchronized boolean send(X x) throws InterruptedException, IOException {
+        System.out.println("HSend \n" + x);
         boolean sent = chan.send(x);
 
         if (sent) {

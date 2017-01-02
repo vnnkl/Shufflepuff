@@ -218,7 +218,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
                 if (socket == null) {
                     throw new NullPointerException();
                 }
-
+				System.out.println("\n\n\n\n\n\n\n\n\nSOCKET S\n\n" + socket);
                 this.socket = socket;
                 in = socket.getInputStream();
             }
@@ -227,6 +227,12 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
             public synchronized boolean send(Bytestring message) throws IOException {
                 // Don't allow sending messages while we're opening or closing the channel.
                 synchronized (lock) { }
+                System.out.println("\n\nTcp m" + message);
+				System.out.println(socket);
+				//System.out.println(socket.getLocalAddress());
+				//System.out.println(socket.getInetAddress());
+				//System.out.println(socket.getLocalSocketAddress());
+				//System.out.println(socket.getRemoteSocketAddress());
 
                 if (socket == null || socket.isClosed()) {
                     return false;
@@ -245,6 +251,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
 
             @Override
             public synchronized void close() {
+				//if (1==1) throw new NullPointerException();
                 if (socket == null) {
                     return;
                 }
@@ -285,7 +292,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
         }
 
         @Override
-        public void run() {
+        public synchronized void run() {
             while (true) {
                 try {
                     // Read in the message header, which tells us
@@ -334,7 +341,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
         }
 
         @Override
-        public void run() {
+        public synchronized void run() {
             while (true) {
                 try {
                     // New connection found.
@@ -395,7 +402,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
 
         @Override
         // TODO should close all connections and stop listening.
-        public void close() {
+        public synchronized void close() {
             if (closed) return;
 
             synchronized (lock) {
@@ -420,7 +427,7 @@ public class TcpChannel implements Channel<InetSocketAddress, Bytestring> {
     }
 
     @Override
-    public Connection<InetSocketAddress> open(
+    public synchronized Connection<InetSocketAddress> open(
             Listener<InetSocketAddress, Bytestring> listener
     ) throws IOException {
         if (listener == null) {

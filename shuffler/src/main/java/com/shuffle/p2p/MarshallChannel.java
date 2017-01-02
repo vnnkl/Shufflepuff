@@ -42,8 +42,10 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public boolean send(X x) throws InterruptedException, IOException {
+        public synchronized boolean send(X x) throws InterruptedException, IOException {
+			System.out.println("\n\nX " + x);
             Bytestring b = m.marshall(x);
+			System.out.println("\n\nB " + b);
             return b != null && s.send(b);
         }
 
@@ -61,8 +63,9 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public boolean send(Bytestring b) throws InterruptedException,IOException {
+        public synchronized boolean send(Bytestring b) throws InterruptedException,IOException {
             X x = null;
+			System.out.println("\n\nX " + x);
             try {
                 x = m.unmarshall(b);
             } catch (FormatException e) {
@@ -70,6 +73,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
                 log.warn("Invalid message " + b + " sent: " + e.getMessage());
                 return false;
             }
+            System.out.println("\n\nB " + b);
             return x != null && z.send(x);
         }
 
@@ -92,7 +96,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public Session<Address, X> openSession(Send<X> send) throws InterruptedException, IOException {
+        public synchronized Session<Address, X> openSession(Send<X> send) throws InterruptedException, IOException {
             if (send == null) return null;
             Session<Address, Bytestring> s = p.openSession(new UnmarshallSend(send));
             if (s == null) return null;
@@ -138,7 +142,7 @@ public class MarshallChannel<Address, X extends Serializable> implements Channel
         }
 
         @Override
-        public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
+        public synchronized Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
             return new UnmarshallSend(l.newSession(new MarshallSession(session)));
         }
     }

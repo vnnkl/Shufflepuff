@@ -67,27 +67,33 @@ public class Mailbox {
     // Send a message into the network.
     public void send(Message m, Phase phase, VerificationKey to)
             throws IOException, InterruptedException, FormatException {
-
+		
         // Don't send anything to a nonexistent player.
         if (!players.contains(to)) {
+			System.out.println("NO\n\nNO--");
             return;
         }
+		System.out.println("SEND\n\nSEND~~~\n\n");
+		Packet packet = null;
+		if (!to.equals(me)) {
+			packet = m.send(phase, to);
+		}
 
-        Packet packet = m.send(phase, to);
-
-        // If this is a message to myself, don't send it. Just pretend we received it.
-        // This is useful later when we have to collect all blame messages later.
+		// TODO comment
+		/*
         if (to.equals(me)) {
+			System.out.println("ME\n\nME\n\n~~");
             history.add(packet);
             if (packet.phase() == Phase.Blame) {
                 blame.add(packet.payload().readBlame().reason);
             }
         }
+        */
     }
 
     public void broadcast(Message message, Phase phase)
             throws IOException, InterruptedException, FormatException {
-
+		
         for (VerificationKey to : players) {
             send(message, phase, to);
         }
@@ -198,7 +204,7 @@ public class Mailbox {
     }
 
     // Receive messages from a set of players, which may come in any order.
-    private Map<VerificationKey, Message> receiveFromMultiple(
+    private synchronized Map<VerificationKey, Message> receiveFromMultiple(
             Set<VerificationKey> from,
             Phase expectedPhase,
             boolean ignoreBlame // Whether to stop if a blame message is received.
@@ -244,7 +250,7 @@ public class Mailbox {
         return messages;
     }
 
-    public Map<VerificationKey, Message> receiveFromMultiple(
+    public synchronized Map<VerificationKey, Message> receiveFromMultiple(
             Set<VerificationKey> from,
             Phase expectedPhase
     )

@@ -43,7 +43,7 @@ public class JavaMarshaller<X extends Serializable> implements
         } catch (ClassNotFoundException | IOException e) {
             throw new FormatException("Could not unmarshall " + string + " got error " + e);
         }
-
+         
         try {
             return (X)obj;
         } catch (ClassCastException e) {

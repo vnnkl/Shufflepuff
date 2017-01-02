@@ -184,7 +184,22 @@ public class Messages implements MessageFactory {
 
             HistorySend<Signed<Packet<VerificationKey, Payload>>> h = new HistorySend<>(z.getValue());
             Send<Packet<VerificationKey, Payload>> signer = new SigningSend<>(h, pm, me);
+			
+			System.out.println(z);
+			System.out.println(k);
+			System.out.println(z.getValue());
+			System.out.println(pm);
+			System.out.println(me);
+			System.out.println(signer);
+			System.out.println(h);
+			System.out.println(session);
+			System.out.println(vk);
+			
+			if (k == null) {
+				throw new NullPointerException("ESCAPE LEAVE NO");
+			}
             Send<Payload> p = new OutgoingPacketSend<>(signer, session, vk, k);
+			System.out.println(p);
 
             this.net.put(k, new Outgoing(p, h, vk));
         }
@@ -233,9 +248,19 @@ public class Messages implements MessageFactory {
         Outgoing x = m.messages.net.get(to);
 
         if (x == null) return null;
+        System.out.println("X\nX\n~");
+		
+		for (Map.Entry<VerificationKey, Outgoing> entry : net.entrySet()) {
+			System.out.println(entry.getKey());
+			System.out.println(entry.getKey().address());
+		}
+		
+		System.out.println(new Payload(phase, m));
+		System.out.println(to);
 
         // About to send message.
         if (!x.out.send(new Payload(phase, m))) {
+			System.out.println("S\nS\n~");
             return null;
         }
 

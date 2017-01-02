@@ -339,8 +339,9 @@ public class Message implements com.shuffle.protocol.message.Message, Serializab
     public com.shuffle.protocol.message.Packet send(Phase phase, VerificationKey to)
             throws InterruptedException, IOException {
 
+        System.out.println("1\n1~\n");
         if (messages == null) return null;
-
+		System.out.println("2\n2~\n");
         return messages.send(this, phase, to);
     }
 

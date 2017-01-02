@@ -1,6 +1,5 @@
 package com.shuffle.p2p;
 
-import com.shuffle.bitcoin.VerificationKey;
 import com.shuffle.chan.BasicChan;
 import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
@@ -46,7 +45,8 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		}
 
 		@Override
-		public boolean send(Bytestring b) throws InterruptedException, IOException {
+		public synchronized boolean send(Bytestring b) throws InterruptedException, IOException {
+			System.out.println("\n\nMap B" + b);
 			return inner.send(b);
 		}
 
@@ -72,7 +72,7 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		}
 
 		@Override
-		public boolean send(Bytestring message) throws InterruptedException, IOException {
+		public synchronized boolean send(Bytestring message) throws InterruptedException, IOException {
 			if (messageCount < 2) {
 				messageCount++;
 				if (new String(message.bytes).equals("received")) {
@@ -104,7 +104,7 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		}
 
 		@Override
-		public boolean send(Bytestring message) throws InterruptedException, IOException {
+		public synchronized boolean send(Bytestring message) throws InterruptedException, IOException {
 			if (messageCount == 0) {
 				messageCount++;
 				Identity you = null;
@@ -145,7 +145,7 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		}
 
 		@Override
-		public Session<Identity, Bytestring> openSession(Send<Bytestring> send) throws InterruptedException, IOException {
+		public synchronized Session<Identity, Bytestring> openSession(Send<Bytestring> send) throws InterruptedException, IOException {
 			if (send == null) return null;
 			Chan<Boolean> chan = new BasicChan<>(1);
 
@@ -209,13 +209,13 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 		}
 
 		@Override
-		public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
+		public synchronized Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
 			return new MappedBobSend(inner, session);
 		}
 	}
 
 	@Override
-	public Connection<Identity> open(Listener<Identity, Bytestring> listener) throws InterruptedException, IOException {
+	public synchronized Connection<Identity> open(Listener<Identity, Bytestring> listener) throws InterruptedException, IOException {
 		Connection<Address> c = inner.open(new MappedListener(listener));
 		if (c == null) return null;
 
