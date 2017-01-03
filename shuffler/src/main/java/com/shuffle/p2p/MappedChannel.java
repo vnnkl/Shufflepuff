@@ -1,7 +1,5 @@
 package com.shuffle.p2p;
 
-import com.shuffle.chan.BasicChan;
-import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
 
 import java.io.IOException;
@@ -11,23 +9,39 @@ import java.util.Map;
 /**
  * Created by Daniel Krawisz on 5/27/16.
  */
-public class MappedChannel<Identity, Address> implements Channel<Identity, Bytestring> {
-    private final Channel<Address, Bytestring> inner;
-    private final Map<Identity, Address> hosts;
-    private final Map<Address, Identity> inverse = new HashMap<>();
+public class MappedChannel<Identity> implements Channel<Identity, Bytestring> {
+    private final Channel<Object, Bytestring> inner;
+    private final Map<Identity, Object> hosts;
+    private final Map<Object, Identity> inverse = new HashMap<>();
 	private final Identity me;
 
-    public MappedChannel(Channel<Address, Bytestring> inner, Map<Identity, Address> hosts, Identity me) {
+    // You can add two or more MappedChannels together like a linked list if you
+    // have two different kinds of channels that you want to use at the same time.
+    private final MappedChannel<Identity> next;
+
+    public MappedChannel(Channel inner, Map hosts, Identity me) {
+        if (inner == null || hosts == null || me == null) throw new NullPointerException();
+
         this.inner = inner;
         this.hosts = hosts;
 		this.me = me;
+        this.next = null;
+    }
+
+    public MappedChannel(Channel inner, Map hosts, Identity me, MappedChannel<Identity> next) {
+        if (inner == null || hosts == null || me == null) throw new NullPointerException();
+
+        this.inner = inner;
+        this.hosts = hosts;
+        this.me = me;
+        this.next = next;
     }
 
     private class MappedSession implements Session<Identity, Bytestring> {
-        private final Session<Address, Bytestring> inner;
+        private final Session<Object, Bytestring> inner;
         private final Identity identity;
 
-        private MappedSession(Session<Address, Bytestring> inner, Identity identity) {
+        private MappedSession(Session<Object, Bytestring> inner, Identity identity) {
             if (inner == null || identity == null) throw new NullPointerException();
 
             this.inner = inner;
@@ -60,62 +74,33 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
         }
     }
 	
-	private class MappedAliceSend implements Send<Bytestring> {
-		private final Send<Bytestring> z;
-		private int messageCount = 0;
-		private Send<Boolean> chan;
-		
-		private MappedAliceSend(Send<Bytestring> z, Send<Boolean> chan) {
-			this.z = z;
-			this.chan = chan;
-		}
-		
-		@Override
-		public boolean send(Bytestring message) throws InterruptedException, IOException {
-			if (messageCount < 2) {
-				messageCount++;
-				if (new String(message.bytes).equals("received")) {
-					chan.send(true);
-					return true;
-				}
-				return true;
-			}
-
-			return this.z.send(message);
-		}
-		
-		@Override
-		public void close() {
-			z.close();
-			chan.close();
-		}
-	}
-	
 	private class MappedBobSend implements Send<Bytestring> {
 		private final Listener<Identity, Bytestring> l;
-		private final Session<Address, Bytestring> s;
-		private int messageCount = 0;
+		private final Session<Object, Bytestring> s;
+		private boolean initialized = false;
 		private Send<Bytestring> z;
 		
-		private MappedBobSend(Listener<Identity, Bytestring> l, Session<Address, Bytestring> s) {
+		private MappedBobSend(Listener<Identity, Bytestring> l, Session<Object, Bytestring> s) {
 			this.l = l;
 			this.s = s;
 		}
 		
 		@Override
 		public boolean send(Bytestring message) throws InterruptedException, IOException {
-			if (messageCount == 0) {
-				messageCount++;
+			if (!initialized) {
 				Identity you = null;
-				for (Map.Entry<Address, Identity> e : inverse.entrySet()) {
-					if (e.getValue().toString().equals(new String(message.bytes))) {
+                String msg = new String(message.bytes);
+                System.out.println("+++ Received " + msg + " ; " + inverse);
+				for (Map.Entry<Object, Identity> e : inverse.entrySet()) {
+					if (e.getValue().toString().equals(msg)) {
 						you = e.getValue();
 						break;
 					}
 				}
 				if (you == null) throw new NullPointerException();
 				this.z = l.newSession(new MappedSession(s, you));
-				return this.s.send(new Bytestring("received".getBytes()));
+                initialized = true;
+				return true;
 			}
 
 			return this.z.send(message);
@@ -128,10 +113,10 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 	}
 
     private class MappedPeer implements Peer<Identity,Bytestring> {
-        private final Peer<Address, Bytestring> inner;
+        private final Peer<Object, Bytestring> inner;
         private final Identity identity;
 
-        private MappedPeer(Peer<Address, Bytestring> inner, Identity identity) {
+        private MappedPeer(Peer<Object, Bytestring> inner, Identity identity) {
             if (inner == null || identity == null) throw new NullPointerException();
 
             this.inner = inner;
@@ -146,22 +131,12 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
         @Override
         public Session<Identity, Bytestring> openSession(Send<Bytestring> send) throws InterruptedException, IOException {
             if (send == null) return null;
-			Chan<Boolean> chan = new BasicChan<>(1);
-			
-			MappedAliceSend alice = new MappedAliceSend(send, chan);
-			Session<Address, Bytestring> session = inner.openSession(alice);
+			Session<Object, Bytestring> session = inner.openSession(send);
 			if (session == null) return null;
 			
 			MappedSession s = new MappedSession(session, identity);
 			
 			session.send(new Bytestring(myIdentity().toString().getBytes()));
-			
-			Boolean result = chan.receive();
-			if (!result) {
-				chan.close();
-				session.close();
-				return null;
-			}
 			
 			return s;
         }
@@ -174,23 +149,41 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
 
     @Override
     public Peer<Identity, Bytestring> getPeer(Identity you) {
-        Address addr = hosts.get(you);
-        if (addr == null) return null;
+        Object addr = hosts.get(you);
+        System.out.println("Get peer " + you + "; " + hosts);
+        if (addr == null) {
+            if (next == null) {
+                return null;
+            } else {
+                System.out.println("not found; calling next.");
+                return next.getPeer(you);
+            }
+        }
 
         return new MappedPeer(inner.getPeer(addr), you);
     }
 
-    public class MappedConnection implements Connection<Identity> {
-        private final Connection<Address> connection;
+    private class MappedConnection implements Connection<Identity> {
+        private final Connection connection;
+        private final Connection next;
 
-        public MappedConnection(Connection<Address> connection) {
+        MappedConnection(Connection<Object> connection) {
             this.connection = connection;
+            next = null;
+        }
+
+        MappedConnection(Connection<Object> connection, Connection next) {
+            this.connection = connection;
+            this.next = next;
         }
 
         @Override
         public void close() {
             if (connection != null) {
                 connection.close();
+            }
+            if (next != null) {
+                next.close();
             }
         }
 
@@ -200,7 +193,7 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
         }
     }
 
-    private class MappedListener implements Listener<Address, Bytestring> {
+    private class MappedListener implements Listener<Object, Bytestring> {
         private final Listener<Identity, Bytestring> inner;
 
         private MappedListener(Listener<Identity, Bytestring> inner) {
@@ -208,17 +201,17 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
         }
 
         @Override
-        public Send<Bytestring> newSession(Session<Address, Bytestring> session) throws InterruptedException {
+        public Send<Bytestring> newSession(Session<Object, Bytestring> session) throws InterruptedException {
             return new MappedBobSend(inner, session);
         }
     }
 
     @Override
     public Connection<Identity> open(Listener<Identity, Bytestring> listener) throws InterruptedException, IOException {
-        Connection<Address> c = inner.open(new MappedListener(listener));
+        Connection c = inner.open(new MappedListener(listener));
         if (c == null) return null;
 
-        for (Map.Entry<Identity, Address> e : hosts.entrySet()) {
+        for (Map.Entry<Identity, Object> e : hosts.entrySet()) {
             if (inverse.containsKey(e.getValue())) {
                 hosts.remove(e.getKey());
             }
@@ -226,10 +219,15 @@ public class MappedChannel<Identity, Address> implements Channel<Identity, Bytes
             inverse.put(e.getValue(), e.getKey());
         }
 
+        if (next != null) {
+            Connection n = next.open(listener);
+            return new MappedConnection(c, n);
+        }
+
         return new MappedConnection(c);
     }
 	
-	public Identity myIdentity() {
+	Identity myIdentity() {
 		return me;
 	}
 

@@ -602,10 +602,8 @@ public class Shuffle {
 		
 		Channel<VerificationKey, Signed<Packet<VerificationKey, Payload>>> channel =
 				new MarshallChannel<>(
-						new MappedChannel<>(
-								new TcpChannel(
-										new InetSocketAddress(InetAddress.getLocalHost(), (int) port)
-								),
+						new MappedChannel<VerificationKey>(
+								new TcpChannel(new InetSocketAddress(InetAddress.getLocalHost(), (int) port)),
 						peers, vk),
 				m.signedMarshaller());
 		
