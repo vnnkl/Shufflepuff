@@ -214,7 +214,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
                 peers.remove();
                 continue;
             }
-            
+
             Peer<Identity, P> peer = channel.getPeer(identity);
 
             if (peer == null) {
