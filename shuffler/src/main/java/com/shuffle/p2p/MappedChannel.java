@@ -215,7 +215,7 @@ public class MappedChannel<Identity> implements Channel<Identity, Bytestring> {
             if (inverse.containsKey(e.getValue())) {
                 hosts.remove(e.getKey());
             }
-
+			
             inverse.put(e.getValue(), e.getKey());
         }
 
