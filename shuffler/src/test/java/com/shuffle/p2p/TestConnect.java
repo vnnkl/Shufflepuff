@@ -268,14 +268,14 @@ public class TestConnect {
 						int port = 5000;
 						final Map<Integer, InetSocketAddress> hosts = new HashMap<>();
 						
-						for (int j = 0; j < n; j ++) {
+						for (int j = 1; j <= n; j ++) {
 							InetSocketAddress address = new InetSocketAddress(InetAddress.getLocalHost(), port);
 							hosts.put(j, address);
 							port ++;
 						}
 						
 						System.out.println(hosts);
-						TcpChannel tcp = new TcpChannel(hosts.get(i-1));
+						TcpChannel tcp = new TcpChannel(hosts.get(i));
                         MappedChannel<Integer> mapped = new MappedChannel<>(tcp, hosts, i);
 
                         return mapped;

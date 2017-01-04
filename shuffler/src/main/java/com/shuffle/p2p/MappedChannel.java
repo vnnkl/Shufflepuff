@@ -159,7 +159,7 @@ public class MappedChannel<Identity> implements Channel<Identity, Bytestring> {
                 return next.getPeer(you);
             }
         }
-
+		
         return new MappedPeer(inner.getPeer(addr), you);
     }
 
