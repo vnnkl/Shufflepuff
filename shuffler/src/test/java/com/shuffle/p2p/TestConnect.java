@@ -52,7 +52,7 @@ public class TestConnect {
 
     private interface TestCase {
         int rounds();
-        Network network();
+        Network network(int n);
     }
 
     private static class ConnectRun implements Runnable {
@@ -242,7 +242,7 @@ public class TestConnect {
             }
 
             @Override
-            public Network network() {
+            public Network network(int n) {
                 return new Network() {
                     private final MockNetwork<Integer, Bytestring> network = new MockNetwork<>();
 
@@ -259,19 +259,24 @@ public class TestConnect {
             }
 
             @Override
-            public Network network() {
+            public Network network(int n) {
                 return new Network() {
-                    int port = 5000;
-                    final Map<Integer, InetSocketAddress> hosts = new HashMap<>();
 
                     @Override
                     public Channel<Integer, Bytestring> node(Integer i) throws UnknownHostException {
-                        InetSocketAddress address = new InetSocketAddress(InetAddress.getLocalHost(), port);
-                        TcpChannel tcp = new TcpChannel(address);
-                        hosts.put(i, address);
+						
+						int port = 5000;
+						final Map<Integer, InetSocketAddress> hosts = new HashMap<>();
+						
+						for (int j = 0; j < n; j ++) {
+							InetSocketAddress address = new InetSocketAddress(InetAddress.getLocalHost(), port);
+							hosts.put(j, address);
+							port ++;
+						}
+						
+						System.out.println(hosts);
+						TcpChannel tcp = new TcpChannel(hosts.get(i-1));
                         MappedChannel<Integer> mapped = new MappedChannel<>(tcp, hosts, i);
-
-                        port ++;
 
                         return mapped;
                     }
@@ -287,7 +292,7 @@ public class TestConnect {
         for (TestCase tc: cases) {
             for (int i = 2; i <= tc.rounds(); i++) {
                 System.out.println("Trial " + i + ": ");
-                Map<Integer, Collector<Integer, Bytestring>> nets = simulation(i, seed + i, tc.network());
+                Map<Integer, Collector<Integer, Bytestring>> nets = simulation(i, seed + i, tc.network(i));
                 Assert.assertTrue(nets != null);
                 System.out.println("Trial " + i + ": " + nets);
                 Assert.assertTrue(nets.size() == i);
