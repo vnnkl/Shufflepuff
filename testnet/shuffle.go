@@ -1,11 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"net"
+	"os/exec"
+	"strconv"
+	"time"
 
 	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
+	"github.com/btcsuite/btcutil/base58"
 )
 
 // Address contains the private key and the Bitcoin address derived from it.
@@ -18,8 +24,9 @@ type Address struct {
 // which will be merged to create the join transaction, one anon key
 // to be his anonymized output, and a change address.
 type Player struct {
+	key    *btcutil.WIF
 	in     []*Address
-	anon   *btcutil.WIF
+	anon   btcutil.Address
 	change btcutil.Address
 }
 
@@ -30,7 +37,8 @@ type Shuffle []Player
 // ToJSON encodes a Shuffle as a JSON string.
 func (sh Shuffle) ToJSON() string {
 	players := make([]struct {
-		in []struct {
+		key string
+		in  []struct {
 			private string
 			public  string
 		}
@@ -54,13 +62,15 @@ func (sh Shuffle) ToJSON() string {
 		}
 
 		players = append(players, struct {
-			in []struct {
+			key string
+			in  []struct {
 				private string
 				public  string
 			}
 			anon   string
 			change string
 		}{
+			key:    player.key.String(),
 			in:     in,
 			anon:   player.anon.String(),
 			change: player.change.EncodeAddress(),
@@ -74,7 +84,8 @@ func (sh Shuffle) ToJSON() string {
 // DecodeShuffleFromJSON tries to create a Shuffle type given a json string.
 func DecodeShuffleFromJSON(JSON string) (Shuffle, error) {
 	var players []struct {
-		in []struct {
+		key string
+		in  []struct {
 			private string
 			public  string
 		}
@@ -107,7 +118,7 @@ func DecodeShuffleFromJSON(JSON string) (Shuffle, error) {
 			})
 		}
 
-		anon, err := btcutil.DecodeWIF(player.anon)
+		anon, err := btcutil.DecodeAddress(player.anon, &chaincfg.TestNet3Params)
 		if err != nil {
 			return nil, err
 		}
@@ -117,7 +128,13 @@ func DecodeShuffleFromJSON(JSON string) (Shuffle, error) {
 			return nil, err
 		}
 
+		key, err := btcutil.DecodeWIF(player.key)
+		if err != nil {
+			return nil, err
+		}
+
 		shuffle = append(shuffle, Player{
+			key:    key,
 			in:     in,
 			anon:   anon,
 			change: change,
@@ -151,12 +168,12 @@ func GenerateShuffle(rpc *RPC, defaultAccount, testAccount string, inputNums []u
 			player.in[i] = wif
 		}
 
-		anon, err := rpc.CreateNewPrivKey(testAccount)
+		anon, err := rpc.CreateNewAddress(testAccount)
 		if err != nil {
 			return nil, err
 		}
 
-		player.anon = anon.private
+		player.anon = anon
 
 		address, err := rpc.CreateNewAddress(testAccount)
 		if err != nil {
@@ -195,4 +212,64 @@ func (sh Shuffle) Fund(rpc *RPC, defaultAccount string, funds []uint64) error {
 	}
 
 	return nil
+}
+
+// Run starts several instances of Shufflepuff and runs the protocol.
+func (sh Shuffle) Run(session string, amount, fee, initPort uint64) {
+	port := initPort
+	when := time.Now().Add(time.Minute)
+	for _, player := range sh {
+		var w bytes.Buffer
+		w.WriteString("java -jar shuffler.jar shuffle --blockchain test --query btcd")
+		w.WriteString("--session '")
+		w.WriteString(session)
+		w.WriteString("' --amount ")
+		w.WriteString(strconv.FormatUint(amount, 10))
+		w.WriteString(" --time ")
+		w.WriteString(strconv.FormatUint(uint64(when.Unix()), 10))
+		w.WriteString(" --fee ")
+		w.WriteString(strconv.FormatUint(fee, 10))
+		w.WriteString(" --port ")
+		w.WriteString(strconv.FormatUint(port, 10))
+		w.WriteString(" --key ")
+		w.WriteString(base58.Encode(player.key.SerializePubKey()))
+		w.WriteString(" --anon ")
+		w.WriteString(player.anon.EncodeAddress())
+		w.WriteString(" --change ")
+		w.WriteString(player.change.EncodeAddress())
+		w.WriteString(" --peers '[")
+		last := false
+		for i := uint64(0); i < uint64(len(sh)); i++ {
+			p := i + initPort
+
+			if p == port {
+				continue
+			}
+
+			if last {
+				w.WriteString(", ")
+			}
+
+			w.WriteString("{\"address\":\"")
+			w.WriteString(net.JoinHostPort("127.0 0.1:", strconv.FormatUint(p, 10)))
+			w.WriteString("\", \"key\":\"")
+			w.WriteString(base58.Encode(sh[i].key.SerializePubKey()))
+			w.WriteString("\"}")
+
+			last = true
+		}
+		w.WriteString("]'")
+
+		port++
+
+		go func() {
+			exec.Command(string(w.Bytes())).Run()
+		}()
+	}
+}
+
+// Clear moves all funds in testAccount to the to address, other than the
+// miner's fee.
+func (sh Shuffle) Clear(rpc *RPC, testAccount string, to btcutil.Address, fee uint64) {
+	// TODO
 }
