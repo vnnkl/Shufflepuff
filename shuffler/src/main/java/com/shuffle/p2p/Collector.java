@@ -34,9 +34,12 @@ public class Collector<Address, X extends Serializable> implements Listener<Addr
         if (session == null) throw new NullPointerException();
         Address address = session.peer().identity();
 
-        if (session.closed()) return false;
+        if (session.closed()) {
+            return false;
+        }
 
-        if (connected.putIfAbsent(address, session) != null) {
+        final Send<X> alreadyExistingMapping = connected.putIfAbsent(address, session);
+        if (alreadyExistingMapping != null) {
             session.close();
             return false;
         }
@@ -46,9 +49,13 @@ public class Collector<Address, X extends Serializable> implements Listener<Addr
 
     @Override
     public Send<X> newSession(Session<Address, X> session) throws InterruptedException {
-        if (session == null) throw new NullPointerException();
+        if (session == null) {
+            throw new NullPointerException();
+        }
 
-        if (!put(session)) return null;
+        if (!put(session)) {
+            throw new IllegalArgumentException("Unable to associate session with address");
+        }
 
         return inbox.receivesFrom(session.peer().identity());
     }
