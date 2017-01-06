@@ -125,7 +125,8 @@ public class Inbox<Address, X extends Serializable> implements Receive<Inbox.Env
             return null;
         }
 
-        return receiveMessage(q.take());
+        final Envelope<Address, X> addressXEnvelope = receiveMessage(q.take());
+        return addressXEnvelope;
     }
 
     @Override

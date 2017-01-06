@@ -219,6 +219,7 @@ public class TestConnect {
       for (Map.Entry<Integer, Connect<Integer, Bytestring>> e : connections.entrySet()) {
          future = future.plus(new NaturalSummableFuture<>(
                new ConnectFuture(e.getKey(), e.getValue(), addresses)));
+         Thread.sleep(1000);
       }
 
       // Get the result of the computation.
@@ -293,7 +294,7 @@ public class TestConnect {
          if (tc.equals(cases[0])) {
             continue;
          }
-         for (int i = 6; i <= tc.rounds(); i++) {
+         for (int i = 5; i <= tc.rounds(); i++) {
             System.out.println("Trial " + i + ": ");
             Map<Integer, Collector<Integer, Bytestring>> nets = simulation(i, seed + i, tc.network(i));
             Assert.assertTrue(nets != null);
@@ -313,12 +314,14 @@ public class TestConnect {
                   Collector<Integer, Bytestring> recipient = a.getValue();
 
                   String j = "Oooo! " + msgNo;
-                  sender.connected.get(to).send(new Bytestring(j.getBytes()));
-                  Inbox.Envelope<Integer, Bytestring> q = recipient.inbox.receive();
+                  Thread.sleep(1000);
+                  final Bytestring sendBytesting = new Bytestring(j.getBytes());
+                  sender.connected.get(to).send(sendBytesting);
+                  Inbox.Envelope<Integer, Bytestring> received = recipient.inbox.receive();
 
-                  Assert.assertNotNull(q);
-                  Assert.assertTrue(q.from.equals(from));
-                  Assert.assertTrue(new String(q.payload.bytes).equals(j));
+                  Assert.assertNotNull(received);
+                  Assert.assertTrue(received.from.equals(from));
+                  Assert.assertEquals(sendBytesting, new Bytestring(received.payload.bytes));
                   msgNo++;
                }
             }

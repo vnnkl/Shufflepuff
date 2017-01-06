@@ -99,8 +99,8 @@ public class MappedChannel<Identity> implements Channel<Identity, Bytestring> {
 				}
 				if (you == null) throw new NullPointerException();
 				this.z = l.newSession(new MappedSession(s, you));
-                initialized = true;
-				return true;
+            initialized = true;
+            return true;
 			}
 
 			return this.z.send(message);
