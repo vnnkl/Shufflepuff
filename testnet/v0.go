@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/btcutil/base58"
 )
@@ -25,6 +26,59 @@ type PlayerV0 struct {
 // ShuffleV0 represents a simulated shuffle, with input and output data
 // for all players.
 type ShuffleV0 []PlayerV0
+
+// DecodeShuffleV0FromJSON tries to create a Shuffle type given a json string.
+func DecodeShuffleV0FromJSON(JSON string) (ShuffleV0, error) {
+	var players []struct {
+		key struct {
+			private string
+			public  string
+		}
+		anon   string
+		change string
+	}
+
+	err := json.Unmarshal([]byte(JSON), &players)
+	if err != nil {
+		return nil, err
+	}
+
+	shuffle := make([]PlayerV0, 0, len(players))
+
+	for _, player := range players {
+		wif, err := btcutil.DecodeWIF(player.key.private)
+		if err != nil {
+			return nil, err
+		}
+		address, err := btcutil.DecodeAddress(player.key.public, &chaincfg.TestNet3Params)
+		if err != nil {
+			return nil, err
+		}
+
+		key := &Address{
+			private: wif,
+			public:  address,
+		}
+
+		anon, err := btcutil.DecodeAddress(player.anon, &chaincfg.TestNet3Params)
+		if err != nil {
+			return nil, err
+		}
+
+		change, err := btcutil.DecodeAddress(player.change, &chaincfg.TestNet3Params)
+		if err != nil {
+			return nil, err
+		}
+
+		shuffle = append(shuffle, PlayerV0{
+			key:    key,
+			anon:   anon,
+			change: change,
+		})
+	}
+
+	return ShuffleV0(shuffle), nil
+}
 
 // ToJSON encodes a Shuffle as a JSON string.
 func (sh ShuffleV0) ToJSON() string {

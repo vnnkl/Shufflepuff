@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"io/ioutil"
 	"os"
 )
 
@@ -92,25 +93,32 @@ func help(args []string) []string {
 	return append([]string{"Invalid method specified."}, help(nil)...)
 }
 
-func setup(args []string) []string {
+func cfg(args []string) []string {
 	if args == nil {
 		var b bytes.Buffer
-		newSetupParser(&Setup{}).WriteHelp(&b)
+		newParser(&Config{}).WriteHelp(&b)
 		return []string{"", b.String()}
 	}
 
-	setup, err := LoadSetup(args)
+	cfg, err := LoadSetup(args)
 	if err != nil {
 		return []string{err.Error()}
 	}
 
-	rpc := setup.RPC()
-	shuffle, err := GenerateShuffleV0(rpc, setup.defaultAccount, setup.testAccount, setup.players)
+	rpc := cfg.RPC()
+
+	shuffle, err := GenerateShuffleV0(rpc, cfg.defaultAccount, cfg.testAccount, cfg.players)
 	if err != nil {
 		return []string{err.Error()}
 	}
 
-	err = shuffle.Fund(rpc, setup.defaultAccount, setup.initialFunds)
+	err = shuffle.Fund(rpc, cfg.defaultAccount, cfg.initialFunds)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	// Save the data to a file.
+	err = ioutil.WriteFile(cfg.filename, []byte(shuffle.ToJSON()), 0644)
 	if err != nil {
 		return []string{err.Error()}
 	}
@@ -118,10 +126,31 @@ func setup(args []string) []string {
 	return nil
 }
 
+const defaultInitPort = 5001
+
 func run(args []string) []string {
 	if args == nil {
 		return []string{"not implemented"}
 	}
+
+	cfg, err := LoadRun(args)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	// Read JSON string from file.
+	json, err := ioutil.ReadFile(cfg.filename)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	shuffle, err := DecodeShuffleFromJSON(string(json))
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	// Run the protocol.
+	shuffle.Run(cfg.session, cfg.amount, 0, defaultInitPort)
 
 	return nil
 }
@@ -139,8 +168,8 @@ func cleanup(args []string) []string {
 // of the args provided by the user and returns a list of lines that
 // say what happened.
 var methods = map[string]func([]string) []string{
-	"setup": setup,
-	"run":   run,
+	"cfg": cfg,
+	"run": run,
 }
 
 // Read a message from the command-line and turn it into the appropriate

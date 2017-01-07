@@ -1,9 +1,6 @@
 package main
 
 import (
-	"encoding/json"
-
-	"github.com/btcsuite/btcd/chaincfg"
 	"github.com/btcsuite/btcutil"
 )
 
@@ -23,65 +20,18 @@ type Address struct {
 }
 
 // DecodeShuffleFromJSON tries to create a Shuffle type given a json string.
-// TODO: right now it only decodes V1. It should be able to do either V0 or V1.
 func DecodeShuffleFromJSON(JSON string) (Shuffle, error) {
-	var players []struct {
-		key string
-		in  []struct {
-			private string
-			public  string
-		}
-		anon   string
-		change string
+	// First try V0.
+	shuffleV0, errV0 := DecodeShuffleV0FromJSON(JSON)
+	if errV0 == nil {
+		return shuffleV0, nil
 	}
 
-	err := json.Unmarshal([]byte(JSON), &players)
-	if err != nil {
-		return nil, err
+	// Then try V1.
+	shuffleV1, errV1 := DecodeShuffleV1FromJSON(JSON)
+	if errV1 == nil {
+		return shuffleV1, nil
 	}
 
-	shuffle := make([]PlayerV1, 0, len(players))
-
-	for _, player := range players {
-		in := make([]*Address, 0, len(player.in))
-		for _, i := range player.in {
-			wif, err := btcutil.DecodeWIF(i.private)
-			if err != nil {
-				return nil, err
-			}
-			address, err := btcutil.DecodeAddress(i.public, &chaincfg.TestNet3Params)
-			if err != nil {
-				return nil, err
-			}
-
-			in = append(in, &Address{
-				private: wif,
-				public:  address,
-			})
-		}
-
-		anon, err := btcutil.DecodeAddress(player.anon, &chaincfg.TestNet3Params)
-		if err != nil {
-			return nil, err
-		}
-
-		change, err := btcutil.DecodeAddress(player.change, &chaincfg.TestNet3Params)
-		if err != nil {
-			return nil, err
-		}
-
-		key, err := btcutil.DecodeWIF(player.key)
-		if err != nil {
-			return nil, err
-		}
-
-		shuffle = append(shuffle, PlayerV1{
-			key:    key,
-			in:     in,
-			anon:   anon,
-			change: change,
-		})
-	}
-
-	return ShuffleV1(shuffle), nil
+	return nil, errV0
 }
