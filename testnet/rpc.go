@@ -15,13 +15,28 @@ import (
 	"github.com/btcsuite/btcutil"
 )
 
+const (
+	defaultUsername   = "daniel"
+	defaultPassword   = "daniel"
+	defaultPassphrase = "priv"
+	defaultServer     = "localhost"
+)
+
 var minConf = 6
 
 // RPC represents a bitcoin wallet rpc server.
 type RPC struct {
-	user       string
-	password   string
-	server     string
+
+	// The user name to log in to btcd's rpc interface.
+	user string
+
+	// The password for btcds rpc interface.
+	password string
+
+	// The address of the btcd server.
+	server string
+
+	// The passphrase to unlock the wallet.
 	passphrase string
 }
 

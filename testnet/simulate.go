@@ -94,7 +94,25 @@ func help(args []string) []string {
 
 func setup(args []string) []string {
 	if args == nil {
-		return []string{"not implemented"}
+		var b bytes.Buffer
+		newSetupParser(&Setup{}).WriteHelp(&b)
+		return []string{"", b.String()}
+	}
+
+	setup, err := LoadSetup(args)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	rpc := setup.RPC()
+	shuffle, err := GenerateShuffleV0(rpc, setup.defaultAccount, setup.testAccount, setup.players)
+	if err != nil {
+		return []string{err.Error()}
+	}
+
+	err = shuffle.Fund(rpc, setup.defaultAccount, setup.initialFunds)
+	if err != nil {
+		return []string{err.Error()}
 	}
 
 	return nil
@@ -113,7 +131,7 @@ func cleanup(args []string) []string {
 		return []string{"not implemented"}
 	}
 
-	return nil
+	return nil // TODO
 }
 
 // methods contains the allowed operations of the simulation program.
@@ -121,9 +139,8 @@ func cleanup(args []string) []string {
 // of the args provided by the user and returns a list of lines that
 // say what happened.
 var methods = map[string]func([]string) []string{
-	"setup":   setup,
-	"run":     run,
-	"cleanup": cleanup,
+	"setup": setup,
+	"run":   run,
 }
 
 // Read a message from the command-line and turn it into the appropriate
