@@ -148,7 +148,7 @@ public class MappedChannel<Identity> implements Channel<Identity, Bytestring> {
                         break;
                     }
                 }
-
+                
                 if (you == null) {
                     close();
                     return false;
