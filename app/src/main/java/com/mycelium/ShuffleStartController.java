@@ -30,8 +30,9 @@ import io.datafx.controller.flow.action.ActionMethod;
 import io.datafx.controller.flow.action.ActionTrigger;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
-import io.datafx.controller.injection.scopes.FlowScoped;
+import io.datafx.controller.injection.scopes.ApplicationScoped;
 import io.datafx.controller.util.VetoException;
+import io.datafx.eventsystem.OnEvent;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -39,8 +40,10 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 
 import javax.annotation.PostConstruct;
+import java.util.LinkedList;
+import java.util.List;
 
-@FlowScoped
+@ApplicationScoped
 @ViewController("shuffle_start.fxml")
 public class ShuffleStartController {
     @FXML
@@ -88,6 +91,39 @@ public class ShuffleStartController {
     @ViewNode
     private ToggleGroup shuffleConnectOptions;
 
+    public List<String> getKeyList() {
+        return keyList;
+    }
+
+    public List<String> getUtxoList() {
+        return utxoList;
+    }
+
+    private List<String> keyList = new LinkedList<String>();
+    private List<String> utxoList = new LinkedList<String>();
+
+    @OnEvent("setkeyList")
+    private boolean setKeyList(List<String> keyList){
+        this.keyList = keyList;
+        if (this.keyList.equals(keyList)){
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+
+    @OnEvent("setUtxoList")
+    private boolean setUtxoList(List<String> utxoList){
+        this.utxoList = utxoList;
+        if (this.utxoList.equals(utxoList)){
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
 
     @ActionHandler
     FlowActionHandler flowActionHandler;
@@ -149,6 +185,7 @@ public class ShuffleStartController {
 
         //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
         //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
+
         try {
             flowActionHandler.navigate((Class<?>) shuffleInOptions.getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {

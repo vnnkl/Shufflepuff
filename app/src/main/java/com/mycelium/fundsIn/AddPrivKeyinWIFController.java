@@ -17,8 +17,17 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import com.mycelium.ShuffleStartController;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.ViewNode;
+import io.datafx.controller.flow.FlowException;
+import io.datafx.controller.flow.action.ActionMethod;
 import io.datafx.controller.flow.action.BackAction;
+import io.datafx.controller.flow.context.ActionHandler;
+import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.util.VetoException;
+import io.datafx.eventsystem.EventProducer;
+import io.datafx.eventsystem.EventTrigger;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -28,18 +37,25 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.List;
 
 @ViewController("shuffle_addPrivKeyInWIF.fxml")
 public class AddPrivKeyinWIFController {
     @FXML private Button AddBtn;
     @FXML @BackAction private Button cancelBtn;
+    @FXML @ViewNode @EventTrigger(id = "setKeyList") private Button nextBtn;
     @FXML private TextField inputPrivKEdit;
     public ArrayList<String> privKeyList = new ArrayList<String>();
     ListProperty<String> listProperty = new SimpleListProperty<>();
     @FXML private ListView privKeyListView;
     public Main.OverlayUI overlayUI;
+    @Inject
+    ShuffleStartController shuffleStartController;
 
+    @ActionHandler
+    FlowActionHandler flowActionHandler;
 
     // Called by FXMLLoader
     public void initialize() {
@@ -60,7 +76,19 @@ public class AddPrivKeyinWIFController {
             listProperty.set(FXCollections.observableArrayList(privKeyList));
     }
 
-    public void next(ActionEvent actionEvent) {
+    @EventProducer("setKeyList")
+    private List<String> getKeys(){
+        return listProperty.get();
+    }
 
+
+
+    @ActionMethod("next")
+    public void next(ActionEvent actionEvent) {
+        try {
+            flowActionHandler.navigate((Class<?>) shuffleStartController.getFundsOutGroup().getSelectedToggle().getUserData());
+        } catch (VetoException | FlowException e) {
+            e.printStackTrace();
+        }
     }
 }
