@@ -25,6 +25,11 @@ public class CryptoProtobuf extends Protobuf {
     NetworkParameters params;
     Bitcoin bitcoin;
 
+    public CryptoProtobuf(NetworkParameters params) {
+        super();
+        this.params = params;
+    }
+
     @Override
     // Unmarshall an address from its string representation.
     public Address unmarshallAdress(String str) throws FormatException {
