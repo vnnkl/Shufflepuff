@@ -363,7 +363,7 @@ public class Shuffle {
                     if (mockCrypto) {
                         m = new MockProtobuf();
                     } else {
-                        m = new CryptoProtobuf();
+                        m = new CryptoProtobuf(netParams);
                     }
                     break;
                 default:
@@ -372,7 +372,7 @@ public class Shuffle {
 
         } else {
             crypto = new BitcoinCrypto(netParams);
-            m = new CryptoProtobuf();
+            m = new CryptoProtobuf(netParams);
         }
 
         amount = (Long)options.valueOf("amount");
