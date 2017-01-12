@@ -125,7 +125,7 @@ public class TestConnect {
             Chan<Collector<Integer, Bytestring>> netChan = new BasicChan<>();
             this.netChan = netChan;
 
-            new Thread(new ConnectRun(conn, i, addresses, 3, netChan)).start();
+            new Thread(new ConnectRun(conn, i, addresses, 10, netChan)).start();
         }
 
         @Override
@@ -202,10 +202,10 @@ public class TestConnect {
             for (int i = 1; i <= n; i++) {
                 addresses.add(i);
             }
-
+            
             // Construct the future which represents all players trying to connect to one another.
             SummableFuture<Map<Integer, Collector<Integer, Bytestring>>> future = new SummableFutureZero<>(
-                    new SummableMaps<Integer, Collector<Integer, Bytestring>>()
+                    new SummableMaps<>()
             );
 
             // Create the set of known hosts for each player.
@@ -215,7 +215,7 @@ public class TestConnect {
                 Connect<Integer, Bytestring> conn = new Connect<>(channel, crypto, 10);
                 connections.put(i, conn);
             }
-
+            
             // Start the connection (this must be done after all Channel objects have been created
             // because everyone must be connected to the internet at the time they attempt to start
             // connecting to one another.

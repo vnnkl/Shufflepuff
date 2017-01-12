@@ -149,7 +149,7 @@ class Player {
 
                 // Begin connecting to all peers.
                 final Collector<VerificationKey, Signed<Packet<VerificationKey, Payload>>> collector
-                        = connect.connect(connectTo, 3);
+                        = connect.connect(connectTo, 10);
 
                 if (collector == null) return Report.invalidInitialState("Could not connect to peers.");
 
