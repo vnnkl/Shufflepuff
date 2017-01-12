@@ -76,7 +76,7 @@ import joptsimple.OptionSpecBuilder;
  */
 public class Shuffle {
     // Turn this on to enable test mode options.
-    private static boolean TEST_MODE = true;
+    private static boolean TEST_MODE = false;
 
     // 1 / 100 of a bitcoin.
     private static long MIN_AMOUNT = 1000000;

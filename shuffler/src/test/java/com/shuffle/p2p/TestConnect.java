@@ -202,7 +202,7 @@ public class TestConnect {
             for (int i = 1; i <= n; i++) {
                 addresses.add(i);
             }
-            
+
             // Construct the future which represents all players trying to connect to one another.
             SummableFuture<Map<Integer, Collector<Integer, Bytestring>>> future = new SummableFutureZero<>(
                     new SummableMaps<>()
@@ -215,7 +215,7 @@ public class TestConnect {
                 Connect<Integer, Bytestring> conn = new Connect<>(channel, crypto, 10);
                 connections.put(i, conn);
             }
-            
+
             // Start the connection (this must be done after all Channel objects have been created
             // because everyone must be connected to the internet at the time they attempt to start
             // connecting to one another.
