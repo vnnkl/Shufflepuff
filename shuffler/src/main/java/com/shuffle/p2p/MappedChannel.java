@@ -75,7 +75,7 @@ public class MappedChannel<Identity> implements Channel<Identity, Bytestring> {
             inner.close();
         }
 
-        @Override 
+        @Override
         public String toString() {
             return "MappedSession[" + inner + "]";
         }
