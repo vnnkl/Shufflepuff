@@ -25,6 +25,7 @@ import com.shuffle.sim.init.Initializer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.params.TestNet3Params;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -102,7 +103,7 @@ public class TestShuffleMachine {
 
         @Override
         protected Protobuf proto() {
-            return new CryptoProtobuf();
+            return new CryptoProtobuf(TestNet3Params.get());
         }
     }
 
