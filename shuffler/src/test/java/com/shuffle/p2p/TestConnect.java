@@ -125,7 +125,7 @@ public class TestConnect {
             Chan<Collector<Integer, Bytestring>> netChan = new BasicChan<>();
             this.netChan = netChan;
 
-            new Thread(new ConnectRun(conn, i, addresses, 3, netChan)).start();
+            new Thread(new ConnectRun(conn, i, addresses, 10, netChan)).start();
         }
 
         @Override
@@ -184,53 +184,65 @@ public class TestConnect {
         }
     }
 
-    private Map<Integer, Collector<Integer, Bytestring>> simulation(int n, int seed, Network network) throws InterruptedException, IOException {
-        if (n <= 0) {
-            return new HashMap<>();
+    class Simulation {
+        private boolean closed = false;
+        private final Map<Integer, Collector<Integer, Bytestring>> nets = new HashMap<>();
+        private final Map<Integer, Connect<Integer, Bytestring>> connections = new HashMap<>();
+
+        Simulation(int n, int seed, Network network) throws IOException, InterruptedException {
+            if (n <= 0) return;
+
+            System.out.println("Running connect test with " + n + " addresses. ");
+
+            Crypto crypto = new MockCrypto(new InsecureRandom(seed));
+
+            SortedSet<Integer> addresses = new TreeSet<>();
+
+            // Create the set of known hosts for each player.
+            for (int i = 1; i <= n; i++) {
+                addresses.add(i);
+            }
+
+            // Construct the future which represents all players trying to connect to one another.
+            SummableFuture<Map<Integer, Collector<Integer, Bytestring>>> future = new SummableFutureZero<>(
+                    new SummableMaps<>()
+            );
+
+            // Create the set of known hosts for each player.
+            for (Integer i : addresses) {
+                Channel<Integer, Bytestring> channel = network.node(i);
+                Assert.assertNotNull(channel);
+                Connect<Integer, Bytestring> conn = new Connect<>(channel, crypto, 10);
+                connections.put(i, conn);
+            }
+
+            // Start the connection (this must be done after all Channel objects have been created
+            // because everyone must be connected to the internet at the time they attempt to start
+            // connecting to one another.
+            for (Map.Entry<Integer, Connect<Integer, Bytestring>> e : connections.entrySet()) {
+                future = future.plus(new NaturalSummableFuture<>(
+                        new ConnectFuture(e.getKey(), e.getValue(), addresses)));
+            }
+
+            // Get the result of the computation.
+            try {
+                nets.putAll(future.get());
+            } catch (InterruptedException | ExecutionException e) {
+                closed = true;
+                e.printStackTrace();
+            }
         }
 
-        System.out.println("Running connect test with " + n + " addresses. ");
-
-        Crypto crypto = new MockCrypto(new InsecureRandom(seed));
-
-        SortedSet<Integer> addresses = new TreeSet<>();
-
-        // Create the set of known hosts for each player.
-        for (int i = 1; i <= n; i++) {
-            addresses.add(i);
+        public synchronized Map<Integer, Collector<Integer, Bytestring>> networks() {
+            if (closed) return new HashMap<>();
+            else return new HashMap<>(nets);
         }
 
-        // Construct the future which represents all players trying to connect to one another.
-        SummableFuture<Map<Integer, Collector<Integer, Bytestring>>> future = new SummableFutureZero<>(
-                new SummableMaps<Integer, Collector<Integer, Bytestring>>()
-        );
-
-        // Create the set of known hosts for each player.
-        Map<Integer, Connect<Integer, Bytestring>> connections = new HashMap<>();
-        for (Integer i : addresses) {
-            Channel<Integer, Bytestring> channel = network.node(i);
-            Assert.assertNotNull(channel);
-            Connect<Integer, Bytestring> conn = new Connect<>(channel, crypto, 10);
-            connections.put(i, conn);
+        public synchronized void close() {
+            for (Connection c : connections.values()) {
+                c.close();
+            }
         }
-
-        // Start the connection (this must be done after all Channel objects have been created
-        // because everyone must be connected to the internet at the time they attempt to start
-        // connecting to one another.
-        for (Map.Entry<Integer, Connect<Integer, Bytestring>> e : connections.entrySet()) {
-            future = future.plus(new NaturalSummableFuture<>(
-                    new ConnectFuture(e.getKey(), e.getValue(), addresses)));
-        }
-
-        // Get the result of the computation.
-        Map<Integer, Collector<Integer, Bytestring>> nets = null;
-        try {
-            nets = future.get();
-        } catch (InterruptedException | ExecutionException e) {
-            e.printStackTrace();
-        }
-
-        return nets;
     }
 
     // There are two test cases. One uses a MockChannel, the other a TcpChannel.
@@ -244,15 +256,19 @@ public class TestConnect {
             @Override
             public Network network() {
                 return new Network() {
+                    boolean closed = false;
                     private final MockNetwork<Integer, Bytestring> network = new MockNetwork<>();
 
                     @Override
                     public Channel<Integer, Bytestring> node(Integer i) {
+                        if (closed) return null;
                         return network.node(i);
                     }
                 };
             }
         }, new TestCase() {
+            int port = 5000;
+
             @Override
             public int rounds() {
                 return 5;
@@ -261,17 +277,19 @@ public class TestConnect {
             @Override
             public Network network() {
                 return new Network() {
-                    int port = 5000;
+
                     final Map<Integer, InetSocketAddress> hosts = new HashMap<>();
 
                     @Override
                     public Channel<Integer, Bytestring> node(Integer i) throws UnknownHostException {
-                        InetSocketAddress address = new InetSocketAddress(InetAddress.getLocalHost(), port);
-                        TcpChannel tcp = new TcpChannel(address);
-                        hosts.put(i, address);
-                        MappedChannel<Integer> mapped = new MappedChannel<>(tcp, hosts, i);
 
+                        InetSocketAddress address = new InetSocketAddress(InetAddress.getLocalHost(), port);
+                        hosts.put(i, address);
                         port ++;
+						
+						System.out.println(hosts);
+						TcpChannel tcp = new TcpChannel(address);
+                        MappedChannel<Integer> mapped = new MappedChannel<>(tcp, hosts, i);
 
                         return mapped;
                     }
@@ -287,7 +305,8 @@ public class TestConnect {
         for (TestCase tc: cases) {
             for (int i = 2; i <= tc.rounds(); i++) {
                 System.out.println("Trial " + i + ": ");
-                Map<Integer, Collector<Integer, Bytestring>> nets = simulation(i, seed + i, tc.network());
+                Simulation sim = new Simulation(i, seed + i, tc.network());
+                Map<Integer, Collector<Integer, Bytestring>> nets = sim.networks();
                 Assert.assertTrue(nets != null);
                 System.out.println("Trial " + i + ": " + nets);
                 Assert.assertTrue(nets.size() == i);
@@ -314,6 +333,9 @@ public class TestConnect {
                         msgNo++;
                     }
                 }
+
+                // Close all channels.
+                sim.close();
             }
         }
     }

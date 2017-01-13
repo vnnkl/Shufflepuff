@@ -14,6 +14,8 @@ import com.shuffle.chan.Send;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.ConnectException;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -219,11 +221,16 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
 
             if (peer == null) {
                 // TODO clean up properly and fail more gracefully.
+                // This shouldn't actually happen either.
                 throw new NullPointerException();
             }
 
-            if (peers.openSession(identity, peer)) {
-                continue;
+            try{
+                if (peers.openSession(identity, peer)) {
+                    continue;
+                }
+            } catch (SocketException e) {
+                // Try again later.
             }
 
             int r = retries.increment(peer.identity());
