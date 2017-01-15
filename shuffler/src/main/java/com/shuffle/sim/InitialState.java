@@ -385,7 +385,7 @@ public class InitialState {
         }
     }
 
-    public Map<SigningKey, Adversary> getPlayers(
+    public Map<SigningKey, Adversary> setup(
             Initializer<Packet<VerificationKey, Payload>> initializer)
             throws ExecutionException, InterruptedException, IOException {
 
@@ -432,6 +432,14 @@ public class InitialState {
 
     public PlayerInitialState getPlayer(int n) {
         return players.get(n);
+    }
+
+    public Map<VerificationKey, PlayerInitialState> getPlayers() {
+        Map<VerificationKey, PlayerInitialState> map = new HashMap<>();
+        for (PlayerInitialState p : players) {
+            map.put(p.vk, p);
+        }
+        return map;
     }
 
     private Map<Integer, MockCoin> networkPoints = null;

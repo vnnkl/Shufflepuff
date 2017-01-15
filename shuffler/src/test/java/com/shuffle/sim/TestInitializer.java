@@ -61,14 +61,10 @@ public class TestInitializer {
         List<Initializer<Integer>> initializers = new LinkedList<>();
 
         // The types of initializers to be tested.
-        initializers.add(new BasicInitializer<>(
-                new Bytestring(("test basic initializer " + players).getBytes()), 2 * (1 + players)));
-        initializers.add(new MockInitializer<>(
-                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players)));
-        initializers.add(new MarshallInitializer<>(
-                new Bytestring(("test marshall channel initializer " + players).getBytes()), 2 * (1 + players), sm));
-        initializers.add(new OtrInitializer<>(
-                new Bytestring(("test mock channel initializer " + players).getBytes()), 2 * (1 + players), sm));
+        initializers.add(new BasicInitializer<>(2 * (1 + players)));
+        initializers.add(new MockInitializer<>(2 * (1 + players)));
+        initializers.add(new MarshallInitializer<>(2 * (1 + players), sm));
+        initializers.add(new OtrInitializer<>(2 * (1 + players), sm));
 
         // Test each one in turn.
         for (Initializer<Integer> initializer : initializers) {

@@ -20,7 +20,6 @@ import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
-import com.shuffle.p2p.Bytestring;
 import com.shuffle.p2p.HistoryChannel;
 import com.shuffle.player.Payload;
 import com.shuffle.protocol.blame.Matrix;
@@ -29,11 +28,16 @@ import com.shuffle.sim.init.MarshallInitializer;
 import com.shuffle.sim.init.Initializer;
 import com.shuffle.sim.init.MockInitializer;
 import com.shuffle.sim.init.OtrInitializer;
+import com.shuffle.sim.init.TcpInitializer;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -73,19 +77,28 @@ public final class Simulator {
         this.marshaller = marshaller;
     }
 
-    private Initializer<Packet<VerificationKey, Payload>> makeInitializer(Bytestring session, int numPlayers) {
+    private Initializer<Packet<VerificationKey, Payload>> makeInitializer(InitialState init) throws UnknownHostException {
         // An appropriate value for the capacity of the channels between the players.
-        int capacity = 3 * (1 + numPlayers);
+        int capacity = 3 * (1 + init.size());
 
         switch (type) {
             case Basic:
-                return new BasicInitializer<>(session, capacity);
+                return new BasicInitializer<>(capacity);
             case Mock:
-                return new MockInitializer<>(session, capacity);
+                return new MockInitializer<>(capacity);
             case Marshall:
-                return new MarshallInitializer<>(session, capacity, marshaller);
+                return new MarshallInitializer<>(capacity, marshaller);
             case OTR:
-                return new OtrInitializer<>(session, capacity, marshaller);
+                return new OtrInitializer<>(capacity, marshaller);
+            case TCP:
+                int port = 5000;
+                Map<VerificationKey, InitialState.PlayerInitialState> players = init.getPlayers();
+                Map<VerificationKey, InetSocketAddress> addresses = new HashMap<>();
+                for (VerificationKey vk : players.keySet()) {
+                    addresses.put(vk, new InetSocketAddress(InetAddress.getLocalHost(), port));
+                    port++;
+                }
+                return new TcpInitializer<>(capacity, marshaller, addresses, false);
             default:
                 throw new IllegalArgumentException();
         }
@@ -96,9 +109,9 @@ public final class Simulator {
             throws ExecutionException, InterruptedException, IOException {
 
         final Initializer<Packet<VerificationKey, Payload>> initializer =
-                makeInitializer(init.session(), init.size());
+                makeInitializer(init);
 
-        final Map<SigningKey, Adversary> machines = init.getPlayers(initializer);
+        final Map<SigningKey, Adversary> machines = init.setup(initializer);
 
         Map<SigningKey, Either<Transaction, Matrix>> results = runSimulation(machines);
 

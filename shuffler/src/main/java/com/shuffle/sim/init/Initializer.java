@@ -26,5 +26,6 @@ public interface Initializer<X> {
         Mock,
         Marshall,
         OTR,
+        TCP,
     }
 }

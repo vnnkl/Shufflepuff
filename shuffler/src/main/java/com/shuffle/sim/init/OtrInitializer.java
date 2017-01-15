@@ -29,14 +29,10 @@ import java.util.Map;
 
 public class OtrInitializer<X> implements Initializer<X> {
     // The set of incoming mailboxes for each player.
-    final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
+    private final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
 
-    // The set of channels that player use to send to other players.
-    final Map<SigningKey, Map<VerificationKey, Send<Signed<X>>>> networks = new HashMap<>();
-
-    final Bytestring session;
-    final int capacity;
-    final Marshaller<Signed<X>> marshaller;
+    private final int capacity;
+    private final Marshaller<Signed<X>> marshaller;
 
     private final MockNetwork<VerificationKey, Bytestring> mockNetwork = new MockNetwork<>();
 
@@ -44,11 +40,10 @@ public class OtrInitializer<X> implements Initializer<X> {
 
     private final Map<SigningKey, HistoryChannel<VerificationKey, Signed<X>>> channels = new HashMap<>();
 
-    public OtrInitializer(Bytestring session, int capacity, Marshaller<Signed<X>> marshaller) {
+    public OtrInitializer(int capacity, Marshaller<Signed<X>> marshaller) {
 
-        if (session == null || capacity == 0 || marshaller == null) throw new IllegalArgumentException();
+        if (capacity == 0 || marshaller == null) throw new IllegalArgumentException();
 
-        this.session = session;
         this.capacity = capacity;
         this.marshaller = marshaller;
     }
@@ -60,7 +55,6 @@ public class OtrInitializer<X> implements Initializer<X> {
 
         // Create a new map. This will contain the channels from this mailbox to the others.
         final Map<VerificationKey, Send<Signed<X>>> inputs = new HashMap<>();
-        networks.put(sk, inputs);
 
         // Create a new mailbox.
         final Inbox<VerificationKey, Signed<X>> inbox = new Inbox<>(capacity);
@@ -103,7 +97,6 @@ public class OtrInitializer<X> implements Initializer<X> {
 
     @Override
     public Map<VerificationKey, Map<VerificationKey, List<HistoryChannel<VerificationKey, Signed<X>>.HistorySession>>> end() {
-        networks.clear();
 
         for (Connection<VerificationKey> c : connections) {
             c.close();

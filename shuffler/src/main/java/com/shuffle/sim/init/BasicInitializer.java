@@ -19,19 +19,17 @@ import java.util.Map;
 
 public class BasicInitializer<X> implements Initializer<X> {
     // The set of incoming mailboxes for each player.
-    final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
+    private final Map<SigningKey, Inbox<VerificationKey, Signed<X>>> mailboxes = new HashMap<>();
 
     // The set of channels that player use to send to other players.
-    final Map<SigningKey, Map<VerificationKey, Send<Signed<X>>>> networks = new HashMap<>();
+    private final Map<SigningKey, Map<VerificationKey, Send<Signed<X>>>> networks = new HashMap<>();
 
-    final Bytestring session;
-    final int capacity;
+    private final int capacity;
 
-    public BasicInitializer(Bytestring session, int capacity) {
+    public BasicInitializer(int capacity) {
 
-        if (session == null || capacity == 0) throw new IllegalArgumentException();
+        if (capacity == 0) throw new IllegalArgumentException();
 
-        this.session = session;
         this.capacity = capacity;
     }
 
