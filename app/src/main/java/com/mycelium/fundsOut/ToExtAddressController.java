@@ -34,7 +34,7 @@ import java.util.ArrayList;
 @ViewController("shuffle_toExtAddress.fxml")
 public class ToExtAddressController {
     public Button AddBtn;
-    @FXML @BackAction Button cancelBtn;
+    @FXML @BackAction Button backBtn;
     public TextField inputPrivKEdit;
     public ArrayList<String> extAddressList = new ArrayList<String>();
     ListProperty<String> listProperty = new SimpleListProperty<>();

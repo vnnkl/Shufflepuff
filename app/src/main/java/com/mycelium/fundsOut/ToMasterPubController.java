@@ -29,7 +29,7 @@ import java.util.ArrayList;
 @ViewController("shuffle_toMasterPub.fxml")
 public class ToMasterPubController {
     public Button AddBtn;
-    @FXML @BackAction private Button cancelBtn;
+    @FXML @BackAction private Button backBtn;
     public TextField inputPrivKEdit;
     public TextField inputIndexEdit;
     public ArrayList<String> privKeyList;
