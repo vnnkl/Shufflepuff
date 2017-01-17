@@ -18,7 +18,13 @@ package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.context.ApplicationContext;
+import io.datafx.controller.context.FXMLApplicationContext;
+import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.BackAction;
+import io.datafx.controller.flow.context.ActionHandler;
+import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.event.ActionEvent;
@@ -42,6 +48,10 @@ public class ToMasterPubController {
     public ProgressIndicator progressIndicator;
     ListProperty<String> listProperty = new SimpleListProperty<>();
     public ArrayList<String> outputList = new ArrayList<String>();
+    @ActionHandler
+    FlowActionHandler flowActionHandler;
+    @FXMLApplicationContext
+    ApplicationContext applicationContext = ApplicationContext.getInstance();
 
     // Called by FXMLLoader
     public void initialize() {
@@ -62,5 +72,10 @@ public class ToMasterPubController {
 
     public void next(ActionEvent actionEvent) {
         progressIndicator.setProgress(13.37);
+        try {
+            flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("connectOption"));
+        } catch (VetoException | FlowException e) {
+            e.printStackTrace();
+        }
     }
 }

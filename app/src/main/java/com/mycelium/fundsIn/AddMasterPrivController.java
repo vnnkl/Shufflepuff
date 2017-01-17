@@ -74,8 +74,8 @@ public class AddMasterPrivController {
                 privKeyList.add(betterInput);
             }
         }
-        listProperty.set(FXCollections.observableArrayList(privKeyList));
 
+        listProperty.set(FXCollections.observableArrayList(privKeyList));
 
     }
 

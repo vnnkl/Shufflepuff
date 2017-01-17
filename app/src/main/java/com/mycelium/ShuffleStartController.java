@@ -16,6 +16,8 @@
 
 package com.mycelium;
 
+import com.mycelium.connect.FetchConnectController;
+import com.mycelium.connect.ManualConnectController;
 import com.mycelium.fundsIn.AddMasterPrivController;
 import com.mycelium.fundsIn.AddPrivKeyinWIFController;
 import com.mycelium.fundsIn.AddReceiveAddressController;
@@ -151,8 +153,8 @@ public class ShuffleStartController {
         fundsOutXPub.setUserData(ToMasterPubController.class);
 
         // setUserData for button selection connectOptions
-        connectByIP.setUserData("connectByIP");
-        connectByFetch.setUserData("connectByFetch");
+        connectByIP.setUserData(ManualConnectController.class);
+        connectByFetch.setUserData(FetchConnectController.class);
     }
 
     @ActionMethod("cancel")
@@ -164,25 +166,6 @@ public class ShuffleStartController {
         }
     }
 
-    public Class getFundsInClass() {
-        return (Class) shuffleInOptions.getSelectedToggle().getUserData();
-    }
-
-    public ToggleGroup getFundsOutGroup() {
-        return shuffleOutOptions;
-    }
-
-    public void goToFundsOut() {
-        try {
-            flowActionHandler.navigate((Class<?>) shuffleOutOptions.getSelectedToggle().getUserData());
-        } catch (VetoException | FlowException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public boolean isConnectingManual() {
-        return "connectByIP".equals(shuffleConnectOptions.getSelectedToggle().getUserData());
-    }
 
     @ActionMethod("next")
     public void next(ActionEvent actionEvent) {
