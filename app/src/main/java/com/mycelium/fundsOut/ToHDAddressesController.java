@@ -18,7 +18,13 @@ package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.context.ApplicationContext;
+import io.datafx.controller.context.FXMLApplicationContext;
+import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.BackAction;
+import io.datafx.controller.flow.context.ActionHandler;
+import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.util.VetoException;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -41,7 +47,10 @@ public class ToHDAddressesController {
     public Label extAddressLabel2;
     public Label extAddressLabel3;
     public Label extAddressLabel4;
-
+    @ActionHandler
+    FlowActionHandler flowActionHandler;
+    @FXMLApplicationContext
+    ApplicationContext applicationContext = ApplicationContext.getInstance();
 
     // Called by FXMLLoader
     public void initialize() {
@@ -54,6 +63,10 @@ public class ToHDAddressesController {
     }
 
     public void next(ActionEvent actionEvent) {
-
+        try {
+            flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("connectOption"));
+        } catch (VetoException | FlowException e) {
+            e.printStackTrace();
+        }
     }
 }

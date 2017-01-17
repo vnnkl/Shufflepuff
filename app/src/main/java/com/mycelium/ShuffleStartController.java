@@ -16,6 +16,7 @@
 
 package com.mycelium;
 
+import com.mycelium.connect.ManualConnectController;
 import com.mycelium.fundsIn.AddMasterPrivController;
 import com.mycelium.fundsIn.AddPrivKeyinWIFController;
 import com.mycelium.fundsIn.AddReceiveAddressController;
@@ -151,7 +152,7 @@ public class ShuffleStartController {
         fundsOutXPub.setUserData(ToMasterPubController.class);
 
         // setUserData for button selection connectOptions
-        connectByIP.setUserData("connectByIP");
+        connectByIP.setUserData(ManualConnectController.class);
         connectByFetch.setUserData("connectByFetch");
     }
 
