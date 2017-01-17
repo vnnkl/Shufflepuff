@@ -18,7 +18,9 @@ package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.action.BackAction;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -28,7 +30,7 @@ import java.util.ArrayList;
 @ViewController("shuffle_toHDAddresses.fxml")
 public class ToHDAddressesController {
     public Button AddBtn;
-    public Button cancelBtn;
+    @FXML @BackAction public Button backBtn;
     public TextField inputPrivKEdit;
     public TextField inputIndexEdit;
     public ArrayList<String> privKeyList;
@@ -49,10 +51,6 @@ public class ToHDAddressesController {
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
-    }
-
-    public void addInput(ActionEvent event) {
-
     }
 
     public void next(ActionEvent actionEvent) {

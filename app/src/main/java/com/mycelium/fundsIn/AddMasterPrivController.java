@@ -17,10 +17,9 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
-import com.mycelium.ShuffleStartController;
-import com.mycelium.ShuffleStartModel;
-import com.mycelium.fundsOut.ToMasterPubController;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.context.ApplicationContext;
+import io.datafx.controller.context.FXMLApplicationContext;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.BackAction;
 import io.datafx.controller.flow.context.ActionHandler;
@@ -35,27 +34,24 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
+
 import static com.mycelium.MainController.shuffleFlow;
 
 @ViewController("shuffle_addMasterPriv.fxml")
 public class AddMasterPrivController {
     @FXML private Button AddBtn;
-    @FXML @BackAction private Button cancelBtn;
+    @FXML @BackAction private Button backBtn;
     @FXML private TextField inputMasterPrivEdit;
     @FXML private ArrayList<String> privKeyList = new ArrayList<String>(1);
     ListProperty<String> listProperty = new SimpleListProperty<>();
     @FXML private ListView privKeyListView;
     public Main.OverlayUI overlayUI;
 
-    @Inject
-    ShuffleStartModel shuffleStartModel;
-    @Inject
-    ShuffleStartController shuffleStartController;
     @ActionHandler
     FlowActionHandler flowActionHandler = new FlowActionHandler(shuffleFlow.createHandler());
-
+    @FXMLApplicationContext
+    ApplicationContext applicationContext = ApplicationContext.getInstance();
 
     // Called by FXMLLoader
     public void initialize() {
@@ -85,9 +81,9 @@ public class AddMasterPrivController {
 
 
     public void next(ActionEvent actionEvent) {
-        shuffleStartModel.setFundsInList(privKeyList);
+        applicationContext.register("MasterPriv",listProperty.get());
         try {
-            flowActionHandler.navigate((Class<? extends Object>) ToMasterPubController.class);
+            flowActionHandler.navigate((Class<? extends Object>) applicationContext.getRegisteredObject("outOption"));
             //flowActionHandler.navigate((Class<? extends Object>) shuffleStartController.getFundsOutGroup().getSelectedToggle().getUserData());
         } catch (VetoException | FlowException e) {
             e.printStackTrace();

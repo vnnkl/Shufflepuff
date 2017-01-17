@@ -25,12 +25,14 @@ import com.mycelium.fundsOut.ToHDAddressesController;
 import com.mycelium.fundsOut.ToMasterPubController;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.ViewNode;
+import io.datafx.controller.context.ApplicationContext;
+import io.datafx.controller.context.FXMLApplicationContext;
 import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.ActionMethod;
 import io.datafx.controller.flow.action.ActionTrigger;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
-import io.datafx.controller.injection.scopes.ApplicationScoped;
+import io.datafx.controller.injection.scopes.FlowScoped;
 import io.datafx.controller.util.VetoException;
 import io.datafx.eventsystem.OnEvent;
 import javafx.event.ActionEvent;
@@ -43,7 +45,7 @@ import javax.annotation.PostConstruct;
 import java.util.LinkedList;
 import java.util.List;
 
-@ApplicationScoped
+@FlowScoped
 @ViewController("shuffle_start.fxml")
 public class ShuffleStartController {
     @FXML
@@ -91,6 +93,9 @@ public class ShuffleStartController {
     @ViewNode
     private ToggleGroup shuffleConnectOptions;
 
+    public ShuffleStartController() {
+    }
+
     public List<String> getKeyList() {
         return keyList;
     }
@@ -103,7 +108,7 @@ public class ShuffleStartController {
     private List<String> utxoList = new LinkedList<String>();
 
     @OnEvent("setkeyList")
-    private boolean setKeyList(List<String> keyList){
+    public boolean setKeyList(List<String> keyList){
         this.keyList = keyList;
         if (this.keyList.equals(keyList)){
             return true;
@@ -127,6 +132,9 @@ public class ShuffleStartController {
 
     @ActionHandler
     FlowActionHandler flowActionHandler;
+
+    @FXMLApplicationContext
+    private static ApplicationContext applicationContext = ApplicationContext.getInstance();
 
     @PostConstruct
     public void initialize() {
@@ -178,6 +186,11 @@ public class ShuffleStartController {
 
     @ActionMethod("next")
     public void next(ActionEvent actionEvent) {
+
+        applicationContext.register("inOption",shuffleInOptions.getSelectedToggle().getUserData());
+        applicationContext.register("outOption",shuffleOutOptions.getSelectedToggle().getUserData());
+        applicationContext.register("connectOption",shuffleConnectOptions.getSelectedToggle().getUserData());
+
         // if next is clicked and every group has a selection made
         //todo: setter method for each group
         String selectedToggle = "" + shuffleInOptions.getSelectedToggle().getUserData();

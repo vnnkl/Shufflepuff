@@ -18,7 +18,13 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.context.ApplicationContext;
+import io.datafx.controller.context.FXMLApplicationContext;
+import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.BackAction;
+import io.datafx.controller.flow.context.ActionHandler;
+import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -35,13 +41,17 @@ import java.util.ArrayList;
 @ViewController("shuffle_addUTXO.fxml")
 public class AddUTXOController {
     @FXML private Button AddBtn;
-    @FXML @BackAction private Button cancelBtn;
+    @FXML @BackAction private Button backBtn;
     @FXML private TextField inputHashEdit;
     @FXML private TextField inputIndexEdit;
     ListProperty<String> listProperty = new SimpleListProperty<>();
     public ArrayList<String> inputList = new ArrayList<String>();
     @FXML private ListView inputListView;
     public Main.OverlayUI overlayUI;
+    @ActionHandler
+    FlowActionHandler flowActionHandler;
+    @FXMLApplicationContext
+    ApplicationContext applicationContext = ApplicationContext.getInstance();
 
     // Called by FXMLLoader
     public void initialize() {
@@ -80,8 +90,12 @@ public class AddUTXOController {
         listProperty.set(FXCollections.observableArrayList(inputList));
     }
 
-
     public void next(ActionEvent actionEvent) {
-
+        applicationContext.register("UTXOs",listProperty.getValue());
+        try {
+            flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("outOption"));
+        } catch (VetoException | FlowException e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -5,11 +5,11 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
   <children>
     <VBox alignment="CENTER_LEFT" layoutY="49.0" prefHeight="303.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
       <children>
-        <Label fx:id="titleLabel" alignment="TOP_LEFT" text="Add UTXOs to be shuffled">
+        <Label fx:id="titleLabel" alignment="TOP_LEFT" text="Add IPs to connect to">
           <font>
             <Font size="25.0" />
           </font>
@@ -18,22 +18,22 @@
                <children>
                   <VBox alignment="CENTER" prefHeight="46.0" prefWidth="379.0">
                      <children>
-                        <Label fx:id="btcLabel" alignment="CENTER" contentDisplay="CENTER" text="prev Hash">
+                        <Label fx:id="btcLabel" alignment="CENTER" contentDisplay="CENTER" text="IP">
                            <font>
                               <Font size="15.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="321.0" promptText="1347ae4bcc50d22070e649a5031f1c05f3b117534c85fd2a9b45cca0044bfa6d" />
+                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="321.0" promptText="192.168.0.1" />
                      </children>
                   </VBox>
-                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="42.0">
+                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="52.0">
                      <children>
-                        <Label fx:id="btcLabel2" alignment="CENTER" contentDisplay="CENTER" text="Index">
+                        <Label fx:id="btcLabel2" alignment="CENTER" contentDisplay="CENTER" text="Port">
                            <font>
                               <Font size="15.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="inputIndexEdit" alignment="TOP_CENTER" maxWidth="39.0" minWidth="10.0" prefHeight="27.0" prefWidth="39.0" promptText="0" />
+                        <TextField fx:id="inputIndexEdit" alignment="TOP_CENTER" maxWidth="54.0" minWidth="10.0" prefHeight="27.0" prefWidth="54.0" promptText="2017" />
                      </children>
                   </VBox>
                   <VBox alignment="CENTER" prefHeight="65.0" prefWidth="54.0">
@@ -55,7 +55,7 @@
             </HBox>
         <HBox alignment="CENTER_RIGHT" fillHeight="true" prefHeight="30.0" prefWidth="600.0" spacing="15.0" VBox.vgrow="NEVER">
           <children>
-                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Next Step: add Outputs" />
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="Next Step: Start Shuffle!" />
             <Button fx:id="backBtn" cancelButton="true" mnemonicParsing="false" onAction="#cancel" prefWidth="79.0" text="Back" />
             <Button fx:id="nextBtn" defaultButton="true" mnemonicParsing="false" onAction="#next" prefWidth="79.0" text="Next" />
           </children>

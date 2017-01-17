@@ -17,12 +17,13 @@
 package com.mycelium.fundsOut;
 
 import com.mycelium.Main;
-import com.mycelium.controls.BitcoinAddressValidator;
 import io.datafx.controller.ViewController;
+import io.datafx.controller.flow.action.BackAction;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -33,7 +34,7 @@ import java.util.ArrayList;
 @ViewController("shuffle_toExtAddress.fxml")
 public class ToExtAddressController {
     public Button AddBtn;
-    public Button cancelBtn;
+    @FXML @BackAction Button cancelBtn;
     public TextField inputPrivKEdit;
     public ArrayList<String> extAddressList = new ArrayList<String>();
     ListProperty<String> listProperty = new SimpleListProperty<>();
