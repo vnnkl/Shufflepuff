@@ -16,6 +16,7 @@
 
 package com.mycelium;
 
+
 import com.mycelium.connect.FetchConnectController;
 import com.mycelium.connect.ManualConnectController;
 import com.mycelium.fundsIn.AddMasterPrivController;
@@ -155,6 +156,7 @@ public class ShuffleStartController {
         // setUserData for button selection connectOptions
         connectByIP.setUserData(ManualConnectController.class);
         connectByFetch.setUserData(FetchConnectController.class);
+
     }
 
     @ActionMethod("cancel")
