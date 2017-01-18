@@ -5,17 +5,31 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
   <children>
-    <VBox alignment="CENTER" layoutY="19.0" prefHeight="359.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+    <VBox alignment="CENTER" layoutY="-32.0" prefHeight="410.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
       <children>
             <HBox alignment="CENTER">
                <children>
-              <Label fx:id="titleLabel" alignment="TOP_LEFT" prefHeight="60.0" prefWidth="386.0" text="There are many ways to Rome, &#10;which is yours?" textAlignment="CENTER">
+              <Label fx:id="titleLabel" alignment="TOP_LEFT" prefHeight="65.0" prefWidth="386.0" text="There are many ways to Rome, &#10;which is yours?" textAlignment="CENTER">
                 <font>
                   <Font size="25.0" />
                 </font>
               </Label>
+               </children>
+            </HBox>
+            <HBox>
+               <children>
+                  <Label fx:id="titleLabel13" alignment="TOP_LEFT" text="Using Full Node?">
+                     <font>
+                        <Font size="18.0" />
+                     </font>
+                  </Label>
+                  <ChoiceBox fx:id="nodeBox" prefWidth="150.0">
+                     <HBox.margin>
+                        <Insets left="45.0" />
+                     </HBox.margin>
+                  </ChoiceBox>
                </children>
             </HBox>
             <HBox fx:id="topHBox" spacing="15.0">
@@ -36,7 +50,6 @@
                               </RadioButton>
                               <RadioButton fx:id="fundsInPrivKeyWIF" mnemonicParsing="false" text="Private Keys (WIF)" toggleGroup="$shuffleInOptions" />
                               <RadioButton fx:id="fundsInMasterPrivKey" mnemonicParsing="false" text="Master PrivKey" toggleGroup="$shuffleInOptions" />
-                              <RadioButton fx:id="fundsInUTXOs" mnemonicParsing="false" text="UTXOs" toggleGroup="$shuffleInOptions" />
                            </children>
                         </HBox>
                      </children>

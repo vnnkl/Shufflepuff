@@ -22,7 +22,6 @@ import com.mycelium.connect.ManualConnectController;
 import com.mycelium.fundsIn.AddMasterPrivController;
 import com.mycelium.fundsIn.AddPrivKeyinWIFController;
 import com.mycelium.fundsIn.AddReceiveAddressController;
-import com.mycelium.fundsIn.AddUTXOController;
 import com.mycelium.fundsOut.ToExtAddressController;
 import com.mycelium.fundsOut.ToHDAddressesController;
 import com.mycelium.fundsOut.ToMasterPubController;
@@ -38,12 +37,10 @@ import io.datafx.controller.flow.context.FlowActionHandler;
 import io.datafx.controller.injection.scopes.FlowScoped;
 import io.datafx.controller.util.VetoException;
 import io.datafx.eventsystem.OnEvent;
+import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Toggle;
-import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.*;
 
 import javax.annotation.PostConstruct;
 import java.util.LinkedList;
@@ -97,6 +94,9 @@ public class ShuffleStartController {
     @ViewNode
     private ToggleGroup shuffleConnectOptions;
 
+    @FXML
+    private ChoiceBox<String> nodeBox;
+
     public ShuffleStartController() {
     }
 
@@ -142,12 +142,14 @@ public class ShuffleStartController {
 
     @PostConstruct
     public void initialize() {
+        nodeBox.setItems(FXCollections.observableArrayList("BTCD","Bitcoin Core"));
+        nodeBox.setValue("BTCD");
         // most is injected by fxml already
         // setUserData for button selection FundsIn
         fundsInReceiveAddress.setUserData(AddReceiveAddressController.class);
         fundsInPrivKeyWIF.setUserData(AddPrivKeyinWIFController.class);
         fundsInMasterPrivKey.setUserData(AddMasterPrivController.class);
-        fundsInUTXOs.setUserData(AddUTXOController.class);
+        //fundsInUTXOs.setUserData(AddUTXOController.class);
 
         // setUserData for button selection FundsOut
         fundsOutInternalHD.setUserData(ToHDAddressesController.class);
@@ -161,15 +163,38 @@ public class ShuffleStartController {
         setToggleContext("inOption");
         setToggleContext("outOption");
         setToggleContext("connectOption");
+        if (!(applicationContext.getRegisteredObject("nodeOption")==null)){
+            nodeBox.setValue(applicationContext.getRegisteredObject("nodeOption").toString());
+        }
+
     }
 
     private void setToggleContext(String key){
         if (!((Class<?>)applicationContext.getRegisteredObject(key)==null)){
-            for (Toggle toggle: shuffleInOptions.getToggles()) {
-                if(toggle.getUserData().equals(applicationContext.getRegisteredObject(key))){
-                    toggle.setSelected(true);
+            switch (key){
+                case "inOption":{
+                    for (Toggle toggle: shuffleInOptions.getToggles()) {
+                        if(toggle.getUserData().equals(applicationContext.getRegisteredObject(key))){
+                            toggle.setSelected(true);
+                        }
+                    }
+                }
+                case "outOption":{
+                    for (Toggle toggle: shuffleOutOptions.getToggles()) {
+                        if(toggle.getUserData().equals(applicationContext.getRegisteredObject(key))){
+                            toggle.setSelected(true);
+                        }
+                    }
+                }
+                case "connectOption":{
+                    for (Toggle toggle: shuffleConnectOptions.getToggles()) {
+                        if(toggle.getUserData().equals(applicationContext.getRegisteredObject(key))){
+                            toggle.setSelected(true);
+                        }
+                    }
                 }
             }
+
         }
     }
 
@@ -185,7 +210,7 @@ public class ShuffleStartController {
 
     @ActionMethod("next")
     public void next(ActionEvent actionEvent) {
-
+        applicationContext.register("nodeOption",nodeBox.getValue());
         applicationContext.register("inOption",shuffleInOptions.getSelectedToggle().getUserData());
         applicationContext.register("outOption",shuffleOutOptions.getSelectedToggle().getUserData());
         applicationContext.register("connectOption",shuffleConnectOptions.getSelectedToggle().getUserData());

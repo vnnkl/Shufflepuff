@@ -57,24 +57,24 @@
                            <children>
                                   <Label fx:id="privKListLabel" text="private keys to be shuffled:">
                                  <HBox.margin>
-                                    <Insets right="40.0" />
+                                    <Insets right="55.0" />
                                  </HBox.margin>
                               </Label>
-                              <Label fx:id="addressListLabel" text="address of private key:">
+                              <Label fx:id="addressListLabel" text="double check address of private key:">
                                  <HBox.margin>
-                                    <Insets left="45.0" />
+                                    <Insets left="55.0" />
                                  </HBox.margin>
                               </Label>
                            </children>
                         </HBox>
                         <HBox>
                            <children>
-                                  <ListView fx:id="privKeyListView" prefHeight="84.0" prefWidth="217.0">
+                                  <ListView fx:id="privKeyListView" prefHeight="84.0" prefWidth="265.0">
                                  <HBox.margin>
                                     <Insets right="15.0" />
                                  </HBox.margin>
                               </ListView>
-                              <ListView fx:id="addressListView" prefHeight="84.0" prefWidth="217.0">
+                              <ListView fx:id="addressListView" prefHeight="84.0" prefWidth="268.0">
                                  <HBox.margin>
                                     <Insets left="20.0" />
                                  </HBox.margin>
