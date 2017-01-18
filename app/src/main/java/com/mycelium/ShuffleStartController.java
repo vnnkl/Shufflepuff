@@ -42,6 +42,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleGroup;
 
 import javax.annotation.PostConstruct;
@@ -157,6 +158,19 @@ public class ShuffleStartController {
         connectByIP.setUserData(ManualConnectController.class);
         connectByFetch.setUserData(FetchConnectController.class);
 
+        setToggleContext("inOption");
+        setToggleContext("outOption");
+        setToggleContext("connectOption");
+    }
+
+    private void setToggleContext(String key){
+        if (!((Class<?>)applicationContext.getRegisteredObject(key)==null)){
+            for (Toggle toggle: shuffleInOptions.getToggles()) {
+                if(toggle.getUserData().equals(applicationContext.getRegisteredObject(key))){
+                    toggle.setSelected(true);
+                }
+            }
+        }
     }
 
     @ActionMethod("cancel")

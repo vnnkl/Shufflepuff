@@ -34,11 +34,11 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Base58;
 import org.bitcoinj.core.ECKey;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,6 +67,9 @@ public class AddPrivKeyinWIFController {
     public void initialize() {
         privKeyListView.itemsProperty().bind(keyListProperty);
         addressListView.itemsProperty().bind(addressListProperty);
+        if (!((List<String>)applicationContext.getRegisteredObject("WIFKeys")==null)){
+            keyListProperty.set(FXCollections.observableArrayList((List<String>)applicationContext.getRegisteredObject("WIFKeys")));
+        }
     }
 
     public void cancel(ActionEvent event) {
@@ -82,8 +85,12 @@ public class AddPrivKeyinWIFController {
                 if (!privKeyList.contains(newInput)){
                     privKeyList.add(newInput);
 
-                    ECKey key =  ECKey.fromPrivate(Base58.decodeToBigInteger(inputPrivKEdit.getText())); //ECKey.fromPrivate(Base58.decodeChecked(inputPrivKEdit.getText()),true);
-                    addressList.add(Address.fromBase58(Main.bitcoin.params(),key.toAddress(Main.bitcoin.params()).toBase58()).toString());
+                    BigInteger privKey = Base58.decodeToBigInteger(newInput);
+                    ECKey key = ECKey.fromPrivate(privKey);
+
+                    //ECKey key =  ECKey.fromPrivate(Base58.decodeToBigInteger(inputPrivKEdit.getText()));
+                    //ECKey.fromPrivate(Base58.decodeChecked(inputPrivKEdit.getText()),true);
+                    addressList.add(key.toAddress(Main.bitcoin.params()).toString());
                 }
                 keyListProperty.set(FXCollections.observableArrayList(privKeyList));
                 addressListProperty.set(FXCollections.observableArrayList(addressList));
