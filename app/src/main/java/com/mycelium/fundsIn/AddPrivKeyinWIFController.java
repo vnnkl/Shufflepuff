@@ -36,9 +36,9 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Base58;
+import org.bitcoinj.core.DumpedPrivateKey;
 import org.bitcoinj.core.ECKey;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,6 +69,10 @@ public class AddPrivKeyinWIFController {
         addressListView.itemsProperty().bind(addressListProperty);
         if (!((List<String>)applicationContext.getRegisteredObject("WIFKeys")==null)){
             keyListProperty.set(FXCollections.observableArrayList((List<String>)applicationContext.getRegisteredObject("WIFKeys")));
+            for (String privkey: keyListProperty.get()) {
+                addressList.add(DumpedPrivateKey.fromBase58(Main.bitcoin.params(),privkey).getKey().toAddress(Main.bitcoin.params()).toBase58());
+            }
+            addressListProperty.set(FXCollections.observableArrayList(addressList));
         }
     }
 
@@ -84,13 +88,10 @@ public class AddPrivKeyinWIFController {
             if (testPrivKey()){
                 if (!privKeyList.contains(newInput)){
                     privKeyList.add(newInput);
-
-                    BigInteger privKey = Base58.decodeToBigInteger(newInput);
-                    ECKey key = ECKey.fromPrivate(privKey);
-
-                    //ECKey key =  ECKey.fromPrivate(Base58.decodeToBigInteger(inputPrivKEdit.getText()));
-                    //ECKey.fromPrivate(Base58.decodeChecked(inputPrivKEdit.getText()),true);
-                    addressList.add(key.toAddress(Main.bitcoin.params()).toString());
+                    String address = DumpedPrivateKey.fromBase58(Main.bitcoin.params(),newInput).getKey().toAddress(Main.bitcoin.params()).toBase58();
+                    if (!addressList.contains(address)){
+                        addressList.add(address);
+                    }
                 }
                 keyListProperty.set(FXCollections.observableArrayList(privKeyList));
                 addressListProperty.set(FXCollections.observableArrayList(addressList));
