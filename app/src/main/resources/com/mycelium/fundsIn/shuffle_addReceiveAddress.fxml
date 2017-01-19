@@ -63,12 +63,12 @@
                   </VBox>
                   <VBox prefHeight="150.0" prefWidth="339.0">
                      <children>
-                        <Text strokeType="OUTSIDE" strokeWidth="0.0" text="I am a lengthy explanation of how my internal wallet is used, &#10;what privacy implications this has and what not." wrappingWidth="352.1982421875">
+                        <Text fx:id="explanation1" strokeType="OUTSIDE" strokeWidth="0.0" text="I am a lengthy explanation of how my internal wallet is used, &#10;what privacy implications this has and what not." wrappingWidth="352.1982421875">
                            <HBox.margin>
                               <Insets left="5.0" />
                            </HBox.margin>
                         </Text>
-                        <Text layoutX="220.0" layoutY="23.0" strokeType="OUTSIDE" strokeWidth="0.0" text="I am a lengthy explanation of how my internal wallet is used, &#10;what privacy implications this has and what not." wrappingWidth="355.1982421875" />
+                        <Text fx:id="explanation2" layoutX="220.0" layoutY="23.0" strokeType="OUTSIDE" strokeWidth="0.0" text="I am a lengthy explanation of how my internal wallet is used, &#10;what privacy implications this has and what not." wrappingWidth="355.1982421875" />
                      </children>
                   </VBox>
                </children>

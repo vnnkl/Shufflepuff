@@ -16,6 +16,7 @@
 
 package com.mycelium.fundsIn;
 
+import com.google.common.collect.ImmutableList;
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
@@ -31,10 +32,17 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.text.Text;
 import net.glxn.qrgen.image.ImageType;
 import org.bitcoinj.core.Address;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.wallet.KeyChain;
+import org.bitcoinj.wallet.Wallet;
 
 import java.io.ByteArrayInputStream;
+import java.util.LinkedList;
+import java.util.List;
 
 @ViewController("shuffle_addReceiveAddress.fxml")
 public class AddReceiveAddressController {
@@ -49,6 +57,10 @@ public class AddReceiveAddressController {
     @FXML private Label qrReceiveCode2Label;
     @FXML private ImageView qrReceiveCode3;
     @FXML private Label qrReceiveCode3Label;
+    @FXML private Text explanation1;
+    @FXML private Text explanation2;
+
+    Wallet wallet = Main.bitcoin.wallet();
 
     @ActionHandler
     FlowActionHandler flowActionHandler;
@@ -69,29 +81,50 @@ public class AddReceiveAddressController {
     // Called by FXMLLoader
     public void initialize() {
 
-        Address address1 = Main.bitcoin.wallet().freshReceiveAddress();
-        Address address2 = Main.bitcoin.wallet().freshReceiveAddress();
-        Address address3 = Main.bitcoin.wallet().freshReceiveAddress();
-        Address address4 = Main.bitcoin.wallet().freshReceiveAddress();
+        DeterministicKey currentReceiveKey = wallet.currentReceiveKey();
+        DeterministicKey firstKeyAfter = makeNextKey(currentReceiveKey);
+        DeterministicKey secondKeyAfter = makeNextKey(firstKeyAfter);
+        DeterministicKey thirdKeyAfter  = makeNextKey(secondKeyAfter);
+
+        Address currentAddress = currentReceiveKey.toAddress(wallet.getParams());
+        ImmutableList<ChildNumber> childNumber =  currentReceiveKey.getPath();
+
+        System.out.println(currentReceiveKey.getPathAsString());
+        System.out.println(firstKeyAfter.getPathAsString());
 
 
-        String address = "1BitcoinEaterAddressDontSendf59kuE";
+        //ImmutableList<ChildNumber> dsas = new ImmutableList.Builder<ChildNumber>().add()
 
-        this.qrReceiveCode.setImage(stringToQR(address1.toBase58()));
-        this.qrReceiveCodeLabel.setText(address1.toBase58());
-        this.qrReceiveCode1.setImage(stringToQR(address2.toBase58()));
-        this.qrReceiveCode1Label.setText(address2.toBase58());
-        this.qrReceiveCode2.setImage(stringToQR(address3.toBase58()));
-        this.qrReceiveCode2Label.setText(address3.toBase58());
-        this.qrReceiveCode3.setImage(stringToQR(address4.toBase58()));
-        this.qrReceiveCode3Label.setText(address4.toBase58());
+
+        this.qrReceiveCode.setImage(stringToQR(currentAddress.toBase58()));
+        this.qrReceiveCodeLabel.setText(currentAddress.toBase58());
+        this.qrReceiveCode1.setImage(stringToQR(firstKeyAfter.toAddress(wallet.getParams()).toBase58()));
+        this.qrReceiveCode1Label.setText(firstKeyAfter.toAddress(wallet.getParams()).toBase58());
+        this.qrReceiveCode2.setImage(stringToQR(firstKeyAfter.toAddress(wallet.getParams()).toBase58()));
+        this.qrReceiveCode2Label.setText(secondKeyAfter.toAddress(wallet.getParams()).toBase58());
+        this.qrReceiveCode3.setImage(stringToQR(thirdKeyAfter.toAddress(wallet.getParams()).toBase58()));
+        this.qrReceiveCode3Label.setText(thirdKeyAfter.toAddress(wallet.getParams()).toBase58());
+
+        explanation2.setText(explanation2.getText() + wallet.currentKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).getPath());
+
     }
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
     }
 
+    public DeterministicKey makeNextKey(DeterministicKey key){
+        ImmutableList<ChildNumber> immutableList = key.getPath();
+        List<ChildNumber> das = new LinkedList<ChildNumber>();
+        // dasd = new ImmutableList.Builder<ChildNumber>()
 
+        for (int i = 0; i<= immutableList.size()-2;i++){
+            das.add(immutableList.get(i));
+        }
+        das.add(new ChildNumber(immutableList.get(immutableList.size()-1).getI()+1));
+        ImmutableList<ChildNumber> newKey = new ImmutableList.Builder<ChildNumber>().addAll(das).build();
+        return wallet.getKeyByPath(newKey);
+    }
 
     public void next(ActionEvent actionEvent) {
         try {

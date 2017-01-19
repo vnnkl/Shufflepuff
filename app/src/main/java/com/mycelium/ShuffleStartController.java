@@ -163,6 +163,7 @@ public class ShuffleStartController {
         setToggleContext("inOption");
         setToggleContext("outOption");
         setToggleContext("connectOption");
+
         if (!(applicationContext.getRegisteredObject("nodeOption")==null)){
             nodeBox.setValue(applicationContext.getRegisteredObject("nodeOption").toString());
         }
