@@ -31,8 +31,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
+import org.bitcoinj.wallet.KeyChain;
 
 import java.util.ArrayList;
+import java.util.List;
+
 @ViewController("shuffle_toHDAddresses.fxml")
 public class ToHDAddressesController {
     public Button AddBtn;
@@ -55,7 +58,17 @@ public class ToHDAddressesController {
     // Called by FXMLLoader
     public void initialize() {
         // fetch internal wallets next unused addresses here and display them to the user
-        this.extAddressLabel2.setText("This is the 2nd Address");
+        List<Label> labelList = new ArrayList<Label>();
+        labelList.add(extAddressLabel1);
+        labelList.add(extAddressLabel2);
+        labelList.add(extAddressLabel3);
+        labelList.add(extAddressLabel4);
+
+        for (Label label :
+                labelList) {
+            label.setText(Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.params()).toString());
+        }
+
     }
 
     public void cancel(ActionEvent event) {
