@@ -16,6 +16,7 @@
 
 package com.mycelium.fundsOut;
 
+import com.google.common.collect.ImmutableList;
 import com.mycelium.Main;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
@@ -31,9 +32,11 @@ import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import org.bitcoinj.wallet.KeyChain;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.crypto.DeterministicKey;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 @ViewController("shuffle_toHDAddresses.fxml")
@@ -50,6 +53,12 @@ public class ToHDAddressesController {
     public Label extAddressLabel2;
     public Label extAddressLabel3;
     public Label extAddressLabel4;
+
+    private DeterministicKey key1;
+    private DeterministicKey key2;
+    private DeterministicKey key3;
+    private DeterministicKey key4;
+
     @ActionHandler
     FlowActionHandler flowActionHandler;
     @FXMLApplicationContext
@@ -58,17 +67,39 @@ public class ToHDAddressesController {
     // Called by FXMLLoader
     public void initialize() {
         // fetch internal wallets next unused addresses here and display them to the user
+        key1 = Main.bitcoin.wallet().currentReceiveKey();
+        key2 = makeNextKey(key1);
+        key3 = makeNextKey(key2);
+        key4 = makeNextKey(key3);
+        List<DeterministicKey> keyList = new ArrayList<DeterministicKey>();
+        keyList.add(key1);
+        keyList.add(key2);
+        keyList.add(key3);
+        keyList.add(key4);
+
         List<Label> labelList = new ArrayList<Label>();
         labelList.add(extAddressLabel1);
         labelList.add(extAddressLabel2);
         labelList.add(extAddressLabel3);
         labelList.add(extAddressLabel4);
 
-        for (Label label :
-                labelList) {
-            label.setText(Main.bitcoin.wallet().freshKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).toAddress(Main.bitcoin.params()).toString());
+        for (int i=0; i<labelList.size();i++) {
+                labelList.get(i).setText(keyList.get(i).toAddress(Main.bitcoin.params()).toBase58());
         }
 
+    }
+
+    private DeterministicKey makeNextKey(DeterministicKey key){
+        ImmutableList<ChildNumber> immutableList = key.getPath();
+        List<ChildNumber> das = new LinkedList<ChildNumber>();
+        // dasd = new ImmutableList.Builder<ChildNumber>()
+
+        for (int i = 0; i<= immutableList.size()-2;i++){
+            das.add(immutableList.get(i));
+        }
+        das.add(new ChildNumber(immutableList.get(immutableList.size()-1).getI()+1));
+        ImmutableList<ChildNumber> newKey = new ImmutableList.Builder<ChildNumber>().addAll(das).build();
+        return Main.bitcoin.wallet().getKeyByPath(newKey);
     }
 
     public void cancel(ActionEvent event) {

@@ -120,7 +120,7 @@ public class AddPrivKeyinWIFController {
     public void next(ActionEvent actionEvent) {
         applicationContext.register("WIFKeys",getKeys());
         try {
-            flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("outOption"));
+            flowActionHandler.navigate(AddUTXOController.class);
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }

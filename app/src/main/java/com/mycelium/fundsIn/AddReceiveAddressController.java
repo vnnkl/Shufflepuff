@@ -113,7 +113,7 @@ public class AddReceiveAddressController {
         overlayUI.done();
     }
 
-    public DeterministicKey makeNextKey(DeterministicKey key){
+    private DeterministicKey makeNextKey(DeterministicKey key){
         ImmutableList<ChildNumber> immutableList = key.getPath();
         List<ChildNumber> das = new LinkedList<ChildNumber>();
         // dasd = new ImmutableList.Builder<ChildNumber>()

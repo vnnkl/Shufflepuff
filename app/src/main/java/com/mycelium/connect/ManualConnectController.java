@@ -23,11 +23,6 @@ import io.datafx.controller.context.FXMLApplicationContext;
 import io.datafx.controller.flow.action.BackAction;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
-import io.datafx.controller.flow.FlowException;
-import io.datafx.controller.flow.action.BackAction;
-import io.datafx.controller.flow.context.ActionHandler;
-import io.datafx.controller.flow.context.FlowActionHandler;
-import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -96,10 +91,6 @@ public class ManualConnectController {
 
     public void next(ActionEvent actionEvent) {
         applicationContext.register("IPs",listProperty.getValue());
-        try {
-            flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("outOption"));
-        } catch (VetoException | FlowException e) {
-            e.printStackTrace();
-        }
+
     }
 }
