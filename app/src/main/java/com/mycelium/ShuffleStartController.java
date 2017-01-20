@@ -36,15 +36,12 @@ import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
 import io.datafx.controller.injection.scopes.FlowScoped;
 import io.datafx.controller.util.VetoException;
-import io.datafx.eventsystem.OnEvent;
 import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 import javax.annotation.PostConstruct;
-import java.util.LinkedList;
-import java.util.List;
 
 @FlowScoped
 @ViewController("shuffle_start.fxml")
@@ -99,40 +96,6 @@ public class ShuffleStartController {
     private ChoiceBox<String> nodeBox;
 
     public ShuffleStartController() {
-    }
-
-    public List<String> getKeyList() {
-        return keyList;
-    }
-
-    public List<String> getUtxoList() {
-        return utxoList;
-    }
-
-    private List<String> keyList = new LinkedList<String>();
-    private List<String> utxoList = new LinkedList<String>();
-
-    @OnEvent("setkeyList")
-    public boolean setKeyList(List<String> keyList){
-        this.keyList = keyList;
-        if (this.keyList.equals(keyList)){
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
-
-
-    @OnEvent("setUtxoList")
-    private boolean setUtxoList(List<String> utxoList){
-        this.utxoList = utxoList;
-        if (this.utxoList.equals(utxoList)){
-            return true;
-        }
-        else {
-            return false;
-        }
     }
 
     @ActionHandler
@@ -218,9 +181,6 @@ public class ShuffleStartController {
         //todo: setter method for each group
         String selectedToggle = "" + shuffleInOptions.getSelectedToggle().getUserData();
         System.out.println(selectedToggle);
-
-        //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsOut/shuffle_toMasterPub.fxml");
-        //Main.OverlayUI<com.mycelium.fundsIn.AddReceiveAddressController> screen = Main.instance.overlayUI("fundsIn/shuffle_"+selectedToggle+".fxml");
 
         try {
             flowActionHandler.navigate((Class<?>) shuffleInOptions.getSelectedToggle().getUserData());
