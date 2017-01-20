@@ -32,7 +32,6 @@ import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.ActionEvent;
-import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -178,14 +177,15 @@ public class MainController {
     }
 
     public static Flow shuffleFlow;
+    public Main.OverlayUI<ShuffleStartController> overlayUI;
 
     public void shuffleClicked(ActionEvent actionEvent) throws FlowException {
-        shuffleFlow = new Flow(ShuffleStartController.class);
-        Scene shuffleScene = new Scene(shuffleFlow.start());
-        Main.instance.mainStage.setScene(shuffleScene);
-        Main.instance.mainStage.show();
+        //shuffleFlow = new Flow(ShuffleStartController.class);
+        //Scene shuffleScene = new Scene(shuffleFlow.start());
+        //Main.instance.mainStage.setScene(shuffleScene);
+        //Main.instance.mainStage.show();
 
         //new Flow(ShuffleStartController.class).startInStage(Main.instance.mainStage);
-        // Main.OverlayUI<WalletSettingsController> screen = Main.instance.overlayUI("shuffle_start.fxml");
+        overlayUI = Main.instance.overlayUI("start_wizard.fxml");
     }
 }

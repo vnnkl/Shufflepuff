@@ -56,6 +56,7 @@ public class ShuffleStartController {
     private Button cancelBtn;
     @ViewNode
     private Button nextBtn;
+    @FXML
     public Main.OverlayUI overlayUI;
     @FXML
     @ViewNode
@@ -142,6 +143,7 @@ public class ShuffleStartController {
 
     @PostConstruct
     public void initialize() {
+
         nodeBox.setItems(FXCollections.observableArrayList("BTCD","Bitcoin Core"));
         nodeBox.setValue("BTCD");
         // most is injected by fxml already
@@ -201,11 +203,7 @@ public class ShuffleStartController {
 
     @ActionMethod("cancel")
     public void cancel() {
-        try {
-            flowActionHandler.navigate(MainController.class);
-        } catch (VetoException | FlowException e) {
-            e.printStackTrace();
-        }
+        Main.instance.controller.overlayUI.done();
     }
 
 

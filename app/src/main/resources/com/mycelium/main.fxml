@@ -1,8 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
-<?scenebuilder-classpath-element ../../../../target/classes?>
-<?scenebuilder-classpath-element ../../../../../core/target/bitcoinj-0.12-SNAPSHOT.jar?>
-
 <?import com.mycelium.controls.ClickableBitcoinAddress?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.effect.BoxBlur?>
