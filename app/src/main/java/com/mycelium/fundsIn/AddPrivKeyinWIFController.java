@@ -17,6 +17,7 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import com.mycelium.utils.GuiUtils;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
@@ -34,26 +35,30 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
-import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Base58;
-import org.bitcoinj.core.DumpedPrivateKey;
-import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @ViewController("shuffle_addPrivKeyInWIF.fxml")
 public class AddPrivKeyinWIFController {
-    @FXML private Button AddBtn;
-    @FXML @BackAction private Button backBtn;
-    @FXML private Button nextBtn;
-    @FXML private TextField inputPrivKEdit;
+    @FXML
+    private Button AddBtn;
+    @FXML
+    @BackAction
+    private Button backBtn;
+    @FXML
+    private Button nextBtn;
+    @FXML
+    private TextField inputPrivKEdit;
     public ArrayList<String> privKeyList = new ArrayList<String>();
     public ArrayList<String> addressList = new ArrayList<String>();
     ListProperty<String> keyListProperty = new SimpleListProperty<>();
     ListProperty<String> addressListProperty = new SimpleListProperty<>();
-    @FXML private ListView privKeyListView;
-    @FXML private ListView addressListView;
+    @FXML
+    private ListView privKeyListView;
+    @FXML
+    private ListView addressListView;
     public Main.OverlayUI overlayUI;
 
 
@@ -67,10 +72,10 @@ public class AddPrivKeyinWIFController {
     public void initialize() {
         privKeyListView.itemsProperty().bind(keyListProperty);
         addressListView.itemsProperty().bind(addressListProperty);
-        if (!((List<String>)applicationContext.getRegisteredObject("WIFKeys")==null)){
-            keyListProperty.set(FXCollections.observableArrayList((List<String>)applicationContext.getRegisteredObject("WIFKeys")));
-            for (String privkey: keyListProperty.get()) {
-                addressList.add(DumpedPrivateKey.fromBase58(Main.bitcoin.params(),privkey).getKey().toAddress(Main.bitcoin.params()).toBase58());
+        if (!((List<String>) applicationContext.getRegisteredObject("WIFKeys") == null)) {
+            keyListProperty.set(FXCollections.observableArrayList((List<String>) applicationContext.getRegisteredObject("WIFKeys")));
+            for (String privkey : keyListProperty.get()) {
+                addressList.add(DumpedPrivateKey.fromBase58(Main.bitcoin.params(), privkey).getKey().toAddress(Main.bitcoin.params()).toBase58());
             }
             addressListProperty.set(FXCollections.observableArrayList(addressList));
         }
@@ -83,48 +88,54 @@ public class AddPrivKeyinWIFController {
     public void addInput(ActionEvent event) {
         // add Input, could be invalid still
         // todo: check input for being valid privKey in WIF
-            String newInput = inputPrivKEdit.getText();
 
-            if (testPrivKey()){
-                if (!privKeyList.contains(newInput)){
+        try {
+            String newInput = inputPrivKEdit.getText();
+            if (testPrivKey()) {
+                if (!privKeyList.contains(newInput)) {
                     privKeyList.add(newInput);
-                    String address = DumpedPrivateKey.fromBase58(Main.bitcoin.params(),newInput).getKey().toAddress(Main.bitcoin.params()).toBase58();
-                    if (!addressList.contains(address)){
+                    String address = null;
+
+                    address = DumpedPrivateKey.fromBase58(Main.bitcoin.params(), newInput).getKey().toAddress(Main.bitcoin.params()).toBase58();
+
+                    if (!addressList.contains(address)) {
                         addressList.add(address);
                     }
                 }
                 keyListProperty.set(FXCollections.observableArrayList(privKeyList));
                 addressListProperty.set(FXCollections.observableArrayList(addressList));
             }
-
+        } catch (WrongNetworkException e) {
+            GuiUtils.informationalAlert("wrong network", "Address has been of wrong Network, mixing Mainnet and Testnet up?");
+            inputPrivKEdit.setText("");
+        }
     }
 
-   private boolean testPrivKey(){
-            try {
-                if (inputPrivKEdit.getText().isEmpty()){
-                    return false;
-                }
-                System.out.println(ECKey.fromPrivate(Base58.decodeChecked(inputPrivKEdit.getText()),true));
-            }
-            catch (AddressFormatException e){
+    private boolean testPrivKey() {
+        try {
+            if (inputPrivKEdit.getText().isEmpty()) {
                 return false;
             }
+            System.out.println(ECKey.fromPrivate(Base58.decodeChecked(inputPrivKEdit.getText()), true));
+        } catch (AddressFormatException e) {
+            return false;
+        }
         return true;
-   }
+    }
 
-    private List<String> getKeys(){
+    private List<String> getKeys() {
         return keyListProperty.get();
     }
 
     @ActionMethod("next")
     public void next(ActionEvent actionEvent) {
-        applicationContext.register("WIFKeys",getKeys());
+        applicationContext.register("WIFKeys", getKeys());
         try {
-        if (applicationContext.getRegisteredObject("nodeOption").equals("Bitcoin Core")){
-            flowActionHandler.navigate(AddUTXOController.class);
-        }else {
-            flowActionHandler.navigate((Class<? extends Object>) applicationContext.getRegisteredObject("outOption"));
-        }
+            if (applicationContext.getRegisteredObject("nodeOption").equals("Bitcoin Core")) {
+                flowActionHandler.navigate(AddUTXOController.class);
+            } else {
+                flowActionHandler.navigate((Class<? extends Object>) applicationContext.getRegisteredObject("outOption"));
+            }
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
