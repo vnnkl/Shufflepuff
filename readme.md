@@ -120,8 +120,8 @@ java that you will use to run Shufflepuff.
 
 **Automatic Installation**
 Download the [Bouncy Castle JAR](http://www.bouncycastle.org/download/bcprov-jdk15on-155.jar) and move it to the `$JAVA_HOME/jre/lib/ext` directory.
-Then, open the `$JAVA_HOME/jre/lib/security/java.security` file and add `security.provider.<n>=org.bouncycastle.jce.provider.BouncyCastleProvider`
-at the end of the list of security providers where <n> represents the number of the next security provider.
+Then, open the `$JAVA_HOME/jre/lib/security/java.security` file and add the line <br /> `security.provider.<n>=org.bouncycastle.jce.provider.BouncyCastleProvider`
+at the end of the list of security providers.  <n> represents the number of the next security provider.
 
 **Manual Installation**
 Simply run `sudo -E build_bc.sh` in the Shufflepuff directory.
