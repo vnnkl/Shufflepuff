@@ -111,7 +111,7 @@ able to run Shufflepuff's cryptographic functions smoothly.
 
 If you have problems, you can [use this tool](https://github.com/jonathancross/jc-docs/blob/master/java-strong-crypto-test) to test support for secure cryptographic keys.
 
-### BouncyCastle for Mac
+### Bouncy Castle for Mac
 
 For Mac users, Bouncy Castle must be added to the list of Java security providers.
 
