@@ -111,6 +111,22 @@ able to run Shufflepuff's cryptographic functions smoothly.
 
 If you have problems, you can [use this tool](https://github.com/jonathancross/jc-docs/blob/master/java-strong-crypto-test) to test support for secure cryptographic keys.
 
+### BouncyCastle for Mac
+
+For Mac users, Bouncy Castle must be added to the list of Java security providers.
+
+If your `$JAVA_HOME` environment variable is not set, set that now to the version of
+java that you will use to run Shufflepuff.
+
+**Automatic Installation**
+Download the [BouncyCastle JAR](http://www.bouncycastle.org/download/bcprov-jdk15on-155.jar) and move it to the `$JAVA_HOME/jre/lib/ext` directory.
+Then, open the `$JAVA_HOME/jre/lib/security/java.security` file and add `security.provider.<n>=org.bouncycastle.jce.provider.BouncyCastleProvider`
+at the end of the list of security providers where <n> represents the number of the next security provider.
+
+**Manual Installation**
+Simply run `sudo -E build_bc.sh` in the Shufflepuff directory.
+The -E flag is required since the script accesses `$JAVA_HOME`.
+
 ### Status Log
 
 status: Works!
