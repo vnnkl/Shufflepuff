@@ -180,12 +180,6 @@ public class MainController {
     public Main.OverlayUI<ShuffleStartController> overlayUI;
 
     public void shuffleClicked(ActionEvent actionEvent) throws FlowException {
-        //shuffleFlow = new Flow(ShuffleStartController.class);
-        //Scene shuffleScene = new Scene(shuffleFlow.start());
-        //Main.instance.mainStage.setScene(shuffleScene);
-        //Main.instance.mainStage.show();
-
-        //new Flow(ShuffleStartController.class).startInStage(Main.instance.mainStage);
         overlayUI = Main.instance.overlayUI("start_wizard.fxml");
     }
 }

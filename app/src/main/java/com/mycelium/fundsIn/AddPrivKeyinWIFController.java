@@ -120,7 +120,11 @@ public class AddPrivKeyinWIFController {
     public void next(ActionEvent actionEvent) {
         applicationContext.register("WIFKeys",getKeys());
         try {
+        if (applicationContext.getRegisteredObject("nodeOption").equals("Bitcoin Core")){
             flowActionHandler.navigate(AddUTXOController.class);
+        }else {
+            flowActionHandler.navigate((Class<? extends Object>) applicationContext.getRegisteredObject("outOption"));
+        }
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
