@@ -127,6 +127,11 @@ at the end of the list of security providers.  Note: `<n>` represents the number
 Simply run `sudo -E build_bc.sh` in the Shufflepuff directory.
 The -E flag is required since the script accesses `$JAVA_HOME`.
 
+### A note about Java Heap space
+
+Depending on your machine, Shufflepuff can exhaust your Java installation's Heap space.
+If this is the case, try adjusting both the minimum memory and maximum memory allocation settings.
+
 ### Status Log
 
 status: Works!
