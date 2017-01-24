@@ -289,7 +289,8 @@ public class TestConnect {
 						
 						System.out.println(hosts);
 						TcpChannel tcp = new TcpChannel(address);
-                        MappedChannel<Integer> mapped = new MappedChannel<>(tcp, hosts, i);
+                        OtrChannel otr = new OtrChannel(tcp);
+                        MappedChannel<Integer> mapped = new MappedChannel<>(otr, hosts, i);
 
                         return mapped;
                     }
