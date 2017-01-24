@@ -123,13 +123,13 @@ If your `$JAVA_HOME` environment variable is not set, set that now to the versio
 java that you will use to run Shufflepuff.
 
 **Automatic Installation**
+Simply run `sudo -E build_bc.sh` in the Shufflepuff directory.
+The -E flag is required since the script accesses `$JAVA_HOME`.
+
+**Manual Installation**
 Download the [Bouncy Castle JAR](http://www.bouncycastle.org/download/bcprov-jdk15on-155.jar) and move it to the `$JAVA_HOME/jre/lib/ext` directory.
 Then, open the `$JAVA_HOME/jre/lib/security/java.security` file and add the line <br /> `security.provider.<n>=org.bouncycastle.jce.provider.BouncyCastleProvider`
 at the end of the list of security providers.  Note: `<n>` represents the number of the next security provider.
-
-**Manual Installation**
-Simply run `sudo -E build_bc.sh` in the Shufflepuff directory.
-The -E flag is required since the script accesses `$JAVA_HOME`.
 
 ### A note about Java Heap space
 
