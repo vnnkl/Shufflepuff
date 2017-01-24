@@ -38,6 +38,10 @@ Shufflepuff needs to look up address balances in order to run the protocol.
 For players with full nodes, an option is provided to look up balances using
 [btcd](https://github.com/btcsuite/btcd). Bitcoin Core support is coming soon!
 
+To generate the `shuffler.jar` file, first `cd` to the Shufflepuff directory.
+Then, run `gradle clean` followed by `gradle jar`.  The `shuffler.jar` file will now be
+installed in the `shuffler/build/libs/` directory.
+
 Usage:
 
     java -jar shuffler.jar shuffle <options...>
