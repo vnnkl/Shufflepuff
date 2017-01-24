@@ -125,7 +125,7 @@ public class TestConnect {
             Chan<Collector<Integer, Bytestring>> netChan = new BasicChan<>();
             this.netChan = netChan;
 
-            new Thread(new ConnectRun(conn, i, addresses, 10, netChan)).start();
+            new Thread(new ConnectRun(conn, i, addresses, 100, netChan)).start();
         }
 
         @Override
@@ -271,7 +271,7 @@ public class TestConnect {
 
             @Override
             public int rounds() {
-                return 5;
+                return 13;
             }
 
             @Override
@@ -289,7 +289,8 @@ public class TestConnect {
 						
 						System.out.println(hosts);
 						TcpChannel tcp = new TcpChannel(address);
-                        MappedChannel<Integer> mapped = new MappedChannel<>(tcp, hosts, i);
+                        OtrChannel otr = new OtrChannel(tcp);
+                        MappedChannel<Integer> mapped = new MappedChannel<>(otr, hosts, i);
 
                         return mapped;
                     }

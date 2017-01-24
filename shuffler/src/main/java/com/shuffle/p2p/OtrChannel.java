@@ -518,7 +518,7 @@ public class OtrChannel<Address> implements Channel<Address, Bytestring> {
              */
 
             Boolean result = chan.receive();
-            if (!result) {
+            if (result == null || !result) {
                 chan.close();
                 session.close();
                 return null;
