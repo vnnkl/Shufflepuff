@@ -10,6 +10,15 @@ package com.shuffle.bitcoin.blockchain;
 
 import com.shuffle.bitcoin.CoinNetworkException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.bitcoinj.core.AddressFormatException;
+import org.bitcoinj.core.Context;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.store.BlockStoreException;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,16 +33,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
-
-import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.NetworkParameters;
-
-import org.apache.commons.codec.binary.Base64;
-
-import org.bitcoinj.store.BlockStoreException;
-import org.json.JSONArray;
-import org.json.JSONObject;
 
 /**
  * Created by Eugene Siegel on 4/22/16.
@@ -175,13 +174,14 @@ public class Btcd extends Bitcoin {
                 HexBinaryAdapter adapter = new HexBinaryAdapter();
                 byte[] bytearray = adapter.unmarshal(currentJson.get("hex").toString());
                 Context context = Context.getOrCreate(netParams);
-                int confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
-                boolean confirmed;
-                if (confirmations == 0) {
-                    confirmed = false;
-                } else {
-                    confirmed = true;
+                int confirmations;
+                try {
+                    confirmations = Integer.parseInt(currentJson.get("confirmations").toString());
+                } catch (JSONException e) {
+                    throw new RuntimeException("The transaction " + txid + " does not seem to have any confirmations", e);
                 }
+                boolean confirmed;
+                confirmed = confirmations != 0;
                 org.bitcoinj.core.Transaction bitTx = new org.bitcoinj.core.Transaction(netParams, bytearray);
                 Transaction tx = new Transaction(txid, bitTx, false, confirmed);
                 txList.add(tx);
