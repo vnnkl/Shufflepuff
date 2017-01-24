@@ -17,6 +17,7 @@
 package com.mycelium.connect;
 
 import com.mycelium.Main;
+import com.mycelium.utils.GuiUtils;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
@@ -33,6 +34,8 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.util.ArrayList;
@@ -72,6 +75,8 @@ public class ManualConnectController {
                 return c;
             }
         }));
+
+
     }
 
     private String[] makeShuffleArguments(){
@@ -97,6 +102,21 @@ public class ManualConnectController {
             inputList.add(betterInput);
         }
         listProperty.set(FXCollections.observableArrayList(inputList));
+
+        byte[] addressBytes = new byte[4];
+        String addressString = inputHashEdit.getText();
+        String[] addressArrayString = addressString.split(".");
+        for (int i=0; addressArrayString.length-1<=i;i++){
+            addressBytes[i] = Byte.valueOf(addressArrayString[i]);
+        }
+
+        try {
+            InetAddress inetAddress= InetAddress.getByAddress(addressBytes);
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+            GuiUtils.informationalAlert("Unknown Host?", "Are you sure this was a correct IP-Address?");
+            inputHashEdit.setText("");
+        }
     }
 
     public void next(ActionEvent actionEvent) {
