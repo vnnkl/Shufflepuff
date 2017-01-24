@@ -2,7 +2,7 @@
 
 for (( c=1; ;c++ ))
 do
-  result=$(grep "security.provider.$c=" "$JAVA_HOME/jre/lib/security/java.security")
+  result=$(grep -F "security.provider.$c=" "$JAVA_HOME/jre/lib/security/java.security")
   if [ "$result" ]
     then
       continue
