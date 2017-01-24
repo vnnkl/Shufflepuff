@@ -81,8 +81,6 @@ public class ManualConnectController {
         applicationContext.getRegisteredObject("UTXOs");
         applicationContext.getRegisteredObject("outAddresses");
 
-
-
         return new String[]{"dfgfd", "sdfsdf"};
     }
 

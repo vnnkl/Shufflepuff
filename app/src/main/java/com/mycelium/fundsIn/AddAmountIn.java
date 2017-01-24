@@ -14,6 +14,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceBox;
+import org.bitcoinj.core.Coin;
 
 /**
  * Created by conta on 24.01.17.
@@ -40,7 +41,8 @@ public class AddAmountIn {
 
 
     public void next(ActionEvent actionEvent) {
-        applicationContext.register("shuffleAmount", amountInChoice.getValue());
+        // register shuffleAmount as Long in satoshis
+        applicationContext.register("shuffleAmount", Coin.parseCoin(amountInChoice.getValue().split(" BTC")[0]));
         try {
             flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("inOption"));
         } catch (VetoException | FlowException e) {
