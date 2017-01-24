@@ -55,7 +55,7 @@ Options that all players must agree on for the protocol to run:
 
 Options that the player must provide to participate in the protocol:
 
-<b>Note: You MUST forward the port if you aren't using localhost.</b>
+<b>Note: You must forward the port if you aren't using localhost.</b>
 
     * --port     A port on which to listen for connections from other players.
     * --key      A private Bitcoin key in [WIF format](https://en.bitcoin.it/wiki/Wallet_import_format) which holds enough funds to create the transaction (amount + fee). The funds must be in a single output.
@@ -125,7 +125,7 @@ If your `$JAVA_HOME` environment variable is not set, set that now to the versio
 java that you will use to run Shufflepuff.
 
 **Automatic Installation**
-Simply run `sudo -E build_bc.sh` in the Shufflepuff directory.
+Simply run `sudo -E ./build_bc.sh` in the Shufflepuff directory.
 The -E flag is required since the script accesses `$JAVA_HOME`.
 
 **Manual Installation**
