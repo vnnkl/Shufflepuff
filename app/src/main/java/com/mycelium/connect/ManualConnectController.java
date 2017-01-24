@@ -74,6 +74,11 @@ public class ManualConnectController {
         }));
     }
 
+    private String[] makeShuffleArguments(){
+
+        return new String[]{"dfgfd", "sdfsdf"};
+    }
+
     public void cancel(ActionEvent event) {
         overlayUI.done();
     }

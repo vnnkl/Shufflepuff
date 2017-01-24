@@ -17,7 +17,6 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
-import com.shuffle.bitcoin.blockchain.Btcd;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
@@ -37,8 +36,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
 import org.bitcoinj.core.TransactionOutput;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
 import java.util.ArrayList;
@@ -57,15 +54,11 @@ public class AddUTXOController {
     FlowActionHandler flowActionHandler;
     @FXMLApplicationContext
     ApplicationContext applicationContext = ApplicationContext.getInstance();
-    Btcd btcd;
+    //Btcd btcd;
 
     // Called by FXMLLoader
     public void initialize() {
-        try {
-            btcd  = new Btcd(Main.params,"admin","pass");
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        }
+        // btcd  = new Btcd(Main.params,"admin","pass");
         inputListView.itemsProperty().bind(listProperty);
         //allow index to have up to 3 numbers
         DecimalFormat format = new DecimalFormat("#");
@@ -100,11 +93,7 @@ public class AddUTXOController {
             }
         listProperty.set(FXCollections.observableArrayList(inputList));
         TransactionOutput output = null;
-        try {
-             output = btcd.getTransaction(inputHashEdit.getText()).getOutput(Long.parseLong(inputIndexEdit.getText()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // output = btcd.getTransaction(inputHashEdit.getText()).getOutput(Long.parseLong(inputIndexEdit.getText()));
         System.out.println(output.toString());
     }
 

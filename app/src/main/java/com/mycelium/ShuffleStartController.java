@@ -19,6 +19,7 @@ package com.mycelium;
 
 import com.mycelium.connect.FetchConnectController;
 import com.mycelium.connect.ManualConnectController;
+import com.mycelium.fundsIn.AddAmountIn;
 import com.mycelium.fundsIn.AddMasterPrivController;
 import com.mycelium.fundsIn.AddPrivKeyinWIFController;
 import com.mycelium.fundsIn.AddReceiveAddressController;
@@ -183,7 +184,7 @@ public class ShuffleStartController {
         System.out.println(selectedToggle);
 
         try {
-            flowActionHandler.navigate((Class<?>) shuffleInOptions.getSelectedToggle().getUserData());
+            flowActionHandler.navigate(AddAmountIn.class);
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
