@@ -11,4 +11,4 @@ do
   break
 done
 
-$(curl -o "$JAVA_HOME/jre/lib/ext/bcprov-jdk15on-155.jar" http://www.bouncycastle.org/download/bcprov-jdk15on-155.jar)
+$(wget -P "$JAVA_HOME/jre/lib/ext/" http://www.bouncycastle.org/download/bcprov-jdk15on-155.jar)
