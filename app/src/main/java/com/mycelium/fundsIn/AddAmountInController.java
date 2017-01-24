@@ -20,7 +20,7 @@ import org.bitcoinj.core.Coin;
  * Created by conta on 24.01.17.
  */
 @ViewController("shuffle_amountIn.fxml")
-public class AddAmountIn {
+public class AddAmountInController {
     @ViewNode @BackAction
     Button backBtn;
     @ViewNode
