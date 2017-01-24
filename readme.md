@@ -55,7 +55,7 @@ Options that all players must agree on for the protocol to run:
 
 Options that the player must provide to participate in the protocol:
 
-    * --port     A port on which to listen for connections from other players.
+    * --port     A port on which to listen for connections from other players.  Note: You MUST forward this port if you aren't using localhost.
     * --key      A private Bitcoin key in [WIF format](https://en.bitcoin.it/wiki/Wallet_import_format) which holds enough funds to create the transaction (amount + fee). The funds must be in a single output.
     * --anon     An address to store the anonymized funds. The output to this address must NEVER be merged with any other output owned by the user or his anonymity is destroyed, and that of the other players is weakened.
     * --change   An optional change address. The change address is not anonymized. If a change address is not provided, any remaining funds go to the miners as a fee.
