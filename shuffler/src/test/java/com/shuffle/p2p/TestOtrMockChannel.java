@@ -1,6 +1,5 @@
 package com.shuffle.p2p;
 
-import com.shuffle.chan.Chan;
 import com.shuffle.chan.Send;
 import com.shuffle.mock.MockNetwork;
 

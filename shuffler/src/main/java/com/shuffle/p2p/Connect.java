@@ -239,6 +239,7 @@ public class Connect<Identity, P extends Serializable> implements Connection<Ide
                 // Maximum number of retries has prevented us from making all connections.
                 // TODO In some instances, it should be possible to run coin shuffle with fewer
                 // players, so we should still return the network object.
+                System.out.println("Reached maximum connection retry limit - could not connect to peer: " + peer.identity());
                 connection.close();
                 return null;
             }
