@@ -38,6 +38,10 @@ Shufflepuff needs to look up address balances in order to run the protocol.
 For players with full nodes, an option is provided to look up balances using
 [btcd](https://github.com/btcsuite/btcd). Bitcoin Core support is coming soon!
 
+To generate the `shuffler.jar` file, first `cd` to the Shufflepuff directory.
+Then, run `gradle clean` followed by `gradle jar`.  The `shuffler.jar` file will now be
+installed in the `shuffler/build/libs/` directory.
+
 Usage:
 
     java -jar shuffler.jar shuffle <options...>
@@ -50,6 +54,8 @@ Options that all players must agree on for the protocol to run:
     * --fee      The mining fee to be payed by each player.
 
 Options that the player must provide to participate in the protocol:
+
+<b>Note: You must forward the port if you aren't using localhost.</b>
 
     * --port     A port on which to listen for connections from other players.
     * --key      A private Bitcoin key in [WIF format](https://en.bitcoin.it/wiki/Wallet_import_format) which holds enough funds to create the transaction (amount + fee). The funds must be in a single output.
@@ -110,6 +116,27 @@ Then, move the three policy files (`README.txt`, `local_policy.jar`, and
 able to run Shufflepuff's cryptographic functions smoothly.
 
 If you have problems, you can [use this tool](https://github.com/jonathancross/jc-docs/blob/master/java-strong-crypto-test) to test support for secure cryptographic keys.
+
+### Bouncy Castle for Mac
+
+For Mac users, Bouncy Castle must be added to the list of Java security providers.
+
+If your `$JAVA_HOME` environment variable is not set, set that now to the version of
+java that you will use to run Shufflepuff.
+
+**Automatic Installation**
+Simply run `sudo -E ./build_bc.sh` in the Shufflepuff directory.
+The -E flag is required since the script accesses `$JAVA_HOME`.
+
+**Manual Installation**
+Download the [Bouncy Castle JAR](http://www.bouncycastle.org/download/bcprov-jdk15on-155.jar) and move it to the `$JAVA_HOME/jre/lib/ext` directory.
+Then, open the `$JAVA_HOME/jre/lib/security/java.security` file and add the line <br /> `security.provider.<n>=org.bouncycastle.jce.provider.BouncyCastleProvider`
+at the end of the list of security providers.  Note: `<n>` represents the number of the next security provider.
+
+### A note about Java Heap space
+
+Depending on your machine, Shufflepuff can exhaust your Java installation's Heap space.
+If this is the case, try adjusting both the minimum memory and maximum memory allocation settings.
 
 ### Status Log
 
