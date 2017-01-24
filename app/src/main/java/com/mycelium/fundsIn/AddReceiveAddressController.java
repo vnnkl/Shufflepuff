@@ -61,6 +61,7 @@ public class AddReceiveAddressController {
     @FXML private Text explanation2;
 
     Wallet wallet = Main.bitcoin.wallet();
+    DeterministicKey currentReceiveKey, firstKeyAfter, secondKeyAfter, thirdKeyAfter;
 
     @ActionHandler
     FlowActionHandler flowActionHandler;
@@ -81,10 +82,10 @@ public class AddReceiveAddressController {
     // Called by FXMLLoader
     public void initialize() {
 
-        DeterministicKey currentReceiveKey = wallet.currentReceiveKey();
-        DeterministicKey firstKeyAfter = makeNextKey(currentReceiveKey);
-        DeterministicKey secondKeyAfter = makeNextKey(firstKeyAfter);
-        DeterministicKey thirdKeyAfter  = makeNextKey(secondKeyAfter);
+        currentReceiveKey = wallet.currentReceiveKey();
+        firstKeyAfter = makeNextKey(currentReceiveKey);
+        secondKeyAfter = makeNextKey(firstKeyAfter);
+        thirdKeyAfter  = makeNextKey(secondKeyAfter);
 
         Address currentAddress = currentReceiveKey.toAddress(wallet.getParams());
         ImmutableList<ChildNumber> childNumber =  currentReceiveKey.getPath();
@@ -116,7 +117,6 @@ public class AddReceiveAddressController {
     private DeterministicKey makeNextKey(DeterministicKey key){
         ImmutableList<ChildNumber> immutableList = key.getPath();
         List<ChildNumber> das = new LinkedList<ChildNumber>();
-        // dasd = new ImmutableList.Builder<ChildNumber>()
 
         for (int i = 0; i<= immutableList.size()-2;i++){
             das.add(immutableList.get(i));
@@ -127,6 +127,14 @@ public class AddReceiveAddressController {
     }
 
     public void next(ActionEvent actionEvent) {
+        // todo: Listen which of the addresses actually received funds and parse only those
+        List<String> keyList = new LinkedList<>();
+        keyList.add(currentReceiveKey.getPrivateKeyAsWiF(wallet.getParams()));
+        keyList.add(firstKeyAfter.getPrivateKeyAsWiF(wallet.getParams()));
+        keyList.add(secondKeyAfter.getPrivateKeyAsWiF(wallet.getParams()));
+        keyList.add(thirdKeyAfter.getPrivateKeyAsWiF(wallet.getParams()));
+        applicationContext.register("WIFKeys",keyList);
+
         try {
             flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("outOption"));
         } catch (VetoException | FlowException e) {

@@ -75,6 +75,13 @@ public class ManualConnectController {
     }
 
     private String[] makeShuffleArguments(){
+        applicationContext.getRegisteredObject("nodeOption");
+        applicationContext.getRegisteredObject("shuffleAmount");
+        applicationContext.getRegisteredObject("WIFKeys");
+        applicationContext.getRegisteredObject("UTXOs");
+        applicationContext.getRegisteredObject("outAddresses");
+
+
 
         return new String[]{"dfgfd", "sdfsdf"};
     }
