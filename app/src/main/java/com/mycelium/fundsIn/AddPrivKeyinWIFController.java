@@ -73,11 +73,14 @@ public class AddPrivKeyinWIFController {
         privKeyListView.itemsProperty().bind(keyListProperty);
         addressListView.itemsProperty().bind(addressListProperty);
         if (!((List<String>) applicationContext.getRegisteredObject("WIFKeys") == null)) {
-            keyListProperty.set(FXCollections.observableArrayList((List<String>) applicationContext.getRegisteredObject("WIFKeys")));
-            for (String privkey : keyListProperty.get()) {
-                addressList.add(DumpedPrivateKey.fromBase58(Main.bitcoin.params(), privkey).getKey().toAddress(Main.bitcoin.params()).toBase58());
+            if (!(((List<String>) applicationContext.getRegisteredObject("WIFKeys")).get(0).equals(Main.bitcoin.wallet().currentReceiveKey().getPrivateKeyAsWiF(Main.params)))) {
+
+                keyListProperty.set(FXCollections.observableArrayList((List<String>) applicationContext.getRegisteredObject("WIFKeys")));
+                for (String privkey : keyListProperty.get()) {
+                    addressList.add(DumpedPrivateKey.fromBase58(Main.bitcoin.params(), privkey).getKey().toAddress(Main.bitcoin.params()).toBase58());
+                }
+                addressListProperty.set(FXCollections.observableArrayList(addressList));
             }
-            addressListProperty.set(FXCollections.observableArrayList(addressList));
         }
     }
 

@@ -33,6 +33,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import org.bitcoinj.core.Coin;
+import org.bitcoinj.core.NetworkParameters;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -63,7 +65,7 @@ public class ManualConnectController {
     // Called by FXMLLoader
     public void initialize() {
         inputListView.itemsProperty().bind(listProperty);
-        //allow index to have up to 3 numbers
+
         DecimalFormat format = new DecimalFormat("#");
         inputIndexEdit.setTextFormatter(new TextFormatter<>(c ->
         {
@@ -84,14 +86,54 @@ public class ManualConnectController {
 
     }
 
-    private String[] makeShuffleArguments(){
+    private String makeShuffleArguments(){
         applicationContext.getRegisteredObject("nodeOption");
         applicationContext.getRegisteredObject("shuffleAmount");
         applicationContext.getRegisteredObject("WIFKeys");
         applicationContext.getRegisteredObject("UTXOs");
         applicationContext.getRegisteredObject("outAddresses");
+        // get inputList
+        List<String> inputs = inputList;
 
-        return new String[]{"dfgfd", "sdfsdf"};
+        String arguments, shuffleAmount, sessionName, blockchain, query, nodeOption, nodeUser, nodePW, timeout, time, utxos;
+
+        shuffleAmount = ((Coin) applicationContext.getRegisteredObject("shuffleAmount")).toString();
+        sessionName = "shuffle"+applicationContext.getRegisteredObject("shuffleAmount");
+        query = (String) applicationContext.getRegisteredObject("nodeOption");
+        if (Main.params.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))){
+            blockchain = "main";
+        }
+        else {
+            blockchain = "test";
+        }
+
+        if (applicationContext.getRegisteredObject("nodeUser")==(null)){
+            nodeUser = "admin";
+        } else {
+        nodeUser = (String) applicationContext.getRegisteredObject("nodeUser");
+        }
+        if (applicationContext.getRegisteredObject("nodePW")==(null)){
+            nodePW = "pass";
+        } else {
+            nodePW = (String) applicationContext.getRegisteredObject("nodePW");
+        }
+
+        if (applicationContext.getRegisteredObject("timeOutTime")==null){
+            timeout = "10000";
+        } else {
+            timeout = (String) applicationContext.getRegisteredObject("timeOutTime");
+        }
+
+        if (query.equals("BTCD")){
+            query = "btcd";
+        } else {
+            query = "core";
+        }
+
+        arguments = "--amount "+shuffleAmount+" --session "+sessionName+" --query "+query+
+                " --blockchain "+blockchain+" --fee 80000 --rpcuser "+nodeUser+" --rpcpass "+nodePW+" --timeout "+timeout+" --time";
+
+        return arguments;
     }
 
     public void cancel(ActionEvent event) {
@@ -100,29 +142,35 @@ public class ManualConnectController {
 
     public void addInput(ActionEvent event) {
         // add Input, could be invalid still
-        String newInput = inputHashEdit.getText() + ":" + inputIndexEdit.getText();
+        String newInput = inputHashEdit.getText();
         String betterInput = newInput.replaceAll(" ", "");
+        String portInput = inputIndexEdit.getText();
         // todo: if one of fields is empty do not paste
-        if (!inputList.contains(betterInput)) {
-            inputList.add(betterInput);
-        }
-        listProperty.set(FXCollections.observableArrayList(inputList));
-
-
-        String addressString = inputHashEdit.getText().replaceAll(" ","");
 
         try {
-            inetAddress= InetAddress.getByName(addressString);
+            inetAddress= InetAddress.getByName(betterInput);
         } catch (UnknownHostException e) {
             e.printStackTrace();
             GuiUtils.informationalAlert("Unknown Host?", "Are you sure this was a correct IP-Address?");
             inputHashEdit.setText("");
         }
         ipList.add(inetAddress);
+
+        String ip;
+        if (portInput.isEmpty()){
+            ip = inetAddress.getHostAddress();
+        } else{
+            ip = inetAddress.getHostAddress()+":"+portInput;
+        }
+        if (!inputList.contains(ip)) {
+            inputList.add(ip);
+        }
+        listProperty.set(FXCollections.observableArrayList(inputList));
     }
 
     public void next(ActionEvent actionEvent) {
         applicationContext.register("IPs",listProperty.getValue());
+        System.out.println(makeShuffleArguments());
 
     }
 }
