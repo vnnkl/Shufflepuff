@@ -182,10 +182,10 @@ public class ShuffleStartController {
         //todo: setter method for each group
         String selectedToggle = "" + shuffleInOptions.getSelectedToggle().getUserData();
         System.out.println(selectedToggle);
-
+        assert(flowActionHandler!=null);
         try {
             flowActionHandler.navigate(AddAmountInController.class);
-        } catch (VetoException | FlowException e) {
+        } catch (VetoException | FlowException | NullPointerException e) {
             e.printStackTrace();
         }
     }

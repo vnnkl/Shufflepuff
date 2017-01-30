@@ -88,7 +88,7 @@ public class ToExtAddressController {
     }
 
     public void next(ActionEvent actionEvent) {
-        applicationContext.register("outAddresses",extAddressList.toString());
+        applicationContext.register("outAddresses",extAddressList);
         try {
             flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("connectOption"));
         } catch (VetoException | FlowException e) {

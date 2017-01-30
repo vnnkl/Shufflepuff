@@ -64,6 +64,8 @@ public class ToHDAddressesController {
     @FXMLApplicationContext
     ApplicationContext applicationContext = ApplicationContext.getInstance();
 
+    List<Label> labelList;
+    List<String> extAddressList = new ArrayList<String>();
     // Called by FXMLLoader
     public void initialize() {
         // fetch internal wallets next unused addresses here and display them to the user
@@ -77,7 +79,7 @@ public class ToHDAddressesController {
         keyList.add(key3);
         keyList.add(key4);
 
-        List<Label> labelList = new ArrayList<Label>();
+        labelList = new ArrayList<Label>();
         labelList.add(extAddressLabel1);
         labelList.add(extAddressLabel2);
         labelList.add(extAddressLabel3);
@@ -85,6 +87,7 @@ public class ToHDAddressesController {
 
         for (int i=0; i<labelList.size();i++) {
                 labelList.get(i).setText(keyList.get(i).toAddress(Main.bitcoin.params()).toBase58());
+                extAddressList.add(keyList.get(i).toAddress(Main.bitcoin.params()).toBase58());
         }
 
     }
@@ -107,6 +110,7 @@ public class ToHDAddressesController {
     }
 
     public void next(ActionEvent actionEvent) {
+        applicationContext.register("outAddresses",extAddressList);
         try {
             flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("connectOption"));
         } catch (VetoException | FlowException e) {

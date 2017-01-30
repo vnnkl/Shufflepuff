@@ -7,7 +7,7 @@
 <?import javafx.scene.text.*?>
 <AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
   <children>
-    <VBox alignment="CENTER_LEFT" layoutY="49.0" prefHeight="303.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
+    <VBox alignment="CENTER_LEFT" layoutY="13.0" prefHeight="370.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
       <children>
         <Label fx:id="titleLabel" alignment="TOP_LEFT" text="Add IPs to connect to">
           <font>
@@ -50,7 +50,13 @@
             </HBox>
             <HBox alignment="CENTER_LEFT" spacing="15.0">
                <children>
-                  <ListView fx:id="inputListView" prefHeight="140.0" prefWidth="414.0" />
+                  <Text strokeType="OUTSIDE" strokeWidth="0.0" text="add the IPs public encryption key here:" />
+                  <TextField fx:id="inputEKedit" prefHeight="27.0" prefWidth="320.0" />
+               </children>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="15.0">
+               <children>
+                  <ListView fx:id="inputListView" prefHeight="79.0" prefWidth="534.0" />
                </children>
             </HBox>
         <HBox alignment="CENTER_RIGHT" fillHeight="true" prefHeight="30.0" prefWidth="600.0" spacing="15.0" VBox.vgrow="NEVER">

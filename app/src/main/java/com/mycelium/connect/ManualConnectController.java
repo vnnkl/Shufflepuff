@@ -50,6 +50,7 @@ public class ManualConnectController {
     @FXML @BackAction private Button backBtn;
     @FXML private TextField inputHashEdit;
     @FXML private TextField inputIndexEdit;
+    @FXML private TextField inputEKedit;
     ListProperty<String> listProperty = new SimpleListProperty<>();
     public ArrayList<String> inputList = new ArrayList<String>();
     @FXML private ListView inputListView;
@@ -131,7 +132,8 @@ public class ManualConnectController {
         }
 
         arguments = "--amount "+shuffleAmount+" --session "+sessionName+" --query "+query+
-                " --blockchain "+blockchain+" --fee 80000 --rpcuser "+nodeUser+" --rpcpass "+nodePW+" --timeout "+timeout+" --time";
+                " --blockchain "+blockchain+" --fee 80000 --rpcuser "+nodeUser+" --rpcpass "+nodePW+" --timeout "+timeout+" --time " +((List<String>)applicationContext.getRegisteredObject("outAddresses")).toString().replace("]","").replace("[","");
+
 
         return arguments;
     }
@@ -155,13 +157,22 @@ public class ManualConnectController {
             inputHashEdit.setText("");
         }
         ipList.add(inetAddress);
-
+        String encKey = inputEKedit.getText();
         String ip;
+        StringBuilder builder = new StringBuilder();
         if (portInput.isEmpty()){
-            ip = inetAddress.getHostAddress();
+            builder.append(inetAddress.getHostAddress());
         } else{
-            ip = inetAddress.getHostAddress()+":"+portInput;
+            builder.append(inetAddress.getHostAddress()+":"+portInput);
         }
+        if (encKey.isEmpty()){
+            GuiUtils.informationalAlert("Missing EK for IP?", "Did you forget to provide a EncryptionKey for an IP?");
+        }else {
+            builder.append(";"+encKey);
+        }
+
+        ip = builder.toString();
+
         if (!inputList.contains(ip)) {
             inputList.add(ip);
         }
