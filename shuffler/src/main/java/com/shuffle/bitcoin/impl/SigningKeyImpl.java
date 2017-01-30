@@ -51,7 +51,7 @@ public class SigningKeyImpl implements SigningKey {
         }
 
         switch (stripped.bytes[0]) {
-            case (-1) : {
+            case (-128) : {
                 params = NetworkParameters.fromID(NetworkParameters.ID_MAINNET);
                 break;
             }
