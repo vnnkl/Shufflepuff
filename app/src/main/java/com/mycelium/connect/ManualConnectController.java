@@ -46,14 +46,21 @@ import java.util.List;
 
 @ViewController("shuffle_addIPs.fxml")
 public class ManualConnectController {
-    @FXML private Button AddBtn;
-    @FXML @BackAction private Button backBtn;
-    @FXML private TextField inputHashEdit;
-    @FXML private TextField inputIndexEdit;
-    @FXML private TextField inputEKedit;
+    @FXML
+    private Button AddBtn;
+    @FXML
+    @BackAction
+    private Button backBtn;
+    @FXML
+    private TextField inputHashEdit;
+    @FXML
+    private TextField inputIndexEdit;
+    @FXML
+    private TextField inputEKedit;
     ListProperty<String> listProperty = new SimpleListProperty<>();
     public ArrayList<String> inputList = new ArrayList<String>();
-    @FXML private ListView inputListView;
+    @FXML
+    private ListView inputListView;
     public Main.OverlayUI overlayUI;
     @ActionHandler
     FlowActionHandler flowActionHandler;
@@ -87,7 +94,7 @@ public class ManualConnectController {
 
     }
 
-    private String makeShuffleArguments(){
+    private String makeShuffleArguments() {
         applicationContext.getRegisteredObject("nodeOption");
         applicationContext.getRegisteredObject("shuffleAmount");
         applicationContext.getRegisteredObject("WIFKeys");
@@ -99,40 +106,39 @@ public class ManualConnectController {
         String arguments, shuffleAmount, sessionName, blockchain, query, nodeOption, nodeUser, nodePW, timeout, time, utxos;
 
         shuffleAmount = ((Coin) applicationContext.getRegisteredObject("shuffleAmount")).toString();
-        sessionName = "shuffle"+applicationContext.getRegisteredObject("shuffleAmount");
+        sessionName = "shuffle" + applicationContext.getRegisteredObject("shuffleAmount");
         query = (String) applicationContext.getRegisteredObject("nodeOption");
-        if (Main.params.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))){
+        if (Main.params.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
             blockchain = "main";
-        }
-        else {
+        } else {
             blockchain = "test";
         }
 
-        if (applicationContext.getRegisteredObject("nodeUser")==(null)){
+        if (applicationContext.getRegisteredObject("nodeUser") == (null)) {
             nodeUser = "admin";
         } else {
-        nodeUser = (String) applicationContext.getRegisteredObject("nodeUser");
+            nodeUser = (String) applicationContext.getRegisteredObject("nodeUser");
         }
-        if (applicationContext.getRegisteredObject("nodePW")==(null)){
+        if (applicationContext.getRegisteredObject("nodePW") == (null)) {
             nodePW = "pass";
         } else {
             nodePW = (String) applicationContext.getRegisteredObject("nodePW");
         }
 
-        if (applicationContext.getRegisteredObject("timeOutTime")==null){
+        if (applicationContext.getRegisteredObject("timeOutTime") == null) {
             timeout = "10000";
         } else {
             timeout = (String) applicationContext.getRegisteredObject("timeOutTime");
         }
 
-        if (query.equals("BTCD")){
+        if (query.equals("BTCD")) {
             query = "btcd";
         } else {
             query = "core";
         }
 
-        arguments = "--amount "+shuffleAmount+" --session "+sessionName+" --query "+query+
-                " --blockchain "+blockchain+" --fee 80000 --rpcuser "+nodeUser+" --rpcpass "+nodePW+" --timeout "+timeout+" --time " +((List<String>)applicationContext.getRegisteredObject("outAddresses")).toString().replace("]","").replace("[","");
+        arguments = "--amount " + shuffleAmount + " --session " + sessionName + " --query " + query +
+                " --blockchain " + blockchain + " --fee 80000 --rpcuser " + nodeUser + " --rpcpass " + nodePW + " --timeout " + timeout + " --time " + ((List<String>) applicationContext.getRegisteredObject("outAddresses")).toString().replace("]", "").replace("[", "");
 
 
         return arguments;
@@ -150,7 +156,7 @@ public class ManualConnectController {
         // todo: if one of fields is empty do not paste
 
         try {
-            inetAddress= InetAddress.getByName(betterInput);
+            inetAddress = InetAddress.getByName(betterInput);
         } catch (UnknownHostException e) {
             e.printStackTrace();
             GuiUtils.informationalAlert("Unknown Host?", "Are you sure this was a correct IP-Address?");
@@ -160,27 +166,31 @@ public class ManualConnectController {
         String encKey = inputEKedit.getText();
         String ip;
         StringBuilder builder = new StringBuilder();
-        if (portInput.isEmpty()){
-            builder.append(inetAddress.getHostAddress());
-        } else{
-            builder.append(inetAddress.getHostAddress()+":"+portInput);
-        }
-        if (encKey.isEmpty()){
+
+        if (encKey.isEmpty()) {
+            // EK is necessary
             GuiUtils.informationalAlert("Missing EK for IP?", "Did you forget to provide a EncryptionKey for an IP?");
-        }else {
-            builder.append(";"+encKey);
+        } else {
+            if (portInput.isEmpty()) {
+                // no port provided = default port?
+                builder.append(inetAddress.getHostAddress());
+            } else {
+                builder.append(inetAddress.getHostAddress() + ":" + portInput);
+            }
+            builder.append(";" + encKey);
         }
 
         ip = builder.toString();
-
-        if (!inputList.contains(ip)) {
-            inputList.add(ip);
+        if (!(ip.isEmpty())) {
+            if (!inputList.contains(ip)) {
+                inputList.add(ip);
+            }
+            listProperty.set(FXCollections.observableArrayList(inputList));
         }
-        listProperty.set(FXCollections.observableArrayList(inputList));
     }
 
     public void next(ActionEvent actionEvent) {
-        applicationContext.register("IPs",listProperty.getValue());
+        applicationContext.register("IPs", listProperty.getValue());
         System.out.println(makeShuffleArguments());
 
     }

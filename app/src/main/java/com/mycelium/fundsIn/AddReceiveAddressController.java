@@ -34,7 +34,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Text;
 import net.glxn.qrgen.image.ImageType;
-import org.bitcoinj.core.Address;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.crypto.DeterministicKey;
 import org.bitcoinj.wallet.KeyChain;
@@ -59,6 +58,8 @@ public class AddReceiveAddressController {
     @FXML private Label qrReceiveCode3Label;
     @FXML private Text explanation1;
     @FXML private Text explanation2;
+    @FXML
+    private Text addressText;
 
     Wallet wallet = Main.bitcoin.wallet();
     DeterministicKey currentReceiveKey, firstKeyAfter, secondKeyAfter, thirdKeyAfter;
@@ -70,7 +71,7 @@ public class AddReceiveAddressController {
 
     public Image stringToQR(String address){
         final byte[] imageBytes = net.glxn.qrgen.QRCode
-                .from(address)
+                .from("bitcoin:" + address)
                 .withSize(200, 200)
                 .to(ImageType.PNG)
                 .stream()
@@ -87,26 +88,12 @@ public class AddReceiveAddressController {
         secondKeyAfter = makeNextKey(firstKeyAfter);
         thirdKeyAfter  = makeNextKey(secondKeyAfter);
 
-        Address currentAddress = currentReceiveKey.toAddress(wallet.getParams());
-        ImmutableList<ChildNumber> childNumber =  currentReceiveKey.getPath();
+        // we only show one address, as the protocol asks for encryption Keys that match a bitcoin address with correct funds
+        // this limits us to one privkey per player, so for more addresses more shuffles are needed.
+        this.qrReceiveCode.setImage(stringToQR(currentReceiveKey.toAddress(wallet.getParams()).toBase58()));
+        this.qrReceiveCodeLabel.setText(currentReceiveKey.toAddress(wallet.getParams()).toBase58());
 
-        System.out.println(currentReceiveKey.getPathAsString());
-        System.out.println(firstKeyAfter.getPathAsString());
-
-
-        //ImmutableList<ChildNumber> dsas = new ImmutableList.Builder<ChildNumber>().add()
-
-
-        this.qrReceiveCode.setImage(stringToQR(currentAddress.toBase58()));
-        this.qrReceiveCodeLabel.setText(currentAddress.toBase58());
-        this.qrReceiveCode1.setImage(stringToQR(firstKeyAfter.toAddress(wallet.getParams()).toBase58()));
-        this.qrReceiveCode1Label.setText(firstKeyAfter.toAddress(wallet.getParams()).toBase58());
-        this.qrReceiveCode2.setImage(stringToQR(firstKeyAfter.toAddress(wallet.getParams()).toBase58()));
-        this.qrReceiveCode2Label.setText(secondKeyAfter.toAddress(wallet.getParams()).toBase58());
-        this.qrReceiveCode3.setImage(stringToQR(thirdKeyAfter.toAddress(wallet.getParams()).toBase58()));
-        this.qrReceiveCode3Label.setText(thirdKeyAfter.toAddress(wallet.getParams()).toBase58());
-
-        explanation2.setText(explanation2.getText() + wallet.currentKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).getPath());
+        addressText.setText(addressText.getText() + currentReceiveKey.toAddress(wallet.getParams()).toBase58() + " Internal wallet path: " + wallet.currentKey(KeyChain.KeyPurpose.RECEIVE_FUNDS).getPath());
 
     }
 
