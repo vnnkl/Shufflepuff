@@ -154,7 +154,7 @@ public class ManualConnectController {
         String betterInput = newInput.replaceAll(" ", "");
         String portInput = inputIndexEdit.getText();
         // todo: if one of fields is empty do not paste
-
+        if (!(betterInput.isEmpty())) {
         try {
             inetAddress = InetAddress.getByName(betterInput);
         } catch (UnknownHostException e) {
@@ -178,14 +178,15 @@ public class ManualConnectController {
                 builder.append(inetAddress.getHostAddress() + ":" + portInput);
             }
             builder.append(";" + encKey);
-        }
+
 
         ip = builder.toString();
-        if (!(ip.isEmpty())) {
+
             if (!inputList.contains(ip)) {
                 inputList.add(ip);
             }
             listProperty.set(FXCollections.observableArrayList(inputList));
+        }
         }
     }
 
