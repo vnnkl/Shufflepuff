@@ -133,6 +133,7 @@ public class AddPrivKeyinWIFController {
     @ActionMethod("next")
     public void next(ActionEvent actionEvent) {
         applicationContext.register("WIFKeys", getKeys());
+        applicationContext.register("changeAddress", addressList.get(0));
         try {
             if (applicationContext.getRegisteredObject("nodeOption").equals("Bitcoin Core")) {
                 flowActionHandler.navigate(AddUTXOController.class);
