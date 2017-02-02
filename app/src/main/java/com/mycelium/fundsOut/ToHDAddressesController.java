@@ -85,10 +85,15 @@ public class ToHDAddressesController {
         labelList.add(extAddressLabel3);
         labelList.add(extAddressLabel4);
 
-        for (int i=0; i<labelList.size();i++) {
+        for (int i = 0; i < 1; i++) {
                 labelList.get(i).setText(keyList.get(i).toAddress(Main.bitcoin.params()).toBase58());
                 extAddressList.add(keyList.get(i).toAddress(Main.bitcoin.params()).toBase58());
         }
+
+        //only one anon address atm
+        extAddressLabel2.setText("");
+        extAddressLabel3.setText("");
+        extAddressLabel4.setText("");
 
     }
 
@@ -110,7 +115,7 @@ public class ToHDAddressesController {
     }
 
     public void next(ActionEvent actionEvent) {
-        applicationContext.register("outAddresses",extAddressList);
+        applicationContext.register("outAddresses", extAddressList.get(0));
         try {
             flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("connectOption"));
         } catch (VetoException | FlowException e) {

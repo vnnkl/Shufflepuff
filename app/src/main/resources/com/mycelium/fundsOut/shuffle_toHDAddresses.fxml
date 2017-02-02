@@ -57,17 +57,20 @@
                               <Font size="12.0" />
                            </font>
                         </Label>
-                        <Label fx:id="extAddressLabel2" prefHeight="17.0" prefWidth="285.0" text="1FnE116QKWHXBixUBphceJt895zPFcg16E">
+                            <Label fx:id="extAddressLabel2" disable="true" prefHeight="17.0" prefWidth="285.0"
+                                   text="1FnE116QKWHXBixUBphceJt895zPFcg16E">
                            <font>
                               <Font size="12.0" />
                            </font>
                         </Label>
-                        <Label fx:id="extAddressLabel3" prefHeight="17.0" prefWidth="285.0" text="1FnE116QKWHXBixUBphceJt895zPFcg16E">
+                            <Label fx:id="extAddressLabel3" disable="true" prefHeight="17.0" prefWidth="285.0"
+                                   text="1FnE116QKWHXBixUBphceJt895zPFcg16E">
                            <font>
                               <Font size="12.0" />
                            </font>
                         </Label>
-                        <Label fx:id="extAddressLabel4" prefHeight="17.0" prefWidth="285.0" text="1FnE116QKWHXBixUBphceJt895zPFcg16E">
+                            <Label fx:id="extAddressLabel4" disable="true" prefHeight="17.0" prefWidth="285.0"
+                                   text="1FnE116QKWHXBixUBphceJt895zPFcg16E">
                            <font>
                               <Font size="12.0" />
                            </font>
