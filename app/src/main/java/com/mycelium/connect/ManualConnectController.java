@@ -102,11 +102,6 @@ public class ManualConnectController {
     }
 
     private String makeShuffleArguments() {
-        applicationContext.getRegisteredObject("nodeOption");
-        applicationContext.getRegisteredObject("shuffleAmount");
-        applicationContext.getRegisteredObject("WIFKeys");
-        applicationContext.getRegisteredObject("UTXOs");
-        applicationContext.getRegisteredObject("outAddresses");
         // get inputList
         List<String> inputs = inputList;
 
@@ -157,6 +152,11 @@ public class ManualConnectController {
 
         stringBuilder.append(" --peers " + getPeerArgument());
 
+        if (applicationContext.getRegisteredObject("WIFKeys") == (null)) {
+        } else {
+            stringBuilder.append(" --key " + ((List<String>) applicationContext.getRegisteredObject("changeAddress")).get(0));
+        }
+
         stringBuilder.append(" --anon " + (String) applicationContext.getRegisteredObject("outAddresses").toString().replace("]", "").replace("[", ""));
 
         if (applicationContext.getRegisteredObject("changeAddress") == (null)) {
@@ -168,7 +168,7 @@ public class ManualConnectController {
 
         arguments = "--amount " + shuffleAmount + " --session " + sessionName + " --query " + query +
                 " --blockchain --fee 80000 --rpcuser  --rpcpass " +
-                " --timeout " + timeout + " --time " + ((String) applicationContext.getRegisteredObject("outAddresses")).toString().replace("]", "").replace("[", "");
+                " --timeout " + timeout + " --time ";
 
         return arguments;
     }
