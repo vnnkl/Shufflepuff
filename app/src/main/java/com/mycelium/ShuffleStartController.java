@@ -115,16 +115,18 @@ public class ShuffleStartController {
         fundsInReceiveAddress.setUserData(AddReceiveAddressController.class);
         fundsInPrivKeyWIF.setUserData(AddPrivKeyinWIFController.class);
         fundsInMasterPrivKey.setUserData(AddMasterPrivController.class);
+        fundsInMasterPrivKey.setDisable(true);
         //fundsInUTXOs.setUserData(AddUTXOController.class);
 
         // setUserData for button selection FundsOut
         fundsOutInternalHD.setUserData(ToHDAddressesController.class);
         fundsOutExtAddresses.setUserData(ToExtAddressController.class);
         fundsOutXPub.setUserData(ToMasterPubController.class);
-
+        fundsOutXPub.setDisable(true);
         // setUserData for button selection connectOptions
         connectByIP.setUserData(ManualConnectController.class);
         connectByFetch.setUserData(FetchConnectController.class);
+        connectByFetch.setDisable(true);
 
         setToggleContext("inOption");
         setToggleContext("outOption");
