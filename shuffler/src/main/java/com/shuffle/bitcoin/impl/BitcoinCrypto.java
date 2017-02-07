@@ -13,12 +13,13 @@ import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.InsufficientMoneyException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Transaction;
-import org.bitcoinj.core.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChain;
 import org.bitcoinj.wallet.KeyChainGroup;
+import org.bitcoinj.wallet.SendRequest;
+import org.bitcoinj.wallet.Wallet;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.encoders.Base64;
 import org.json.JSONObject;
@@ -154,7 +155,7 @@ public class BitcoinCrypto implements Crypto {
       }
       Coin amount = Coin.valueOf(amountSatoshis);
       // create a SendRequest of amount to destinationAddress
-      Wallet.SendRequest sendRequest = Wallet.SendRequest.to(addressj, amount);
+      SendRequest sendRequest = SendRequest.to(addressj, amount);
       // set dynamic fee
       sendRequest.feePerKb = getRecommendedFee();
       // complete & sign tx
@@ -175,7 +176,9 @@ public class BitcoinCrypto implements Crypto {
          kit.restoreWalletFromSeed(seed);
       }
       // startUp WalletAppKit
-      kit.startAndWait();
+      kit.setBlockingStartup(true);
+      kit.startAsync();
+      kit.awaitRunning();
       return kit;
    }
 

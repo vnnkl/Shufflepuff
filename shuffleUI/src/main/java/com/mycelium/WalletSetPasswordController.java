@@ -28,7 +28,7 @@ import org.slf4j.*;
 import org.spongycastle.crypto.params.*;
 import com.mycelium.utils.*;
 
-import java.time.*;
+import java.time.Duration;
 import java.util.concurrent.*;
 
 import static com.mycelium.utils.GuiUtils.*;
