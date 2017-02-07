@@ -18,6 +18,7 @@ package com.mycelium.connect;
 
 
 import com.mycelium.Main;
+import com.mycelium.ShuffleStartController;
 import com.mycelium.utils.GuiUtils;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.player.Shuffle;
@@ -25,9 +26,11 @@ import com.shuffle.protocol.FormatException;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
+import io.datafx.controller.flow.FlowException;
 import io.datafx.controller.flow.action.BackAction;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
@@ -281,28 +284,18 @@ public class ManualConnectController {
         System.out.println(builder.toString().replaceFirst(",",""));
         */
 
-
-        applicationContext.register("IPs", listProperty.getValue());
         System.out.println(makeShuffleArguments());
 
         OptionParser parser = Shuffle.getShuffleOptionsParser();
         OptionSet optionSet = parser.parse(makeShuffleArguments().split(" "));
 
+        applicationContext.register("optionSet",optionSet);
         try {
-            Shuffle shuffle = new Shuffle(optionSet,System.out);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (FormatException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (BitcoinCrypto.Exception e) {
+            flowActionHandler.navigate(ShuffleConsoleController.class);
+        } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
+
     }
 
     public Coin getRecommendedFee() {
