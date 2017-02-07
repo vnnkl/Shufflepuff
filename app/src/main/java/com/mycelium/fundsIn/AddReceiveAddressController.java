@@ -117,9 +117,7 @@ public class AddReceiveAddressController {
         // todo: Listen which of the addresses actually received funds and parse only those
         List<String> keyList = new LinkedList<>();
         keyList.add(currentReceiveKey.getPrivateKeyAsWiF(wallet.getParams()));
-        keyList.add(firstKeyAfter.getPrivateKeyAsWiF(wallet.getParams()));
-        keyList.add(secondKeyAfter.getPrivateKeyAsWiF(wallet.getParams()));
-        keyList.add(thirdKeyAfter.getPrivateKeyAsWiF(wallet.getParams()));
+
         applicationContext.register("WIFKeys",keyList);
 
         try {

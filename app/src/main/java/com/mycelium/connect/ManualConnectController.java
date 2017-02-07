@@ -47,6 +47,10 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.text.ParsePosition;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -97,6 +101,8 @@ public class ManualConnectController {
                 return c;
             }
         }));
+
+        inputIndexEdit.setText("6996");
 
 
     }
@@ -150,27 +156,50 @@ public class ManualConnectController {
             stringBuilder.append(" --timeout " + (String) applicationContext.getRegisteredObject("timeOutTime"));
         }
 
-        stringBuilder.append(" --peers " + getPeerArgument());
+        if (applicationContext.getRegisteredObject("port") == null) {
+            stringBuilder.append(" --port 6996");
+        } else {
+            stringBuilder.append(" --port " + (String) applicationContext.getRegisteredObject("port"));
+        }
 
         if (applicationContext.getRegisteredObject("WIFKeys") == (null)) {
         } else {
-            stringBuilder.append(" --key " + ((List<String>) applicationContext.getRegisteredObject("changeAddress")).get(0));
+            stringBuilder.append(" --key " + ((List<String>) applicationContext.getRegisteredObject("WIFKeys")).toString().replace("]", "").replace("[", ""));
         }
 
         stringBuilder.append(" --anon " + (String) applicationContext.getRegisteredObject("outAddresses").toString().replace("]", "").replace("[", ""));
 
         if (applicationContext.getRegisteredObject("changeAddress") == (null)) {
+
         } else {
-            stringBuilder.append(" --change " + (String) applicationContext.getRegisteredObject("changeAddress"));
+            if (!(((List<String>) applicationContext.getRegisteredObject("changeAddress")).isEmpty())) {
+                stringBuilder.append(" --change " + ((List<String>) applicationContext.getRegisteredObject("changeAddress")).get(0));
+            }
         }
 
-        System.out.println("Content of Stringbuilder: " + stringBuilder.toString());
+        stringBuilder.append(" --peers " + getPeerArgument());
+
+
 
         arguments = "--amount " + shuffleAmount + " --session " + sessionName + " --query " + query +
                 " --blockchain --fee 80000 --rpcuser  --rpcpass " +
                 " --timeout " + timeout + " --time ";
 
-        return arguments;
+
+        LocalDateTime localTime = LocalDateTime.now();
+        int minutesSinceMidnight = localTime.toLocalTime().toSecondOfDay() / 60;
+        double minutesInHour = minutesSinceMidnight % 60;
+        double ceilHour = Math.ceil(minutesInHour / 10);
+        int shuffleTimeMinute = (int) (ceilHour * 10);
+        Instant instant = Instant.ofEpochSecond(System.currentTimeMillis() / 1000);
+        ZonedDateTime atZone = instant.atZone(ZoneId.systemDefault());
+        long unixShuffleTime = atZone.plusMinutes(shuffleTimeMinute - atZone.getMinute()).minusSeconds(atZone.getSecond()).toEpochSecond();//shuffleDateTime.toEpochSecond(ZoneOffset.of(ZoneOffset.systemDefault().getId()));
+
+        stringBuilder.append(" --time " + unixShuffleTime);
+
+        System.out.println("Content of Stringbuilder: " + stringBuilder.toString());
+
+        return stringBuilder.toString();
     }
 
     public void cancel(ActionEvent event) {
@@ -251,6 +280,7 @@ public class ManualConnectController {
 
         applicationContext.register("IPs", listProperty.getValue());
         System.out.println(makeShuffleArguments());
+
 
     }
 
