@@ -19,6 +19,9 @@ package com.mycelium.connect;
 
 import com.mycelium.Main;
 import com.mycelium.utils.GuiUtils;
+import com.shuffle.bitcoin.impl.BitcoinCrypto;
+import com.shuffle.player.Shuffle;
+import com.shuffle.protocol.FormatException;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
@@ -34,6 +37,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextFormatter;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.NetworkParameters;
 import org.json.JSONTokener;
@@ -41,11 +46,10 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
+import java.net.*;
+import java.security.NoSuchAlgorithmException;
 import java.text.DecimalFormat;
+import java.text.ParseException;
 import java.text.ParsePosition;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -281,7 +285,24 @@ public class ManualConnectController {
         applicationContext.register("IPs", listProperty.getValue());
         System.out.println(makeShuffleArguments());
 
+        OptionParser parser = Shuffle.getShuffleOptionsParser();
+        OptionSet optionSet = parser.parse(makeShuffleArguments());
 
+        try {
+            Shuffle shuffle = new Shuffle(optionSet,System.out);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (FormatException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (BitcoinCrypto.Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public Coin getRecommendedFee() {
