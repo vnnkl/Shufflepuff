@@ -17,6 +17,7 @@
 package com.mycelium.connect;
 
 import com.mycelium.Main;
+import com.mycelium.utils.TextAreaAppender;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.player.Shuffle;
 import com.shuffle.protocol.FormatException;
@@ -26,18 +27,15 @@ import io.datafx.controller.context.FXMLApplicationContext;
 import io.datafx.controller.flow.action.BackAction;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
+import io.datafx.core.concurrent.Async;
 import javafx.application.Platform;
-import javafx.beans.property.ListProperty;
-import javafx.beans.property.SimpleListProperty;
-import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
-import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.text.TextFlow;
 import joptsimple.OptionSet;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.filter.BurstFilter;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,11 +44,8 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 @ViewController("shuffle_console.fxml")
 public class ShuffleConsoleController {
@@ -58,6 +53,8 @@ public class ShuffleConsoleController {
     @FXML @BackAction private Button backBtn;
     public Main.OverlayUI overlayUI;
     @FXML TextArea textArea;
+
+    TextAreaAppender textAreaAppender;
     @ActionHandler
     FlowActionHandler flowActionHandler;
     @FXMLApplicationContext
@@ -74,10 +71,8 @@ public class ShuffleConsoleController {
     public void initialize() {
         this.optionSet = (OptionSet) applicationContext.getRegisteredObject("optionSet");
 
-        printStream = new PrintStream(new Console(textArea)) ;
-        System.setOut(printStream);
-        System.setErr(printStream);
-        System.out.println("Press Next to begin shuffle");
+        textAreaAppender = TextAreaAppender.createAppender("textAreaAppender", null, BurstFilter.newBuilder().setLevel(Level.ALL).build());
+        TextAreaAppender.setTextArea(textArea);
 
 
 
@@ -103,9 +98,10 @@ public class ShuffleConsoleController {
         overlayUI.done();
     }
 
+    @Async
     public void next(ActionEvent actionEvent) {
         try {
-            new Shuffle(optionSet,printStream);
+            new Shuffle(optionSet);
         } catch (ParseException e) {
             e.printStackTrace();
         } catch (UnknownHostException e) {

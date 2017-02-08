@@ -60,6 +60,7 @@ public class ToHDAddressesController {
     private DeterministicKey key4;
 
     @ActionHandler
+    private
     FlowActionHandler flowActionHandler;
     @FXMLApplicationContext
     ApplicationContext applicationContext = ApplicationContext.getInstance();

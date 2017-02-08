@@ -1,38 +1,21 @@
 package com.shuffle.player;
 
-import com.shuffle.bitcoin.Address;
-import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.impl.BitcoinCrypto;
-import com.shuffle.bitcoin.Coin;
-import com.shuffle.bitcoin.Crypto;
-import com.shuffle.bitcoin.SigningKey;
-import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.*;
 import com.shuffle.bitcoin.blockchain.Btcd;
-import com.shuffle.bitcoin.impl.AddressImpl;
-import com.shuffle.bitcoin.impl.CryptoProtobuf;
-import com.shuffle.bitcoin.impl.SigningKeyImpl;
-import com.shuffle.bitcoin.impl.VerificationKeyImpl;
+import com.shuffle.bitcoin.impl.*;
 import com.shuffle.chan.packet.Packet;
 import com.shuffle.chan.packet.Signed;
-import com.shuffle.mock.InsecureRandom;
-import com.shuffle.mock.MockAddress;
-import com.shuffle.mock.MockCoin;
-import com.shuffle.mock.MockCrypto;
-import com.shuffle.mock.MockNetwork;
-import com.shuffle.mock.MockProtobuf;
-import com.shuffle.mock.MockSigningKey;
-import com.shuffle.mock.MockVerificationKey;
+import com.shuffle.mock.*;
 import com.shuffle.monad.NaturalSummableFuture;
 import com.shuffle.monad.SummableFuture;
 import com.shuffle.monad.SummableFutureZero;
 import com.shuffle.monad.SummableMaps;
-import com.shuffle.p2p.Bytestring;
-import com.shuffle.p2p.Channel;
-import com.shuffle.p2p.MappedChannel;
-import com.shuffle.p2p.MarshallChannel;
-import com.shuffle.p2p.TcpChannel;
+import com.shuffle.p2p.*;
 import com.shuffle.protocol.FormatException;
-
+import joptsimple.ArgumentAcceptingOptionSpec;
+import joptsimple.OptionParser;
+import joptsimple.OptionSet;
+import joptsimple.OptionSpecBuilder;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
@@ -42,7 +25,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -50,24 +32,10 @@ import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import joptsimple.ArgumentAcceptingOptionSpec;
-import joptsimple.OptionParser;
-import joptsimple.OptionSet;
-import joptsimple.OptionSpecBuilder;
 
 /**
  *
@@ -206,7 +174,7 @@ public class Shuffle {
 
     private final MockNetwork<Integer, Signed<Packet<VerificationKey, Payload>>> mock = new MockNetwork<>();
 
-    public Shuffle(OptionSet options, PrintStream stream)
+    public Shuffle(OptionSet options)
             throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception {
 
         if (options.valueOf("amount") == null) {
@@ -701,7 +669,7 @@ public class Shuffle {
 
         Shuffle shuffle;
         try {
-            shuffle = new Shuffle(options, System.out);
+            shuffle = new Shuffle(options);
         } catch (AddressFormatException a) {
             System.out.println("Invalid private key: " + a.getMessage());
             return;

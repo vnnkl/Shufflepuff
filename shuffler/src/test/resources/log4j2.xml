@@ -15,11 +15,19 @@
                 <Pattern>%d %p %C{1.} [%t] %m%n</Pattern>
             </Layout>
         </Appender>
+        <Appenders>
+            <TextAreaAppender name="JavaFXLogger">
+                <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %c{1}:%L - %m%n"/>
+            </TextAreaAppender>
+        </Appenders>
     </Appenders>
     <Loggers>
         <Root level="info">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="File"/>
+        </Root>
+        <Root level="debug">
+            <AppenderRef ref="JavaFXLogger"/>
         </Root>
     </Loggers>
 </Configuration>
