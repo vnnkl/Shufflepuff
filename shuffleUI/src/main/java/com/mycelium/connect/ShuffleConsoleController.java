@@ -47,18 +47,17 @@ import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @ViewController("shuffle_console.fxml")
 public class ShuffleConsoleController {
-    @FXML
-    private Button AddBtn;
-    @FXML
-    @BackAction
-    private Button backBtn;
+    @FXML private Button AddBtn;
+    @FXML @BackAction private Button backBtn;
     public Main.OverlayUI overlayUI;
-    @FXML
-    TextArea textArea;
+    @FXML TextArea textArea;
     @ActionHandler
     FlowActionHandler flowActionHandler;
     @FXMLApplicationContext
@@ -70,26 +69,17 @@ public class ShuffleConsoleController {
 
     ExecutorService executorService;
     Callable<Void> shuffleCallable;
-    Future<Void> shuffleFuture;
 
     // Called by FXMLLoader
     public void initialize() {
         this.optionSet = (OptionSet) applicationContext.getRegisteredObject("optionSet");
 
-        printStream = new PrintStream(new Console(textArea));
+        printStream = new PrintStream(new Console(textArea)) ;
         System.setOut(printStream);
         System.setErr(printStream);
         System.out.println("Press Next to begin shuffle");
 
-        executorService = Executors.newSingleThreadExecutor();
 
-        shuffleCallable = new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                new Shuffle(optionSet, printStream);
-                return null;
-            }
-        };
 
     }
 
@@ -105,7 +95,7 @@ public class ShuffleConsoleController {
         }
 
         public void write(int b) throws IOException {
-            Platform.runLater(() -> appendText(String.valueOf((char) b)));
+            appendText(String.valueOf((char)b));
         }
     }
 
@@ -114,6 +104,20 @@ public class ShuffleConsoleController {
     }
 
     public void next(ActionEvent actionEvent) {
-        shuffleFuture = executorService.submit(shuffleCallable);
+        try {
+            new Shuffle(optionSet,printStream);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        } catch (UnknownHostException e) {
+            e.printStackTrace();
+        } catch (FormatException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        } catch (BitcoinCrypto.Exception e) {
+            e.printStackTrace();
+        }
     }
 }

@@ -187,12 +187,6 @@ public class ManualConnectController {
         stringBuilder.append(" --peers " + getPeerArgument());
 
 
-
-        arguments = "--amount " + shuffleAmount + " --session " + sessionName + " --query " + query +
-                " --blockchain --fee 80000 --rpcuser  --rpcpass " +
-                " --timeout " + timeout + " --time ";
-
-
         LocalDateTime localTime = LocalDateTime.now();
         int minutesSinceMidnight = localTime.toLocalTime().toSecondOfDay() / 60;
         double minutesInHour = minutesSinceMidnight % 60;
