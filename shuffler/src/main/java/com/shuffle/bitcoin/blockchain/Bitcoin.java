@@ -342,13 +342,12 @@ public abstract class Bitcoin implements Coin {
         String address = addr.toString();
 
         List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
+        long txAmount = 0;
+        for (Transaction tx : transactions) {
 
-        if (transactions.size() == 1) {
-            Bitcoin.Transaction tx = transactions.get(0);
             if (!tx.confirmed) {
                 return false;
             }
-            long txAmount = 0;
 
             if (tx.bitcoinj == null) {
                 try {
@@ -369,10 +368,9 @@ public abstract class Bitcoin implements Coin {
                     txAmount += output.getValue().value;
                 }
             }
-            return txAmount >= amount;
-        } else {
-            return false;
         }
+            return txAmount >= amount;
+
     }
 
     @Override

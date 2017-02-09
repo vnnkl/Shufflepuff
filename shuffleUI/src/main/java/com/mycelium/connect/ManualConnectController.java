@@ -283,7 +283,7 @@ public class ManualConnectController {
         OptionParser parser = Shuffle.getShuffleOptionsParser();
         OptionSet optionSet = parser.parse(makeShuffleArguments().split(" "));
 
-        applicationContext.register("optionSet",optionSet);
+        applicationContext.register("shuffleArguments",makeShuffleArguments().split(" "));
         try {
             flowActionHandler.navigate(ShuffleConsoleController.class);
         } catch (VetoException | FlowException e) {

@@ -3,9 +3,9 @@ package com.shuffle.bitcoin;
 import com.shuffle.bitcoin.impl.BitcoinCrypto;
 
 import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.Wallet;
+import org.bitcoinj.wallet.Wallet;
 import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.store.UnreadableWalletException;
+import org.bitcoinj.wallet.UnreadableWalletException;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.wallet.DeterministicSeed;
 import org.bitcoinj.wallet.KeyChainGroup;
@@ -188,7 +188,7 @@ public class BitcoinCryptoTest {
    public void testSend() throws Exception {
       WalletAppKit nomKit = bitcoinCryptoNoP.getKit();
       Wallet wallet = nomKit.wallet();
-      System.out.println("Current Receive Address: " + wallet.currentReceiveAddress().toString() + "\nIssued Receive Addresses: \n" + wallet.getIssuedReceiveAddresses().toString() + "\nMnemonic: " + wallet.getActiveKeychain().getMnemonicCode().toString() + "\nWallets Balance: " + wallet.getBalance().toPlainString() + " BTC");
+      System.out.println("Current Receive Address: " + wallet.currentReceiveAddress().toString() + "\nIssued Receive Addresses: \n" + wallet.getIssuedReceiveAddresses().toString() + "\nMnemonic: " + wallet.getActiveKeyChain().getMnemonicCode().toString() + "\nWallets Balance: " + wallet.getBalance().toPlainString() + " BTC");
       // Get a ready to send TX in its Raw HEX format
       System.out.println("Raw TX HEX: " + bitcoinCryptoNoP.sendOffline("n2ooxjPCQ19f56ivrCBq93DM6a71TA89bc", 10000));
       // Create and send transaciton using the wallets broadcast

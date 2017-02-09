@@ -76,10 +76,7 @@ public class ShuffleConsoleController {
         logger = LogManager.getLogger("MyLogger");
         textAreaAppender = TextAreaAppender.createAppender("textAreaAppender", null, BurstFilter.newBuilder().setLevel(Level.ALL).build());
         logger.debug("TestMessage");
-        TextAreaAppender.setTextArea(textArea);
-
-
-
+        // TextAreaAppender.setTextArea(textArea);
 
     }
 
@@ -103,25 +100,21 @@ public class ShuffleConsoleController {
         overlayUI.done();
     }
 
+    Shuffle shuffle;
+
     @Async
     public void next(ActionEvent actionEvent) {
         try {
-            new Shuffle(optionSet);
-        } catch (ParseException e) {
-            e.printStackTrace();
+            Shuffle.main((String[]) applicationContext.getRegisteredObject("shuffleArguments"));
         } catch (UnknownHostException e) {
-            e.printStackTrace();
-        } catch (FormatException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (MalformedURLException e) {
             e.printStackTrace();
-        } catch (BitcoinCrypto.Exception e) {
+        } catch (IllegalArgumentException e){
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
-        catch (IllegalArgumentException e){
-            e.printStackTrace();
-        }
+
     }
 }
