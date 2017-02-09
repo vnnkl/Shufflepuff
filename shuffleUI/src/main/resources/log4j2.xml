@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO"
     strict="true"
-    name="XMLConfigTest"
-    packages="org.apache.logging.log4j.test">
+    packages="org.apache.logging.log4j">
     <Properties>
         <Property name="filename">logs/test.log</Property>
     </Properties>
@@ -16,7 +15,7 @@
             </Layout>
         </Appender>
         <Appenders>
-            <TextAreaAppender name="JavaFXLogger">
+            <TextAreaAppender name="TextAreaAppender">
                 <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %c{1}:%L - %m%n"/>
             </TextAreaAppender>
         </Appenders>
@@ -25,9 +24,10 @@
         <Root level="info">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="File"/>
+            <AppenderRef ref="TextAreaAppender"/>
         </Root>
         <Root level="debug">
-            <AppenderRef ref="JavaFXLogger"/>
+            <AppenderRef ref="TextAreaAppender"/>
         </Root>
     </Loggers>
 </Configuration>
