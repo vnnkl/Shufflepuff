@@ -34,10 +34,8 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import joptsimple.OptionSet;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.filter.BurstFilter;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -56,7 +54,6 @@ public class ShuffleConsoleController {
     public Main.OverlayUI overlayUI;
     @FXML TextArea textArea;
 
-    TextAreaAppender textAreaAppender;
     @ActionHandler
     FlowActionHandler flowActionHandler;
     @FXMLApplicationContext
@@ -73,10 +70,9 @@ public class ShuffleConsoleController {
     // Called by FXMLLoader
     public void initialize() {
         this.optionSet = (OptionSet) applicationContext.getRegisteredObject("optionSet");
-        logger = LogManager.getLogger("MyLogger");
-        textAreaAppender = TextAreaAppender.createAppender("textAreaAppender", null, BurstFilter.newBuilder().setLevel(Level.ALL).build());
-        logger.debug("TestMessage");
+        logger = LogManager.getLogger();
         TextAreaAppender.setTextArea(textArea);
+        logger.debug("TestMessage");
 
 
 

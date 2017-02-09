@@ -16,6 +16,9 @@ import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpecBuilder;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.params.MainNetParams;
@@ -43,6 +46,7 @@ import java.util.concurrent.Executors;
  * Created by Daniel Krawisz on 6/10/16.
  */
 public class Shuffle {
+    private final static Logger LOGGER = LogManager.getLogger();
     // Turn this on to enable test mode options.
     private static boolean TEST_MODE = false;
 
@@ -176,6 +180,8 @@ public class Shuffle {
 
     public Shuffle(OptionSet options)
             throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception {
+
+        LOGGER.debug("Hi from shuffle");
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
