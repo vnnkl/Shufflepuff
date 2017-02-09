@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="INFO"
-    strict="true"
-    packages="org.apache.logging.log4j">
+               packages="com.mycelium.utils.TextAreaAppender">
     <Properties>
         <Property name="filename">logs/test.log</Property>
     </Properties>
@@ -14,17 +13,17 @@
                 <Pattern>%d %p %C{1.} [%t] %m%n</Pattern>
             </Layout>
         </Appender>
-        <Appenders>
-            <TextAreaAppender name="TextAreaAppender">
-                <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %c{1}:%L - %m%n"/>
-            </TextAreaAppender>
-        </Appenders>
+        <TextAreaAppender name="TextAreaAppender">
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %c{1}:%L - %m%n"/>
+        </TextAreaAppender>
     </Appenders>
     <Loggers>
+        <Logger name="My Logger" level="debug" additivity="false">
+            <appender-ref ref="TextAreaAppender" level="debug"/>
+        </Logger>
         <Root level="info">
             <AppenderRef ref="Console"/>
             <AppenderRef ref="File"/>
-            <AppenderRef ref="TextAreaAppender"/>
         </Root>
         <Root level="debug">
             <AppenderRef ref="TextAreaAppender"/>

@@ -196,7 +196,7 @@ public class ManualConnectController {
         ZonedDateTime atZone = instant.atZone(ZoneId.systemDefault());
         long unixShuffleTime = atZone.plusMinutes(shuffleTimeMinute - atZone.getMinute()).minusSeconds(atZone.getSecond()).toEpochSecond();//shuffleDateTime.toEpochSecond(ZoneOffset.of(ZoneOffset.systemDefault().getId()));
 
-        stringBuilder.append(" --time " + unixShuffleTime*1000);
+        stringBuilder.append(" --time " + unixShuffleTime*1000L);
 
         System.out.println("Content of Stringbuilder: " + stringBuilder.toString());
 

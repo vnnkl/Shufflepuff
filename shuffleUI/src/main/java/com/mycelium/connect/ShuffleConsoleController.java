@@ -35,6 +35,8 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import joptsimple.OptionSet;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.filter.BurstFilter;
 
 import java.io.IOException;
@@ -63,6 +65,7 @@ public class ShuffleConsoleController {
     private PrintStream printStream;
 
     OptionSet optionSet;
+    Logger logger;
 
     ExecutorService executorService;
     Callable<Void> shuffleCallable;
@@ -70,9 +73,11 @@ public class ShuffleConsoleController {
     // Called by FXMLLoader
     public void initialize() {
         this.optionSet = (OptionSet) applicationContext.getRegisteredObject("optionSet");
-
+        logger = LogManager.getLogger("MyLogger");
         textAreaAppender = TextAreaAppender.createAppender("textAreaAppender", null, BurstFilter.newBuilder().setLevel(Level.ALL).build());
+        logger.debug("TestMessage");
         TextAreaAppender.setTextArea(textArea);
+
 
 
 
@@ -113,6 +118,9 @@ public class ShuffleConsoleController {
         } catch (MalformedURLException e) {
             e.printStackTrace();
         } catch (BitcoinCrypto.Exception e) {
+            e.printStackTrace();
+        }
+        catch (IllegalArgumentException e){
             e.printStackTrace();
         }
     }
