@@ -17,6 +17,7 @@
 package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
+import com.mycelium.utils.GuiUtils;
 import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
@@ -33,7 +34,6 @@ import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -74,7 +74,7 @@ public class AddUTXOController {
         if (!((List<String>) applicationContext.getRegisteredObject("UTXOs") == null)) {
             List<String> utxos = (List<String>) applicationContext.getRegisteredObject("UTXOs");
             inputList.addAll(utxos);
-            listProperty.setValue((ObservableList<String>) applicationContext.getRegisteredObject("UTXOs"));
+            listProperty.setValue(FXCollections.observableArrayList((List<String>) applicationContext.getRegisteredObject("UTXOs")));
         }
         inputListView.itemsProperty().bind(listProperty);
         //allow index to have up to 3 numbers
@@ -116,11 +116,9 @@ public class AddUTXOController {
         int vout = Integer.valueOf(inputIndexEdit.getText());
         try {
             transactionWithConfirmations = bitcoinCore.getTransaction(hash);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-        try {
+
+            try {
             if (bitcoinCore.isUtxo(hash,vout)){
                 System.out.println("is UTXO √");
 
@@ -142,15 +140,15 @@ public class AddUTXOController {
 
 
             }
+            } catch (IOException | CommunicationException | BitcoindException e) {
+            e.printStackTrace();
+            }
+
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (BitcoindException e) {
-            e.printStackTrace();
-        } catch (CommunicationException e) {
-            e.printStackTrace();
+        } catch (NullPointerException e) {
+            GuiUtils.informationalAlert("BitcoinCore not reachable", "Is Bitcoin-Core running?");
         }
-
-
 
     }
 

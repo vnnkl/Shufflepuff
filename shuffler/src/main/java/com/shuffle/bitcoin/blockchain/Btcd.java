@@ -81,6 +81,24 @@ public class Btcd extends Bitcoin {
         }
     }
 
+    public Btcd(NetworkParameters netParams,String rpchost,String rpcuser, String rpcpass)
+            throws MalformedURLException {
+
+        // minPeers = 0 because we connect to peers via Btcd
+        super(netParams, 0);
+        this.rpcuser = rpcuser;
+        this.rpcpass = rpcpass;
+
+        if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+            url = new URL("https://"+rpchost+":8334");
+        } else if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+            url = new URL("https://"+rpchost+":18334");
+        } else {
+            throw new IllegalArgumentException("Invalid network parameters passed to btcd. ");
+        }
+    }
+
+
     /**
      * This method takes in a transaction hash and returns a bitcoinj transaction object.
      */

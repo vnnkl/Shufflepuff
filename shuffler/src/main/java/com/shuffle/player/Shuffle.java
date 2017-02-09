@@ -36,6 +36,9 @@ import joptsimple.ArgumentAcceptingOptionSpec;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 import joptsimple.OptionSpecBuilder;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.Sha256Hash;
@@ -65,6 +68,8 @@ import java.util.concurrent.Executors;
  * Created by Daniel Krawisz on 6/10/16.
  */
 public class Shuffle {
+    private final static Logger LOGGER = LogManager.getLogger();
+    // Turn this on to enable test mode options.
     // Turn this on to enable test mode options.
     private static boolean TEST_MODE = true;
 
@@ -206,6 +211,8 @@ public class Shuffle {
     public Shuffle(OptionSet options)
             throws IllegalArgumentException, ParseException, UnknownHostException, FormatException, NoSuchAlgorithmException, AddressFormatException, MalformedURLException, BitcoinCrypto.Exception, BitcoindException, CommunicationException {
 
+
+        LOGGER.debug("Hi from shuffle");
 
         if (options.valueOf("amount") == null) {
             throw new IllegalArgumentException("No option 'amount' supplied. We need to know what sum " +
@@ -941,7 +948,7 @@ public class Shuffle {
         try {
             options = parser.parse(opts);
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            LOGGER.debug(e.getMessage());
             parser.printHelpOn(System.out);
             return;
         }
@@ -956,10 +963,10 @@ public class Shuffle {
         try {
             shuffle = new Shuffle(options);
         } catch (AddressFormatException a) {
-            System.out.println("Invalid private key: " + a.getMessage());
+            LOGGER.debug("Invalid private key: " + a.getMessage());
             return;
         } catch (BitcoinCrypto.Exception e) {
-            System.out.print(e.getMessage());
+            LOGGER.debug(e.getMessage());
             return;
         } catch (IllegalArgumentException
                 //| ClassCastException
@@ -970,7 +977,7 @@ public class Shuffle {
                 | BitcoindException
                 | CommunicationException e) {
 
-            System.out.println("Unable to setup protocol: " + e.getMessage());
+            LOGGER.debug("Unable to setup protocol: " + e.getMessage());
             return;
         }
 
@@ -980,10 +987,10 @@ public class Shuffle {
         } catch (InterruptedException | ExecutionException | NullPointerException e) {
             throw new RuntimeException(e);
         } catch (CoinNetworkException | AddressFormatException e) {
-            System.out.println("Protocol failed: " + e.getMessage());
+            LOGGER.debug("Protocol failed: " + e.getMessage());
             return;
         } catch (ProtocolFailure e) {
-            System.out.println("Protocol failed as the result of a bug. Please alert Daniel Krawisz" +
+            LOGGER.debug("Protocol failed as the result of a bug. Please alert Daniel Krawisz" +
                     " at daniel.krawisz@thingobjectentity.net and include the logs that Shufflepuff" +
                     " outputted. shutting down.");
             return;
@@ -992,7 +999,7 @@ public class Shuffle {
         }
 
         for (Player.Report report : reports) {
-            System.out.println(report.toString());
+            LOGGER.debug(report.toString());
         }
     }
 }

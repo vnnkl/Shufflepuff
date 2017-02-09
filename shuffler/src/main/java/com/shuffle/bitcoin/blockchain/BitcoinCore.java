@@ -16,6 +16,7 @@ import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
 
+import javax.annotation.Nullable;
 import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.IOException;
@@ -50,6 +51,26 @@ public class BitcoinCore extends Bitcoin {
         }
 
         client = new BtcdQueryClient("127.0.0.1", rpcport, rpcuser, rpcpass);
+    }
+
+    public BitcoinCore(NetworkParameters netParams, @Nullable String rpchost, String rpcuser, String rpcpass) throws MalformedURLException, BitcoindException, CommunicationException {
+        // 0 because we connect to peers via BitcoinCore
+        super(netParams, 0);
+
+        Integer rpcport;
+
+        if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+            rpcport = 8332;
+        } else if (netParams.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+            rpcport = 18332;
+        } else {
+            throw new IllegalArgumentException("Invalid network parameters passed to Bitcoin Core.");
+        }
+        if (rpchost.equals(null)){
+        client = new BtcdQueryClient("127.0.0.1", rpcport, rpcuser, rpcpass);
+        }else {
+            client = new BtcdQueryClient(rpchost, rpcport, rpcuser, rpcpass);
+        }
     }
 
     // TODO -- VERIFY {address, vout, & don't need mempool)

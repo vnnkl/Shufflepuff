@@ -19,6 +19,7 @@ package com.mycelium.connect;
 
 import com.mycelium.Main;
 import com.mycelium.utils.GuiUtils;
+import com.shuffle.bitcoin.impl.VerificationKeyImpl;
 import com.shuffle.player.Shuffle;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
@@ -196,7 +197,7 @@ public class ManualConnectController {
         if (applicationContext.getRegisteredObject("UTXOs") == (null)) {
         } else {
             // --utxos '[{"vout":"2","transactionHash":"caa0472df7635f09599c925886d53794285dd6399003df9892678b29d3900d70"}]'
-            stringBuilder.append(" --utxos "+ getUtxoArgument());
+            stringBuilder.append(" --utxos " + getUtxoArgument());
         }
 
         stringBuilder.append(" --peers " + getPeerArgument());
@@ -211,7 +212,7 @@ public class ManualConnectController {
         ZonedDateTime atZone = instant.atZone(ZoneId.systemDefault());
         long unixShuffleTime = atZone.plusMinutes(shuffleTimeMinute - atZone.getMinute()).minusSeconds(atZone.getSecond()).toEpochSecond();//shuffleDateTime.toEpochSecond(ZoneOffset.of(ZoneOffset.systemDefault().getId()));
 
-        stringBuilder.append(" --time " + unixShuffleTime*1000L);
+        stringBuilder.append(" --time " + unixShuffleTime * 1000L);
 
         System.out.println("Content of Stringbuilder: " + stringBuilder.toString());
 
@@ -222,7 +223,7 @@ public class ManualConnectController {
         overlayUI.done();
     }
 
-    public void removeLastInput(ActionEvent event){
+    public void removeLastInput(ActionEvent event) {
         if (!(inputList.isEmpty())) {
             inputList.remove(inputList.size() - 1);
             listProperty.setValue(FXCollections.observableArrayList(inputList));
@@ -236,38 +237,49 @@ public class ManualConnectController {
         String portInput = inputIndexEdit.getText();
         // todo: if one of fields is empty do not paste
         if (!(betterInput.isEmpty())) {
-        try {
-            inetAddress = InetAddress.getByName(betterInput);
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
-            GuiUtils.informationalAlert("Unknown Host?", "Are you sure this was a correct IP-Address?");
-            inputHashEdit.setText("");
-        }
-        ipList.add(inetAddress);
-        String encKey = inputEKedit.getText();
-        String ip;
-        StringBuilder builder = new StringBuilder();
+            try {
+                inetAddress = InetAddress.getByName(betterInput);
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+                GuiUtils.informationalAlert("Unknown Host?", "Are you sure this was a correct IP-Address?");
+                inputHashEdit.setText("");
+            }
+            ipList.add(inetAddress);
+            String encKey = inputEKedit.getText();
+            String ip;
+            StringBuilder builder = new StringBuilder();
 
-        if (encKey.isEmpty()) {
-            // EK is necessary
-            GuiUtils.informationalAlert("Missing EK for IP?", "Did you forget to provide a EncryptionKey for an IP?");
-        } else {
-            if (portInput.isEmpty()) {
-                // no port provided = default port?
-                builder.append(inetAddress.getHostAddress());
+            if (encKey.isEmpty()) {
+                // EK is necessary
+                GuiUtils.informationalAlert("Missing EK for IP?", "Did you forget to provide a EncryptionKey for an IP?");
             } else {
-                builder.append(inetAddress.getHostAddress() + ":" + portInput);
+                try {
+                    //check input of encKey
+                    VerificationKeyImpl verificationKey = new VerificationKeyImpl(encKey, Main.params);
+
+                    if (portInput.isEmpty()) {
+                        // no port provided = default port?
+                        builder.append(inetAddress.getHostAddress());
+                    } else {
+
+
+                        builder.append(inetAddress.getHostAddress() + ":" + portInput);
+                    }
+                    builder.append(";" + encKey);
+
+
+                    ip = builder.toString();
+
+                    if (!inputList.contains(ip)) {
+                        inputList.add(ip);
+                    }
+                    listProperty.set(FXCollections.observableArrayList(inputList));
+
+                } catch (Exception e) {
+                    GuiUtils.informationalAlert("Wrong EK?", "Is encryption Key correct?");
+                }
+
             }
-            builder.append(";" + encKey);
-
-
-        ip = builder.toString();
-
-            if (!inputList.contains(ip)) {
-                inputList.add(ip);
-            }
-            listProperty.set(FXCollections.observableArrayList(inputList));
-        }
         }
     }
 

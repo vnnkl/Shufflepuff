@@ -73,10 +73,19 @@ public class ShuffleConsoleController {
     // Called by FXMLLoader
     public void initialize() {
         this.optionSet = (OptionSet) applicationContext.getRegisteredObject("optionSet");
+
         logger = LogManager.getLogger("MyLogger");
         textAreaAppender = TextAreaAppender.createAppender("textAreaAppender", null, BurstFilter.newBuilder().setLevel(Level.ALL).build());
         logger.debug("TestMessage");
         // TextAreaAppender.setTextArea(textArea);
+
+        logger = LogManager.getLogger();
+        TextAreaAppender.setTextArea(textArea);
+        logger.debug("TestMessage");
+
+
+
+
 
     }
 

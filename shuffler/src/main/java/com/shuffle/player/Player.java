@@ -38,6 +38,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.TransactionOutPoint;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -84,6 +85,8 @@ class Player {
     private final Address change;
     private final Messages.ShuffleMarshaller m;
     private final PrintStream stream;
+
+    private final static Logger LOGGER = LogManager.getLogger();
 
     public Report report = null;
 
@@ -177,7 +180,7 @@ class Player {
                     | AddressFormatException
                     | ExecutionException e) {
 
-                stream.println("  Player " + sk.VerificationKey() + " reports error " +  e.getMessage());
+                LOGGER.info("  Player " + sk.VerificationKey() + " reports error " +  e.getMessage());
                 return Report.error(e.getMessage());
             }
 
@@ -203,7 +206,7 @@ class Player {
                 final Chan<Phase> ch = new BasicChan<>(2);
                 final Chan<Report> r = new BasicChan<>(2);
 
-                stream.println("  Player " + sk.VerificationKey() + " begins " + session);
+                LOGGER.info("  Player " + sk.VerificationKey() + " begins " + session);
 
                 new Thread(new Runnable() {
                     @Override
@@ -215,7 +218,7 @@ class Player {
                         } finally {
                             ch.close();
                             r.close();
-                            stream.println("  Player " + sk.VerificationKey() + " ends protocol. ");
+                            LOGGER.info("  Player " + sk.VerificationKey() + " ends protocol. ");
                         }
                     }
                 }).start();
@@ -223,7 +226,7 @@ class Player {
                 while (true) {
                     Phase phase = ch.receive();
                     if (phase == null) break;
-                    stream.println("  Player " + sk.VerificationKey() + " reaches phase " + phase);
+                    LOGGER.info("  Player " + sk.VerificationKey() + " reaches phase " + phase);
                 }
 
                 return r.receive();
@@ -231,7 +234,7 @@ class Player {
                 return Report.error(e.getMessage());
             } finally {
                 connect.close();
-                stream.println("  Player " + sk.VerificationKey() + " shuts down.");
+                LOGGER.info("  Player " + sk.VerificationKey() + " shuts down.");
             }
         }
 
@@ -251,7 +254,7 @@ class Player {
                     } catch (InterruptedException | NullPointerException e) {
                         throw new RuntimeException(e);
                     } catch (AddressFormatException | IOException e) {
-                        stream.println("  Player " + sk.VerificationKey() + " could not begin protocol due to error " + e.getMessage());
+                        LOGGER.info("  Player " + sk.VerificationKey() + " could not begin protocol due to error " + e.getMessage());
                     } finally {
                         cr.close();
                     }
