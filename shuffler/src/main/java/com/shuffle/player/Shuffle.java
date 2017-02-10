@@ -384,7 +384,7 @@ public class Shuffle {
         }
 
         // Finally, get the peers.
-        JSONArray jsonPeers = readJSONArray((String)options.valueOf("peers"));
+        JSONArray jsonPeers = readNestedJson((String)options.valueOf("peers"));
         if (jsonPeers == null) {
             throw new IllegalArgumentException("Could not read " + options.valueOf("peers") + " as json array.");
         }
@@ -472,7 +472,7 @@ public class Shuffle {
                 }
 
             }
-            
+
             if (checkDuplicateAddress.contains(addr)) {
                 throw new IllegalArgumentException("Duplicate address.");
             } else {
@@ -561,6 +561,7 @@ public class Shuffle {
                 }
 
                 String key, utxos;
+                Long port;
 
                 try {
                     key = (String) o.get("key");
@@ -572,6 +573,11 @@ public class Shuffle {
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + "'" + o.get("utxos") + "'" + " as string.");
                 }
+                try {
+                    port = (Long) o.get("port");
+                } catch (ClassCastException e) {
+                    throw new IllegalArgumentException("Could not read option " + o.get("port") + " as string.");
+                }
 
                 JSONArray jsonUtxos = readJSONArrayUtxo(utxos);
 
@@ -580,6 +586,9 @@ public class Shuffle {
                 }
                 if (utxos.equals("''")) {
                     throw new IllegalArgumentException("Player missing field \"utxos\".");
+                }
+                if (port == null) {
+                    throw new IllegalArgumentException("Player missing field \"port\".");
                 }
 
                 if (jsonUtxos == null) {
@@ -639,6 +648,7 @@ public class Shuffle {
 
                 localMap.put(sk, checkDuplicateUtxo);
                 keyMap.put(key, sk);
+                peers.put(sk.VerificationKey(), new InetSocketAddress(InetAddress.getLocalHost(), port.intValue()));
 
             }
 
@@ -768,7 +778,7 @@ public class Shuffle {
                 Long vout;
                 Sha256Hash transactionHash;
                 try {
-                    vout = (Long) o.get("vout");
+                    vout = Long.valueOf((String) o.get("vout"));
                 } catch (ClassCastException e) {
                     throw new IllegalArgumentException("Could not read option " + o.get("vout") + " as Long.");
                 }
@@ -848,7 +858,6 @@ public class Shuffle {
             } else {
                 changeAddress = new AddressImpl(change);
             }
-            fundedOutputs.put(sk.VerificationKey(), utxoSet);
         }
 
         VerificationKey vk = sk.VerificationKey();
@@ -856,8 +865,12 @@ public class Shuffle {
             throw new IllegalArgumentException("Duplicate key.");
         }
 
-        for (SigningKey k : localMap.keySet()) {
-            fundedOutputs.put(k.VerificationKey(), localMap.get(k));
+        fundedOutputs.put(sk.VerificationKey(), utxoSet);
+
+        if (localMap != null) {
+            for (SigningKey k : localMap.keySet()) {
+                fundedOutputs.put(k.VerificationKey(), localMap.get(k));
+            }
         }
 
         keys.add(vk);
