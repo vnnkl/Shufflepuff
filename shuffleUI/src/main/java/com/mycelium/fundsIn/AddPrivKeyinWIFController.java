@@ -18,6 +18,9 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import com.mycelium.utils.GuiUtils;
+import com.shuffle.bitcoin.*;
+import com.shuffle.bitcoin.blockchain.Bitcoin;
+import com.shuffle.bitcoin.blockchain.Btcd;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
@@ -36,8 +39,13 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import org.bitcoinj.core.*;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.store.BlockStoreException;
 
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 @ViewController("shuffle_addPrivKeyInWIF.fxml")
@@ -82,6 +90,51 @@ public class AddPrivKeyinWIFController {
                 addressListProperty.set(FXCollections.observableArrayList(addressList));
             }
         }
+    }
+
+    public void getKeyFunds(){
+        if (applicationContext.getRegisteredObject("nodeOption")=="Bitcoin Core"){
+
+        }else {
+            Btcd btcd = null;
+            try {
+                btcd = new Btcd(Main.params,"admin","pass");
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            List<String> keyList = addressList;
+
+            List<Bitcoin.Transaction> txList = new LinkedList<>();
+
+            for (String address : keyList) {
+                try {
+                    txList.addAll(btcd.getAddressTransactionsInner(address));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            List<String> utxoList = new LinkedList<String >();
+            // go through all txs and find the vouts that sent to address we have
+            for (Bitcoin.Transaction tx : txList) {
+                try {
+                    //go through all outputs
+                    for (TransactionOutput output: tx.bitcoinj().getOutputs()){
+                        // todo: fix, needs isUTXO
+                        if (addressList.contains(output.getAddressFromP2PKHScript(Main.params).toString())){
+                            if (tx.bitcoinj().getOutput(output.getIndex()).getSpentBy()==null) {
+                                utxoList.add(tx.toString()+":" + output.getIndex());
+                            }
+                        }
+                    }
+                } catch (BlockStoreException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        System.out.println(utxoList);
+        }
+
     }
 
     public void cancel(ActionEvent event) {
@@ -143,5 +196,6 @@ public class AddPrivKeyinWIFController {
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
+        getKeyFunds();
     }
 }
