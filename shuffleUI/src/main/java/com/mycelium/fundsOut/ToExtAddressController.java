@@ -61,6 +61,8 @@ public class ToExtAddressController {
     // Called by FXMLLoader
     public void initialize() {
         if (!((List<String>) applicationContext.getRegisteredObject("OutAddresses") == null)) {
+            List<String> outAddresses = (List<String>) applicationContext.getRegisteredObject("outAddresses");
+            extAddressList.addAll(outAddresses);
             listProperty.setValue((ObservableList<String>) applicationContext.getRegisteredObject("outAddresses"));
         }
         addressListView.itemsProperty().bind(listProperty);
