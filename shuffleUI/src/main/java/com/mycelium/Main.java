@@ -145,7 +145,7 @@ public class Main extends Application {
         if (NetworkParameters.ID_REGTEST.equals(params.getId())) {
             bitcoin.connectToLocalHost();   // You should run a regtest mode bitcoind locally.
         }
-        bitcoin.connectToLocalHost();
+        //bitcoin.connectToLocalHost();
         //else if (params == TestNet3Params.get()) {
         // As an example!
         //bitcoin.useTor();

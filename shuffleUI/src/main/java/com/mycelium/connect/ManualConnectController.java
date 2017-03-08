@@ -31,6 +31,7 @@ import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -88,6 +89,12 @@ public class ManualConnectController {
 
     // Called by FXMLLoader
     public void initialize() {
+
+        if (!((List<String>) applicationContext.getRegisteredObject("peers") == null)) {
+            List<String> peers = (List<String>) applicationContext.getRegisteredObject("peers");
+            inputList.addAll(peers);
+            listProperty.setValue((ObservableList<String>) applicationContext.getRegisteredObject("peers"));
+        }
         inputListView.itemsProperty().bind(listProperty);
 
         DecimalFormat format = new DecimalFormat("#");
@@ -139,6 +146,8 @@ public class ManualConnectController {
         } else {
             stringBuilder.append(" --blockchain test");
         }
+
+        stringBuilder.append(" --crypto real");
 
         // is per byte, we assume 1 in/1out/1change -> 228 bytes
         stringBuilder.append(" --fee " + getRecommendedFee().multiply(228L).toString());
@@ -285,24 +294,12 @@ public class ManualConnectController {
     }
 
     public void next(ActionEvent actionEvent) {
-        // getAddress
-
-
-        StringBuilder builder = new StringBuilder();
-        /*builder.append("'[");
-        for (JSONObject json :
-                peersJsonList) {
-            builder.append(","+json.toJSONString());
-        }
-        builder.append("]'");
-        System.out.println(builder.toString().replaceFirst(",",""));
-        */
 
         System.out.println(makeShuffleArguments());
 
         OptionParser parser = Shuffle.getShuffleOptionsParser();
         OptionSet optionSet = parser.parse(makeShuffleArguments().split(" "));
-
+        applicationContext.register("peers",listProperty.getValue());
         applicationContext.register("shuffleArguments",makeShuffleArguments().split(" "));
         try {
             flowActionHandler.navigate(ShuffleConsoleController.class);

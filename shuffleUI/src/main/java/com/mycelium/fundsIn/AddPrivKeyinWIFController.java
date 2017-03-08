@@ -92,7 +92,7 @@ public class AddPrivKeyinWIFController {
     }
     BitcoinCore bitcoinCore;
 
-    public void getKeyFunds(){
+    public void getKeyUTXOs(){
         if (applicationContext.getRegisteredObject("nodeOption")=="Bitcoin Core"){
 
         }else {
@@ -102,11 +102,10 @@ public class AddPrivKeyinWIFController {
             } catch (MalformedURLException e) {
                 e.printStackTrace();
             }
-            List<String> keyList = addressList;
-
+            List<String> addressList = this.addressList;
             List<Bitcoin.Transaction> txList = new LinkedList<>();
 
-            for (String address : keyList) {
+            for (String address : addressList) {
                 try {
                     txList.addAll(btcd.getAddressTransactions(address));
                 } catch (IOException e) {
@@ -119,11 +118,10 @@ public class AddPrivKeyinWIFController {
                 try {
                     //go through all outputs
                     for (TransactionOutput output: tx.bitcoinj().getOutputs()){
-                        // todo: fix, needs isUTXO
-                        if (addressList.contains(output.getAddressFromP2PKHScript(Main.params).toString())){
-
-                                utxoList.add(tx.toString()+":" + output.getIndex());
-
+                        if (this.addressList.contains(output.getAddressFromP2PKHScript(Main.params).toString())){
+                            if (btcd.isUtxo(tx.bitcoinj().getHashAsString(),output.getIndex())){
+                                utxoList.add(tx.bitcoinj().getHashAsString()+":" + output.getIndex());
+                            }
                         }
                     }
                 } catch (BlockStoreException e) {
@@ -132,7 +130,7 @@ public class AddPrivKeyinWIFController {
                     e.printStackTrace();
                 }
             }
-            System.out.println(utxoList);
+            applicationContext.register("UTXOs",utxoList);
         }
 
     }
@@ -187,6 +185,7 @@ public class AddPrivKeyinWIFController {
     public void next(ActionEvent actionEvent) {
         applicationContext.register("WIFKeys", getKeys());
         applicationContext.register("changeAddress", addressList);
+        getKeyUTXOs();
         try {
             if (applicationContext.getRegisteredObject("nodeOption").equals("Bitcoin Core")) {
                 flowActionHandler.navigate(AddUTXOController.class);
@@ -196,6 +195,6 @@ public class AddPrivKeyinWIFController {
         } catch (VetoException | FlowException e) {
             e.printStackTrace();
         }
-        getKeyFunds();
+
     }
 }

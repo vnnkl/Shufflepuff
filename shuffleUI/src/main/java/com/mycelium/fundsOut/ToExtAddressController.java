@@ -79,7 +79,7 @@ public class ToExtAddressController {
         String newInput = inputAddressEdit.getText();
         //test address provided
         if (testAddr(newInput)) {
-                if (!extAddressList.contains(newInput)) {
+            if (!extAddressList.contains(newInput)) {
                     extAddressList.add(newInput);
                 }
                 listProperty.set(FXCollections.observableArrayList(extAddressList));

@@ -330,7 +330,7 @@ public class Btcd extends Bitcoin {
         return true;
     }
 
-    synchronized boolean isUtxo(String hexTx, int vout) throws IOException {
+    public synchronized boolean isUtxo(String hexTx, int vout) throws IOException {
         String requestBody = "{\"jsonrpc\":\"2.0\",\"id\":\"null\",\"method\":\"gettxout\", \"params\":[\"" + hexTx + "\"";
         requestBody = requestBody.concat("," + Integer.toString(vout) + ",false]}");
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
