@@ -18,8 +18,8 @@ package com.mycelium.fundsIn;
 
 import com.mycelium.Main;
 import com.mycelium.utils.GuiUtils;
-import com.shuffle.bitcoin.*;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
+import com.shuffle.bitcoin.blockchain.BitcoinCore;
 import com.shuffle.bitcoin.blockchain.Btcd;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
@@ -39,7 +39,6 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import org.bitcoinj.core.*;
-import org.bitcoinj.core.Address;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
@@ -91,6 +90,7 @@ public class AddPrivKeyinWIFController {
             }
         }
     }
+    BitcoinCore bitcoinCore;
 
     public void getKeyFunds(){
         if (applicationContext.getRegisteredObject("nodeOption")=="Bitcoin Core"){
@@ -108,7 +108,7 @@ public class AddPrivKeyinWIFController {
 
             for (String address : keyList) {
                 try {
-                    txList.addAll(btcd.getAddressTransactionsInner(address));
+                    txList.addAll(btcd.getAddressTransactions(address));
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -121,9 +121,9 @@ public class AddPrivKeyinWIFController {
                     for (TransactionOutput output: tx.bitcoinj().getOutputs()){
                         // todo: fix, needs isUTXO
                         if (addressList.contains(output.getAddressFromP2PKHScript(Main.params).toString())){
-                            if (tx.bitcoinj().getOutput(output.getIndex()).getSpentBy()==null) {
+
                                 utxoList.add(tx.toString()+":" + output.getIndex());
-                            }
+
                         }
                     }
                 } catch (BlockStoreException e) {
@@ -132,7 +132,7 @@ public class AddPrivKeyinWIFController {
                     e.printStackTrace();
                 }
             }
-        System.out.println(utxoList);
+            System.out.println(utxoList);
         }
 
     }

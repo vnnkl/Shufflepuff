@@ -13,25 +13,12 @@ import com.neemre.btcdcli4j.core.BitcoindException;
 import com.neemre.btcdcli4j.core.CommunicationException;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.Coin;
-import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.Signatures;
-import com.shuffle.bitcoin.SigningKey;
-import com.shuffle.bitcoin.VerificationKey;
+import com.shuffle.bitcoin.*;
 import com.shuffle.bitcoin.impl.AddressUtxoImpl;
 import com.shuffle.bitcoin.impl.SigningKeyImpl;
 import com.shuffle.p2p.Bytestring;
 import com.shuffle.protocol.FormatException;
-
-import org.bitcoinj.core.AddressFormatException;
-import org.bitcoinj.core.Context;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.PeerGroup;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.TransactionInput;
-import org.bitcoinj.core.TransactionOutPoint;
-import org.bitcoinj.core.TransactionOutput;
-import org.bitcoinj.core.VerificationException;
+import org.bitcoinj.core.*;
 import org.bitcoinj.crypto.TransactionSignature;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.script.Script;
@@ -39,15 +26,10 @@ import org.bitcoinj.script.ScriptBuilder;
 import org.bitcoinj.store.BlockStoreException;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+
+import com.shuffle.bitcoin.blockchain.Bitcoin.Transaction;
 
 public abstract class Bitcoin implements Coin {
     static long cache_expire = 10000; // Ten seconds.
@@ -320,44 +302,12 @@ public abstract class Bitcoin implements Coin {
         return sum;
     }
 
-
-    @Override
-    public final boolean sufficientFunds(Address addr, long amount) throws CoinNetworkException, AddressFormatException, IOException {
-        String address = addr.toString();
-
-        List<Bitcoin.Transaction> transactions = getAddressTransactions(address);
-        long txAmount = 0;
-        for (Transaction tx : transactions) {
-
-            if (!tx.confirmed) {
-                return false;
-            }
-
-            if (tx.bitcoinj == null) {
-                try {
-                    tx.bitcoinj = getTransaction(tx.hash);
-                } catch (IOException e) {
-                    return false;
-                }
-            }
-
-            for (TransactionOutput output : tx.bitcoinj.getOutputs()) {
-
     /**
      * The getUtxoBalance method takes one UTXO and returns the amount of spendable Bitcoin that it holds.
      * This amount is a long value represented as the number of satoshis.
      */
 
-
     protected synchronized long getUtxoBalance(TransactionOutPoint t) throws IOException, CoinNetworkException, AddressFormatException, BitcoindException, CommunicationException {
-
-                String addressP2pkh = output.getAddressFromP2PKHScript(netParams).toString();
-                if (address.equals(addressP2pkh)) {
-                    txAmount += output.getValue().value;
-                }
-            }
-        }
-            return txAmount >= amount;
 
         if (isUtxo(t.getHash().toString(), (int) t.getIndex())) {
             TransactionOutput tx = getTransaction(t.getHash().toString()).getOutput(t.getIndex());
@@ -374,7 +324,7 @@ public abstract class Bitcoin implements Coin {
     }
 
     @Override
-    public synchronized com.shuffle.bitcoin.Transaction getConflictingTransaction(com.shuffle.bitcoin.Transaction transaction, Address a, long amount) 
+    public synchronized com.shuffle.bitcoin.Transaction getConflictingTransaction(com.shuffle.bitcoin.Transaction transaction, Address a, long amount)
             throws CoinNetworkException, AddressFormatException, BlockStoreException, BitcoindException, CommunicationException, IOException {
         return getConflictingTransactionInner(transaction, a, amount);
     }

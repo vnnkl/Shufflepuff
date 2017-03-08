@@ -9,23 +9,20 @@ import com.neemre.btcdcli4j.core.CommunicationException;
 import com.neemre.btcdcli4j.core.domain.RawTransaction;
 import com.shuffle.bitcoin.Address;
 import com.shuffle.bitcoin.CoinNetworkException;
-import com.shuffle.bitcoin.Transaction;
 import com.shuffle.bitcoin.impl.AddressUtxoImpl;
-
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.TransactionInput;
 import org.bitcoinj.core.TransactionOutPoint;
 import org.bitcoinj.store.BlockStoreException;
 
+import javax.xml.bind.DatatypeConverter;
+import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-
-import javax.xml.bind.DatatypeConverter;
-import javax.xml.bind.annotation.adapters.HexBinaryAdapter;
 
 /**
  * 1. We cannot lookup address balances with Bitcoin Core easily.  There is no address index.
@@ -57,7 +54,10 @@ public class BitcoinCore extends Bitcoin {
 
     // TODO -- VERIFY {address, vout, & don't need mempool)
     public synchronized boolean isUtxo(String transactionHash, int vout) throws IOException, BitcoindException, CommunicationException {
-        return client.getTxOut(transactionHash, vout, false);
+        if (client.getTxOut(transactionHash, vout, false)){
+            return true;
+        }
+        return false;
     }
 
     public synchronized List<String> getMempool() throws BitcoindException, CommunicationException {
@@ -173,7 +173,6 @@ public class BitcoinCore extends Bitcoin {
                 return null;
             }
         }
-
         return txList;
     }
 

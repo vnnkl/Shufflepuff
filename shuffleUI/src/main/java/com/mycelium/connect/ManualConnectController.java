@@ -18,11 +18,8 @@ package com.mycelium.connect;
 
 
 import com.mycelium.Main;
-import com.mycelium.ShuffleStartController;
 import com.mycelium.utils.GuiUtils;
-import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.player.Shuffle;
-import com.shuffle.protocol.FormatException;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
@@ -49,10 +46,11 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
 import java.io.IOException;
-import java.net.*;
-import java.security.NoSuchAlgorithmException;
+import java.net.HttpURLConnection;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.UnknownHostException;
 import java.text.DecimalFormat;
-import java.text.ParseException;
 import java.text.ParsePosition;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -133,7 +131,7 @@ public class ManualConnectController {
         if (query.equals("BTCD")) {
             stringBuilder.append(" --query btcd");
         } else {
-            stringBuilder.append(" --query core");
+            stringBuilder.append(" --query bitcoin-core");
         }
 
         if (Main.params.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
@@ -182,6 +180,12 @@ public class ManualConnectController {
             if (!(((List<String>) applicationContext.getRegisteredObject("changeAddress")).isEmpty())) {
                 stringBuilder.append(" --change " + ((List<String>) applicationContext.getRegisteredObject("changeAddress")).get(0));
             }
+        }
+
+        if (applicationContext.getRegisteredObject("UTXOs") == (null)) {
+        } else {
+            // --utxos '[{"vout":"2","transactionHash":"caa0472df7635f09599c925886d53794285dd6399003df9892678b29d3900d70"}]'
+            stringBuilder.append(" --utxos "+ getUtxoArgument());
         }
 
         stringBuilder.append(" --peers " + getPeerArgument());
@@ -261,6 +265,22 @@ public class ManualConnectController {
             jsonArray.add(peers);
         }
 
+        return jsonArray.toJSONString();
+    }
+
+    private String getUtxoArgument() {
+        // In form of: --utxos '[{"vout":"2","transactionHash":"caa0472df7635f09599c925886d53794285dd6399003df9892678b29d3900d70"}]'
+        JSONArray jsonArray = new JSONArray();
+        List<String> utxoList = ((List<String>) applicationContext.getRegisteredObject("UTXOs"));
+        for (String utxo : utxoList) {
+            JSONObject utxos = new JSONObject();
+            // split at ; so you have ip+port at index 0 and enckey at index 1
+            String[] splitted = utxo.split(":");
+            utxos.put("vout", splitted[1]);
+            utxos.put("transactionHash", splitted[0]);
+            jsonArray.add(utxos);
+
+        }
         return jsonArray.toJSONString();
     }
 

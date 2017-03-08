@@ -16,7 +16,6 @@
 
 package com.mycelium;
 
-import com.google.common.io.BaseEncoding;
 import com.google.common.util.concurrent.Service;
 import com.mycelium.controls.NotificationBarPane;
 import com.mycelium.utils.GuiUtils;
@@ -30,10 +29,8 @@ import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
-import org.bitcoinj.core.ECKey;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.net.discovery.HttpDiscovery;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
@@ -42,7 +39,6 @@ import org.bitcoinj.wallet.DeterministicSeed;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.net.URL;
 
 import static com.mycelium.utils.GuiUtils.*;
@@ -149,6 +145,7 @@ public class Main extends Application {
         if (NetworkParameters.ID_REGTEST.equals(params.getId())) {
             bitcoin.connectToLocalHost();   // You should run a regtest mode bitcoind locally.
         }
+        bitcoin.connectToLocalHost();
         //else if (params == TestNet3Params.get()) {
         // As an example!
         //bitcoin.useTor();

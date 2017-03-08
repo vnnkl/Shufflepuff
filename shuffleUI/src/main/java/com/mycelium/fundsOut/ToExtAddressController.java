@@ -28,6 +28,7 @@ import io.datafx.controller.util.VetoException;
 import javafx.beans.property.ListProperty;
 import javafx.beans.property.SimpleListProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -38,6 +39,8 @@ import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 
 import java.util.ArrayList;
+import java.util.List;
+
 @ViewController("shuffle_toExtAddress.fxml")
 public class ToExtAddressController {
     public Button AddBtn;
@@ -57,6 +60,9 @@ public class ToExtAddressController {
 
     // Called by FXMLLoader
     public void initialize() {
+        if (!((List<String>) applicationContext.getRegisteredObject("OutAddresses") == null)) {
+            listProperty.setValue((ObservableList<String>) applicationContext.getRegisteredObject("outAddresses"));
+        }
         addressListView.itemsProperty().bind(listProperty);
     }
 
