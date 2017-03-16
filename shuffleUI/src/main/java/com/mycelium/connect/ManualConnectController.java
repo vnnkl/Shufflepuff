@@ -213,6 +213,7 @@ public class ManualConnectController {
         long unixShuffleTime = atZone.plusMinutes(shuffleTimeMinute - atZone.getMinute()).minusSeconds(atZone.getSecond()).toEpochSecond();//shuffleDateTime.toEpochSecond(ZoneOffset.of(ZoneOffset.systemDefault().getId()));
 
         stringBuilder.append(" --time " + unixShuffleTime * 1000L);
+        applicationContext.register("shuffleTimeSeconds", unixShuffleTime);
 
         System.out.println("Content of Stringbuilder: " + stringBuilder.toString());
 

@@ -18,9 +18,7 @@ package com.mycelium.connect;
 
 import com.mycelium.Main;
 import com.mycelium.utils.TextAreaAppender;
-import com.shuffle.bitcoin.impl.BitcoinCrypto;
 import com.shuffle.player.Shuffle;
-import com.shuffle.protocol.FormatException;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
@@ -41,13 +39,10 @@ import org.apache.logging.log4j.core.filter.BurstFilter;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
-import java.security.NoSuchAlgorithmException;
-import java.text.ParseException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
+import java.time.Instant;
+import java.time.ZoneId;
 
 @ViewController("shuffle_console.fxml")
 public class ShuffleConsoleController {
@@ -62,13 +57,9 @@ public class ShuffleConsoleController {
     @FXMLApplicationContext
     ApplicationContext applicationContext = ApplicationContext.getInstance();
 
-    private PrintStream printStream;
-
     OptionSet optionSet;
     Logger logger;
 
-    ExecutorService executorService;
-    Callable<Void> shuffleCallable;
 
     // Called by FXMLLoader
     public void initialize() {
@@ -76,15 +67,16 @@ public class ShuffleConsoleController {
 
         logger = LogManager.getLogger("MyLogger");
         textAreaAppender = TextAreaAppender.createAppender("textAreaAppender", null, BurstFilter.newBuilder().setLevel(Level.ALL).build());
-        logger.debug("TestMessage");
-        // TextAreaAppender.setTextArea(textArea);
-
         logger = LogManager.getLogger();
         TextAreaAppender.setTextArea(textArea);
-        logger.debug("TestMessage");
 
-
-
+        Instant time = Instant.ofEpochSecond((long) applicationContext.getRegisteredObject("shuffleTimeSeconds"));
+        int minute = time.atZone(ZoneId.systemDefault()).getMinute();
+        String minuteString;
+        if (minute == 0) {
+            minuteString = "00";
+        } else minuteString = String.valueOf(minute);
+        logger.debug("\nOnce Next is pressed Shuffle will take place at " + time.atZone(ZoneId.systemDefault()).getHour() + ":" + minuteString + "\nOnce this time has been reached you will find more information below");
 
 
     }
@@ -108,8 +100,6 @@ public class ShuffleConsoleController {
     public void cancel(ActionEvent event) {
         overlayUI.done();
     }
-
-    Shuffle shuffle;
 
     @Async
     public void next(ActionEvent actionEvent) {
