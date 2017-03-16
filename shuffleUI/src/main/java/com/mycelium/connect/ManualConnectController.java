@@ -69,6 +69,8 @@ public class ManualConnectController {
     @BackAction
     private Button backBtn;
     @FXML
+    private Button rmvBtn;
+    @FXML
     private TextField inputHashEdit;
     @FXML
     private TextField inputIndexEdit;
@@ -150,7 +152,7 @@ public class ManualConnectController {
         stringBuilder.append(" --crypto real");
 
         // is per byte, we assume 1 in/1out/1change -> 228 bytes
-        stringBuilder.append(" --fee " + getRecommendedFee().multiply(228L).toString());
+        stringBuilder.append(" --fee " + getRecommendedFee().toString());
 
         if (applicationContext.getRegisteredObject("nodeUser") == (null)) {
             stringBuilder.append(" --rpcuser admin");
@@ -218,6 +220,13 @@ public class ManualConnectController {
 
     public void cancel(ActionEvent event) {
         overlayUI.done();
+    }
+
+    public void removeLastInput(ActionEvent event){
+        if (!(inputList.isEmpty())) {
+            inputList.remove(inputList.size() - 1);
+            listProperty.setValue(FXCollections.observableArrayList(inputList));
+        }
     }
 
     public void addInput(ActionEvent event) {
@@ -294,19 +303,19 @@ public class ManualConnectController {
     }
 
     public void next(ActionEvent actionEvent) {
+        if (!(inputList.isEmpty())) {
+            System.out.println(makeShuffleArguments());
 
-        System.out.println(makeShuffleArguments());
-
-        OptionParser parser = Shuffle.getShuffleOptionsParser();
-        OptionSet optionSet = parser.parse(makeShuffleArguments().split(" "));
-        applicationContext.register("peers",listProperty.getValue());
-        applicationContext.register("shuffleArguments",makeShuffleArguments().split(" "));
-        try {
-            flowActionHandler.navigate(ShuffleConsoleController.class);
-        } catch (VetoException | FlowException e) {
-            e.printStackTrace();
+            OptionParser parser = Shuffle.getShuffleOptionsParser();
+            OptionSet optionSet = parser.parse(makeShuffleArguments().split(" "));
+            applicationContext.register("peers", listProperty.getValue());
+            applicationContext.register("shuffleArguments", makeShuffleArguments().split(" "));
+            try {
+                flowActionHandler.navigate(ShuffleConsoleController.class);
+            } catch (VetoException | FlowException e) {
+                e.printStackTrace();
+            }
         }
-
     }
 
     public Coin getRecommendedFee() {

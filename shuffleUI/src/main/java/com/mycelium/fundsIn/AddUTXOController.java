@@ -54,6 +54,7 @@ import java.util.List;
 @ViewController("shuffle_addUTXO.fxml")
 public class AddUTXOController {
     @FXML private Button AddBtn;
+    @FXML private Button rmvBtn;
     @FXML @BackAction private Button backBtn;
     @FXML private TextField inputHashEdit;
     @FXML private TextField inputIndexEdit;
@@ -204,12 +205,21 @@ public class AddUTXOController {
         }
 
     }
+    public void removeLastUtxo(ActionEvent event){
+        if (!(inputList.isEmpty())) {
+            inputList.remove(inputList.size() - 1);
+            listProperty.setValue(FXCollections.observableArrayList(inputList));
+        }
+    }
+
     public void next(ActionEvent actionEvent) {
-        applicationContext.register("UTXOs",listProperty.getValue());
-        try {
-            flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("outOption"));
-        } catch (VetoException | FlowException e) {
-            e.printStackTrace();
+        if (!(inputList.isEmpty())) {
+            applicationContext.register("UTXOs", listProperty.getValue());
+            try {
+                flowActionHandler.navigate((Class<?>) applicationContext.getRegisteredObject("outOption"));
+            } catch (VetoException | FlowException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

@@ -19,7 +19,6 @@ package com.mycelium.fundsIn;
 import com.mycelium.Main;
 import com.mycelium.utils.GuiUtils;
 import com.shuffle.bitcoin.blockchain.Bitcoin;
-import com.shuffle.bitcoin.blockchain.BitcoinCore;
 import com.shuffle.bitcoin.blockchain.Btcd;
 import io.datafx.controller.ViewController;
 import io.datafx.controller.context.ApplicationContext;
@@ -54,6 +53,7 @@ public class AddPrivKeyinWIFController {
     @FXML
     @BackAction
     private Button backBtn;
+    @FXML private Button rmvBtn;
     @FXML
     private Button nextBtn;
     @FXML
@@ -82,7 +82,9 @@ public class AddPrivKeyinWIFController {
         if (!((List<String>) applicationContext.getRegisteredObject("WIFKeys") == null)) {
             if (!(((List<String>) applicationContext.getRegisteredObject("WIFKeys")).get(0).equals(Main.bitcoin.wallet().currentReceiveKey().getPrivateKeyAsWiF(Main.params)))) {
 
-                keyListProperty.set(FXCollections.observableArrayList((List<String>) applicationContext.getRegisteredObject("WIFKeys")));
+                List<String> keyList = (List<String>) applicationContext.getRegisteredObject("WIFKeys");
+                privKeyList.addAll(keyList);
+                keyListProperty.set(FXCollections.observableArrayList(privKeyList));
                 for (String privkey : keyListProperty.get()) {
                     addressList.add(DumpedPrivateKey.fromBase58(Main.bitcoin.params(), privkey).getKey().toAddress(Main.bitcoin.params()).toBase58());
                 }
@@ -90,7 +92,6 @@ public class AddPrivKeyinWIFController {
             }
         }
     }
-    BitcoinCore bitcoinCore;
 
     public void getKeyUTXOs(){
         if (applicationContext.getRegisteredObject("nodeOption")=="Bitcoin Core"){
@@ -133,6 +134,15 @@ public class AddPrivKeyinWIFController {
             applicationContext.register("UTXOs",utxoList);
         }
 
+    }
+
+    public void removeLastPrivKey(ActionEvent event){
+        if (!(privKeyList.isEmpty())) {
+            privKeyList.remove(privKeyList.size()-1);
+            addressList.remove(addressList.size() - 1);
+            addressListProperty.setValue(FXCollections.observableArrayList(addressList));
+            keyListProperty.setValue(FXCollections.observableArrayList(privKeyList));
+        }
     }
 
     public void cancel(ActionEvent event) {

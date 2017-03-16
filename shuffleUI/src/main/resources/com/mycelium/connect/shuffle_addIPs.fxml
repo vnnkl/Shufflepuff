@@ -16,14 +16,14 @@
         </Label>
             <HBox fx:id="topHBox" alignment="CENTER" spacing="15.0">
                <children>
-                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="379.0">
+                  <VBox alignment="CENTER" prefHeight="65.0" prefWidth="276.0">
                      <children>
                         <Label fx:id="btcLabel" alignment="CENTER" contentDisplay="CENTER" text="IP">
                            <font>
                               <Font size="15.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="321.0" promptText="192.168.0.1" />
+                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="350.0" promptText="192.168.0.1" />
                      </children>
                   </VBox>
                   <VBox alignment="CENTER" prefHeight="46.0" prefWidth="52.0">
@@ -44,6 +44,30 @@
                            </font>
                         </Label>
                         <Button fx:id="AddBtn" alignment="CENTER" mnemonicParsing="false" onAction="#addInput" prefWidth="79.0" text="Add" />
+                     </children>
+                  </VBox>
+                  <VBox>
+                     <children>
+                        <Label fx:id="btcLabel1111" alignment="CENTER" contentDisplay="CENTER" visible="false" wrapText="true">
+                           <font>
+                              <Font size="15.0" />
+                           </font>
+                        </Label>
+                        <Label fx:id="btcLabel11111" alignment="CENTER" contentDisplay="CENTER" visible="false" wrapText="true">
+                           <font>
+                              <Font size="15.0" />
+                           </font>
+                        </Label>
+                     </children>
+                  </VBox>
+                  <VBox alignment="CENTER" prefHeight="65.0" prefWidth="79.0">
+                     <children>
+                        <Label fx:id="btcLabel111" alignment="CENTER" contentDisplay="CENTER" visible="false" wrapText="true">
+                           <font>
+                              <Font size="15.0" />
+                           </font>
+                        </Label>
+                        <Button fx:id="RmvBtn" alignment="CENTER" mnemonicParsing="false" onAction="#removeLastInput" prefHeight="12.0" prefWidth="70.0" text="Remove" />
                      </children>
                   </VBox>
                </children>

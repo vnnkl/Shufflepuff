@@ -5,7 +5,7 @@
 <?import javafx.scene.effect.DropShadow?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.*?>
-<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+<AnchorPane id="AnchorPane" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" style="" xmlns="http://javafx.com/javafx/8.0.65" xmlns:fx="http://javafx.com/fxml/1">
   <children>
     <VBox alignment="CENTER_LEFT" layoutY="49.0" prefHeight="303.0" prefWidth="600.0" spacing="20.0" style="-fx-background-color: white;" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
       <children>
@@ -16,19 +16,19 @@
         </Label>
             <HBox fx:id="topHBox" alignment="CENTER" spacing="15.0">
                <children>
-                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="379.0">
+                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="336.0">
                      <children>
                         <Label fx:id="btcLabel" alignment="CENTER" contentDisplay="CENTER" text="prev Hash">
                            <font>
                               <Font size="15.0" />
                            </font>
                         </Label>
-                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="321.0" promptText="1347ae4bcc50d22070e649a5031f1c05f3b117534c85fd2a9b45cca0044bfa6d" />
+                        <TextField fx:id="inputHashEdit" prefHeight="27.0" prefWidth="365.0" promptText="1347ae4bcc50d22070e649a5031f1c05f3b117534c85fd2a9b45cca0044bfa6d" />
                      </children>
                   </VBox>
-                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="42.0">
+                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="44.0">
                      <children>
-                        <Label fx:id="btcLabel2" alignment="CENTER" contentDisplay="CENTER" text="Index">
+                        <Label fx:id="btcLabel2" alignment="CENTER" contentDisplay="CENTER" prefHeight="19.0" prefWidth="44.0" text="Index">
                            <font>
                               <Font size="15.0" />
                            </font>
@@ -46,11 +46,21 @@
                         <Button fx:id="AddBtn" alignment="CENTER" mnemonicParsing="false" onAction="#addInput" prefWidth="79.0" text="Add" />
                      </children>
                   </VBox>
+                  <VBox alignment="CENTER" prefHeight="46.0" prefWidth="79.0">
+                     <children>
+                        <Label fx:id="btcLabel111" alignment="CENTER" contentDisplay="CENTER" visible="false" wrapText="true">
+                           <font>
+                              <Font size="15.0" />
+                           </font>
+                        </Label>
+                        <Button fx:id="rmvBtn" alignment="CENTER" mnemonicParsing="false" onAction="#removeLastUtxo" prefHeight="27.0" prefWidth="74.0" text="Remove" />
+                     </children>
+                  </VBox>
                </children>
             </HBox>
             <HBox alignment="CENTER_LEFT" spacing="15.0">
                <children>
-                  <ListView fx:id="inputListView" prefHeight="140.0" prefWidth="414.0" />
+                  <ListView fx:id="inputListView" prefHeight="102.0" prefWidth="544.0" />
                </children>
             </HBox>
         <HBox alignment="CENTER_RIGHT" fillHeight="true" prefHeight="30.0" prefWidth="600.0" spacing="15.0" VBox.vgrow="NEVER">

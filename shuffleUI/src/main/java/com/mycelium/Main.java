@@ -142,9 +142,7 @@ public class Main extends Application {
         };
         // Now configure and start the appkit. This will take a second or two - we could show a temporary splash screen
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
-        if (NetworkParameters.ID_REGTEST.equals(params.getId())) {
-            bitcoin.connectToLocalHost();   // You should run a regtest mode bitcoind locally.
-        }
+
         //bitcoin.connectToLocalHost();
         //else if (params == TestNet3Params.get()) {
         // As an example!
