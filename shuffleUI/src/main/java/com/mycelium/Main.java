@@ -25,11 +25,14 @@ import javafx.application.Platform;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.TextInputDialog;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.kits.WalletAppKit;
 import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.utils.BriefLogFormatter;
@@ -39,7 +42,8 @@ import org.bitcoinj.wallet.DeterministicSeed;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.io.IOException;
-import java.net.URL;
+import java.net.*;
+import java.util.Optional;
 
 import static com.mycelium.utils.GuiUtils.*;
 
@@ -144,6 +148,35 @@ public class Main extends Application {
         // or progress widget to keep the user engaged whilst we initialise, but we don't.
 
         //bitcoin.connectToLocalHost();
+
+
+        PeerAddress nodeAddress = getNodeAddress();
+
+
+        PeerAddress[] peerAddresses = new PeerAddress[0];
+        if (nodeAddress == null) {
+            if (params.equals(NetworkParameters.fromID(NetworkParameters.ID_MAINNET))) {
+                try {
+                    peerAddresses = new PeerAddress[]{new PeerAddress(Inet4Address.getByName("91.240.141.169"), 8333), new PeerAddress(Inet4Address.getByName("208.12.64.252"), 8333),
+                            new PeerAddress(Inet4Address.getByName("84.246.200.122"), 8333), new PeerAddress(Inet4Address.getByName("50.3.72.129"), 8333), new PeerAddress(Inet4Address.getByName("188.65.59.69"), 8333),
+                            new PeerAddress(Inet4Address.getByName("193.49.43.219"), 8333), new PeerAddress(Inet4Address.getByName("212.45.19.162"), 8333), new PeerAddress(Inet4Address.getByName("217.64.47.138"), 8333)};
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (params.equals(NetworkParameters.fromID(NetworkParameters.ID_TESTNET))) {
+                try {
+                    peerAddresses = new PeerAddress[]{
+                            new PeerAddress(Inet6Address.getByName("[2a00:1098:0:80:1000:25:0:1]"), 18333), new PeerAddress(Inet4Address.getByName("160.16.109.253"), 18333),
+                            new PeerAddress(Inet4Address.getByName("160.16.109.253"), 18333), new PeerAddress(Inet4Address.getByName("190.190.150.45"), 18333)};
+                } catch (UnknownHostException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            bitcoin.setPeerNodes(peerAddresses);
+        } else bitcoin.setPeerNodes(nodeAddress);
+
         //else if (params == TestNet3Params.get()) {
         // As an example!
         //bitcoin.useTor();
@@ -154,6 +187,30 @@ public class Main extends Application {
                 .setUserAgent(APP_NAME, "1.0");
         if (seed != null)
             bitcoin.restoreWalletFromSeed(seed);
+    }
+
+    private PeerAddress getNodeAddress() {
+        TextInputDialog dialog = new TextInputDialog("127.0.0.1");
+        dialog.setTitle("Do you have your own Bitcoin Full Node?");
+        dialog.setHeaderText("You can provide the IP to your BitcoinCore or Btcd server \nand we will connect bitcoinj with it.");
+        dialog.setContentText("Please enter Nodes IP or URL:");
+        dialog.setGraphic(new ImageView(this.getClass().getResource("core-logo.png").toString()));
+
+        Optional<String> result = dialog.showAndWait();
+
+        final PeerAddress[] nodeAddress = {null};
+        // The Java 8 way to get the response value (with lambda expression).
+        result.ifPresent(name -> {
+                    try {
+                        InetAddress inetAddress = InetAddress.getByName(name);
+                        nodeAddress[0] = new PeerAddress(inetAddress, params.getPort());
+                    } catch (UnknownHostException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+        );
+        return nodeAddress[0];
     }
 
     private Node stopClickPane = new Pane();

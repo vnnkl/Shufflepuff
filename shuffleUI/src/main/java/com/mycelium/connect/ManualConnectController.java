@@ -206,8 +206,8 @@ public class ManualConnectController {
         LocalDateTime localTime = LocalDateTime.now();
         int minutesSinceMidnight = localTime.toLocalTime().toSecondOfDay() / 60;
         double minutesInHour = minutesSinceMidnight % 60;
-        double ceilHour = Math.ceil(minutesInHour / 10);
-        int shuffleTimeMinute = (int) (ceilHour * 10);
+        double ceilHour = Math.ceil(minutesInHour / 5);
+        int shuffleTimeMinute = (int) (ceilHour * 5);
         Instant instant = Instant.ofEpochSecond(System.currentTimeMillis() / 1000);
         ZonedDateTime atZone = instant.atZone(ZoneId.systemDefault());
         long unixShuffleTime = atZone.plusMinutes(shuffleTimeMinute - atZone.getMinute()).minusSeconds(atZone.getSecond()).toEpochSecond();//shuffleDateTime.toEpochSecond(ZoneOffset.of(ZoneOffset.systemDefault().getId()));

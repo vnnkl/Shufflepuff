@@ -25,7 +25,6 @@ import io.datafx.controller.context.FXMLApplicationContext;
 import io.datafx.controller.flow.action.BackAction;
 import io.datafx.controller.flow.context.ActionHandler;
 import io.datafx.controller.flow.context.FlowActionHandler;
-import io.datafx.core.concurrent.Async;
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -67,16 +66,22 @@ public class ShuffleConsoleController {
 
         logger = LogManager.getLogger("MyLogger");
         textAreaAppender = TextAreaAppender.createAppender("textAreaAppender", null, BurstFilter.newBuilder().setLevel(Level.ALL).build());
-        logger = LogManager.getLogger();
         TextAreaAppender.setTextArea(textArea);
 
         Instant time = Instant.ofEpochSecond((long) applicationContext.getRegisteredObject("shuffleTimeSeconds"));
         int minute = time.atZone(ZoneId.systemDefault()).getMinute();
         String minuteString;
-        if (minute == 0) {
-            minuteString = "00";
+        if (minute <= 5) {
+            minuteString = "0" + String.valueOf(minute);
         } else minuteString = String.valueOf(minute);
-        logger.debug("\nOnce Next is pressed Shuffle will take place at " + time.atZone(ZoneId.systemDefault()).getHour() + ":" + minuteString + "\nOnce this time has been reached you will find more information below");
+
+        int hour = time.atZone(ZoneId.systemDefault()).getHour();
+        String hourString;
+        if (hour < 10) {
+            hourString = "0" + String.valueOf(hour);
+        } else hourString = String.valueOf(hour);
+
+        logger.debug("\nOnce Next is pressed Shuffle will take place at " + hourString + ":" + minuteString + "\nOnce this time has been reached you will find more information below");
 
 
     }
@@ -101,7 +106,6 @@ public class ShuffleConsoleController {
         overlayUI.done();
     }
 
-    @Async
     public void next(ActionEvent actionEvent) {
         try {
             Shuffle.main((String[]) applicationContext.getRegisteredObject("shuffleArguments"));

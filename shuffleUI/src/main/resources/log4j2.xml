@@ -14,7 +14,7 @@
             </Layout>
         </Appender>
         <TextAreaAppender name="TextAreaAppender">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %c{1}:%L - %m%n"/>
+            <PatternLayout pattern="%d{HH:mm:ss} - %m%n"/>
         </TextAreaAppender>
     </Appenders>
     <Loggers>
