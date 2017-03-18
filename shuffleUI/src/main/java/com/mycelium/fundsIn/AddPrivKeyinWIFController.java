@@ -193,18 +193,20 @@ public class AddPrivKeyinWIFController {
 
     @ActionMethod("next")
     public void next(ActionEvent actionEvent) {
-        applicationContext.register("WIFKeys", getKeys());
-        applicationContext.register("changeAddress", addressList);
-        getKeyUTXOs();
-        try {
-            if (applicationContext.getRegisteredObject("nodeOption").equals("Bitcoin Core")) {
-                flowActionHandler.navigate(AddUTXOController.class);
-            } else {
-                flowActionHandler.navigate((Class<? extends Object>) applicationContext.getRegisteredObject("outOption"));
+        if (!(privKeyList.isEmpty())) {
+            applicationContext.register("WIFKeys", getKeys());
+            applicationContext.register("changeAddress", addressList);
+            getKeyUTXOs();
+            try {
+                if (applicationContext.getRegisteredObject("nodeOption").equals("Bitcoin Core")) {
+                    flowActionHandler.navigate(AddUTXOController.class);
+                } else {
+                    flowActionHandler.navigate((Class<? extends Object>) applicationContext.getRegisteredObject("outOption"));
+                }
+            } catch (VetoException | FlowException e) {
+                e.printStackTrace();
             }
-        } catch (VetoException | FlowException e) {
-            e.printStackTrace();
-        }
 
+        }
     }
 }
