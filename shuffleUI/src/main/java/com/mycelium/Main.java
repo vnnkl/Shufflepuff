@@ -20,17 +20,23 @@ import com.google.common.util.concurrent.Service;
 import com.mycelium.controls.NotificationBarPane;
 import com.mycelium.utils.GuiUtils;
 import com.mycelium.utils.TextFieldValidator;
+import io.datafx.controller.context.ApplicationContext;
+import io.datafx.controller.context.FXMLApplicationContext;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Insets;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCombination;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
+import javafx.util.Pair;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.kits.WalletAppKit;
@@ -55,6 +61,9 @@ public class Main extends Application {
 
     public static WalletAppKit bitcoin;
     public static Main instance;
+
+    @FXMLApplicationContext
+    ApplicationContext applicationContext = ApplicationContext.getInstance();
 
     private StackPane uiStack;
     private Pane mainUI;
@@ -192,8 +201,8 @@ public class Main extends Application {
     private PeerAddress getNodeAddress() {
         TextInputDialog dialog = new TextInputDialog("127.0.0.1");
         dialog.setTitle("Do you have your own Bitcoin Full Node?");
-        dialog.setHeaderText("You can provide the IP to your BitcoinCore or Btcd server \nand we will connect bitcoinj with it.");
-        dialog.setContentText("Please enter Nodes IP or URL:");
+        dialog.setHeaderText("You can provide the IP to your BitcoinCore or Btcd server \nand we will connect bitcoinj with it.\nIf you do not have one or do not know what it is, \nuse cancel to use a default.");
+        dialog.setContentText("Please enter Nodes IP or URL: \n");
         dialog.setGraphic(new ImageView(this.getClass().getResource("core-logo.png").toString()));
 
         Optional<String> result = dialog.showAndWait();
@@ -210,8 +219,80 @@ public class Main extends Application {
                 }
 
         );
+
+        if (!(nodeAddress[0]==null)){getNodeLogin();}
+
         return nodeAddress[0];
     }
+
+    private void getNodeLogin() {
+
+        // Create the custom dialog.
+        Dialog<Pair<String, String>> dialog = new Dialog<>();
+        dialog.setTitle("Full Node Login");
+        dialog.setHeaderText("What are the RPC login details for your Full node?");
+
+        // Set the icon (must be included in the project).
+        dialog.setGraphic(new ImageView(this.getClass().getResource("core-logo.png").toString()));
+
+        // Set the button types.
+        ButtonType loginButtonType = new ButtonType("Login", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(loginButtonType, ButtonType.CANCEL);
+
+        // Create the username and password labels and fields.
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        TextField username = new TextField();
+        username.setPromptText("RPCUser");
+        PasswordField password = new PasswordField();
+        password.setPromptText("RPCPass");
+
+        grid.add(new Label("Username:"), 0, 0);
+        grid.add(username, 1, 0);
+        grid.add(new Label("Password:"), 0, 1);
+        grid.add(password, 1, 1);
+
+        // Enable/Disable login button depending on whether a username was entered.
+        Node loginButton = dialog.getDialogPane().lookupButton(loginButtonType);
+        loginButton.setDisable(true);
+
+        // Do some validation (using the Java 8 lambda syntax).
+        username.textProperty().addListener((observable, oldValue, newValue) -> {
+            loginButton.setDisable(newValue.trim().isEmpty());
+        });
+
+        dialog.getDialogPane().setContent(grid);
+
+        // Request focus on the username field by default.
+        Platform.runLater(() -> username.requestFocus());
+
+        // Convert the result to a username-password-pair when the login button is clicked.
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == loginButtonType) {
+                return new Pair<>(username.getText(), password.getText());
+            }
+            return null;
+        });
+
+        Optional<Pair<String, String>> result = dialog.showAndWait();
+
+        result.ifPresent(usernamePassword -> {
+            System.out.println("Username=" + usernamePassword.getKey() + ", Password=" + usernamePassword.getValue());
+            String user = usernamePassword.getKey().toString();
+            String pw = usernamePassword.getValue().toString();
+            if (!(user.equals(""))) {
+                if (!(pw.equals(""))){
+                    applicationContext.register("RPCUser", usernamePassword.getKey().toString());
+                    applicationContext.register("RPCPass", usernamePassword.getValue().toString());
+                }
+            }
+        });
+
+    }
+
 
     private Node stopClickPane = new Pane();
 
