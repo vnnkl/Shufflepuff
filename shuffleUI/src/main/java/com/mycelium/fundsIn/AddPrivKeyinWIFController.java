@@ -98,11 +98,24 @@ public class AddPrivKeyinWIFController {
 
         }else {
             Btcd btcd = null;
-            try {
-                btcd = new Btcd(Main.params,"admin","pass");
-            } catch (MalformedURLException e) {
-                e.printStackTrace();
+
+            if (applicationContext.getRegisteredObject("nodeUser") == (null)) {
+                String nodeIP = (String) applicationContext.getRegisteredObject("nodeIP");
+                String nodeUser = (String) applicationContext.getRegisteredObject("nodeUser");
+                String nodePw = (String) applicationContext.getRegisteredObject("nodePW");
+                try {
+                    btcd = new Btcd(Main.params,nodeIP,nodeUser,nodePw);
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                try {
+                    btcd = new Btcd(Main.params,"admin","pass");
+                } catch (MalformedURLException e) {
+                    e.printStackTrace();
+                }
             }
+
             List<String> addressList = this.addressList;
             List<Bitcoin.Transaction> txList = new LinkedList<>();
 

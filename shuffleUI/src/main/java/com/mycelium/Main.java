@@ -220,7 +220,10 @@ public class Main extends Application {
 
         );
 
-        if (!(nodeAddress[0]==null)){getNodeLogin();}
+        if (!(nodeAddress[0]==null)){
+            getNodeLogin();
+            applicationContext.register("nodeIP",nodeAddress[0].toString());
+        }
 
         return nodeAddress[0];
     }
@@ -285,8 +288,8 @@ public class Main extends Application {
             String pw = usernamePassword.getValue().toString();
             if (!(user.equals(""))) {
                 if (!(pw.equals(""))){
-                    applicationContext.register("RPCUser", usernamePassword.getKey().toString());
-                    applicationContext.register("RPCPass", usernamePassword.getValue().toString());
+                    applicationContext.register("nodeUser", usernamePassword.getKey().toString());
+                    applicationContext.register("nodePW", usernamePassword.getValue().toString());
                 }
             }
         });
