@@ -17,14 +17,17 @@
 package com.mycelium;
 
 import com.google.common.util.concurrent.Service;
+import com.msopentech.thali.java.toronionproxy.JavaOnionProxyContext;
+import com.msopentech.thali.java.toronionproxy.JavaOnionProxyManager;
+import com.msopentech.thali.toronionproxy.OnionProxyManager;
 import com.mycelium.controls.NotificationBarPane;
 import com.mycelium.utils.GuiUtils;
 import com.mycelium.utils.TextFieldValidator;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
+import io.nucleo.net.*;
 import javafx.application.Application;
 import javafx.application.Platform;
-import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
@@ -40,21 +43,22 @@ import javafx.util.Pair;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.kits.WalletAppKit;
-import org.bitcoinj.params.TestNet3Params;
+import org.bitcoinj.params.MainNetParams;
 import org.bitcoinj.utils.BriefLogFormatter;
 import org.bitcoinj.utils.Threading;
 import org.bitcoinj.wallet.DeterministicSeed;
 
 import javax.annotation.Nullable;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.net.*;
 import java.util.Optional;
+import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
 
 import static com.mycelium.utils.GuiUtils.*;
 
 public class Main extends Application {
-    public static NetworkParameters params = TestNet3Params.get();
+    public static NetworkParameters params = MainNetParams.get();
     public static final String APP_NAME = "ShufflePuff";
     private static final String WALLET_FILE_NAME = APP_NAME.replaceAll("[^a-zA-Z0-9.-]", "_") + "-"
             + params.getPaymentProtocolId();
@@ -186,6 +190,8 @@ public class Main extends Application {
             bitcoin.setPeerNodes(peerAddresses);
         } else bitcoin.setPeerNodes(nodeAddress);
 
+
+        startupTor();
         //else if (params == TestNet3Params.get()) {
         // As an example!
         //bitcoin.useTor();
@@ -196,6 +202,152 @@ public class Main extends Application {
                 .setUserAgent(APP_NAME, "1.0");
         if (seed != null)
             bitcoin.restoreWalletFromSeed(seed);
+    }
+
+
+    private void startupTor() {
+
+        class Client implements Runnable {
+
+            private Socket sock;
+            private final Scanner scanner;
+
+            private Client(Socket sock, Scanner scanner) {
+                this.sock = sock;
+                this.scanner = scanner;
+            }
+
+            private Client(Socket sock) {
+                this(sock, new Scanner(System.in));
+            }
+
+            @Override
+            public void run() {
+                try {
+                    BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                    OutputStreamWriter out = new OutputStreamWriter(sock.getOutputStream());
+                    System.out.print("\n> ");
+                    String input = scanner.nextLine();
+                    out.write(input + "\n");
+                    out.flush();
+                    String aLine = null;
+                    while ((aLine = in.readLine()) != null) {
+                        System.out.println(aLine);
+                        System.out.print("\n> ");
+                        input = scanner.nextLine();
+                        out.write(input + "\n");
+                        out.flush();
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+
+        //create server class
+        class Server implements Runnable {
+            private final ServerSocket socket;
+
+            private Server(ServerSocket socket) {
+                this.socket = socket;
+            }
+
+            @Override
+            public void run() {
+
+                System.out.println("Wating for incoming connections...");
+                try {
+                    while (true) {
+
+                        Socket sock = socket.accept();
+                        System.out.println(
+                                "Accepting Client " + sock.getRemoteSocketAddress() + " on port " + sock.getLocalPort());
+                        BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                        OutputStreamWriter out = new OutputStreamWriter(sock.getOutputStream());
+                        String aLine = null;
+                        while ((aLine = in.readLine()) != null) {
+                            System.out.println("ECHOING " + aLine);
+                            out.write("ECHO " + aLine + "\n");
+                            out.flush();
+                            if (aLine.equals("END"))
+                                break;
+                        }
+                        sock.close();
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+
+
+        try {
+            File dir = new File("tor-files");
+            dir.mkdirs();
+            TorNode<JavaOnionProxyManager, JavaOnionProxyContext> node = new JavaTorNode(dir);
+
+            OnionProxyManager onionProxyManager = null;
+            onionProxyManager = new JavaOnionProxyManager(new JavaOnionProxyContext(dir));
+
+
+            int totalSecondsPerTorStartup = 4 * 60;
+            int totalTriesPerTorStartup = 5;
+
+            // Start the Tor Onion Proxy
+            if (onionProxyManager.startWithRepeat(totalSecondsPerTorStartup, totalTriesPerTorStartup) == false) {
+                return;
+            }
+
+            // Start a hidden service listener
+            int hiddenServicePort = 80;
+            int localPort = 6996;
+            String onionAddress = onionProxyManager.publishHiddenService(hiddenServicePort, localPort);
+
+            // It can taken anywhere from 30 seconds to a few minutes for Tor to start properly routing
+            // requests to to a hidden service. So you generally want to try to test connect to it a
+            // few times. But after the previous call the Tor Onion Proxy will route any requests
+            // to the returned onionAddress and hiddenServicePort to 127.0.0.1:localPort. So, for example,
+            // you could just pass localPort into the NanoHTTPD constructor and have a HTTP server listening
+            // to that port.
+
+            // Connect via the TOR network
+            // In this case we are trying to connect to the hidden service but any IP/DNS address and port can be
+            // used here.
+
+
+            CountDownLatch serverLatch = new CountDownLatch(2);
+
+
+            final ServiceDescriptor hiddenService = node.createHiddenService(6996, new HiddenServiceReadyListener() {
+
+                @Override
+                public void onConnect(HiddenServiceDescriptor descriptor) {
+
+                    System.out.println("Successfully published hidden service " + descriptor.getFullAddress());
+                    serverLatch.countDown();
+                }
+            });
+
+
+            Thread t1 = new Thread(new Server(hiddenService.getServerSocket()));
+            t1.start();
+            serverLatch.await();
+            // Now the socket is open but note that it can take some time before the Tor network has everything
+            // connected and connection requests can fail for spurious reasons (especially when connecting to
+            // hidden services) so have lots of retry logic.
+
+            Client client = new Client(node.connectToHiddenService(hiddenService.getHostname(), hiddenService.getServicePort()));
+            client.run();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     private PeerAddress getNodeAddress() {
@@ -220,9 +372,8 @@ public class Main extends Application {
 
         );
 
-        if (!(nodeAddress[0]==null)){
+        if (!(nodeAddress[0] == null)) {
             getNodeLogin();
-            applicationContext.register("nodeIP",nodeAddress[0].toString());
         }
 
         return nodeAddress[0];
