@@ -33,7 +33,7 @@ dependencies {
     compile files('libs/java-0.0.3-SNAPSHOT.jar')
     compile files('libs/ThaliOnionProxyUniversal-0.0.2.jar')
     compile files('libs/jtorproxy-0.4.9.9.jar')
-    compile files('libs/jtorctl-briar.jar')
+    compile files('libs/jtorctl-0.4.9.9.jar')
     compile 'com.github.ravn:jsocks:567e1cd6c1'
 }
 
