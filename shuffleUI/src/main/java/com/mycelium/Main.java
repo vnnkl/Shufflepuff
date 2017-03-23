@@ -187,8 +187,8 @@ public class Main extends Application {
                 }
             }
 
-            bitcoin.setPeerNodes(peerAddresses);
-        } else bitcoin.setPeerNodes(nodeAddress);
+            bitcoin.setPeerNodes(peerAddresses).setDiscovery(null);
+        } else bitcoin.setPeerNodes(nodeAddress).setDiscovery(null);
 
 
         startupTor();
@@ -204,90 +204,14 @@ public class Main extends Application {
             bitcoin.restoreWalletFromSeed(seed);
     }
 
-
+    private static CountDownLatch serverLatch = new CountDownLatch(2);
     private void startupTor() {
-
-        class Client implements Runnable {
-
-            private Socket sock;
-            private final Scanner scanner;
-
-            private Client(Socket sock, Scanner scanner) {
-                this.sock = sock;
-                this.scanner = scanner;
-            }
-
-            private Client(Socket sock) {
-                this(sock, new Scanner(System.in));
-            }
-
-            @Override
-            public void run() {
-                try {
-                    BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-                    OutputStreamWriter out = new OutputStreamWriter(sock.getOutputStream());
-                    System.out.print("\n> ");
-                    String input = scanner.nextLine();
-                    out.write(input + "\n");
-                    out.flush();
-                    String aLine = null;
-                    while ((aLine = in.readLine()) != null) {
-                        System.out.println(aLine);
-                        System.out.print("\n> ");
-                        input = scanner.nextLine();
-                        out.write(input + "\n");
-                        out.flush();
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-        }
-
-        //create server class
-        class Server implements Runnable {
-            private final ServerSocket socket;
-
-            private Server(ServerSocket socket) {
-                this.socket = socket;
-            }
-
-            @Override
-            public void run() {
-
-                System.out.println("Wating for incoming connections...");
-                try {
-                    while (true) {
-
-                        Socket sock = socket.accept();
-                        System.out.println(
-                                "Accepting Client " + sock.getRemoteSocketAddress() + " on port " + sock.getLocalPort());
-                        BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-                        OutputStreamWriter out = new OutputStreamWriter(sock.getOutputStream());
-                        String aLine = null;
-                        while ((aLine = in.readLine()) != null) {
-                            System.out.println("ECHOING " + aLine);
-                            out.write("ECHO " + aLine + "\n");
-                            out.flush();
-                            if (aLine.equals("END"))
-                                break;
-                        }
-                        sock.close();
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-
-            }
-
-        }
 
 
         try {
             File dir = new File("tor-files");
             dir.mkdirs();
-            TorNode<JavaOnionProxyManager, JavaOnionProxyContext> node = new JavaTorNode(dir);
+            TorNode node = new JavaTorNode(dir);
 
             OnionProxyManager onionProxyManager = null;
             onionProxyManager = new JavaOnionProxyManager(new JavaOnionProxyContext(dir));
@@ -318,7 +242,7 @@ public class Main extends Application {
             // used here.
 
 
-            CountDownLatch serverLatch = new CountDownLatch(2);
+
 
 
             final ServiceDescriptor hiddenService = node.createHiddenService(6996, new HiddenServiceReadyListener() {
@@ -378,6 +302,84 @@ public class Main extends Application {
 
         return nodeAddress[0];
     }
+
+    private static class Client implements Runnable {
+
+        private Socket sock;
+        private final Scanner scanner;
+
+        private Client(Socket sock, Scanner scanner) {
+            this.sock = sock;
+            this.scanner = scanner;
+        }
+
+        private Client(Socket sock) {
+            this(sock, new Scanner(System.in));
+        }
+
+        @Override
+        public void run() {
+            try {
+                BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                OutputStreamWriter out = new OutputStreamWriter(sock.getOutputStream());
+                System.out.print("\n> ");
+                String input = scanner.nextLine();
+                out.write(input + "\n");
+                out.flush();
+                String aLine = null;
+                while ((aLine = in.readLine()) != null) {
+                    System.out.println(aLine);
+                    System.out.print("\n> ");
+                    input = scanner.nextLine();
+                    out.write(input + "\n");
+                    out.flush();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+    }
+
+    //create server class
+    private static class Server implements Runnable {
+        private final ServerSocket socket;
+
+        private Server(ServerSocket socket) {
+            this.socket = socket;
+        }
+
+        @Override
+        public void run() {
+
+            System.out.println("Wating for incoming connections...");
+            try {
+                while (true) {
+
+                    Socket sock = socket.accept();
+                    System.out.println(
+                            "Accepting Client " + sock.getRemoteSocketAddress() + " on port " + sock.getLocalPort());
+                    BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+                    OutputStreamWriter out = new OutputStreamWriter(sock.getOutputStream());
+                    String aLine = null;
+                    while ((aLine = in.readLine()) != null) {
+                        System.out.println("ECHOING " + aLine);
+                        out.write("ECHO " + aLine + "\n");
+                        out.flush();
+                        if (aLine.equals("END"))
+                            break;
+                    }
+                    sock.close();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+
+
 
     private void getNodeLogin() {
 
