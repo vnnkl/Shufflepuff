@@ -1,7 +1,6 @@
 package com.mycelium.fundsIn;
 
 import io.datafx.controller.ViewController;
-import io.datafx.controller.ViewNode;
 import io.datafx.controller.context.ApplicationContext;
 import io.datafx.controller.context.FXMLApplicationContext;
 import io.datafx.controller.flow.FlowException;
@@ -21,10 +20,11 @@ import org.bitcoinj.core.Coin;
  */
 @ViewController("shuffle_amountIn.fxml")
 public class AddAmountInController {
-    @ViewNode @BackAction
-    Button backBtn;
-    @ViewNode
-    Button nextBtn;
+    @FXML
+    @BackAction
+    private Button backBtn;
+    @FXML
+    private Button nextBtn;
     @FXML
     ChoiceBox<String> amountInChoice;
     @ActionHandler
